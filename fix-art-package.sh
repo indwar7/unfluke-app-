@@ -1,21 +1,34 @@
 #!/bin/bash
 
-echo "🔧 Fixing @react-native-community/art..."
+echo "Fixing ART package..."
 
-# Fix ARTRenderableViewManager.java - Add prepareToRecycleView method
-FILE1="node_modules/@react-native-community/art/android/src/main/java/com/reactnativecommunity/art/ARTRenderableViewManager.java"
+ART_MANAGER="node_modules/@react-native-community/art/android/src/main/java/com/reactnativecommunity/art/ARTRenderableViewManager.java"
 
-# Find the last closing brace and add method before it
-sed -i.backup '/^}$/i\
-\
-  @Override\
-  public void prepareToRecycleView(\
-      @androidx.annotation.NonNull ThemedReactContext reactContext,\
-      @androidx.annotation.NonNull View view) {\
-    super.prepareToRecycleView(reactContext, view);\
-  }
-' "$FILE1"
+# Check if file exists
+if [ ! -f "$ART_MANAGER" ]; then
+    echo "Error: ARTRenderableViewManager.java not found"
+    exit 1
+fi
 
-echo "✅ Fixed ARTRenderableViewManager.java"
-echo "🎉 Done! Now create the patch..."
+# Remove duplicate prepareToRecycleView method
+# Keep only the first occurrence
+awk '
+/public View prepareToRecycleView/ {
+    if (!seen) {
+        seen = 1
+        print
+        next
+    } else {
+        skip = 1
+        next
+    }
+}
+skip && /^  \}$/ {
+    skip = 0
+    next
+}
+!skip { print }
+' "$ART_MANAGER" > "$ART_MANAGER.tmp" && mv "$ART_MANAGER.tmp" "$ART_MANAGER"
 
+echo "✓ Fixed ARTRenderableViewManager.java"
+echo "ART package fixed!"
