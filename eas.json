@@ -1,0 +1,28 @@
+// {
+//   "build": {
+//     "development": {
+//       "node": "20.18.0"
+//     },
+//     "preview": {
+//       "node": "20.18.0"
+//     },
+//     "production": {
+//       "node": "20.18.0"
+//     }
+//   }
+// }
+
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "apk": {
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "name": "unflukeapp",
+    "slug": "unfluke",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "unflukeapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vikas-gupta.unflukeapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.vikas_gupta.unflukeapp",
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-web-browser",
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          },
+          "ios": {
+            "infoPlist": {
+              "NSAppTransportSecurity": {
+                "NSAllowsArbitraryLoads": true
+              }
+            }
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "BACKEND_URL": "https://api.unfluke.in",
+      "PUBLIC_URL": "http://www.unfluke.in",
+      "DEFAULT_AUTH": "jwt",
+      "GENERATE_SOURCE_MAP": false,
+      "GA_ID": "G-TXPTX3V04",
+      "REACT_APP_CHATBOT_TOKEN": "ELRIKHJDFOIPJGHER9567802B43J9M5703459-BH78JM34589067",
+      "REACT_APP_CHATBOT_URL": "http://34.124.230.132",
+      "router": {},
+      "eas": {
+        "projectId": "eb3f2c76-9555-479b-b2f1-65fccc64c2b6"
+      }
+    },
+    "owner": "abhay1234578s-organization"
+  }
+}

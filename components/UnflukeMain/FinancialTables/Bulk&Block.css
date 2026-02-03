@@ -1,0 +1,21 @@
+.custom-inline-thead {
+    white-space: nowrap !important;
+    font-weight: bold !important;
+  }
+
+  .no-wrap-table *{
+    white-space: nowrap !important;
+  }
+  
+
+
+.no-wrap-table th,
+.no-wrap-table td {
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
