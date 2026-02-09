@@ -89,7 +89,11 @@ export default function RootLayout() {
   }, [menuVisible, slideAnim, width]);
 
   if (isLoading) {
-    return null; // Return null while loading - splash screen stays visible
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#ffffff" }}>
+        <ActivityIndicator size="large" color="#4A9782" />
+      </View>
+    );
   }
 
   return (
