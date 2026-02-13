@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -62,7 +62,7 @@ const safeNum = (v: any): number => {
 /* ─── Stock List ─── */
 const STOCK_LIST: StockInfo[] = [
   { name: "Reliance Industries", code: 476, type: "C", symbol: "RELIANCE" },
-  { name: "TCS", code: 11536, type: "C", symbol: "TCS" },
+  { name: "TCS", code: 5400, type: "C", symbol: "TCS" },
   { name: "HDFC Bank", code: 7229, type: "C", symbol: "HDFCBANK" },
   { name: "Infosys", code: 7595, type: "C", symbol: "INFY" },
   { name: "ICICI Bank", code: 4963, type: "C", symbol: "ICICIBANK" },
@@ -111,20 +111,13 @@ const extractMetric = (yearData: any, metric: string): any => {
   if (!yearData) return null;
   const blocks = Array.isArray(yearData) ? yearData : [yearData];
   for (const block of blocks) {
-    // 1. Exact match
     if (block[metric] !== undefined && block[metric] !== null) return block[metric];
-
-    // 2. Case-insensitive
     let key = Object.keys(block).find(k => k.toLowerCase() === metric.toLowerCase());
     if (key && block[key] !== undefined && block[key] !== null) return block[key];
-
-    // 3. Aliases
     const aliases = ALIASES[metric];
     if (aliases) {
       for (const alias of aliases) {
-        // Alias exact
         if (block[alias] !== undefined && block[alias] !== null) return block[alias];
-        // Alias case-insensitive
         key = Object.keys(block).find(k => k.toLowerCase() === alias.toLowerCase());
         if (key && block[key] !== undefined && block[key] !== null) return block[key];
       }
@@ -132,6 +125,54 @@ const extractMetric = (yearData: any, metric: string): any => {
   }
   return null;
 };
+
+/* ═══════════════════════════ STYLES ═══════════════════════════ */
+const st = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f3f4f6" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  header: { padding: 16, backgroundColor: "#4f46e5", zIndex: 10, elevation: 5 },
+  searchBar: {
+    backgroundColor: "white", padding: 12, borderRadius: 12, flexDirection: "row", alignItems: "center",
+    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, elevation: 4
+  },
+  searchTitle: { fontWeight: "bold", fontSize: 16, color: "#1f2937" },
+  searchSub: { fontSize: 12, color: "#6b7280" },
+  searchIconBtn: {
+    backgroundColor: "#e0e7ff", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20
+  },
+  retryBtn: { marginTop: 20, backgroundColor: "#4f46e5", paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 },
+  retryText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  tabBar: { backgroundColor: "#fff", elevation: 2, maxHeight: 48, borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
+  tab: { paddingVertical: 13, paddingHorizontal: 16, marginHorizontal: 2 },
+  tabActive: { borderBottomWidth: 3, borderBottomColor: "#4f46e5" },
+  tabText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
+  tabTextActive: { color: "#4f46e5", fontWeight: "700" },
+  card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, marginBottom: 12, elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
+  sectionTitle: { fontSize: 17, fontWeight: "700", color: "#111827", marginBottom: 14 },
+  insightGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  insightCard: { width: "48%", backgroundColor: "#f9fafb", borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
+  insightIcon: { fontSize: 20, marginBottom: 4 },
+  insightLabel: { fontSize: 12, color: "#6b7280", fontWeight: "600" },
+  insightValue: { fontSize: 16, fontWeight: "700", marginTop: 2 },
+  insightSub: { fontSize: 12, fontWeight: "600", marginTop: 4 },
+  tRow: { flexDirection: "row" },
+  tHeaderRow: { backgroundColor: "#4f46e5" },
+  tRowEven: { backgroundColor: "#f9fafb" },
+  tRowOdd: { backgroundColor: "#fff" },
+  tCell: { paddingVertical: 10, paddingHorizontal: 10, borderRightWidth: 1, borderRightColor: "#e5e7eb", borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
+  tMetricCell: { minWidth: 150, maxWidth: 180 },
+  tYearCell: { minWidth: 100 },
+  tHeaderText: { color: "#fff", fontWeight: "700", fontSize: 12 },
+  tMetricText: { color: "#374151", fontWeight: "600", fontSize: 13 },
+  tDataText: { color: "#111827", fontWeight: "500", fontSize: 13, textAlign: "right" },
+  subTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: "#f3f4f6", marginRight: 8 },
+  subTabActive: { backgroundColor: "#4f46e5" },
+  subTabText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
+  subTabTextActive: { color: "#fff" },
+  modalContent: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 20, paddingHorizontal: 20, maxHeight: "80%" },
+  searchInput: { backgroundColor: "#f3f4f6", borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 12, color: "#111827" },
+  stockItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 14, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+});
 
 /* ═══════════════════════════ COMPONENT ═══════════════════════════ */
 
@@ -144,14 +185,17 @@ export default function FundamentalScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [token, setToken] = useState<string | null>(null);
 
+  // Resolved capcode & type (may differ from stock.code after API verification)
+  const [resolvedCode, setResolvedCode] = useState<number>(stock.code);
+  const [resolvedType, setResolvedType] = useState<string>(stock.type);
+
+  // Bumped every time the stock changes - triggers core data reload
+  const [stockVersion, setStockVersion] = useState(0);
+
   useEffect(() => {
     (async () => {
-      const t = await AsyncStorage.getItem("authToken") || await AsyncStorage.getItem("access"); // Try both keys
+      const t = await AsyncStorage.getItem("authToken") || await AsyncStorage.getItem("access");
       if (t) setToken(t);
-      else {
-        // If no token, maybe redirect or just warn?
-        // We will proceed for now, some endpoints might be public?
-      }
     })();
   }, []);
 
@@ -167,6 +211,7 @@ export default function FundamentalScreen() {
     }
     catch { return null; }
   };
+
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<StockInfo[]>([]);
   const [searching, setSearching] = useState(false);
@@ -190,92 +235,144 @@ export default function FundamentalScreen() {
   const [eventType, setEventType] = useState<"Dividends" | "Bonus" | "StockSplit" | "InsiderTrading">("Dividends");
   const [dealType, setDealType] = useState<"Bulk" | "Block">("Bulk");
 
-  /* ─── Core data load ─── */
-  const loadCore = useCallback(async (isRefresh = false) => {
-    if (!token && !isRefresh) {
-      // Wait for token? Or maybe just try?
-      // We will try.
-    }
+  // Clear ALL data stores
+  const clearAllData = () => {
+    setPlData(null); setBsData(null); setCfData(null); setCompanyInfo(null);
+    setRatioData(null); setQuarterlyData(null); setShareholding(null);
+    setDividends(null); setBonus(null); setSplits(null); setInsider(null);
+    setBulkDeals(null); setBlockDeals(null);
+  };
 
-    try {
-      isRefresh ? setRefreshing(true) : setLoading(true);
-      setError(null);
-      setPlData(null); setBsData(null); setCfData(null); setCompanyInfo(null);
-      setRatioData(null); setQuarterlyData(null); setShareholding(null);
-      setDividends(null); setBonus(null); setSplits(null); setInsider(null);
-      setBulkDeals(null); setBlockDeals(null);
-
-      // --- FIX: Verify Capcode ---
-      let activeCode = stock.code;
-      try {
-        // Always try to verify the code from valid API source if possible
-        const codeRes = await safeFetch(`${HIST}/getCapcodeByStockSymbol?instrument=${stock.symbol}`);
-        if (codeRes && codeRes.code && codeRes.code !== stock.code) {
-          console.log(`[Fundamental] Correcting code for ${stock.symbol}: ${stock.code} -> ${codeRes.code}`);
-          activeCode = codeRes.code;
-          // Update state so other tabs use the correct code
-          setStock(prev => ({ ...prev, code: codeRes.code }));
-        }
-      } catch (err) {
-        console.warn("[Fundamental] Failed to verify capcode", err);
-      }
-      // ---------------------------
-
-      let activeType = stock.type;
-      let pl = await safeFetch(`${BASE}/getProfitLoss?type=${activeType}&capcode=${activeCode}`);
-
-      // Auto-switch type if data is missing
-      if (!pl?.results || Object.keys(pl.results).length === 0) {
-        const altType = activeType === "C" ? "S" : "C";
-        const plAlt = await safeFetch(`${BASE}/getProfitLoss?type=${altType}&capcode=${activeCode}`);
-        if (plAlt?.results && Object.keys(plAlt.results).length > 0) {
-          pl = plAlt;
-          activeType = altType;
-          setStock(s => ({ ...s, type: altType }));
-        }
-      }
-
-      const [bs, cf, info] = await Promise.all([
-        safeFetch(`${BASE}/getBalanceSheet?type=${activeType}&capcode=${activeCode}`),
-        safeFetch(`${BASE}/getCashFlow?type=${activeType}&capcode=${activeCode}`),
-        safeFetch(`${HIST}/companyname?instrument=${activeCode}`),
-      ]);
-
-      // if (!pl?.results && !bs?.results && !cf?.results) throw new Error("No data available for this stock");
-      setPlData(pl); setBsData(bs); setCfData(cf); setCompanyInfo(info);
-      // Reset lazy data on stock change
-      setRatioData(null); setQuarterlyData(null); setShareholding(null);
-      setDividends(null); setBonus(null); setSplits(null); setInsider(null);
-      setBulkDeals(null); setBlockDeals(null);
-    } catch (e: any) {
-      setError(e.message || "Failed to load");
-    } finally { setLoading(false); setRefreshing(false); }
-  }, [stock, token]);
-
-  useEffect(() => { loadCore(); }, [loadCore]);
-
-  /* ─── Lazy tab data ─── */
+  /* ─── Core data load: triggered by stockVersion change ─── */
   useEffect(() => {
+    let cancelled = false;
+
+    const loadCore = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        clearAllData();
+
+        // Step 1: Resolve correct capcode via API
+        let activeCode = stock.code;
+        try {
+          const codeRes = await safeFetch(`${HIST}/getCapcodeByStockSymbol?instrument=${stock.symbol}`);
+          // API returns { code: 5400 }
+          if (codeRes?.code) {
+            activeCode = codeRes.code;
+            console.log(`[Fundamental] Resolved capcode for ${stock.symbol}: ${activeCode}`);
+          }
+        } catch (err) {
+          console.warn("[Fundamental] Capcode resolve failed, using default:", stock.code);
+        }
+
+        if (cancelled) return;
+
+        // Step 2: Try Consolidated, fall back to Standalone
+        let activeType = stock.type;
+        let pl = await safeFetch(`${BASE}/getProfitLoss?type=${activeType}&capcode=${activeCode}`);
+
+        if (!pl?.results || Object.keys(pl.results).length === 0) {
+          const altType = activeType === "C" ? "S" : "C";
+          const plAlt = await safeFetch(`${BASE}/getProfitLoss?type=${altType}&capcode=${activeCode}`);
+          if (plAlt?.results && Object.keys(plAlt.results).length > 0) {
+            pl = plAlt;
+            activeType = altType;
+          }
+        }
+
+        if (cancelled) return;
+
+        // Step 3: Fetch BS, CF, Company Info in parallel
+        const [bs, cf, info] = await Promise.all([
+          safeFetch(`${BASE}/getBalanceSheet?type=${activeType}&capcode=${activeCode}`),
+          safeFetch(`${BASE}/getCashFlow?type=${activeType}&capcode=${activeCode}`),
+          safeFetch(`${HIST}/companyname?instrument=${activeCode}`),
+        ]);
+
+        if (cancelled) return;
+
+        // Store resolved values for lazy tabs to use
+        setResolvedCode(activeCode);
+        setResolvedType(activeType);
+        setPlData(pl);
+        setBsData(bs);
+        setCfData(cf);
+        setCompanyInfo(info);
+      } catch (e: any) {
+        if (!cancelled) setError(e.message || "Failed to load data");
+      } finally {
+        if (!cancelled) { setLoading(false); setRefreshing(false); }
+      }
+    };
+
+    loadCore();
+    return () => { cancelled = true; };
+  }, [stockVersion]);
+
+  /* ─── Lazy tab data: loads when user switches tabs ─── */
+  useEffect(() => {
+    if (loading) return; // wait for core to finish
+    let cancelled = false;
+
     const load = async () => {
       setTabLoading(true);
       try {
-        if (tab === "Ratios" && !ratioData) setRatioData(await safeFetch(`${BASE}/getCFRatio?capcode=${stock.code}&type=${stock.type}&section=KeyFinancial`));
-        else if (tab === "Quarterly" && !quarterlyData) setQuarterlyData(await safeFetch(`${BASE}/getQuarterly?capcode=${stock.code}&type=${stock.type}`));
-        else if (tab === "Shareholding" && !shareholding) setShareholding(await safeFetch(`${BASE}/getShareholdingPatterns?capcode=${stock.code}`));
-        else if (tab === "Corporate Events") {
-          if (eventType === "Dividends" && !dividends) setDividends(await safeFetch(`${BASE}/getCorporateEvents?capcode=${stock.code}&type=Dividends&page=1`));
-          else if (eventType === "Bonus" && !bonus) setBonus(await safeFetch(`${BASE}/getCorporateEvents?capcode=${stock.code}&type=Bonus&page=1`));
-          else if (eventType === "StockSplit" && !splits) setSplits(await safeFetch(`${BASE}/getCorporateEvents?capcode=${stock.code}&type=StockSplit&page=1`));
-          else if (eventType === "InsiderTrading" && !insider) setInsider(await safeFetch(`${BASE}/getCorporateEvents?capcode=${stock.code}&type=InsiderTrading&page=1`));
+        const code = resolvedCode;
+        const type = resolvedType;
+
+        if (tab === "Ratios" && !ratioData) {
+          const d = await safeFetch(`${BASE}/getCFRatio?capcode=${code}&type=${type}&section=KeyFinancial`);
+          if (!cancelled) setRatioData(d);
+        } else if (tab === "Quarterly" && !quarterlyData) {
+          const d = await safeFetch(`${BASE}/getQuarterly?capcode=${code}&type=${type}`);
+          if (!cancelled) setQuarterlyData(d);
+        } else if (tab === "Shareholding" && !shareholding) {
+          const d = await safeFetch(`${BASE}/getShareholdingPatterns?capcode=${code}`);
+          if (!cancelled) setShareholding(d);
+        } else if (tab === "Corporate Events") {
+          if (eventType === "Dividends" && !dividends) {
+            const d = await safeFetch(`${BASE}/getCorporateEvents?capcode=${code}&type=Dividends&page=1`);
+            if (!cancelled) setDividends(d);
+          } else if (eventType === "Bonus" && !bonus) {
+            const d = await safeFetch(`${BASE}/getCorporateEvents?capcode=${code}&type=Bonus&page=1`);
+            if (!cancelled) setBonus(d);
+          } else if (eventType === "StockSplit" && !splits) {
+            const d = await safeFetch(`${BASE}/getCorporateEvents?capcode=${code}&type=StockSplit&page=1`);
+            if (!cancelled) setSplits(d);
+          } else if (eventType === "InsiderTrading" && !insider) {
+            const d = await safeFetch(`${BASE}/getCorporateEvents?capcode=${code}&type=InsiderTrading&page=1`);
+            if (!cancelled) setInsider(d);
+          }
         } else if (tab === "Bulk & Block Deals") {
-          if (dealType === "Bulk" && !bulkDeals) setBulkDeals(await safeFetch(`${BASE}/getBulkBlockDeals?capcode=${stock.code}&type=Bulk&page=1`));
-          else if (dealType === "Block" && !blockDeals) setBlockDeals(await safeFetch(`${BASE}/getBulkBlockDeals?capcode=${stock.code}&type=Block&page=1`));
+          if (dealType === "Bulk" && !bulkDeals) {
+            const d = await safeFetch(`${BASE}/getBulkBlockDeals?capcode=${code}&type=Bulk&page=1`);
+            if (!cancelled) setBulkDeals(d);
+          } else if (dealType === "Block" && !blockDeals) {
+            const d = await safeFetch(`${BASE}/getBulkBlockDeals?capcode=${code}&type=Block&page=1`);
+            if (!cancelled) setBlockDeals(d);
+          }
         }
       } catch { }
-      finally { setTabLoading(false); }
+      finally {
+        if (!cancelled) setTabLoading(false);
+      }
     };
-    if (!loading) load();
-  }, [tab, eventType, dealType, loading, token, stock]);
+
+    load();
+    return () => { cancelled = true; };
+  }, [tab, eventType, dealType, loading, stockVersion, resolvedCode]);
+
+  /* ─── Handle stock selection ─── */
+  const selectStock = (item: StockInfo) => {
+    setStock(item);
+    setShowPicker(false);
+    setSearch("");
+    setSearchResults([]);
+    setTab("Profit & Loss");
+    clearAllData();
+    setStockVersion(v => v + 1); // triggers core reload
+  };
 
   /* ─── Search handler ─── */
   const handleSearch = async (text: string) => {
@@ -286,15 +383,20 @@ export default function FundamentalScreen() {
       s.symbol.toLowerCase().includes(text.toLowerCase())
     );
     setSearchResults(local);
-    // also try API search
     if (text.length >= 3) {
       setSearching(true);
       try {
+        // API returns { code: 5400 }
         const res = await safeFetch(`${HIST}/getCapcodeByStockSymbol?instrument=${text.toUpperCase()}`);
-        if (res?.capcode && !local.find(s => s.code === res.capcode)) {
-          const nameRes = await safeFetch(`${HIST}/companyname?instrument=${res.capcode}`);
+        if (res?.code && !local.find(s => s.code === res.code)) {
+          const nameRes = await safeFetch(`${HIST}/companyname?instrument=${res.code}`);
           if (nameRes?.name) {
-            setSearchResults(prev => [...prev, { name: nameRes.name, code: res.capcode, type: "C", symbol: text.toUpperCase() }]);
+            setSearchResults(prev => [...prev, {
+              name: nameRes.name,
+              code: res.code,
+              type: "C",
+              symbol: text.toUpperCase()
+            }]);
           }
         }
       } catch { }
@@ -352,20 +454,18 @@ export default function FundamentalScreen() {
   const renderYearWiseTable = (apiData: any, metricsToShow: string[]) => {
     if (!apiData?.results) return <View style={{ padding: 20, alignItems: "center" }}><Text style={{ color: "#6b7280" }}>No data available</Text></View>;
     const allYears = Object.keys(apiData.results).sort();
-    const years = allYears.slice(-5); // last 5 years
+    const years = allYears.slice(-5);
 
     return (
       <View style={st.card}>
         <ScrollView horizontal showsHorizontalScrollIndicator>
           <View>
-            {/* Header row with years */}
             <View style={[st.tRow, st.tHeaderRow]}>
               <Text style={[st.tCell, st.tMetricCell, st.tHeaderText]}>Metric</Text>
               {years.map(y => (
                 <Text key={y} style={[st.tCell, st.tYearCell, st.tHeaderText]}>{y}</Text>
               ))}
             </View>
-            {/* Data rows */}
             {metricsToShow.map((metric, idx) => (
               <View key={metric} style={[st.tRow, idx % 2 === 0 ? st.tRowEven : st.tRowOdd]}>
                 <Text style={[st.tCell, st.tMetricCell, st.tMetricText]} numberOfLines={2}>{metric}</Text>
@@ -453,7 +553,7 @@ export default function FundamentalScreen() {
     if (tabLoading) return <Loader />;
     if (!quarterlyData?.results) return <NoData />;
     const allQtrs = Object.keys(quarterlyData.results).sort();
-    const qtrs = allQtrs.slice(-8); // last 8 quarters
+    const qtrs = allQtrs.slice(-8);
     const METRICS = ["Sales", "Expenses", "Operating Profit", "OPM%", "EBITDA", "Net Profit", "NPM%", "EPS (Adjusted)"];
     const fmtQtr = (q: string) => {
       const yr = q.slice(0, 4);
@@ -663,7 +763,7 @@ export default function FundamentalScreen() {
       <StatusBar backgroundColor="#4f46e5" barStyle="light-content" />
       <View style={st.center}>
         <Text style={{ color: "#ef4444", fontSize: 16, fontWeight: "600" }}>⚠️ {error}</Text>
-        <TouchableOpacity style={st.retryBtn} onPress={() => loadCore()}><Text style={st.retryText}>Retry</Text></TouchableOpacity>
+        <TouchableOpacity style={st.retryBtn} onPress={() => setStockVersion(v => v + 1)}><Text style={st.retryText}>Retry</Text></TouchableOpacity>
         <TouchableOpacity style={[st.retryBtn, { marginTop: 12, backgroundColor: "#6b7280" }]} onPress={() => setShowPicker(true)}><Text style={st.retryText}>Change Stock</Text></TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -674,13 +774,13 @@ export default function FundamentalScreen() {
     <SafeAreaView style={st.container} edges={["top"]}>
       <StatusBar backgroundColor="#4f46e5" barStyle="light-content" />
 
-      {/* Header with Search Bar */}
+      {/* Header */}
       <View style={st.header}>
         <TouchableOpacity style={st.searchBar} onPress={() => setShowPicker(true)} activeOpacity={0.9}>
           <Text style={{ fontSize: 18, marginRight: 8 }}>🔍</Text>
           <View style={{ flex: 1 }}>
             <Text style={st.searchTitle} numberOfLines={1}>{companyInfo?.name || stock.name}</Text>
-            <Text style={st.searchSub}>{stock.symbol} • {stock.type === "C" ? "Consolidated" : "Standalone"}</Text>
+            <Text style={st.searchSub}>{stock.symbol} • {resolvedType === "C" ? "Consolidated" : "Standalone"} • Code: {resolvedCode}</Text>
           </View>
           <View style={st.searchIconBtn}>
             <Text style={{ color: "#4f46e5", fontWeight: "700", fontSize: 12 }}>CHANGE</Text>
@@ -699,14 +799,14 @@ export default function FundamentalScreen() {
 
       {/* Content */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12, paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadCore(true)} colors={["#4f46e5"]} tintColor="#4f46e5" />}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setStockVersion(v => v + 1); }} colors={["#4f46e5"]} tintColor="#4f46e5" />}>
         {contentMap[tab]?.()}
         <View style={{ alignItems: "center", paddingVertical: 24 }}>
           <Text style={{ color: "#9ca3af", fontSize: 12 }}>Data from Unfluke API • Pull to refresh</Text>
         </View>
       </ScrollView>
 
-      {/* Stock Picker */}
+      {/* Stock Picker Modal */}
       <Modal visible={showPicker} animationType="slide" transparent onRequestClose={() => setShowPicker(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end" }}>
           <TouchableOpacity style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }} activeOpacity={1} onPress={() => setShowPicker(false)} />
@@ -721,12 +821,12 @@ export default function FundamentalScreen() {
               {searching && <ActivityIndicator size="small" color="#4f46e5" style={{ marginBottom: 8 }} />}
               <FlatList data={displayStocks} keyExtractor={i => `${i.code}-${i.symbol}`}
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={st.stockItem} onPress={() => { setStock(item); setShowPicker(false); setSearch(""); setSearchResults([]); }}>
+                  <TouchableOpacity style={st.stockItem} onPress={() => selectStock(item)}>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 16, fontWeight: "600", color: "#111827" }}>{item.name}</Text>
                       <Text style={{ fontSize: 13, color: "#6b7280", marginTop: 2 }}>NSE: {item.symbol}</Text>
                     </View>
-                    {stock.code === item.code && <Text style={{ fontSize: 24, color: "#4f46e5", fontWeight: "700" }}>✓</Text>}
+                    {stock.symbol === item.symbol && <Text style={{ fontSize: 24, color: "#4f46e5", fontWeight: "700" }}>✓</Text>}
                   </TouchableOpacity>
                 )}
                 ListEmptyComponent={<View style={{ padding: 40, alignItems: "center" }}><Text style={{ color: "#6b7280" }}>No stocks found</Text></View>}
@@ -737,64 +837,4 @@ export default function FundamentalScreen() {
       </Modal>
     </SafeAreaView>
   );
-
-
-  /* ═══════════════════════════ STYLES ═══════════════════════════ */
-  const st = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#f3f4f6" },
-    center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
-    header: { padding: 16, backgroundColor: "#4f46e5", zIndex: 10, elevation: 5 },
-    searchBar: {
-      backgroundColor: "white", padding: 12, borderRadius: 12, flexDirection: "row", alignItems: "center",
-      shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 6, elevation: 4
-    },
-    searchTitle: { fontWeight: "bold", fontSize: 16, color: "#1f2937" },
-    searchSub: { fontSize: 12, color: "#6b7280" },
-    searchIconBtn: {
-      backgroundColor: "#e0e7ff", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20
-    },
-    retryBtn: { marginTop: 20, backgroundColor: "#4f46e5", paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 },
-    retryText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-
-    // Tabs
-    tabBar: { backgroundColor: "#fff", elevation: 2, maxHeight: 48, borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-    tab: { paddingVertical: 13, paddingHorizontal: 16, marginHorizontal: 2 },
-    tabActive: { borderBottomWidth: 3, borderBottomColor: "#4f46e5" },
-    tabText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
-    tabTextActive: { color: "#4f46e5", fontWeight: "700" },
-
-    // Cards
-    card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, marginBottom: 12, elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
-    sectionTitle: { fontSize: 17, fontWeight: "700", color: "#111827", marginBottom: 14 },
-
-    // Insight cards
-    insightGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-    insightCard: { width: "48%", backgroundColor: "#f9fafb", borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
-    insightIcon: { fontSize: 20, marginBottom: 4 },
-    insightLabel: { fontSize: 12, color: "#6b7280", fontWeight: "600" },
-    insightValue: { fontSize: 16, fontWeight: "700", marginTop: 2 },
-    insightSub: { fontSize: 12, fontWeight: "600", marginTop: 4 },
-
-    // Table
-    tRow: { flexDirection: "row" },
-    tHeaderRow: { backgroundColor: "#4f46e5" },
-    tRowEven: { backgroundColor: "#f9fafb" },
-    tRowOdd: { backgroundColor: "#fff" },
-    tCell: { paddingVertical: 10, paddingHorizontal: 10, borderRightWidth: 1, borderRightColor: "#e5e7eb", borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-    tMetricCell: { minWidth: 150, maxWidth: 180 },
-    tYearCell: { minWidth: 100 },
-    tHeaderText: { color: "#fff", fontWeight: "700", fontSize: 12 },
-    tMetricText: { color: "#374151", fontWeight: "600", fontSize: 13 },
-    tDataText: { color: "#111827", fontWeight: "500", fontSize: 13, textAlign: "right" },
-
-    // Sub tabs
-    subTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: "#f3f4f6", marginRight: 8 },
-    subTabActive: { backgroundColor: "#4f46e5" },
-    subTabText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
-    subTabTextActive: { color: "#fff" },
-
-    // Modal
-    modalContent: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 20, paddingHorizontal: 20, maxHeight: "80%" },
-    searchInput: { backgroundColor: "#f3f4f6", borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 12, color: "#111827" },
-    stockItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 14, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  });
+}
