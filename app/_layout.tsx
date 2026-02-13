@@ -104,7 +104,20 @@ export default function RootLayout() {
                       <Stack.Screen name="dashboard" options={{ headerShown: false }} />
                       <Stack.Screen name="fundamental" options={{ headerShown: false }} />
                       <Stack.Screen name="strategy-charts" options={{ headerShown: false }} />
+                      <Stack.Screen name="historical" options={{ headerShown: false }} />
                       <Stack.Screen name="login" options={{ headerShown: false }} />
+                      <Stack.Screen name="basic-backtester" options={{ headerShown: false }} />
+                      <Stack.Screen name="basic-backtester-home" options={{ headerShown: false }} />
+                      <Stack.Screen name="basic-backtester-main" options={{ headerShown: false }} />
+                      <Stack.Screen name="basic-backtester-view" options={{ headerShown: false }} />
+                      <Stack.Screen name="advanced-backtester" options={{ headerShown: false }} />
+                      <Stack.Screen name="advanced-backtester-home" options={{ headerShown: false }} />
+                      <Stack.Screen name="advanced-backtester-main" options={{ headerShown: false }} />
+                      <Stack.Screen name="scanner" options={{ headerShown: false }} />
+                      <Stack.Screen name="scannerhome" options={{ headerShown: false }} />
+                      <Stack.Screen name="scannermain" options={{ headerShown: false }} />
+                      <Stack.Screen name="scannerfundamental" options={{ headerShown: false }} />
+                      <Stack.Screen name="scannerlist" options={{ headerShown: false }} />
                       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                       <Stack.Screen name="+not-found" options={{ headerShown: false }} />
                     </Stack>
