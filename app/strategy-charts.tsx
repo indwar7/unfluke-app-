@@ -110,20 +110,44 @@ export default function StrategyChartsScreen() {
 
   /* ─── Load option names ─── */
   useEffect(() => {
-    if (!token || !userId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
-      const data = await safeFetch(`${BASE}/api/historicalChart/getOptionNames?id=${userId}`, token);
-      if (data?.optionNames && data.optionNames.length > 0) {
-        setOptionNames(data.optionNames);
-        setSelectedInstrument(data.optionNames[0]);
-        setError(null);
-      } else {
-        // Fallback to major indices if API fails
-        const FALLBACK = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"];
+      try {
+        const data = await safeFetch(`${BASE}/api/historicalChart/getOptionNames?id=${userId || 'default'}`, token);
+        // API returns a plain array like ["NIFTY","BANKNIFTY",...] OR {optionNames: [...]}
+        let names: string[] = [];
+        if (Array.isArray(data)) {
+          names = data;
+        } else if (data?.optionNames && Array.isArray(data.optionNames)) {
+          names = data.optionNames;
+        }
+
+        if (names.length > 0) {
+          setOptionNames(names);
+          setSelectedInstrument(names[0]);
+          setError(null);
+        } else {
+          // Fallback to major indices/stocks
+          const FALLBACK = [
+            "NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY",
+            "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
+            "SBIN", "TATAMOTORS", "TATASTEEL", "ITC", "AXISBANK",
+            "BHARTIARTL", "WIPRO", "LT", "MARUTI", "SUNPHARMA",
+            "KOTAKBANK", "BAJFINANCE", "HINDUNILVR", "ASIANPAINT",
+          ];
+          setOptionNames(FALLBACK);
+          setSelectedInstrument(FALLBACK[0]);
+          setError(null);
+        }
+      } catch (e) {
+        console.error("[StrategyCharts] Failed to load option names", e);
+        const FALLBACK = [
+          "NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY",
+          "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
+          "SBIN", "TATAMOTORS", "TATASTEEL", "ITC", "AXISBANK",
+        ];
         setOptionNames(FALLBACK);
         setSelectedInstrument(FALLBACK[0]);
-        setError(null);
       }
       setLoading(false);
     })();
@@ -131,35 +155,36 @@ export default function StrategyChartsScreen() {
 
   /* ─── Load expiries when instrument changes ─── */
   useEffect(() => {
-    if (!selectedInstrument || !token || !userId) return;
+    if (!selectedInstrument) return;
+    const uid = userId || 'default';
     (async () => {
       setChartLoading(true);
       try {
         if (chartType === "Straddle Chart" || chartType === "Iron Fly Chart" || chartType === "Double Calendar Chart" || chartType === "Straddle Combo Chart") {
           // For straddle-type charts, get separate call/put strikes
-          const expiryData = await safeFetch(`${BASE}/api/historicalChart/getStradleExpiryDate?optionName=${selectedInstrument}&id=${userId}`, token);
+          const expiryData = await safeFetch(`${BASE}/api/historicalChart/getStradleExpiryDate?optionName=${selectedInstrument}&id=${uid}`, token);
           if (expiryData?.expiry_date) {
             setExpiries(expiryData.expiry_date);
             setSelectedExpiry(expiryData.expiry_date[0] || "");
             setLongExpiry(expiryData.expiry_date[0] || "");
             setShortExpiry(expiryData.expiry_date[0] || "");
             // Get call strikes
-            const callSt = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=CE - Call&id=${userId}`, token);
+            const callSt = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=CE - Call&id=${uid}`, token);
             if (callSt?.strike_price) { setCallStrikes(callSt.strike_price); setSelectedCallStrike(callSt.strike_price[0] || ""); }
             // Get put strikes
-            const putSt = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=PE - Put&id=${userId}`, token);
+            const putSt = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=PE - Put&id=${uid}`, token);
             if (putSt?.strike_price) { setPutStrikes(putSt.strike_price); setSelectedPutStrike(putSt.strike_price[0] || ""); }
           }
         } else {
           // For single option charts
-          const expiryData = await safeFetch(`${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${userId}`, token);
+          const expiryData = await safeFetch(`${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`, token);
           if (expiryData?.expiry_date) {
             setExpiries(expiryData.expiry_date);
             setSelectedExpiry(expiryData.expiry_date[0] || "");
             setLongExpiry(expiryData.expiry_date[0] || "");
             setShortExpiry(expiryData.expiry_date[0] || "");
             // Get strikes for first expiry
-            const strikeData = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${userId}`, token);
+            const strikeData = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`, token);
             if (strikeData?.strike_price) {
               setStrikes(strikeData.strike_price);
               setSelectedStrike(strikeData.strike_price[0] || "");
@@ -176,10 +201,10 @@ export default function StrategyChartsScreen() {
   /* ─── Update strikes on expiry change ─── */
   const handleExpiryChange = async (exp: string) => {
     setSelectedExpiry(exp);
-    if (!token || !userId) return;
+    const uid = userId || 'default';
     setChartLoading(true);
     try {
-      const strikeData = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${exp}&optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${userId}`, token);
+      const strikeData = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${exp}&optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`, token);
       if (strikeData?.strike_price) {
         setStrikes(strikeData.strike_price);
         setSelectedStrike(strikeData.strike_price[0] || "");
@@ -190,10 +215,9 @@ export default function StrategyChartsScreen() {
 
   /* ─── Submit chart request ─── */
   const handleSubmit = async () => {
-    if (!token || !userId) { Alert.alert("Error", "Please login first. User ID not found."); return; }
+    const uid = userId || 'default';
     if (!selectedInstrument) { Alert.alert("Error", "Please select an instrument"); return; }
     if (!selectedExpiry && (chartType !== "Options Chart" || expiries.length > 0)) {
-      // Only require expiry if strictly needed or available
       Alert.alert("Error", "Please select an expiry date");
       return;
     }
@@ -209,26 +233,26 @@ export default function StrategyChartsScreen() {
       switch (chartType) {
         case "Options Chart":
           if (!selectedStrike) { Alert.alert("Error", "Select strike price"); setChartLoading(false); return; }
-          url = `${BASE}/api/historicalChart/getHistoricOptionsResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${userId}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&strikePrice=${selectedStrike}`;
+          url = `${BASE}/api/historicalChart/getHistoricOptionsResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&strikePrice=${selectedStrike}`;
           break;
 
         case "Straddle Chart":
-          url = `${BASE}/api/historicalChart/getStradleOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${userId}&expiryDate=${selectedExpiry}&callLots=${callLots}&putLots=${putLots}&callStrikePrice=${selectedCallStrike}&putStrikePrice=${selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getStradleOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&callLots=${callLots}&putLots=${putLots}&callStrikePrice=${selectedCallStrike}&putStrikePrice=${selectedPutStrike}`;
           break;
         case "Spread Chart":
-          url = `${BASE}/api/historicalChart/getSpreadOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${userId}&optionType=${encodeURIComponent(optionType)}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&shortStrikePrice=${shortStrike}&longStrikePrice=${longStrike}&shortLots=-1&longLots=1`;
+          url = `${BASE}/api/historicalChart/getSpreadOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&optionType=${encodeURIComponent(optionType)}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&shortStrikePrice=${shortStrike}&longStrikePrice=${longStrike}&shortLots=-1&longLots=1`;
           break;
         case "Butterfly Chart":
-          url = `${BASE}/api/historicalChart/getButterFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${userId}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&s1=${selectedStrike}&s2=${strikes[1] || selectedStrike}&s3=${strikes[2] || selectedStrike}`;
+          url = `${BASE}/api/historicalChart/getButterFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&s1=${selectedStrike}&s2=${strikes[1] || selectedStrike}&s3=${strikes[2] || selectedStrike}`;
           break;
         case "Iron Fly Chart":
-          url = `${BASE}/api/historicalChart/getIronFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${userId}&expiryDate=${selectedExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${selectedPutStrike}&s4=${putStrikes[1] || selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getIronFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${selectedPutStrike}&s4=${putStrikes[1] || selectedPutStrike}`;
           break;
         case "Double Calendar Chart":
-          url = `${BASE}/api/historicalChart/getDCalResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${userId}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${selectedPutStrike}&s4=${putStrikes[1] || selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getDCalResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${selectedPutStrike}&s4=${putStrikes[1] || selectedPutStrike}`;
           break;
         case "Straddle Combo Chart":
-          url = `${BASE}/api/historicalChart/getComboResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${userId}&expiryDate=${selectedExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${callStrikes[2] || selectedCallStrike}&s4=${selectedPutStrike}&s5=${putStrikes[1] || selectedPutStrike}&s6=${putStrikes[2] || selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getComboResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${callStrikes[2] || selectedCallStrike}&s4=${selectedPutStrike}&s5=${putStrikes[1] || selectedPutStrike}&s6=${putStrikes[2] || selectedPutStrike}`;
           break;
       }
 
@@ -333,27 +357,7 @@ export default function StrategyChartsScreen() {
     </View>
   );
 
-  /* ─── No auth state ─── */
-  if (!token || !userId) {
-    return (
-      <SafeAreaView style={s.container} edges={["top"]}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Text style={{ color: "#fff", fontSize: 18 }}>← </Text>
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>Strategy Charts</Text>
-        </View>
-        <View style={s.center}>
-          <Text style={{ fontSize: 48 }}>🔒</Text>
-          <Text style={{ fontSize: 18, fontWeight: "700", color: "#374151", marginTop: 12 }}>Login Required</Text>
-          <Text style={{ fontSize: 14, color: "#6b7280", marginTop: 6, textAlign: "center" }}>Strategy Charts requires authentication to access historical options data.</Text>
-          <TouchableOpacity style={s.primaryBtn} onPress={() => router.push("/login" as any)}>
-            <Text style={s.primaryBtnText}>Go to Login</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+
 
   /* ─── Loading state ─── */
   if (loading) {
