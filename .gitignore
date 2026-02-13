@@ -54,3 +54,7 @@ ios/build/
 # Gradle
 .gradle/
 
+.dependencygraph/
+tsc_errors.txt
+final_errors.txt
+patches/
