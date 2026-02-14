@@ -1,0 +1,11 @@
+/* Default styling for images */
+.nav-img-height {
+    height: 100px;
+}
+
+/* Media query for small screens */
+@media (max-width: 800px) {
+    .nav-img-height {
+        height: 60px;
+    }
+}

@@ -1,0 +1,29 @@
+/* table th,
+table td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 12px 8px;
+}
+table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-borderless td,
+.table-borderless th,
+.table-borderless {
+  border: none;
+}
+
+table {
+  table-layout: fixed;
+  width: 100%;
+  word-wrap: break-word;
+}
+
+th > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+ */
