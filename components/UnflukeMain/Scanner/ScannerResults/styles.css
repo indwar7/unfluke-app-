@@ -1,0 +1,20 @@
+.header {
+    cursor: pointer;
+}
+
+.header:hover {
+    text-decoration: underline;
+}
+
+th,
+th.header {
+  display: table-cell !important;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+th.header i,
+th.header svg {
+  display: inline-block !important;
+  vertical-align: middle;
+}

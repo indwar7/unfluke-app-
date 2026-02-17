@@ -1,0 +1,24 @@
+.watchlist-and-graph {
+  display: flex;
+  justify-content: space-around;
+ 
+  min-height: 500px;
+
+  .left {
+    flex: 1;
+    margin: 5px;
+  }
+
+  .right {
+    border: 1px solid var(--vz-border-color) !important;
+    flex: 2;
+    margin: 5px;
+    border-radius: 5px;
+  }
+}
+
+@media (max-width: 720px) {
+  .watchlist-and-graph {
+    flex-direction: column;
+  }
+}
