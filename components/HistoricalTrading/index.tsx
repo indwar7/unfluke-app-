@@ -105,7 +105,7 @@ const Trading = () => {
 
             <View style={styles.chartContainer}>
               <View style={styles.chartWrapper}>
-                <TVChartContainer coinId={selectedSymbol ? `NSE:${selectedSymbol}` : "NSE:NIFTY"} />
+                <TVChartContainer coinId={selectedSymbol ? (selectedSymbol.startsWith('NSE:') ? selectedSymbol : `NSE:${selectedSymbol}`) : "NSE:NIFTY"} />
               </View>
             </View>
           </View>

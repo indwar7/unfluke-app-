@@ -1,13 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 export const initialState = {
-    historicalDateTime:"",
-    selectedSymbol:"NSE:NIFTY 50",
-    historicalWatchlist:[],
+    historicalDateTime: "",
+    selectedSymbol: "NSE:NIFTY",
+    historicalWatchlist: [],
     historicalTrades: [],
     historicalOrders: [],
     historicalPosition: [],
-    historicalHoldings:[],
+    historicalHoldings: [],
 }
 
 const HistoricalTradingSlice = createSlice({
@@ -40,13 +40,13 @@ const HistoricalTradingSlice = createSlice({
 })
 
 export const {
- setHistoricalHoldings,
- setHistoricalPositions,
- setHistoricalOrders,
- setHistoricalTrades,
- setHistoricalDateTime,
- setHistoricalWatchlist,
- setHistoricalSelectedSymbol
+    setHistoricalHoldings,
+    setHistoricalPositions,
+    setHistoricalOrders,
+    setHistoricalTrades,
+    setHistoricalDateTime,
+    setHistoricalWatchlist,
+    setHistoricalSelectedSymbol
 } = HistoricalTradingSlice.actions
 
 export default HistoricalTradingSlice.reducer;

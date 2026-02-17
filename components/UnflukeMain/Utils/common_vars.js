@@ -602,7 +602,15 @@ function addSuffixToNumber(num) {
   return num + suffix;
 }
 
+const fundamentalYears = [
+  { value: "1", label: "1 Year" },
+  { value: "3", label: "3 Years" },
+  { value: "5", label: "5 Years" },
+  { value: "10", label: "10 Years" },
+];
+
 export {
+  fundamentalYears,
   legTPUnitTypes,
   legSLUnitTypes,
   TSLUnitTypes,

@@ -287,7 +287,7 @@ export default function StrategyChartsScreen() {
         <View style={{ marginTop: 12, marginBottom: 12 }}>
           <Text style={{ fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 }}>Resolved Symbol: {chartSymbols[0]}</Text>
           <View style={{ height: 350, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e7eb' }}>
-            <TVChartContainer coinId={chartSymbols[0]} />
+            <TVChartContainer coinId={chartSymbols[0] ? (chartSymbols[0].startsWith('NSE:') ? chartSymbols[0] : `NSE:${chartSymbols[0]}`) : "NSE:NIFTY"} />
           </View>
         </View>
 
