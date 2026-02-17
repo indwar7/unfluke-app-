@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 viewBox="0 0 504 504" xml:space="preserve">
+<path style="fill:#FFF8EF;" d="M420,72v272h-24V120c0-4.8-4-8-8-8h-64c-4,0-8,3.2-8,8v224h-24V184c0-4-4-8-8-8h-64c-4,0-8,4-8,8v160
+	h-24V224c0-4-4-8-8-8h-64c-4.8,0-8,4-8,8v120H84V72H420z"/>
+<rect x="332" y="128" style="fill:#FF7D00;" width="48" height="216"/>
+<rect x="340" y="128" style="fill:#FF9900;" width="32" height="216"/>
+<rect x="228" y="192" style="fill:#1D9AAE;" width="48" height="152"/>
+<rect x="236" y="192" style="fill:#2FB4C2;" width="32" height="152"/>
+<rect x="124" y="232" style="fill:#E94545;" width="48" height="112"/>
+<rect x="132" y="232" style="fill:#EE5656;" width="32" height="112"/>
+<g>
+	<polygon style="fill:#2FB4C2;" points="452,360 452,400 52,400 52,360 76,360 116,360 180,360 220,360 284,360 324,360 388,360 
+		428,360 	"/>
+	<polygon style="fill:#2FB4C2;" points="452,16 452,56 428,56 76,56 52,56 52,16 	"/>
+</g>
+<path style="fill:#42210B;" d="M124,232v112h48V232H124z M380,128h-48v216h48V128z M276,344V192h-48v152H276z M252,488
+	c8.8,0,16-7.2,16-16s-7.2-16-16-16c-8.8,0-16,7.2-16,16S243.2,488,252,488z M428,56h24V16H52v40h24H428z M428,360h-40h-64h-40h-64
+	h-40h-64H76H52v40h400v-40H428z M420,344V72H84v272h24V224c0-4,3.2-8,8-8h64c4,0,8,4,8,8v120h24V184c0-4,4-8,8-8h64c4,0,8,4,8,8v160
+	h24V120c0-4.8,4-8,8-8h64c4,0,8,3.2,8,8v224H420z M36,64V8c0-4,3.2-8,8-8h416c4,0,8,4,8,8v56c0,4.8-4,8-8,8h-24v272h24c4,0,8,4,8,8
+	v56c0,4-4,8-8,8H260v24.8c13.6,4,24,16,24,31.2c0,17.6-14.4,32-32,32s-32-14.4-32-32c0-15.2,10.4-27.2,24-31.2V416H44
+	c-4.8,0-8-4-8-8v-56c0-4,3.2-8,8-8h24V72H44C39.2,72,36,68.8,36,64z"/>
+<path style="fill:#D9CDC1;" d="M92,344V112.8C92,94.4,106.4,80,124.8,80h254.4c18.4,0,32.8,14.4,32.8,32.8V344h8V72H84v272H92z"/>
+<g>
+	<path style="fill:#1D9AAE;" d="M60,56V33.6c0-4.8,4.8-9.6,9.6-9.6h364c5.6,0,10.4,4.8,10.4,9.6V56h8V16H52v40H60z"/>
+	<path style="fill:#1D9AAE;" d="M60,360v22.4c0,4.8,4.8,9.6,9.6,9.6h364c5.6,0,9.6-4.8,9.6-9.6V360h8v40H52v-40H60z"/>
+</g>
+</svg>
