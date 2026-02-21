@@ -6,7 +6,7 @@ import LayoutReducer from "./layouts/reducer";
 // Authentication
 import LoginReducer from "./auth/login/reducer";
 import AccountReducer from "./auth/register/reducer";
-import {forgotPasswordReducer, otpVerificationReducer, resetPasswordReducer} from "./auth/forgetpwd/reducer";
+import { forgotPasswordReducer, otpVerificationReducer, resetPasswordReducer } from "./auth/forgetpwd/reducer";
 import ProfileReducer from "./auth/profile/reducer";
 
 // ScannerAlert
@@ -94,6 +94,7 @@ import BasicBacktestReducer from "../slices/basicBacktester/reducer"
 import ScannerReducer from "../slices/scanner/reducer"
 import AdvancedBacktesterReducer from "../slices/advancedBacktester/reducer"
 import BasicBacktestDashReducer from "./basicBacktest/reducer"
+import GlobalStockReducer from "./globalStock/reducer"
 
 const rootReducer = combineReducers({
     Layout: LayoutReducer,
@@ -104,13 +105,13 @@ const rootReducer = combineReducers({
     ResetPassword: resetPasswordReducer,
     Profile: ProfileReducer,
     ScannerAlert: ScannerAlertReducer,
-    Historical:HistoricalTradingReducer,
-    Leaderboard:LeaderboardReducer,
-    LtpSocket:LtpWebSocketReducer,
-    TopPerformers:TopPerformerReducer,
-    MemebershipPlans:MemebershipPlanReducer,
-    Wallet:WalletReducer,
-    StrategyCharts:StrategyChartsReducer,
+    Historical: HistoricalTradingReducer,
+    Leaderboard: LeaderboardReducer,
+    LtpSocket: LtpWebSocketReducer,
+    TopPerformers: TopPerformerReducer,
+    MemebershipPlans: MemebershipPlanReducer,
+    Wallet: WalletReducer,
+    StrategyCharts: StrategyChartsReducer,
     TestMyStrategy: TestMyStrategyReducer,
     // Calendar: CalendarReducer,
     // Chat: chatReducer,
@@ -135,7 +136,8 @@ const rootReducer = combineReducers({
     BasicBacktestDash: BasicBacktestDashReducer,
     BasicBacktester: BasicBacktestReducer,
     AdvancedBacktester: AdvancedBacktesterReducer,
-    Scanner: ScannerReducer
+    Scanner: ScannerReducer,
+    GlobalStock: GlobalStockReducer,
 });
 
 export default rootReducer;

@@ -1,12 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import Trading from '@/components/HistoricalTrading'
+import React from 'react';
+import Trading from '@/components/HistoricalTrading';
+import { ScreenWithHeader } from '@/components/AppHeader';
 
 const Historical = () => {
   return (
-    <Trading/> )
-}
+    <ScreenWithHeader>
+      <Trading />
+    </ScreenWithHeader>
+  );
+};
 
-export default Historical
-
-const styles = StyleSheet.create({})
+export default Historical;

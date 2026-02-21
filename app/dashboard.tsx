@@ -1,14 +1,16 @@
-import React from 'react'
-import { Stack } from 'expo-router'
-import UnDashboard from '../components/screens/Dashboard'
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import UnDashboard from '@/components/screens/Dashboard';
+import { ScreenWithHeader } from '@/components/AppHeader';
 
 const Dashboard = () => {
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false, title: '' }} />
+    <ScreenWithHeader>
       <UnDashboard />
-    </>
-  )
-}
+    </ScreenWithHeader>
+  );
+};
 
-export default Dashboard
+const styles = StyleSheet.create({});
+
+export default Dashboard;

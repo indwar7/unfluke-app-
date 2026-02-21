@@ -95,7 +95,7 @@
 
 //   const handleDownload = async () => {
 //     const supported = await Linking.canOpenURL(downloadUrl);
-    
+
 //     if (supported) {
 //       await Linking.openURL(downloadUrl);
 //     } else {
@@ -147,7 +147,7 @@
 //   const RenderTableRow = ({ item, index, isFundamental }) => (
 //     <DataTable.Row>
 //       <DataTable.Cell style={styles.snoCell}>{index + 1}</DataTable.Cell>
-      
+
 //       {!isFundamental && (
 //         <>
 //           <DataTable.Cell>{item.ticker}</DataTable.Cell>
@@ -159,7 +159,7 @@
 //           <DataTable.Cell>{item.time}</DataTable.Cell>
 //         </>
 //       )}
-      
+
 //       {headers.map((header) => (
 //         <DataTable.Cell key={header}>{item[header]}</DataTable.Cell>
 //       ))}
@@ -185,7 +185,7 @@
 //         <ScrollView horizontal>
 //           <DataTable style={styles.table}>
 //             <RenderTableHeader headers={headers} isFundamental={type === "fundamental"} />
-            
+
 //             <ScrollView>
 //               {sortedResults.map((row, i) => (
 //                 <RenderTableRow
@@ -259,12 +259,40 @@ import {
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
+import { useDispatch } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
+import { setSelectedStock } from "../../../../redux/Unfluke_slices/globalStock/reducer";
+
 const ScannerResults = ({ results, downloadUrl, type, headers }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const dynamicStyles = styles(isDark);
 
+  // Navigation Logic
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+
+  const handleRowPress = (item) => {
+    // Only if we have a valid ticker/symbol
+    if (item.ticker || item.Instrument) {
+      const symbol = item.ticker || item.Instrument;
+      dispatch(setSelectedStock({
+        symbol: symbol,
+        name: symbol, // Fallback name
+      }));
+
+      if (type === "fundamental") {
+        // @ts-ignore
+        navigation.navigate("fundamental");
+      } else {
+        // @ts-ignore
+        navigation.navigate("historical");
+      }
+    }
+  };
+
   const [sortedResults, setSortedResults] = useState(results);
+
   const [sortedState, setSortedState] = useState({
     by: "",
     order: "asc",
@@ -441,6 +469,7 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
   //   </View>
   // );
 
+
   // Table View Renderer
   const renderTableView = () => {
     const allHeaders =
@@ -472,11 +501,11 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
                       style={[
                         dynamicStyles.sortIcon,
                         sortedState.header === header &&
-                          dynamicStyles.sortIconActive,
+                        dynamicStyles.sortIconActive,
                       ]}
                     >
                       {sortedState.header === header &&
-                      sortedState.order === "desc"
+                        sortedState.order === "desc"
                         ? "▼"
                         : "▲"}
                     </Text>
@@ -492,8 +521,9 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
               showsHorizontalScrollIndicator={true}
             >
               {sortedResults.map((row, rowIndex) => (
-                <View
+                <TouchableOpacity
                   key={rowIndex}
+                  onPress={() => handleRowPress(row)}
                   style={[
                     dynamicStyles.tableRow,
                     rowIndex % 2 === 0 && dynamicStyles.tableRowEven,
@@ -552,7 +582,7 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
                         ))}
                     </>
                   )}
-                </View>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
@@ -602,17 +632,6 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
               </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Download Button */}
-          {/* {downloadUrl && (
-            <TouchableOpacity
-              style={dynamicStyles.downloadButton}
-              onPress={handleDownload}
-            >
-              <Text style={dynamicStyles.downloadIcon}>⬇</Text>
-              <Text style={dynamicStyles.downloadText}>Download</Text>
-            </TouchableOpacity>
-          )} */}
         </View>
       </View>
 
@@ -621,63 +640,63 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
         renderTableView()
       ) : (
         <View style={dynamicStyles.cardList}>
-  {sortedResults.map((item, index) => (
-    <View key={index} style={dynamicStyles.card}>
-      <View style={dynamicStyles.cardNumber}>
-        <Text style={dynamicStyles.cardNumberText}>{index + 1}</Text>
-      </View>
-
-      {type !== "fundamental" ? (
-        <View style={dynamicStyles.cardContent}>
-          <Text style={dynamicStyles.cardTitle}>{item.ticker}</Text>
-          <View style={dynamicStyles.cardGrid}>
-            <View style={dynamicStyles.cardField}>
-              <Text style={dynamicStyles.cardLabel}>Open:</Text>
-              <Text style={dynamicStyles.cardValue}>{item.open}</Text>
-            </View>
-            <View style={dynamicStyles.cardField}>
-              <Text style={dynamicStyles.cardLabel}>High:</Text>
-              <Text style={dynamicStyles.cardValue}>{item.high}</Text>
-            </View>
-            <View style={dynamicStyles.cardField}>
-              <Text style={dynamicStyles.cardLabel}>Low:</Text>
-              <Text style={dynamicStyles.cardValue}>{item.low}</Text>
-            </View>
-            <View style={dynamicStyles.cardField}>
-              <Text style={dynamicStyles.cardLabel}>Close:</Text>
-              <Text style={dynamicStyles.cardValue}>{item.close}</Text>
-            </View>
-          </View>
-          <View style={dynamicStyles.cardFooter}>
-            <Text style={dynamicStyles.cardDate}>
-              {item.date} {item.time}
-            </Text>
-          </View>
-          {headers && headers.length > 0 && (
-            <View style={dynamicStyles.cardIndicators}>
-              {headers.map((header, idx) => (
-                <View key={idx} style={dynamicStyles.cardField}>
-                  <Text style={dynamicStyles.cardLabel}>{header}:</Text>
-                  <Text style={dynamicStyles.cardValue}>{item[header]}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-      ) : (
-        <View style={dynamicStyles.cardContent}>
-          {headers &&
-            headers.map((header, idx) => (
-              <View key={idx} style={dynamicStyles.cardField}>
-                <Text style={dynamicStyles.cardLabel}>{header}:</Text>
-                <Text style={dynamicStyles.cardValue}>{item[header]}</Text>
+          {sortedResults.map((item, index) => (
+            <TouchableOpacity key={index} style={dynamicStyles.card} onPress={() => handleRowPress(item)}>
+              <View style={dynamicStyles.cardNumber}>
+                <Text style={dynamicStyles.cardNumberText}>{index + 1}</Text>
               </View>
-            ))}
+
+              {type !== "fundamental" ? (
+                <View style={dynamicStyles.cardContent}>
+                  <Text style={dynamicStyles.cardTitle}>{item.ticker}</Text>
+                  <View style={dynamicStyles.cardGrid}>
+                    <View style={dynamicStyles.cardField}>
+                      <Text style={dynamicStyles.cardLabel}>Open:</Text>
+                      <Text style={dynamicStyles.cardValue}>{item.open}</Text>
+                    </View>
+                    <View style={dynamicStyles.cardField}>
+                      <Text style={dynamicStyles.cardLabel}>High:</Text>
+                      <Text style={dynamicStyles.cardValue}>{item.high}</Text>
+                    </View>
+                    <View style={dynamicStyles.cardField}>
+                      <Text style={dynamicStyles.cardLabel}>Low:</Text>
+                      <Text style={dynamicStyles.cardValue}>{item.low}</Text>
+                    </View>
+                    <View style={dynamicStyles.cardField}>
+                      <Text style={dynamicStyles.cardLabel}>Close:</Text>
+                      <Text style={dynamicStyles.cardValue}>{item.close}</Text>
+                    </View>
+                  </View>
+                  <View style={dynamicStyles.cardFooter}>
+                    <Text style={dynamicStyles.cardDate}>
+                      {item.date} {item.time}
+                    </Text>
+                  </View>
+                  {headers && headers.length > 0 && (
+                    <View style={dynamicStyles.cardIndicators}>
+                      {headers.map((header, idx) => (
+                        <View key={idx} style={dynamicStyles.cardField}>
+                          <Text style={dynamicStyles.cardLabel}>{header}:</Text>
+                          <Text style={dynamicStyles.cardValue}>{item[header]}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={dynamicStyles.cardContent}>
+                  {headers &&
+                    headers.map((header, idx) => (
+                      <View key={idx} style={dynamicStyles.cardField}>
+                        <Text style={dynamicStyles.cardLabel}>{header}:</Text>
+                        <Text style={dynamicStyles.cardValue}>{item[header]}</Text>
+                      </View>
+                    ))}
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
-      )}
-    </View>
-  ))}
-</View>
       )}
 
       {/* Footer */}

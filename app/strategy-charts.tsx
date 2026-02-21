@@ -1,27 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-  Modal,
-  FlatList,
-  Dimensions,
-  RefreshControl,
-  Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  ActivityIndicator, TextInput, Modal, FlatList, Dimensions,
+  RefreshControl, Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenWithHeader } from "@/components/AppHeader";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TVChartContainer from "../components/UnflukeMain/TradingViewChart/TradingViewChart";
 
 const WIDTH = Dimensions.get("window").width;
 const BASE = "https://api.unfluke.in";
 
-/* ─── Chart Types ─── */
 const CHART_TYPES = [
   { label: "Options Chart", value: "Options Chart" },
   { label: "Straddle Chart", value: "Straddle Chart" },
@@ -32,7 +23,6 @@ const CHART_TYPES = [
   { label: "Straddle Combo", value: "Straddle Combo Chart" },
 ] as const;
 
-/* ─── Helpers ─── */
 const safeFetch = async (url: string, token?: string | null) => {
   try {
     const headers: any = { "Content-Type": "application/json" };
@@ -45,10 +35,7 @@ const safeFetch = async (url: string, token?: string | null) => {
   } catch { return null; }
 };
 
-/* ═══════════════════ COMPONENT ═══════════════════ */
 export default function StrategyChartsScreen() {
-  const params = useLocalSearchParams();
-
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,213 +43,177 @@ export default function StrategyChartsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Form state
   const [chartType, setChartType] = useState("Options Chart");
   const [showChartTypePicker, setShowChartTypePicker] = useState(false);
 
-  // Instrument state
   const [optionNames, setOptionNames] = useState<string[]>([]);
   const [selectedInstrument, setSelectedInstrument] = useState("");
-  const [instrumentSearch, setInstrumentSearch] = useState("");
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
 
-  // Expiry & Strike state
   const [expiries, setExpiries] = useState<string[]>([]);
   const [selectedExpiry, setSelectedExpiry] = useState("");
-  const [strikes, setStrikes] = useState<string[]>([]);
-  const [selectedStrike, setSelectedStrike] = useState("");
-
-  // Option type
-  const [optionType, setOptionType] = useState("CE - Call");
-
-  // Straddle specific
-  const [callStrikes, setCallStrikes] = useState<string[]>([]);
-  const [putStrikes, setPutStrikes] = useState<string[]>([]);
-  const [selectedCallStrike, setSelectedCallStrike] = useState("");
-  const [selectedPutStrike, setSelectedPutStrike] = useState("");
-  const [callLots, setCallLots] = useState("1");
-  const [putLots, setPutLots] = useState("1");
-
-  // Spread specific
-  const [longStrike, setLongStrike] = useState("");
-  const [shortStrike, setShortStrike] = useState("");
   const [longExpiry, setLongExpiry] = useState("");
   const [shortExpiry, setShortExpiry] = useState("");
 
-  // Chart result
+  const [optionType, setOptionType] = useState("CE - Call");
+
+  // Strikes list
+  const [strikes, setStrikes] = useState<string[]>([]);
+  const [callStrikes, setCallStrikes] = useState<string[]>([]);
+  const [putStrikes, setPutStrikes] = useState<string[]>([]);
+
+  // Selected strikes (s1 to s6, reused based on chartType)
+  const [s1, setS1] = useState("");
+  const [s2, setS2] = useState("");
+  const [s3, setS3] = useState("");
+  const [s4, setS4] = useState("");
+  const [s5, setS5] = useState("");
+  const [s6, setS6] = useState("");
+
+  const [callLots, setCallLots] = useState("1");
+  const [putLots, setPutLots] = useState("1");
+
   const [chartData, setChartData] = useState<any>(null);
   const [chartSymbols, setChartSymbols] = useState<string[]>([]);
 
-  /* ─── Auth ─── */
+  // @ts-ignore
+  const globalSelectedStock = useSelector((s) => s.GlobalStock.selectedStock);
+
   useEffect(() => {
     (async () => {
       try {
         const t = await AsyncStorage.getItem("access");
         const userStr = await AsyncStorage.getItem("authUser");
         setToken(t);
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          setUserId(user._id || user.id);
-        }
+        if (userStr) setUserId(JSON.parse(userStr)._id || JSON.parse(userStr).id);
       } catch { }
     })();
   }, []);
 
-  /* ─── Load option names ─── */
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         const data = await safeFetch(`${BASE}/api/historicalChart/getOptionNames?id=${userId || 'default'}`, token);
-        // API returns a plain array like ["NIFTY","BANKNIFTY",...] OR {optionNames: [...]}
         let names: string[] = [];
-        if (Array.isArray(data)) {
-          names = data;
-        } else if (data?.optionNames && Array.isArray(data.optionNames)) {
-          names = data.optionNames;
-        }
+        if (Array.isArray(data)) names = data;
+        else if (data?.optionNames && Array.isArray(data.optionNames)) names = data.optionNames;
 
-        if (names.length > 0) {
-          setOptionNames(names);
-          setSelectedInstrument(names[0]);
-          setError(null);
-        } else {
-          // Fallback to major indices/stocks
-          const FALLBACK = [
-            "NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY",
-            "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-            "SBIN", "TATAMOTORS", "TATASTEEL", "ITC", "AXISBANK",
-            "BHARTIARTL", "WIPRO", "LT", "MARUTI", "SUNPHARMA",
-            "KOTAKBANK", "BAJFINANCE", "HINDUNILVR", "ASIANPAINT",
-          ];
-          setOptionNames(FALLBACK);
-          setSelectedInstrument(FALLBACK[0]);
-          setError(null);
+        const FALLBACK = ["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY"];
+        if (names.length === 0) names = FALLBACK;
+        setOptionNames(names);
+
+        let defaultSelect = names[0];
+        if (globalSelectedStock?.symbol) {
+          const cleanSymbol = globalSelectedStock.symbol.replace(/^NSE:/, '').replace(/^BSE:/, '');
+          const found = names.find(n => n.toUpperCase() === cleanSymbol.toUpperCase());
+          if (found) defaultSelect = found;
         }
+        setSelectedInstrument(defaultSelect);
       } catch (e) {
-        console.error("[StrategyCharts] Failed to load option names", e);
-        const FALLBACK = [
-          "NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY",
-          "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-          "SBIN", "TATAMOTORS", "TATASTEEL", "ITC", "AXISBANK",
-        ];
-        setOptionNames(FALLBACK);
-        setSelectedInstrument(FALLBACK[0]);
+        setOptionNames(["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY"]);
+        setSelectedInstrument("NIFTY");
       }
       setLoading(false);
     })();
-  }, [token, userId, refreshKey]);
+  }, [token, userId, refreshKey, globalSelectedStock?.symbol]);
 
-  /* ─── Load expiries when instrument changes ─── */
+  const fetchStrikes = async (exp: string, type: string) => {
+    const uid = userId || 'default';
+    const res = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${exp}&optionName=${selectedInstrument}&optionType=${encodeURIComponent(type)}&id=${uid}`, token);
+    return res?.strike_price || [];
+  };
+
+  const updateStrikesForExpiry = async (exp: string) => {
+    setChartLoading(true);
+    const mStraddleTypes = ["Straddle Chart", "Iron Fly Chart", "Double Calendar Chart", "Straddle Combo Chart"];
+    if (mStraddleTypes.includes(chartType)) {
+      const calls = await fetchStrikes(exp, "CE - Call");
+      const puts = await fetchStrikes(exp, "PE - Put");
+      setCallStrikes(calls); setPutStrikes(puts);
+      if (calls.length > 0) { setS1(calls[0]); setS2(calls[1] || calls[0]); setS3(calls[2] || calls[0]); }
+      if (puts.length > 0) { setS4(puts[0]); setS5(puts[1] || puts[0]); setS6(puts[2] || puts[0]); }
+    } else {
+      const sts = await fetchStrikes(exp, optionType);
+      setStrikes(sts);
+      if (sts.length > 0) { setS1(sts[0]); setS2(sts[1] || sts[0]); setS3(sts[2] || sts[0]); }
+    }
+    setChartLoading(false);
+  };
+
   useEffect(() => {
     if (!selectedInstrument) return;
     const uid = userId || 'default';
     (async () => {
       setChartLoading(true);
       try {
-        if (chartType === "Straddle Chart" || chartType === "Iron Fly Chart" || chartType === "Double Calendar Chart" || chartType === "Straddle Combo Chart") {
-          // For straddle-type charts, get separate call/put strikes
-          const expiryData = await safeFetch(`${BASE}/api/historicalChart/getStradleExpiryDate?optionName=${selectedInstrument}&id=${uid}`, token);
-          if (expiryData?.expiry_date) {
-            setExpiries(expiryData.expiry_date);
-            setSelectedExpiry(expiryData.expiry_date[0] || "");
-            setLongExpiry(expiryData.expiry_date[0] || "");
-            setShortExpiry(expiryData.expiry_date[0] || "");
-            // Get call strikes
-            const callSt = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=CE - Call&id=${uid}`, token);
-            if (callSt?.strike_price) { setCallStrikes(callSt.strike_price); setSelectedCallStrike(callSt.strike_price[0] || ""); }
-            // Get put strikes
-            const putSt = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=PE - Put&id=${uid}`, token);
-            if (putSt?.strike_price) { setPutStrikes(putSt.strike_price); setSelectedPutStrike(putSt.strike_price[0] || ""); }
-          }
+        let expiryData;
+        if (["Straddle Chart", "Iron Fly Chart", "Double Calendar Chart", "Straddle Combo Chart"].includes(chartType)) {
+          expiryData = await safeFetch(`${BASE}/api/historicalChart/getStradleExpiryDate?optionName=${selectedInstrument}&id=${uid}`, token);
         } else {
-          // For single option charts
-          const expiryData = await safeFetch(`${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`, token);
-          if (expiryData?.expiry_date) {
-            setExpiries(expiryData.expiry_date);
-            setSelectedExpiry(expiryData.expiry_date[0] || "");
-            setLongExpiry(expiryData.expiry_date[0] || "");
-            setShortExpiry(expiryData.expiry_date[0] || "");
-            // Get strikes for first expiry
-            const strikeData = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${expiryData.expiry_date[0]}&optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`, token);
-            if (strikeData?.strike_price) {
-              setStrikes(strikeData.strike_price);
-              setSelectedStrike(strikeData.strike_price[0] || "");
-              setLongStrike(strikeData.strike_price[0] || "");
-              setShortStrike(strikeData.strike_price[0] || "");
-            }
-          }
+          expiryData = await safeFetch(`${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`, token);
+        }
+        if (expiryData?.expiry_date && expiryData.expiry_date.length > 0) {
+          setExpiries(expiryData.expiry_date);
+          const firstExp = expiryData.expiry_date[0];
+          setSelectedExpiry(firstExp);
+          setLongExpiry(firstExp);
+          setShortExpiry(firstExp);
+        } else {
+          setExpiries([]);
         }
       } catch (e) { console.error(e); }
       setChartLoading(false);
     })();
   }, [selectedInstrument, chartType, optionType]);
 
-  /* ─── Update strikes on expiry change ─── */
-  const handleExpiryChange = async (exp: string) => {
-    setSelectedExpiry(exp);
-    const uid = userId || 'default';
-    setChartLoading(true);
-    try {
-      const strikeData = await safeFetch(`${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${exp}&optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`, token);
-      if (strikeData?.strike_price) {
-        setStrikes(strikeData.strike_price);
-        setSelectedStrike(strikeData.strike_price[0] || "");
-      }
-    } catch { }
-    setChartLoading(false);
-  };
+  // When selectedExpiry changes, we load strikes for that expiry.
+  // For Spread/DCal, we use shortExpiry to load the strikes list, but selectedExpiry handles the rest.
+  useEffect(() => {
+    if (!selectedExpiry && !shortExpiry) return;
+    const expToUse = ["Spread Chart", "Double Calendar Chart"].includes(chartType) ? (shortExpiry || selectedExpiry) : selectedExpiry;
+    if (expToUse) updateStrikesForExpiry(expToUse);
+  }, [selectedExpiry, shortExpiry, chartType]);
 
-  /* ─── Submit chart request ─── */
+
   const handleSubmit = async () => {
     const uid = userId || 'default';
     if (!selectedInstrument) { Alert.alert("Error", "Please select an instrument"); return; }
-    if (!selectedExpiry && (chartType !== "Options Chart" || expiries.length > 0)) {
-      Alert.alert("Error", "Please select an expiry date");
-      return;
-    }
-    setChartLoading(true);
-    setError(null);
-    setChartData(null);
-    setChartSymbols([]);
+    setChartLoading(true); setError(null); setChartData(null); setChartSymbols([]);
 
     try {
       let url = "";
-      console.log("Submitting chart request for", chartType, selectedInstrument, selectedExpiry);
-
       switch (chartType) {
         case "Options Chart":
-          if (!selectedStrike) { Alert.alert("Error", "Select strike price"); setChartLoading(false); return; }
-          url = `${BASE}/api/historicalChart/getHistoricOptionsResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&strikePrice=${selectedStrike}`;
+          url = `${BASE}/api/historicalChart/getHistoricOptionsResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&strikePrice=${s1}`;
           break;
-
         case "Straddle Chart":
-          url = `${BASE}/api/historicalChart/getStradleOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&callLots=${callLots}&putLots=${putLots}&callStrikePrice=${selectedCallStrike}&putStrikePrice=${selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getStradleOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&callLots=${callLots}&putLots=${putLots}&callStrikePrice=${s1}&putStrikePrice=${s4}`;
           break;
         case "Spread Chart":
-          url = `${BASE}/api/historicalChart/getSpreadOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&optionType=${encodeURIComponent(optionType)}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&shortStrikePrice=${shortStrike}&longStrikePrice=${longStrike}&shortLots=-1&longLots=1`;
+          url = `${BASE}/api/historicalChart/getSpreadOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&optionType=${encodeURIComponent(optionType)}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&shortStrikePrice=${s2}&longStrikePrice=${s1}&shortLots=-1&longLots=1`;
           break;
         case "Butterfly Chart":
-          url = `${BASE}/api/historicalChart/getButterFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&s1=${selectedStrike}&s2=${strikes[1] || selectedStrike}&s3=${strikes[2] || selectedStrike}`;
+          url = `${BASE}/api/historicalChart/getButterFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&optionType=${encodeURIComponent(optionType)}&s1=${s1}&s2=${s2}&s3=${s3}`;
           break;
         case "Iron Fly Chart":
-          url = `${BASE}/api/historicalChart/getIronFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${selectedPutStrike}&s4=${putStrikes[1] || selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getIronFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&s1=${s1}&s2=${s2}&s3=${s4}&s4=${s5}`;
           break;
         case "Double Calendar Chart":
-          url = `${BASE}/api/historicalChart/getDCalResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${selectedPutStrike}&s4=${putStrikes[1] || selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getDCalResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&shortExpiryDate=${shortExpiry}&longExpiryDate=${longExpiry}&s1=${s1}&s2=${s2}&s3=${s4}&s4=${s5}`;
           break;
         case "Straddle Combo Chart":
-          url = `${BASE}/api/historicalChart/getComboResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&s1=${selectedCallStrike}&s2=${callStrikes[1] || selectedCallStrike}&s3=${callStrikes[2] || selectedCallStrike}&s4=${selectedPutStrike}&s5=${putStrikes[1] || selectedPutStrike}&s6=${putStrikes[2] || selectedPutStrike}`;
+          url = `${BASE}/api/historicalChart/getComboResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${selectedExpiry}&s1=${s1}&s2=${s2}&s3=${s3}&s4=${s4}&s5=${s5}&s6=${s6}`;
           break;
       }
 
       const result = await safeFetch(url, token);
-      if (result?.Error) {
+      if (result?.Error || !result) {
         setError("No data found for this selection");
-      } else if (result?.option) {
+      } else if (result?.option || result?.[0]) {
         setChartData(result);
-        const symbols = Array.isArray(result.option) ? result.option : [result.option];
-        setChartSymbols(symbols);
+        const symbols = Array.isArray(result.option) ? result.option : (result.option ? [result.option] : result);
+        setChartSymbols(Array.isArray(symbols) ? symbols : [symbols]);
       } else {
         setError("No chart data available. Try different parameters.");
       }
@@ -272,33 +223,6 @@ export default function StrategyChartsScreen() {
     setChartLoading(false);
   };
 
-  /* ─── Result display ─── */
-  const renderChartResult = () => {
-    if (!chartData || chartSymbols.length === 0) return null;
-    return (
-      <View style={s.card}>
-        <Text style={s.sectionTitle}>📊 Chart Data Loaded</Text>
-        <Text style={s.resultNote}>Strategy: {chartType}</Text>
-        <Text style={s.resultNote}>Instrument: {selectedInstrument}</Text>
-        {chartType === "Options Chart" && (
-          <Text style={s.resultNote}>Strike: {selectedStrike} ({optionType})</Text>
-        )}
-
-        <View style={{ marginTop: 12, marginBottom: 12 }}>
-          <Text style={{ fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 }}>Resolved Symbol: {chartSymbols[0]}</Text>
-          <View style={{ height: 350, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e7eb' }}>
-            <TVChartContainer coinId={chartSymbols[0] ? (chartSymbols[0].startsWith('NSE:') ? chartSymbols[0] : `NSE:${chartSymbols[0]}`) : "NSE:NIFTY"} />
-          </View>
-        </View>
-
-        <View style={{ padding: 12, backgroundColor: "#f0fdf4", borderRadius: 8, borderLeftWidth: 3, borderLeftColor: "#22c55e" }}>
-          <Text style={{ fontSize: 13, fontWeight: "600", color: "#15803d" }}>✅ Chart successfully generated</Text>
-        </View>
-      </View>
-    );
-  };
-
-  /* ─── Picker Modal ─── */
   const PickerModal = ({ visible, onClose, data, selected, onSelect, title, searchable = false }: any) => {
     const [search, setSearch] = useState("");
     const filtered = searchable ? data.filter((i: string) => i.toLowerCase().includes(search.toLowerCase())) : data;
@@ -321,24 +245,7 @@ export default function StrategyChartsScreen() {
                   {selected === item && <Text style={{ color: "#4f46e5", fontSize: 18, fontWeight: "700" }}>✓</Text>}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={
-                searchable && search.length > 0 ? (
-                  <TouchableOpacity style={s.pickerItem} onPress={() => { onSelect(search.toUpperCase()); onClose(); }}>
-                    <Text style={s.pickerItemText}>Use "{search.toUpperCase()}"</Text>
-                    <Text style={{ color: "#4f46e5", fontSize: 14, fontWeight: "600" }}>SELECT</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <Text style={{ textAlign: "center", color: "#9ca3af", padding: 20 }}>No items</Text>
-                )
-              }
-              ListHeaderComponent={
-                searchable && search.length > 0 && filtered.length > 0 ? (
-                  <TouchableOpacity style={[s.pickerItem, { borderBottomWidth: 4, borderBottomColor: "#f3f4f6" }]} onPress={() => { onSelect(search.toUpperCase()); onClose(); }}>
-                    <Text style={s.pickerItemText}>Use "{search.toUpperCase()}"</Text>
-                    <Text style={{ color: "#4f46e5", fontSize: 14, fontWeight: "600" }}>SELECT</Text>
-                  </TouchableOpacity>
-                ) : null
-              }
+              ListEmptyComponent={<Text style={{ textAlign: "center", color: "#9ca3af", padding: 20 }}>No items</Text>}
             />
           </View>
         </TouchableOpacity>
@@ -346,7 +253,6 @@ export default function StrategyChartsScreen() {
     );
   };
 
-  /* ─── Field Component ─── */
   const FormField = ({ label, value, onPress, disabled = false }: any) => (
     <View style={s.fieldGroup}>
       <Text style={s.fieldLabel}>{label}</Text>
@@ -357,62 +263,57 @@ export default function StrategyChartsScreen() {
     </View>
   );
 
+  const PickStrike = ({ label, value, list, onSet }: any) => (
+    <FormField label={label} value={value || "Loading..."} onPress={() => {
+      if (list.length > 0) {
+        const buttons: any[] = list.slice(0, 15).map((st: any) => ({ text: String(st), onPress: () => onSet(st) }));
+        buttons.push({ text: "Cancel", style: "cancel", onPress: () => { } });
+        Alert.alert(`Select ${label}`, undefined, buttons);
+      }
+    }} disabled={list.length === 0} />
+  );
 
+  const PickExpiry = ({ label, value, onSet }: any) => (
+    <FormField label={label} value={value || "Loading..."} onPress={() => {
+      if (expiries.length > 0) {
+        const buttons: any[] = expiries.slice(0, 10).map((e: any) => ({ text: e, onPress: () => onSet(e) }));
+        buttons.push({ text: "Cancel", style: "cancel", onPress: () => { } });
+        Alert.alert(`Select ${label}`, undefined, buttons);
+      }
+    }} disabled={expiries.length === 0} />
+  );
 
-  /* ─── Loading state ─── */
   if (loading) {
     return (
-      <SafeAreaView style={s.container} edges={["top"]}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Text style={{ color: "#fff", fontSize: 18 }}>←</Text>
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>Strategy Charts</Text>
-        </View>
+      <ScreenWithHeader>
         <View style={s.center}>
           <ActivityIndicator size="large" color="#4f46e5" />
           <Text style={{ marginTop: 12, color: "#6b7280" }}>Loading instruments...</Text>
         </View>
-      </SafeAreaView>
+      </ScreenWithHeader>
     );
   }
 
-  /* ═══ MAIN RENDER ═══ */
   return (
-    <SafeAreaView style={s.container} edges={["top"]}>
-      {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-          <Text style={{ color: "#fff", fontSize: 18 }}>←</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={s.headerTitle}>Strategy Charts</Text>
-          <Text style={s.headerSub}>{selectedInstrument ? `${selectedInstrument} • ${chartType}` : "Select an instrument"}</Text>
-        </View>
+    <ScreenWithHeader>
+      <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+        <Text style={s.headerTitle}>Strategy Charts</Text>
+        <Text style={s.headerSub}>{selectedInstrument ? `${selectedInstrument} • ${chartType}` : "Select an instrument"}</Text>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={() => setRefreshKey(prev => prev + 1)} tintColor="#4f46e5" />
-        }>
-        {/* Chart Type Selector */}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => setRefreshKey(prev => prev + 1)} tintColor="#4f46e5" />}>
         <View style={s.card}>
           <Text style={s.sectionTitle}>📈 Chart Configuration</Text>
-
-          {/* Chart Type */}
           <FormField label="Chart Type" value={chartType} onPress={() => setShowChartTypePicker(true)} />
-
-          {/* Instrument */}
           <FormField label="Instrument" value={selectedInstrument || "Select instrument"} onPress={() => setShowInstrumentPicker(true)} />
 
-          {/* Option Type (for Options/Spread/Butterfly) */}
           {(chartType === "Options Chart" || chartType === "Spread Chart" || chartType === "Butterfly Chart") && (
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Option Type</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {["CE - Call", "PE - Put"].map(t => (
-                  <TouchableOpacity key={t} style={[s.radioBtn, optionType === t && s.radioBtnActive]}
-                    onPress={() => setOptionType(t)}>
+                  <TouchableOpacity key={t} style={[s.radioBtn, optionType === t && s.radioBtnActive]} onPress={() => setOptionType(t)}>
                     <Text style={[s.radioText, optionType === t && s.radioTextActive]}>{t}</Text>
                   </TouchableOpacity>
                 ))}
@@ -420,170 +321,135 @@ export default function StrategyChartsScreen() {
             </View>
           )}
 
-          {/* Expiry */}
-          <FormField label="Expiry Date" value={selectedExpiry || "Loading..."} onPress={() => {
-            if (expiries.length > 0) {
-              Alert.alert("Select Expiry", undefined, expiries.slice(0, 10).map(e => ({ text: e, onPress: () => handleExpiryChange(e) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-            }
-          }} disabled={expiries.length === 0} />
-
-          {/* Strike selection based on chart type */}
-          {chartType === "Options Chart" && (
-            <FormField label="Strike Price" value={selectedStrike || "Loading..."} onPress={() => {
-              if (strikes.length > 0) {
-                Alert.alert("Select Strike", undefined, strikes.slice(0, 15).map(st => ({ text: String(st), onPress: () => setSelectedStrike(st) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-              }
-            }} disabled={strikes.length === 0} />
+          {/* Render Expiries */}
+          {["Spread Chart", "Double Calendar Chart"].includes(chartType) ? (
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1 }}><PickExpiry label="Long Expiry" value={longExpiry} onSet={setLongExpiry} /></View>
+              <View style={{ flex: 1 }}><PickExpiry label="Short Expiry" value={shortExpiry} onSet={setShortExpiry} /></View>
+            </View>
+          ) : (
+            <PickExpiry label="Expiry Date" value={selectedExpiry} onSet={setSelectedExpiry} />
           )}
 
-          {(chartType === "Straddle Chart" || chartType === "Iron Fly Chart" || chartType === "Straddle Combo Chart") && (
-            <>
-              <FormField label="Call Strike" value={selectedCallStrike || "Loading..."} onPress={() => {
-                if (callStrikes.length > 0) {
-                  Alert.alert("Select Call Strike", undefined, callStrikes.slice(0, 15).map(st => ({ text: String(st), onPress: () => setSelectedCallStrike(st) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-                }
-              }} disabled={callStrikes.length === 0} />
-              <FormField label="Put Strike" value={selectedPutStrike || "Loading..."} onPress={() => {
-                if (putStrikes.length > 0) {
-                  Alert.alert("Select Put Strike", undefined, putStrikes.slice(0, 15).map(st => ({ text: String(st), onPress: () => setSelectedPutStrike(st) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-                }
-              }} disabled={putStrikes.length === 0} />
-              {chartType === "Straddle Chart" && (
-                <View style={{ flexDirection: "row", gap: 12 }}>
-                  <View style={[s.fieldGroup, { flex: 1 }]}>
-                    <Text style={s.fieldLabel}>Call Lots</Text>
-                    <TextInput style={s.fieldInput} value={callLots} onChangeText={setCallLots} keyboardType="numeric" />
-                  </View>
-                  <View style={[s.fieldGroup, { flex: 1 }]}>
-                    <Text style={s.fieldLabel}>Put Lots</Text>
-                    <TextInput style={s.fieldInput} value={putLots} onChangeText={setPutLots} keyboardType="numeric" />
-                  </View>
-                </View>
-              )}
-            </>
+          {/* Render Strikes */}
+          {chartType === "Options Chart" && <PickStrike label="Strike Price" value={s1} list={strikes} onSet={setS1} />}
+          {chartType === "Butterfly Chart" && (
+            <View>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Strike 1" value={s1} list={strikes} onSet={setS1} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Strike 2" value={s2} list={strikes} onSet={setS2} /></View>
+              </View>
+              <PickStrike label="Strike 3" value={s3} list={strikes} onSet={setS3} />
+            </View>
           )}
-
-          {(chartType === "Spread Chart" || chartType === "Double Calendar Chart") && (
-            <>
-              <FormField label="Long Strike" value={longStrike || "Loading..."} onPress={() => {
-                const list = chartType === "Double Calendar Chart" ? callStrikes : strikes;
-                if (list.length > 0) {
-                  Alert.alert("Select Long Strike", undefined, list.slice(0, 15).map(st => ({ text: String(st), onPress: () => setLongStrike(st) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-                }
-              }} />
-              <FormField label="Short Strike" value={shortStrike || "Loading..."} onPress={() => {
-                const list = chartType === "Double Calendar Chart" ? callStrikes : strikes;
-                if (list.length > 0) {
-                  Alert.alert("Select Short Strike", undefined, list.slice(0, 15).map(st => ({ text: String(st), onPress: () => setShortStrike(st) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-                }
-              }} />
+          {chartType === "Spread Chart" && (
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1 }}><PickStrike label="Long Strike" value={s1} list={strikes} onSet={setS1} /></View>
+              <View style={{ flex: 1 }}><PickStrike label="Short Strike" value={s2} list={strikes} onSet={setS2} /></View>
+            </View>
+          )}
+          {chartType === "Straddle Chart" && (
+            <View>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Call Strike" value={s1} list={callStrikes} onSet={setS1} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Put Strike" value={s4} list={putStrikes} onSet={setS4} /></View>
+              </View>
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={[s.fieldGroup, { flex: 1 }]}>
-                  <Text style={s.fieldLabel}>Long Expiry</Text>
-                  <TouchableOpacity style={s.fieldInput} onPress={() => {
-                    if (expiries.length > 0) {
-                      Alert.alert("Long Expiry", undefined, expiries.slice(0, 10).map(e => ({ text: e, onPress: () => setLongExpiry(e) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-                    }
-                  }}>
-                    <Text style={s.fieldValue} numberOfLines={1}>{longExpiry || "Select"}</Text>
-                  </TouchableOpacity>
+                  <Text style={s.fieldLabel}>Call Lots</Text>
+                  <TextInput style={s.fieldInput} value={callLots} onChangeText={setCallLots} keyboardType="numeric" />
                 </View>
                 <View style={[s.fieldGroup, { flex: 1 }]}>
-                  <Text style={s.fieldLabel}>Short Expiry</Text>
-                  <TouchableOpacity style={s.fieldInput} onPress={() => {
-                    if (expiries.length > 0) {
-                      Alert.alert("Short Expiry", undefined, expiries.slice(0, 10).map(e => ({ text: e, onPress: () => setShortExpiry(e) })).concat([{ text: "Cancel", style: "cancel" as any, onPress: () => { } }]));
-                    }
-                  }}>
-                    <Text style={s.fieldValue} numberOfLines={1}>{shortExpiry || "Select"}</Text>
-                  </TouchableOpacity>
+                  <Text style={s.fieldLabel}>Put Lots</Text>
+                  <TextInput style={s.fieldInput} value={putLots} onChangeText={setPutLots} keyboardType="numeric" />
                 </View>
               </View>
-            </>
+            </View>
+          )}
+          {(chartType === "Iron Fly Chart" || chartType === "Double Calendar Chart") && (
+            <View>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Call Strike 1" value={s1} list={callStrikes} onSet={setS1} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Call Strike 2" value={s2} list={callStrikes} onSet={setS2} /></View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Put Strike 1" value={s4} list={putStrikes} onSet={setS4} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Put Strike 2" value={s5} list={putStrikes} onSet={setS5} /></View>
+              </View>
+            </View>
+          )}
+          {chartType === "Straddle Combo Chart" && (
+            <View>
+              <Text style={{ fontWeight: "700", marginBottom: 6, color: "#111827" }}>Call Strikes</Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Call 1" value={s1} list={callStrikes} onSet={setS1} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Call 2" value={s2} list={callStrikes} onSet={setS2} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Call 3" value={s3} list={callStrikes} onSet={setS3} /></View>
+              </View>
+              <Text style={{ fontWeight: "700", marginBottom: 6, marginTop: 4, color: "#111827" }}>Put Strikes</Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Put 1" value={s4} list={putStrikes} onSet={setS4} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Put 2" value={s5} list={putStrikes} onSet={setS5} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Put 3" value={s6} list={putStrikes} onSet={setS6} /></View>
+              </View>
+            </View>
           )}
 
-          {/* Submit */}
           <TouchableOpacity style={[s.primaryBtn, chartLoading && { opacity: 0.6 }]}
             onPress={handleSubmit} disabled={chartLoading} activeOpacity={0.8}>
-            {chartLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={s.primaryBtnText}>🚀  Load Chart</Text>
-            )}
+            {chartLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.primaryBtnText}>🚀  Load Chart</Text>}
           </TouchableOpacity>
         </View>
 
-        {/* Error */}
         {error && (
           <View style={[s.card, { borderLeftWidth: 4, borderLeftColor: "#ef4444" }]}>
             <Text style={{ color: "#ef4444", fontWeight: "600" }}>⚠️ {error}</Text>
           </View>
         )}
 
-        {/* Chart Result */}
-        {renderChartResult()}
-
-        {/* Strategy Info */}
-        <View style={s.card}>
-          <Text style={s.sectionTitle}>💡 About Strategy Charts</Text>
-          <View style={{ gap: 8 }}>
-            {[
-              { type: "Options Chart", desc: "View historical options data for a single option contract" },
-              { type: "Straddle Chart", desc: "Analyze straddle strategies with simultaneous call and put positions" },
-              { type: "Spread Chart", desc: "Compare long and short options at different strikes/expiries" },
-              { type: "Butterfly Chart", desc: "Three-strike strategy for range-bound markets" },
-              { type: "Iron Fly Chart", desc: "Four-legged strategy combining puts and calls" },
-              { type: "Double Calendar", desc: "Multi-expiry strategy for time decay analysis" },
-              { type: "Straddle Combo", desc: "Advanced six-legged strategy analysis" },
-            ].map((info, i) => (
-              <View key={i} style={{ flexDirection: "row", paddingVertical: 6 }}>
-                <Text style={{ fontSize: 13, color: "#4f46e5", fontWeight: "700", width: 140 }}>{info.type}</Text>
-                <Text style={{ fontSize: 13, color: "#6b7280", flex: 1 }}>{info.desc}</Text>
+        {chartData && chartSymbols.length > 0 && (
+          <View style={s.card}>
+            <Text style={s.sectionTitle}>📊 Chart Data Loaded</Text>
+            <Text style={s.resultNote}>Strategy: {chartType}</Text>
+            <View style={{ marginTop: 12, marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 }}>Resolved Symbol: {chartSymbols[0]}</Text>
+              <View style={{ height: 350, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e7eb' }}>
+                <TVChartContainer coinId={chartSymbols[0] ? (chartSymbols[0].startsWith('NSE:') ? chartSymbols[0] : `NSE:${chartSymbols[0]}`) : "NSE:NIFTY"} />
               </View>
-            ))}
+            </View>
+            <View style={{ padding: 12, backgroundColor: "#f0fdf4", borderRadius: 8, borderLeftWidth: 3, borderLeftColor: "#22c55e" }}>
+              <Text style={{ fontSize: 13, fontWeight: "600", color: "#15803d" }}>✅ Chart successfully generated</Text>
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
 
-      {/* Modals */}
       <PickerModal visible={showChartTypePicker} onClose={() => setShowChartTypePicker(false)}
         data={CHART_TYPES.map(c => c.label)} selected={chartType} onSelect={setChartType} title="Select Chart Type" />
       <PickerModal visible={showInstrumentPicker} onClose={() => setShowInstrumentPicker(false)}
         data={optionNames} selected={selectedInstrument} onSelect={setSelectedInstrument} title="Select Instrument" searchable />
-    </SafeAreaView>
+    </ScreenWithHeader >
   );
 }
 
-/* ═══ STYLES ═══ */
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f3f4f6" },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
-
-  header: { backgroundColor: "#4f46e5", paddingHorizontal: 16, paddingVertical: 14, flexDirection: "row", alignItems: "center", elevation: 4 },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  headerSub: { color: "#c7d2fe", fontSize: 12, marginTop: 2 },
-
+  headerTitle: { color: "#111827", fontSize: 22, fontWeight: "700" },
+  headerSub: { color: "#6b7280", fontSize: 13, marginTop: 2, fontWeight: "500" },
   card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, marginBottom: 14, elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
   sectionTitle: { fontSize: 17, fontWeight: "700", color: "#111827", marginBottom: 14 },
-
   fieldGroup: { marginBottom: 14 },
-  fieldLabel: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 },
+  fieldLabel: { fontSize: 12, fontWeight: "600", color: "#6b7280", marginBottom: 6 },
   fieldInput: { backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  fieldValue: { fontSize: 15, color: "#111827", fontWeight: "500", flex: 1 },
-
+  fieldValue: { fontSize: 14, color: "#111827", fontWeight: "600", flex: 1 },
   radioBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb", backgroundColor: "#f9fafb", alignItems: "center" },
   radioBtnActive: { backgroundColor: "#eef2ff", borderColor: "#4f46e5" },
-  radioText: { fontSize: 13, color: "#6b7280", fontWeight: "500" },
+  radioText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
   radioTextActive: { color: "#4f46e5", fontWeight: "700" },
-
   primaryBtn: { backgroundColor: "#4f46e5", paddingVertical: 14, borderRadius: 10, alignItems: "center", marginTop: 8 },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-
   resultNote: { fontSize: 13, color: "#6b7280", marginBottom: 4 },
-  symbolCard: { backgroundColor: "#f0f9ff", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6, borderWidth: 1, borderColor: "#bae6fd" },
-  symbolText: { fontSize: 14, color: "#0369a1", fontWeight: "600", fontFamily: "monospace" },
-
-  // Modals
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   modalContent: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: "70%" },
   modalTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },

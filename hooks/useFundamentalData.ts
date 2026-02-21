@@ -1,143 +1,262 @@
+/**
+ * hooks/useFundamentalData.ts
+ *
+ * EXACT API CONTRACT  (base: https://api.unfluke.in/api/screener)
+ *   getCompany?capcode=476
+ *   getBalanceSheet?capcode=476&type=C
+ *   getProfitLoss?capcode=476&type=C
+ *   getCashFlow?capcode=476&type=C
+ *   getQuarterly?capcode=476&type=C
+ *   getCFRatio?capcode=476&type=C&section=KeyFinancial
+ *   getCFRatio?capcode=476&type=C&section=DuPont
+ *   getCFRatio?capcode=476&type=C&section=Calculated
+ *   getCFRatio?capcode=476&type=C&section=Valuation1
+ *   getCFRatio?capcode=476&type=C&section=Valuation2
+ *   getCFRatio?capcode=476&type=C&section=ValuationCalculated
+ */
+
 import { useQuery } from "@tanstack/react-query";
-import { unflukeAPI, StockType, FinancialResponse, RatioResponse } from "../api/unfluke";
 
-// Hook to search for a company (Symbol -> Capcode)
-export function useCapcode(symbol: string) {
-    return useQuery({
-        queryKey: ["capcode", symbol],
-        queryFn: async () => {
-            if (!symbol) return null;
-            try {
-                const capcode = await unflukeAPI.getCapcodeBySymbol(symbol);
-                return capcode;
-            } catch (e) {
-                console.warn("Capcode fetch failed for symbol:", symbol, e);
-                return null;
-            }
+const BASE = "https://api.unfluke.in/api/screener";
+
+export const RATIO_SECTIONS = [
+  "KeyFinancial", "DuPont", "Calculated", "Valuation1", "Valuation2", "ValuationCalculated",
+] as const;
+export type RatioSection = typeof RATIO_SECTIONS[number];
+
+export type FinancialsData = {
+  balanceSheet: any;
+  profitLoss: any;
+  cashFlow: any;
+  quarterly: any;
+  ratios: Record<RatioSection, any>;
+};
+
+async function get(url: string): Promise<any> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}: ${url}`);
+  return r.json();
+}
+
+/* ── useCompany ─────────────────────────────────────────── */
+export function useCompany(capcode: string | number | undefined) {
+  return useQuery({
+    queryKey: ["company", String(capcode ?? "")],
+    queryFn: () => get(`${BASE}/getCompany?capcode=${capcode}`),
+    enabled: !!capcode,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
+}
+
+/* ── useFinancials ──────────────────────────────────────── */
+export function useFinancials(
+  capcode: string | number | undefined,
+  type: "C" | "S" = "C",
+) {
+  return useQuery<FinancialsData>({
+    queryKey: ["financials", String(capcode ?? ""), type],
+    queryFn: async (): Promise<FinancialsData> => {
+      if (!capcode) throw new Error("capcode required");
+      const q = `capcode=${capcode}&type=${type}`;
+
+      const [bs, pl, cf, qr, kf, dp, ca, v1, v2, vc] = await Promise.all([
+        get(`${BASE}/getBalanceSheet?${q}`).catch(e => { console.warn("BS", e.message); return null; }),
+        get(`${BASE}/getProfitLoss?${q}`).catch(e => { console.warn("PL", e.message); return null; }),
+        get(`${BASE}/getCashFlow?${q}`).catch(e => { console.warn("CF", e.message); return null; }),
+        get(`${BASE}/getQuarterly?${q}`).catch(e => { console.warn("QR", e.message); return null; }),
+        get(`${BASE}/getCFRatio?${q}&section=KeyFinancial`).catch(() => null),
+        get(`${BASE}/getCFRatio?${q}&section=DuPont`).catch(() => null),
+        get(`${BASE}/getCFRatio?${q}&section=Calculated`).catch(() => null),
+        get(`${BASE}/getCFRatio?${q}&section=Valuation1`).catch(() => null),
+        get(`${BASE}/getCFRatio?${q}&section=Valuation2`).catch(() => null),
+        get(`${BASE}/getCFRatio?${q}&section=ValuationCalculated`).catch(() => null),
+      ]);
+
+      return {
+        balanceSheet: bs, profitLoss: pl, cashFlow: cf, quarterly: qr,
+        ratios: {
+          KeyFinancial: kf, DuPont: dp, Calculated: ca,
+          Valuation1: v1, Valuation2: v2, ValuationCalculated: vc
         },
-        enabled: !!symbol && symbol.length > 1,
-        staleTime: 1000 * 60 * 60,
-        retry: false,
-    });
+      };
+    },
+    enabled: !!capcode,
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
 }
 
-// Hook to get Company Details
-export function useCompany(capcode?: string) {
-    return useQuery({
-        queryKey: ["company", capcode],
-        queryFn: async () => {
-            if (!capcode) throw new Error("No capcode provided");
-            return unflukeAPI.getCompanyInfo(capcode);
-        },
-        enabled: !!capcode,
-        staleTime: 1000 * 60 * 60,
-    });
-}
+/* ── getPeriodKeys ─────────────────────────────────────── */
+const META = new Set([
+  "label", "name", "description", "rowLabel", "rowName", "category",
+  "id", "type", "unit", "format", "indent", "bold", "separator", "subRows",
+]);
 
-// Hook to get All Financials
-export function useFinancials(capcode?: string, type: StockType = "C") {
-    return useQuery({
-        queryKey: ["financials", capcode, type],
-        queryFn: async () => {
-            if (!capcode) throw new Error("No capcode provided");
-            return unflukeAPI.getAllFinancials(capcode, type);
-        },
-        enabled: !!capcode,
-        staleTime: 1000 * 60 * 30,
-    });
-}
-
-// --- Data extraction helpers ---
-
-// Flatten an array of partial objects into a single merged object
-export function flattenYearArray(arr: Array<Record<string, any>>): Record<string, any> {
-    const merged: Record<string, any> = {};
-    for (const item of arr) {
-        if (item && typeof item === "object") {
-            Object.assign(merged, item);
-        }
+export function getPeriodKeys(res: any): string[] {
+  if (!res) return [];
+  try {
+    // Primary format: { results: { "2024": [...], "2023": [...] } }
+    if (res.results && typeof res.results === "object" && !Array.isArray(res.results)) {
+      const ks = Object.keys(res.results).filter(k => !META.has(k));
+      if (ks.length) {
+        // Sort: numeric descending (newest first)
+        return ks.sort((a, b) => {
+          const na = parseInt(a), nb = parseInt(b);
+          if (!isNaN(na) && !isNaN(nb)) return nb - na;
+          return b.localeCompare(a);
+        });
+      }
     }
-    return merged;
-}
-
-// Get the available sorted period keys from a FinancialResponse
-export function getPeriodKeys(response: FinancialResponse | RatioResponse | undefined): string[] {
-    if (!response || !response.results) return [];
-    return Object.keys(response.results).sort((a, b) => {
-        const numA = parseInt(a);
-        const numB = parseInt(b);
-        return numB - numA; // Descending (latest first)
-    });
-}
-
-// Get flattened section data for a specific period
-export function getSectionDataForPeriod(
-    response: FinancialResponse | RatioResponse | undefined,
-    period: string
-): Record<string, any> {
-    if (!response || !response.results || !response.results[period]) return {};
-    const arr = response.results[period];
-    if (Array.isArray(arr)) {
-        return flattenYearArray(arr);
+    // Fallback: headers / periods / columns arrays
+    for (const k of ["headers", "periods", "columns", "yearHeaders"]) {
+      if (Array.isArray(res[k]) && res[k].length) return res[k];
     }
-    return arr || {};
-}
-
-// Get headings from a financial response
-export function getHeadings(
-    response: FinancialResponse | RatioResponse | undefined
-): Array<{ title: string; children?: string[] }> {
-    if (!response || !response.headings) return [];
-    return response.headings;
-}
-
-// Format a period key for display:  "2011" → "2011", "202306" → "Jun 2023", "200203" → "Mar 2002"
-export function formatPeriodLabel(period: string): string {
-    if (period.length === 4) return period;
-    if (period.length === 6) {
-        const year = period.substring(0, 4);
-        const month = parseInt(period.substring(4, 6));
-        const monthNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        return `${monthNames[month] || month} ${year}`;
+    if (res.data && typeof res.data === "object" && !Array.isArray(res.data)) {
+      const ks = Object.keys(res.data).filter(k => !META.has(k));
+      if (ks.length) return ks;
     }
-    return period;
+    if (Array.isArray(res) && res.length) {
+      const first = res[0];
+      if (first && typeof first === "object" && !Array.isArray(first)) {
+        const ks = Object.keys(first).filter(k => !META.has(k));
+        if (ks.length) return ks;
+      }
+    }
+    if (typeof res === "object" && !Array.isArray(res)) {
+      const ks = Object.keys(res).filter(k => !META.has(k) && k !== "headings" && k !== "results");
+      if (ks.length) return ks;
+    }
+  } catch { }
+  return [];
 }
 
-// For ratio sections: merge all ratio data for a given period
+export function getRatioPeriodKeys(ratios: Record<string, any> | undefined): string[] {
+  if (!ratios) return [];
+  for (const s of RATIO_SECTIONS) {
+    const ks = getPeriodKeys(ratios[s]);
+    if (ks.length) return ks;
+  }
+  return [];
+}
+
+/* ── formatPeriodLabel ─────────────────────────────────── */
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export function formatPeriodLabel(p: string): string {
+  if (!p) return "";
+  if (/[A-Za-z]/.test(p)) return p.replace(/-(\d{2})$/, (_, y) => ` 20${y}`);
+  if (/^\d{6}$/.test(p)) return `${MON[+p.slice(4, 6) - 1] ?? ""} ${p.slice(0, 4)}`;
+  if (/^\d{5}$/.test(p)) return `Q${p[4]} ${p.slice(0, 4)}`;
+  return p;
+}
+
+/* ── getMergedRatioData ────────────────────────────────── */
 export function getMergedRatioData(
-    ratios: Record<string, RatioResponse> | undefined,
-    period: string
+  ratios: Record<string, any> | undefined,
+  period: string,
 ): Record<string, any> {
-    if (!ratios) return {};
-    const merged: Record<string, any> = {};
-    for (const sectionResp of Object.values(ratios)) {
-        const data = getSectionDataForPeriod(sectionResp, period);
-        Object.assign(merged, data);
-    }
-    return merged;
-}
-
-// Get merged ratio period keys (union of all ratio section keys)
-export function getRatioPeriodKeys(ratios: Record<string, RatioResponse> | undefined): string[] {
-    if (!ratios) return [];
-    const keys = new Set<string>();
-    for (const sectionResp of Object.values(ratios)) {
-        if (sectionResp?.results) {
-            Object.keys(sectionResp.results).forEach(k => keys.add(k));
+  if (!ratios || !period) return {};
+  const out: Record<string, any> = {};
+  for (const s of RATIO_SECTIONS) {
+    const d = ratios[s];
+    if (!d) continue;
+    try {
+      // API format: { results: { "202403": [ {key: val, key: val} ] }, headings: [...] }
+      if (d.results?.[period]) {
+        const periodData = d.results[period];
+        if (Array.isArray(periodData)) {
+          for (const obj of periodData) {
+            if (obj && typeof obj === "object") Object.assign(out, obj);
+          }
+        } else if (typeof periodData === "object") {
+          Object.assign(out, periodData);
         }
-    }
-    return Array.from(keys).sort((a, b) => parseInt(b) - parseInt(a));
+        continue;
+      }
+      // Legacy/fallback: rows array
+      const rows = Array.isArray(d) ? d : Array.isArray(d.rows) ? d.rows : null;
+      if (rows) {
+        for (const row of rows) {
+          const k = row?.label || row?.name || row?.description;
+          if (k && row[period] != null) out[k] = row[period];
+        }
+        continue;
+      }
+      if (d.data?.[period] && typeof d.data[period] === "object") { Object.assign(out, d.data[period]); continue; }
+      if (d[period] && typeof d[period] === "object") Object.assign(out, d[period]);
+    } catch { }
+  }
+  return out;
 }
 
-// Get all ratio headings merged
-export function getMergedRatioHeadings(
-    ratios: Record<string, RatioResponse> | undefined
-): Array<{ title: string; children?: string[] }> {
-    if (!ratios) return [];
-    const all: Array<{ title: string; children?: string[] }> = [];
-    for (const sectionResp of Object.values(ratios)) {
-        const hdgs = getHeadings(sectionResp);
-        all.push(...hdgs);
+/* ── getSectionDataForPeriod ──────────────────────────── */
+/**
+ * Extract a flat key→value map for one period from a financial response.
+ * API returns: { results: { "2024": [ {k:v, k:v}, {k:v} ], "2023": [...] } }
+ * Each period is an array of objects; we merge them into one flat object.
+ */
+export function getSectionDataForPeriod(
+  response: any,
+  period: string,
+): Record<string, any> {
+  if (!response || !period) return {};
+  try {
+    const results = response?.results;
+    if (!results) return {};
+
+    const periodData = results[period];
+    if (!periodData) return {};
+
+    // Most common: array of objects → merge into flat map
+    if (Array.isArray(periodData)) {
+      const out: Record<string, any> = {};
+      for (const obj of periodData) {
+        if (obj && typeof obj === "object") Object.assign(out, obj);
+      }
+      return out;
     }
-    return all;
+
+    // Single object
+    if (typeof periodData === "object") return { ...periodData };
+  } catch { }
+  return {};
+}
+
+/* ── getHeadings ──────────────────────────────────────── */
+/**
+ * Extract headings from a financial response.
+ * API returns: { headings: [ { title: "Total Shareholders Fund", children: ["Share Capital", "Reserves"] } ] }
+ */
+export function getHeadings(response: any): { title: string; children?: string[] }[] {
+  if (!response) return [];
+  try {
+    if (Array.isArray(response.headings)) return response.headings;
+  } catch { }
+  return [];
+}
+
+/* ── getMergedRatioHeadings ───────────────────────────── */
+/**
+ * Merge headings from all 6 ratio sections into one list.
+ */
+export function getMergedRatioHeadings(
+  ratios: Record<string, any> | undefined,
+): { title: string; children?: string[] }[] {
+  if (!ratios) return [];
+  const out: { title: string; children?: string[] }[] = [];
+  const seenTitles = new Set<string>();
+  for (const s of RATIO_SECTIONS) {
+    const d = ratios[s];
+    if (!d) continue;
+    try {
+      const headings = getHeadings(d);
+      for (const h of headings) {
+        if (!seenTitles.has(h.title)) {
+          seenTitles.add(h.title);
+          out.push(h);
+        }
+      }
+    } catch { }
+  }
+  return out;
 }

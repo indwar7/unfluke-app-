@@ -1,13 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import ProfileScreen from '../components/screens/ProfileScreen'
+import React from 'react';
+import ProfileScreen from '../components/screens/ProfileScreen';
+import { ScreenWithHeader } from '@/components/AppHeader';
 
 const Profile = () => {
   return (
-    <ProfileScreen/>
-  )
-}
+    <ScreenWithHeader>
+      <ProfileScreen />
+    </ScreenWithHeader>
+  );
+};
 
-export default Profile
-
-const styles = StyleSheet.create({})
+export default Profile;

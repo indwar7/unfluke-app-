@@ -1,13 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import OptionSimulator from '@/components/OptionSimulator'
+import React from 'react';
+import OptionSimulator from '@/components/OptionSimulator';
+import { ScreenWithHeader } from '@/components/AppHeader';
 
 const Simulator = () => {
   return (
-    <OptionSimulator/>
-  )
-}
+    <ScreenWithHeader>
+      <OptionSimulator />
+    </ScreenWithHeader>
+  );
+};
 
-export default Simulator
-
-const styles = StyleSheet.create({})
+export default Simulator;

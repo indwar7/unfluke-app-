@@ -42,7 +42,8 @@ const Trading = () => {
 
   const { layoutModeType } = useSelector(selectDashboardData);
   const user = useSelector(auth);
-  const selectedSymbol = useSelector(historicaldata);
+  // @ts-ignore
+  const selectedStock = useSelector((state) => state.GlobalStock.selectedStock);
   const currentDatetime = useSelector(dateData);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -51,7 +52,7 @@ const Trading = () => {
     containerId: "historic-trading-view-chart",
     fullScreen: false,
     layoutMode: layoutModeType,
-    symbol: selectedSymbol,
+    symbol: selectedStock?.symbol,
     currentDate: currentDatetime,
     userID: user?._id,
     maxYear: user?.charts_fno,
@@ -105,7 +106,7 @@ const Trading = () => {
 
             <View style={styles.chartContainer}>
               <View style={styles.chartWrapper}>
-                <TVChartContainer coinId={selectedSymbol ? (selectedSymbol.startsWith('NSE:') ? selectedSymbol : `NSE:${selectedSymbol}`) : "NSE:NIFTY"} />
+                <TVChartContainer coinId={selectedStock?.symbol ? (selectedStock.symbol.startsWith('NSE:') ? selectedStock.symbol : `NSE:${selectedStock.symbol}`) : "NSE:NIFTY"} />
               </View>
             </View>
           </View>

@@ -87,7 +87,7 @@ const ResetPassword = () => {
           // Remove stored forgot password response
           await AsyncStorage.removeItem("forgotPasswordResponse");
           dispatch(resetPasswordFlag());
-          router.replace("login");
+          router.replace("/login");
         } catch (error) {
           console.error("Error clearing storage:", error);
         }

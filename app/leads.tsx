@@ -1,13 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import LeadsDashboard from '@/components/LeadsDashboard'
+import React from 'react';
+import LeadsDashboard from '@/components/LeadsDashboard';
+import { ScreenWithHeader } from '@/components/AppHeader';
 
 const Leads = () => {
   return (
-     <LeadsDashboard/>
-  )
-}
+    <ScreenWithHeader>
+      <LeadsDashboard />
+    </ScreenWithHeader>
+  );
+};
 
-export default Leads
-
-const styles = StyleSheet.create({})
+export default Leads;

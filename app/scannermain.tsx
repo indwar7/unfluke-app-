@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { ChevronRight, Eye, Plus } from "lucide-react-native";
+import { ScreenWithHeader } from "@/components/AppHeader";
 
 const ScannerMain = () => {
   const [defaultScanners, setDefaultScanners] = useState({});
@@ -108,78 +109,80 @@ const ScannerMain = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        {/* Left section: Title + breadcrumb */}
-        <View>
-          <Text style={styles.title}>Scanner Home</Text>
-          <View style={styles.breadcrumb}>
-            <Text style={styles.breadcrumbText}>Pages</Text>
-            <ChevronRight size={13} color="#6B7280" />
-            <Text style={styles.breadcrumbText}>Technical Scanner</Text>
+    <ScreenWithHeader>
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          {/* Left section: Title + breadcrumb */}
+          <View>
+            <Text style={styles.title}>Scanner Home</Text>
+            <View style={styles.breadcrumb}>
+              <Text style={styles.breadcrumbText}>Pages</Text>
+              <ChevronRight size={13} color="#6B7280" />
+              <Text style={styles.breadcrumbText}>Technical Scanner</Text>
+            </View>
           </View>
-        </View>
 
-        {/* Right section: Buttons */}
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={styles.viewSavedButton}
-            onPress={() => {
-              console.log("View saved pressed");
-              navigation.navigate("scannerhome")
-            }}
-          >
-            <Eye color="#000" size={12} />
-            <Text style={styles.viewSavedButtonText}>View saved</Text>
-          </TouchableOpacity>
+          {/* Right section: Buttons */}
+          <View style={styles.buttonGroup}>
+            <TouchableOpacity
+              style={styles.viewSavedButton}
+              onPress={() => {
+                console.log("View saved pressed");
+                navigation.navigate("scannerhome")
+              }}
+            >
+              <Eye color="#000" size={12} />
+              <Text style={styles.viewSavedButtonText}>View saved</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.createNewButton}
-            onPress={() =>
+            <TouchableOpacity
+              style={styles.createNewButton}
+              onPress={() =>
                 navigation.navigate("scanner", {
                   type: "scanner",
                 })
               }
-          >
-            <Plus color="white" size={12} strokeWidth={3} />
-            <Text style={styles.createNewButtonText}>Create new</Text>
-          </TouchableOpacity>
+            >
+              <Plus color="white" size={12} strokeWidth={3} />
+              <Text style={styles.createNewButtonText}>Create new</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading scanners...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.scannerGrid}
-          showsVerticalScrollIndicator={false}
-        >
-          {Object.keys(defaultScanners).length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No scanners available</Text>
-            </View>
-          ) : (
-            Object.keys(defaultScanners).map((category) => (
-              <ScannerCard
-                key={category}
-                title={category}
-                items={defaultScanners[category] || []}
-              />
-            ))
-          )}
-        </ScrollView>
-      )}
-    </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text style={styles.loadingText}>Loading scanners...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.scannerGrid}
+            showsVerticalScrollIndicator={false}
+          >
+            {Object.keys(defaultScanners).length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No scanners available</Text>
+              </View>
+            ) : (
+              Object.keys(defaultScanners).map((category) => (
+                <ScannerCard
+                  key={category}
+                  title={category}
+                  items={defaultScanners[category] || []}
+                />
+              ))
+            )}
+          </ScrollView>
+        )}
+      </View>
+    </ScreenWithHeader>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     padding: 12,
-    paddingTop: 85,
+    paddingTop: 12,
     paddingBottom: 20,
     backgroundColor: "#f8f9fa",
     flexGrow: 1,

@@ -1,13 +1,15 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import Pricing from '@/components/Pricing/Pricing'
+import React from 'react';
+import Pricing from '@/components/Pricing/Pricing';
+import { ScreenWithHeader } from '@/components/AppHeader';
+import { useNavigation } from '@react-navigation/native';
 
 const PricingPage = () => {
+  const navigation = useNavigation();
   return (
- <Pricing/>
-  )
-}
+    <ScreenWithHeader>
+      <Pricing navigation={navigation} />
+    </ScreenWithHeader>
+  );
+};
 
-export default PricingPage
-
-const styles = StyleSheet.create({})
+export default PricingPage;

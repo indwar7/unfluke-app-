@@ -40,6 +40,7 @@ import {
   UserHistoricalSelectedSymbol,
 } from "../../redux/Unfluke_slices/thunks";
 import { setHistoricalWatchlist } from "../../redux/Unfluke_slices/historicalTrading/reducer";
+import { setSelectedStock } from "../../redux/Unfluke_slices/globalStock/reducer";
 
 const Watchlist = () => {
   const dispatch = useDispatch();
@@ -290,7 +291,7 @@ const Watchlist = () => {
     }).then((data) => {
       console.log("current feed==>", data);
       setLoader(false);
-      
+
       // Update price data state instead of manipulating DOM
       const newPriceData = {};
       data.forEach((feed) => {
@@ -382,10 +383,18 @@ const Watchlist = () => {
     }
   };
 
+  /* import { setSelectedStock } from "../../redux/Unfluke_slices/globalStock/reducer"; -- moved top */
+
   const handleChartPress = (tradeWatchItem) => {
     setIsDisabled(true);
     if (!isDisabled) {
-      setSelectedSymbol(`${tradeWatchItem.exch}:${tradeWatchItem.name}`);
+      const symbol = `${tradeWatchItem.exch}:${tradeWatchItem.name}`;
+      setSelectedSymbol(symbol);
+      dispatch(setSelectedStock({
+        symbol: symbol,
+        name: tradeWatchItem.name,
+        // Exchange might differ or be implicit in symbol for TVChart
+      }));
     }
     setActiveCardIndex(null); // Hide action buttons
     setTimeout(() => {
@@ -411,7 +420,7 @@ const Watchlist = () => {
           onChange={setSelectMarket}
           disableTyping={true}
         />
-        
+
         {selectMarket !== "Option" && (
           <View style={styles.searchInputWrapper}>
             <TextInput
@@ -564,23 +573,23 @@ const Watchlist = () => {
 
                 {activeCardIndex === index && (
                   <View style={styles.actionButtonsContainer}>
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.chartButton}
-                      disabled={isDisabled}
-                      onPress={() => handleChartPress(tradeWatchItem)}
-                    >
-                      <TrendingUp size={16} color="#101010" />
-                    </TouchableOpacity>
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        style={styles.chartButton}
+                        disabled={isDisabled}
+                        onPress={() => handleChartPress(tradeWatchItem)}
+                      >
+                        <TrendingUp size={16} color="#101010" />
+                      </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      disabled={loader}
-                      onPress={() => handleDeletePress(tradeWatchItem.instrument_token)}
-                    >
-                      <Trash2 size={16} color="#EF4444" />
-                    </TouchableOpacity>
-                  </View>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        disabled={loader}
+                        onPress={() => handleDeletePress(tradeWatchItem.instrument_token)}
+                      >
+                        <Trash2 size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 )}
               </View>
@@ -712,15 +721,15 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginLeft: 8,
   },
-  actionButtonsContainer:{
-position: 'absolute',
-    top:-10,
+  actionButtonsContainer: {
+    position: 'absolute',
+    top: -10,
     right: 0,
   },
   actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical:4,
+    paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 4,
     gap: 8,
