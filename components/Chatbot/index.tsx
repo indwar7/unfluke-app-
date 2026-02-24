@@ -838,461 +838,467 @@ const AIChatbot = ({
                   },
                   code_inline: {
                     backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
-                      padding: 2,
-                      borderRadius: 4,
-                    },
-                    code_block: {
-                      backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
-                      padding: 10,
-                      borderRadius: 8,
-                      marginVertical: 5,
-                    },
-                  }}
-                >
-                  {streamingMessage}
-                </Markdown>
-              </View>
-            )}
-
-            {/* Sources icon */}
-            {isBot &&
-              !isStream &&
-              msg.docs &&
-              Object.keys(msg.docs).length > 0 && (
-                <TouchableOpacity
-                  style={styles.sourcesButton}
-                  onPress={() => {
-                    setSources(msg.docs);
-                    setSourcesModalOpen(true);
-                  }}
-                >
-                  <Ionicons name="document-text" size={18} color="#6B7280" />
-                </TouchableOpacity>
-              )}
-          </View>
-        );
-      },
-      [isDarkMode, resultsLinkAction, setOptionToPrompt, streamingMessage]
-    );
-    console.log(chatbotGuideOpen, ChatbotGuide);
-
-    return (
-      <View style={[styles.container, isDarkMode && styles.darkContainer]}>
-        {/* Modals */}
-        {sourcesModalOpen && (
-          <SourcesModal
-            sourcesModalOpen={sourcesModalOpen}
-            setSourcesModalOpen={setSourcesModalOpen}
-            sources={sources}
-          />
-        )}
-
-        {chatbotGuideOpen && (
-          <ChatbotGuide
-            setChatbotGuideOpen={setChatbotGuideOpen}
-            botType={selectedBot}
-            typeAndAsk={setInput}
-          />
-        )}
-
-        {scannerResultsModalOpen && (
-          <ScannerResultsModal
-            modalOpen={scannerResultsModalOpen}
-            setModalOpen={setScannerResultsModalOpen}
-            resultsObj={scannerResults}
-            type={scannerResultsType}
-          />
-        )}
-
-        {/* Bot Navigation Tabs */}
-        <View style={styles.tabContainer}>
-          <View style={styles.dropdownWrapper}>
-            <Picker
-              selectedValue={selectedBot}
-              onValueChange={(bot, index) => {
-                if (loading) return;
-                setSelectedBot(bot);
-                setBotExplanation(aboutBots[index]);
-
-                if (onTabChange) {
-                  onTabChange(bot);
-                }
-              }}
-              style={[
-                styles.dropdown,
-                isDarkMode ? styles.dropdownDark : styles.dropdownLight,
-              ]}
-              dropdownIconColor={isDarkMode ? "#F9FAFB" : "#111827"}
-            >
-              {bots.map((bot, i) => (
-                <Picker.Item
-                  key={i}
-                  label={bot}
-                  value={bot}
-                  color={isDarkMode ? "#F9FAFB" : "#111827"}
-                  style={{ fontSize: 15 }}
-                />
-              ))}
-            </Picker>
-
-            {/* Info Icon beside dropdown */}
-            <TouchableOpacity
-              style={styles.infoIcon}
-              onPress={() => {
-                if (loading) return;
-                setChatbotGuideOpen(true);
-              }}
-            >
-              <Ionicons
-                name="information-circle-outline"
-                size={20}
-                color={isDarkMode ? "#F9FAFB" : "#6B7280"}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Chat Messages */}
-        <KeyboardAwareScrollView
-          ref={scrollViewRef}
-          style={[styles.chatArea, isDarkMode && styles.darkChatArea]}
-          contentContainerStyle={styles.chatContent}
-          onContentSizeChange={scrollToBottom}
-          enableOnAndroid={true}
-          enableAutomaticScroll={true}
-          keyboardOpeningTime={250}
-          extraScrollHeight={60}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.length > 0 ? (
-            messages
-              .filter((msg) => msg.mode === selectedBot)
-              .map((msg, index) => renderMessage(msg, index))
-          ) : (
-            <View style={styles.explanationContainer}>
-              <Text
-                style={[
-                  styles.explanationText,
-                  { color: isDarkMode ? "#FFFFFF" : "#171717" },
-                ]}
+                    padding: 2,
+                    borderRadius: 4,
+                  },
+                  code_block: {
+                    backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                    padding: 10,
+                    borderRadius: 8,
+                    marginVertical: 5,
+                  },
+                }}
               >
-                {botExplanation}
-              </Text>
-            </View>
-          )}
-        </KeyboardAwareScrollView>
-
-        {/* Quick Questions */}
-        {showQuickQuestions &&
-          messages.filter((msg) => msg.mode === selectedBot).length === 0 && (
-            <View style={styles.quickQuestionsContainer}>
-              <View style={styles.questionChipsContainer}>
-                {botQuestions[selectedBot]?.map((question, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.questionChip,
-                      isDarkMode && styles.questionChipDark,
-                      { maxWidth: width - 40 }
-                    ]}
-                    onPress={() => {
-                      if (!loading) {
-                        setInput(question);
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.questionChipText,
-                        { color: isDarkMode ? "#FFFFFF" : "#6B7280" },
-                      ]}
-                    >
-                      {question}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                {streamingMessage}
+              </Markdown>
             </View>
           )}
 
-        {/* Input Area */}
-        <View
-          style={[styles.inputContainer, isDarkMode && styles.darkInputContainer]}
-        >
-          <View style={styles.inputGroup}>
-            <TextInput
-              style={[styles.textInput, isDarkMode && styles.darkTextInput]}
-              placeholder="Type your message..."
-              placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
-              value={input}
-              onChangeText={handleInputChange}
-              onSubmitEditing={handleKeyDown}
-              multiline
-              maxLength={1000}
+          {/* Sources icon */}
+          {isBot &&
+            !isStream &&
+            msg.docs &&
+            Object.keys(msg.docs).length > 0 && (
+              <TouchableOpacity
+                style={styles.sourcesButton}
+                onPress={() => {
+                  setSources(msg.docs);
+                  setSourcesModalOpen(true);
+                }}
+              >
+                <Ionicons name="document-text" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            )}
+        </View>
+      );
+    },
+    [isDarkMode, resultsLinkAction, setOptionToPrompt, streamingMessage]
+  );
+  console.log(chatbotGuideOpen, ChatbotGuide);
+
+  return (
+    <View style={[styles.container, isDarkMode && styles.darkContainer]}>
+      {/* Modals */}
+      {sourcesModalOpen && (
+        <SourcesModal
+          sourcesModalOpen={sourcesModalOpen}
+          setSourcesModalOpen={setSourcesModalOpen}
+          sources={sources}
+        />
+      )}
+
+      {chatbotGuideOpen && (
+        <ChatbotGuide
+          setChatbotGuideOpen={setChatbotGuideOpen}
+          botType={selectedBot}
+          typeAndAsk={setInput}
+        />
+      )}
+
+      {scannerResultsModalOpen && (
+        <ScannerResultsModal
+          modalOpen={scannerResultsModalOpen}
+          setModalOpen={setScannerResultsModalOpen}
+          resultsObj={scannerResults}
+          type={scannerResultsType}
+        />
+      )}
+
+      {/* Bot Navigation Tabs */}
+      <View style={styles.tabContainer}>
+        <View style={styles.dropdownWrapper}>
+          <Picker
+            selectedValue={selectedBot}
+            onValueChange={(bot, index) => {
+              if (loading) return;
+              setSelectedBot(bot);
+              setBotExplanation(aboutBots[index]);
+
+              if (onTabChange) {
+                onTabChange(bot);
+              }
+            }}
+            style={[
+              styles.dropdown,
+              isDarkMode ? styles.dropdownDark : styles.dropdownLight,
+            ]}
+            dropdownIconColor={isDarkMode ? "#F9FAFB" : "#111827"}
+          >
+            {bots.map((bot, i) => (
+              <Picker.Item
+                key={i}
+                label={bot}
+                value={bot}
+                color={isDarkMode ? "#F9FAFB" : "#111827"}
+                style={{ fontSize: 15 }}
+              />
+            ))}
+          </Picker>
+
+          {/* Info Icon beside dropdown */}
+          <TouchableOpacity
+            style={styles.infoIcon}
+            onPress={() => {
+              if (loading) return;
+              setChatbotGuideOpen(true);
+            }}
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color={isDarkMode ? "#F9FAFB" : "#6B7280"}
             />
-            <TouchableOpacity
-              style={[styles.sendButton, loading && styles.disabledButton]}
-              onPress={handleMessage}
-              disabled={loading}
-            >
-              <Ionicons name="send" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
-    );
-  };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#F9FAFB",
-      paddingTop: 75
-    },
-    darkContainer: {
-      backgroundColor: "#111827",
-    },
+      {/* Chat Messages */}
+      <KeyboardAwareScrollView
+        ref={scrollViewRef}
+        style={[styles.chatArea, isDarkMode && styles.darkChatArea]}
+        contentContainerStyle={styles.chatContent}
+        onContentSizeChange={scrollToBottom}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        keyboardOpeningTime={250}
+        extraScrollHeight={60}
+        showsVerticalScrollIndicator={false}
+      >
+        {messages.length > 0 ? (
+          messages
+            .filter((msg) => msg.mode === selectedBot)
+            .map((msg, index) => renderMessage(msg, index))
+        ) : (
+          <View style={styles.explanationContainer}>
+            <Text
+              style={[
+                styles.explanationText,
+                { color: isDarkMode ? "#FFFFFF" : "#171717" },
+              ]}
+            >
+              {botExplanation}
+            </Text>
+          </View>
+        )}
+      </KeyboardAwareScrollView>
 
-    // Tab Navigation
-    tabContainer: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-    tabScrollView: {
-      flexGrow: 0,
-    },
-    tabButton: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      marginRight: 8,
-      borderRadius: 8,
-      minWidth: 120,
-    },
-    activeTab: {
-      backgroundColor: "#2563EB",
-    },
-    inactiveTab: {
-      backgroundColor: "#E5E7EB",
-    },
-    activeTabDark: {
-      backgroundColor: "#2563EB",
-    },
-    inactiveTabDark: {
-      backgroundColor: "#374151",
-    },
-    tabContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    tabText: {
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    activeTabText: {
-      color: "#FFFFFF",
-    },
-    inactiveTabText: {
-      color: "#374151",
-    },
-    infoIcon: {
-      marginLeft: 8,
-    },
-    dropdownWrapper: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: "#D1D5DB",
-      backgroundColor: "#FFFFFF",
-      paddingHorizontal: 8,
-    },
+      {/* Quick Questions */}
+      {showQuickQuestions &&
+        messages.filter((msg) => msg.mode === selectedBot).length === 0 && (
+          <View style={styles.quickQuestionsContainer}>
+            <View style={styles.questionChipsContainer}>
+              {botQuestions[selectedBot]?.map((question, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.questionChip,
+                    isDarkMode && styles.questionChipDark,
+                    { maxWidth: width - 40 }
+                  ]}
+                  onPress={() => {
+                    if (!loading) {
+                      setInput(question);
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.questionChipText,
+                      { color: isDarkMode ? "#FFFFFF" : "#6B7280" },
+                    ]}
+                  >
+                    {question}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
-    dropdown: {
-      flex: 1,
-      height: 50,
-      paddingVertical: 26,
-    },
+      {/* Input Area */}
+      <View
+        style={[styles.inputContainer, isDarkMode && styles.darkInputContainer]}
+      >
+        <View style={[styles.inputGroup, isDarkMode && styles.darkInputGroup]}>
+          <TextInput
+            style={[
+              styles.textInput,
+              { color: isDarkMode ? "#F9FAFB" : "#111827" },
+            ]}
+            placeholder="Type your message..."
+            placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
+            value={input}
+            onChangeText={handleInputChange}
+            onSubmitEditing={handleKeyDown}
+            multiline
+            maxLength={1000}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, loading && styles.disabledButton]}
+            onPress={handleMessage}
+            disabled={loading}
+          >
+            <Ionicons name="send" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};
 
-    dropdownLight: {
-      backgroundColor: "#FFFFFF",
-      color: "#111827",
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+  },
+  darkContainer: {
+    backgroundColor: "#111827",
+  },
 
-    dropdownDark: {
-      backgroundColor: "#374151",
-      color: "#F9FAFB",
-    },
-    // Chat Area
-    chatArea: {
-      flex: 1,
-      paddingHorizontal: 16,
-    },
-    darkChatArea: {
-      backgroundColor: "#111827",
-    },
-    chatContent: {
-      paddingVertical: 16,
-      minHeight: 550,
-    },
-    explanationContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      paddingHorizontal: 32,
-    },
-    explanationText: {
-      fontSize: 18,
-      fontWeight: "600",
-      textAlign: "center",
-      lineHeight: 28,
-    },
+  // Tab Navigation
+  tabContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  tabScrollView: {
+    flexGrow: 0,
+  },
+  tabButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 8,
+    minWidth: 120,
+  },
+  activeTab: {
+    backgroundColor: "#2563EB",
+  },
+  inactiveTab: {
+    backgroundColor: "#E5E7EB",
+  },
+  activeTabDark: {
+    backgroundColor: "#2563EB",
+  },
+  inactiveTabDark: {
+    backgroundColor: "#374151",
+  },
+  tabContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  activeTabText: {
+    color: "#FFFFFF",
+  },
+  inactiveTabText: {
+    color: "#374151",
+  },
+  infoIcon: {
+    marginLeft: 8,
+  },
+  dropdownWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 8,
+  },
 
-    // Messages
-    messageContainer: {
-      flexDirection: "row",
-      marginVertical: 8,
-      alignItems: "flex-end",
-    },
-    botMessageContainer: {
-      justifyContent: "flex-start",
-    },
-    userMessageContainer: {
-      justifyContent: "flex-start",
-      flexDirection: "row-reverse",
-    },
-    iconContainer: {
-      width: 32,
-      height: 32,
-      marginHorizontal: 4,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    messageBubble: {
-      maxWidth: "80%",
-      paddingHorizontal: 12,
-      paddingVertical: 2,
-      borderRadius: 10,
-      marginHorizontal: 4,
-    },
-    userMessage: {
-      backgroundColor: "#2563EB",
-      alignSelf: "flex-end",
-    },
-    botMessage: {
-      backgroundColor: "#EFF3FF",
-      alignSelf: "flex-start",
-    },
-    loadingMessage: {
-      opacity: 0.7,
-    },
-    messageText: {
-      fontSize: 16,
-      lineHeight: 22,
-    },
-    linkText: {
-      color: "#2563EB",
-      textDecorationLine: "underline",
-    },
-    sourcesButton: {
-      padding: 8,
-      marginLeft: 8,
-    },
+  dropdown: {
+    flex: 1,
+    height: 50,
+    paddingVertical: 26,
+  },
 
-    // Options
-    optionsContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      marginTop: 8,
-      gap: 8,
-    },
-    optionButton: {
-      backgroundColor: "#10B981",
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 6,
-      flex: 1,
-      minWidth: 100,
-    },
-    optionButtonText: {
-      color: "#FFFFFF",
-      fontSize: 12,
-      textAlign: "center",
-      fontWeight: "500",
-    },
+  dropdownLight: {
+    backgroundColor: "#FFFFFF",
+    color: "#111827",
+  },
 
-    // Quick Questions
-    quickQuestionsContainer: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-    questionChipsContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "center",
-      gap: 8,
-    },
-    questionChip: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderWidth: 1,
-      borderColor: "#D1D5DB",
-      borderRadius: 50,
-      backgroundColor: "#FFFFFF",
-    },
-    questionChipDark: {
-      borderColor: "#4B5563",
-      backgroundColor: "#374151",
-    },
-    questionChipText: {
-      fontSize: 14,
-      textAlign: "center",
-      flexShrink: 1,
-    },
+  dropdownDark: {
+    backgroundColor: "#374151",
+    color: "#F9FAFB",
+  },
+  // Chat Area
+  chatArea: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  darkChatArea: {
+    backgroundColor: "#111827",
+  },
+  chatContent: {
+    paddingVertical: 16,
+    minHeight: 550,
+  },
+  explanationContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  explanationText: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 28,
+  },
 
-    // Input Area
-    inputContainer: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      paddingBottom: 20
-    },
-    darkInputContainer: {
-      backgroundColor: "#1F2937",
-      borderTopColor: "#374151",
-    },
-    inputGroup: {
-      flexDirection: "row",
-      alignItems: "flex-end",
-      backgroundColor: "#F3F4F6",
-      borderRadius: 12,
-      paddingHorizontal: 4,
-      paddingBottom: 7,
-      paddingRight: 8,
-      paddingVertical: 4,
-    },
-    textInput: {
-      flex: 1,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
-      maxHeight: 120,
-      color: "#111827",
-      backgroundColor: "transparent",
-    },
-    darkTextInput: {
-      color: "#F9FAFB",
-      backgroundColor: "#374151",
-    },
-    sendButton: {
-      backgroundColor: "#2563EB",
-      padding: 12,
-      borderRadius: 8,
-      marginLeft: 4,
-    },
-    disabledButton: {
-      opacity: 0.5,
-    },
-  });
+  // Messages
+  messageContainer: {
+    flexDirection: "row",
+    marginVertical: 8,
+    alignItems: "flex-end",
+  },
+  botMessageContainer: {
+    justifyContent: "flex-start",
+  },
+  userMessageContainer: {
+    justifyContent: "flex-start",
+    flexDirection: "row-reverse",
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    marginHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  messageBubble: {
+    maxWidth: "80%",
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginHorizontal: 4,
+  },
+  userMessage: {
+    backgroundColor: "#2563EB",
+    alignSelf: "flex-end",
+  },
+  botMessage: {
+    backgroundColor: "#EFF3FF",
+    alignSelf: "flex-start",
+  },
+  loadingMessage: {
+    opacity: 0.7,
+  },
+  messageText: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  linkText: {
+    color: "#2563EB",
+    textDecorationLine: "underline",
+  },
+  sourcesButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
 
-  export default AIChatbot;
+  // Options
+  optionsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+    gap: 8,
+  },
+  optionButton: {
+    backgroundColor: "#10B981",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    flex: 1,
+    minWidth: 100,
+  },
+  optionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    textAlign: "center",
+    fontWeight: "500",
+  },
+
+  // Quick Questions
+  quickQuestionsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  questionChipsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+  },
+  questionChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 50,
+    backgroundColor: "#FFFFFF",
+  },
+  questionChipDark: {
+    borderColor: "#4B5563",
+    backgroundColor: "#374151",
+  },
+  questionChipText: {
+    fontSize: 14,
+    textAlign: "center",
+    flexShrink: 1,
+  },
+
+  // Input Area
+  inputContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: 20
+  },
+  darkInputContainer: {
+    backgroundColor: "#1F2937",
+    borderTopColor: "#374151",
+  },
+  inputGroup: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    paddingHorizontal: 4,
+    paddingBottom: 7,
+    paddingRight: 8,
+    paddingVertical: 4,
+  },
+  textInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    maxHeight: 120,
+    color: "#111827",
+    backgroundColor: "transparent",
+  },
+  darkTextInput: {
+    color: "#F9FAFB",
+    backgroundColor: "transparent",
+  },
+  darkInputGroup: {
+    backgroundColor: "#374151",
+  },
+  sendButton: {
+    backgroundColor: "#2563EB",
+    padding: 12,
+    borderRadius: 8,
+    marginLeft: 4,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+});
+
+export default AIChatbot;

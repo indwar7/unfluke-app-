@@ -145,28 +145,114 @@ function HorizontalTable({
     );
 }
 
+/* ── Expandable List (Balance Sheet / PL style) ──────── */
+function ExpandableList({
+    response,
+    period,
+    emptyMessage,
+}: {
+    response: any;
+    period: string;
+    emptyMessage?: string;
+}) {
+    if (!response?.results) return <EmptyState message={emptyMessage || "No data available."} />;
+
+    const periodKeys = useMemo(() => getPeriodKeys(response), [response]);
+    const headings = useMemo(() => {
+        try { return getHeadings(response) || []; } catch { return []; }
+    }, [response]);
+
+    // Use period from parent PeriodPicker; fall back to first available
+    const selectedYear = (period && periodKeys.includes(period)) ? period : (periodKeys[0] || "");
+    const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+
+    const toggleSection = (title: string) => {
+        setExpandedMap(prev => ({ ...prev, [title]: !prev[title] }));
+    };
+
+    const allData = useMemo(() => {
+        const map: Record<string, Record<string, any>> = {};
+        try {
+            for (const pk of periodKeys) {
+                map[pk] = getSectionDataForPeriod(response, pk) || {};
+            }
+        } catch { }
+        return map;
+    }, [periodKeys, response]);
+
+    const getValue = (label: string, parent?: string) => {
+        const data = allData[selectedYear] || {};
+        const val = data[label];
+        return val !== undefined && val !== null ? fmt(val) : "-";
+    };
+
+    if (periodKeys.length === 0 || headings.length === 0)
+        return <EmptyState message={emptyMessage || "No data available."} />;
+
+    return (
+        <View>
+            {/* Expandable rows — year controlled by parent PeriodPicker */}
+            {headings.map((item: any, index: number) => {
+                const hasChildren = Array.isArray(item?.children) && item.children.length > 0;
+                const isOpen = !!expandedMap[item?.title];
+                return (
+                    <View key={index} style={el.rowWrap}>
+                        <TouchableOpacity
+                            style={el.rowHeader}
+                            onPress={() => hasChildren && toggleSection(item.title)}
+                            activeOpacity={hasChildren ? 0.7 : 1}
+                        >
+                            <View style={el.rowLeft}>
+                                <Text style={el.plusIcon}>+</Text>
+                                <Text style={el.rowTitle} numberOfLines={2}>{item?.title}</Text>
+                            </View>
+                            <View style={el.rowRight}>
+                                <Text style={el.rowValue}>{getValue(item?.title)}</Text>
+                                {hasChildren && (
+                                    <Text style={[el.chevron, isOpen && el.chevronOpen]}>›</Text>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+
+                        {isOpen && hasChildren && (
+                            <View style={el.childrenWrap}>
+                                {item.children.map((child: string, ci: number) => (
+                                    <View key={ci} style={el.childRow}>
+                                        <Text style={el.childLabel} numberOfLines={2}>{child}</Text>
+                                        <Text style={el.childValue}>{getValue(child, item.title)}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                );
+            })}
+        </View>
+    );
+}
+
 /* ── Balance Sheet Tab ────────────────────────────────── */
 export function BalanceSheetTab({ response, period }: { response: any; period: string }) {
-    return <HorizontalTable response={response} emptyMessage="No balance sheet data available." />;
+    return <ExpandableList response={response} period={period} emptyMessage="No balance sheet data available." />;
 }
 
 /* ── P&L / Cash Flow / Quarterly Tab ─────────────────── */
 export function PLStyleTab({ response, period, emptyMessage }: { response: any; period: string; emptyMessage?: string }) {
-    return <HorizontalTable response={response} emptyMessage={emptyMessage || "No data available."} />;
+    return <ExpandableList response={response} period={period} emptyMessage={emptyMessage || "No data available."} />;
 }
+
 
 /* ═══════════════════════════════════════════════════════════
    KEY RATIOS TAB
-   - Year selector pills (horizontal scroll)
-   - 2-column grid of ratio cards
+   Uses period passed from parent PeriodPicker (no internal pills)
 ═══════════════════════════════════════════════════════════ */
-export function KeyRatiosTab({ ratios, period: initialPeriod }: { ratios: Record<string, any> | undefined; period: string }) {
+export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> | undefined; period: string }) {
     const allPeriods = useMemo(() => {
         try { return getRatioPeriodKeys(ratios) || []; } catch { return []; }
     }, [ratios]);
 
-    const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod || allPeriods[0] || "");
-    const activePeriod = allPeriods.includes(selectedPeriod) ? selectedPeriod : (allPeriods[0] || "");
+    // Use parent period; fall back to first available
+    const activePeriod = (period && allPeriods.includes(period)) ? period : (allPeriods[0] || "");
 
     if (!ratios || allPeriods.length === 0) return <EmptyState message="No ratio data available." />;
 
@@ -245,21 +331,6 @@ export function KeyRatiosTab({ ratios, period: initialPeriod }: { ratios: Record
 
     return (
         <View>
-            {/* Year pills */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={rt.pillScroll}>
-                <View style={rt.pillRow}>
-                    {allPeriods.slice(0, 10).map(yr => (
-                        <TouchableOpacity key={yr}
-                            style={[rt.pill, activePeriod === yr && rt.pillOn]}
-                            onPress={() => setSelectedPeriod(yr)} activeOpacity={0.7}>
-                            <Text style={[rt.pillTxt, activePeriod === yr && rt.pillTxtOn]}>
-                                {formatPeriodLabel(yr)}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </ScrollView>
-
             {/* 2-column grid */}
             <FlatList
                 data={gridItems}
@@ -353,4 +424,96 @@ const rt = StyleSheet.create({
     cardLabel: { fontSize: 11, color: TEXT_MUTED, fontWeight: "500", marginBottom: 4, lineHeight: 15 },
     cardValue: { fontSize: 18, fontWeight: "800", color: TEXT_PRIMARY, marginBottom: 2 },
     cardYoy: { fontSize: 10, fontWeight: "600", marginTop: 2 },
+});
+
+const el = StyleSheet.create({
+    pillScroll: { marginBottom: 16 },
+    pillRow: { flexDirection: "row", gap: 8, paddingHorizontal: 4 },
+    pill: {
+        paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+        backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: BORDER_COLOR,
+    },
+    pillOn: { backgroundColor: ACCENT, borderColor: ACCENT },
+    pillTxt: { fontSize: 13, fontWeight: "600", color: TEXT_MUTED },
+    pillTxtOn: { color: "#fff" },
+
+    rowWrap: {
+        marginBottom: 8,
+    },
+    rowHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        backgroundColor: CARD_BG,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: BORDER_COLOR,
+    },
+    rowLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    plusIcon: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: ACCENT,
+        marginRight: 8,
+        width: 16,
+    },
+    rowTitle: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: TEXT_PRIMARY,
+        flex: 1,
+    },
+    rowRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    rowValue: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: TEXT_PRIMARY,
+        marginRight: 8,
+    },
+    chevron: {
+        fontSize: 18,
+        color: TEXT_MUTED,
+        transform: [{ rotate: '90deg' }],
+        marginLeft: 8,
+    },
+    chevronOpen: {
+        transform: [{ rotate: '-90deg' }],
+    },
+    childrenWrap: {
+        backgroundColor: '#FAFAFA',
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+        borderWidth: 1,
+        borderColor: BORDER_COLOR,
+        borderTopWidth: 0,
+        marginTop: -4,
+        paddingTop: 8,
+        paddingBottom: 8,
+    },
+    childRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        paddingLeft: 36,
+    },
+    childLabel: {
+        fontSize: 12,
+        color: TEXT_SECONDARY,
+        flex: 1,
+    },
+    childValue: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: TEXT_PRIMARY,
+    },
 });

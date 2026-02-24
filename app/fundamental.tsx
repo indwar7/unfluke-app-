@@ -64,19 +64,19 @@ interface SearchResult {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   INLINE RATIO CARD — styled exactly like the website
+   INLINE RATIO CARD — styled to fit 4 per row
 ═══════════════════════════════════════════════════════════ */
-const CARD_W = (SCREEN_W - 48) / 2;   // 2 cards per visible row, scrollable
+const CARD_W = (SCREEN_W - 48) / 4;   // 4 cards per visible row
 
 function RatioCardInline({ label, value, yoyChange }: { label: string; value: any; yoyChange?: number }) {
   const isPositive = (yoyChange ?? 0) >= 0;
   return (
     <View style={st.rcCard}>
       <Text style={st.rcLabel} numberOfLines={1}>{label}</Text>
-      <Text style={st.rcValue}>{fmt(value)}</Text>
+      <Text style={st.rcValue} numberOfLines={1}>{fmt(value)}</Text>
       {yoyChange !== undefined && yoyChange !== null && !isNaN(yoyChange) && (
-        <Text style={[st.rcYoy, { color: isPositive ? GREEN : RED }]}>
-          {isPositive ? "↗" : "↘"} {isPositive ? "+" : ""}{yoyChange.toFixed(2)}% YoY
+        <Text style={[st.rcYoy, { color: isPositive ? GREEN : RED }]} numberOfLines={1}>
+          {isPositive ? "↗" : "↘"} {isPositive ? "+" : ""}{yoyChange.toFixed(1)}%
         </Text>
       )}
     </View>
@@ -248,7 +248,7 @@ export default function FundamentalScreen() {
       if (activeTab === "Bulk and Block Deals") return <BulkBlockDealsTab capcode={capcode} />;
       if (activeTab === "Corporate Events") return <CorporateEventsTab capcode={capcode} />;
       if (activeTab === "Shareholding Patterns") return <ShareholdingPatternsTab capcode={capcode} />;
-      if (activeTab === "Documents") return <DocumentsTab capcode={capcode} />;
+      if (activeTab === "Documents") return <DocumentsTab capcode={capcode} companyName={companyName} />;
       if (!financials) return <Text style={st.emptyMsg}>No data. Try toggling S / C.</Text>;
       if (activeTab === "Balance Sheet")
         return <BalanceSheetTab response={financials.balanceSheet} period={period} />;
@@ -362,13 +362,11 @@ export default function FundamentalScreen() {
           {/* ── Ratio Cards Strip ── */}
           {ratioCards.length > 0 && !isLoading && (
             <View style={st.ratioStripWrap}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={st.ratioStripContent}
-                showsVerticalScrollIndicator={false}>
+              <View style={st.ratioStripContent}>
                 {ratioCards.map((c, i) => (
                   <RatioCardInline key={`${c.label}-${i}`} label={c.label} value={c.value} yoyChange={c.yoyChange} />
                 ))}
-              </ScrollView>
+              </View>
             </View>
           )}
 
@@ -395,7 +393,7 @@ export default function FundamentalScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
-    </ScreenWithHeader>
+    </ScreenWithHeader >
   );
 }
 
@@ -441,27 +439,29 @@ const st = StyleSheet.create({
     borderBottomColor: BORDER_COLOR,
   },
   ratioStripContent: {
-    paddingHorizontal: 16,
+    flexDirection: "row",
+    paddingHorizontal: 12,
     paddingVertical: 12,
+    gap: 6,
   },
   rcCard: {
     backgroundColor: CARD_BG,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    width: (SCREEN_W - 48) / 2,
-    marginRight: 10,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    flex: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
     elevation: 2,
     borderWidth: 1,
     borderColor: BORDER_COLOR,
+    justifyContent: 'center',
   },
-  rcLabel: { fontSize: 12, color: TEXT_MUTED, fontWeight: "500", marginBottom: 6 },
-  rcValue: { fontSize: 26, fontWeight: "800", color: TEXT_PRIMARY, marginBottom: 4 },
-  rcYoy: { fontSize: 11, fontWeight: "600", marginTop: 2 },
+  rcLabel: { fontSize: 8.5, color: TEXT_MUTED, fontWeight: "500", marginBottom: 4 },
+  rcValue: { fontSize: 13, fontWeight: "800", color: TEXT_PRIMARY, marginBottom: 2 },
+  rcYoy: { fontSize: 8, fontWeight: "600", marginTop: 2 },
 
   // ── Period Picker Row
   periodRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8, backgroundColor: BG, gap: 10 },

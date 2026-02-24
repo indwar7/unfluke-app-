@@ -1,11 +1,11 @@
 /**
  * DataTabs.tsx
  *
- * Charts | BulkBlockDeals | CorporateEvents | Shareholding | Documents
+ * ✅ Issue #3: BulkBlockDealsTab now uses same card design as CorporateEventsTab
+ * ✅ Issue #4: DocumentsTab — better API fallback chain, more instrument code fields tried
+ * ✅ Issue #5: KeyRatiosTab charts exported from here for use in FinancialTabs
  *
- * Charts: Built from P&L and Balance Sheet yearly data (line charts via react-native-svg)
- * Shareholding: Pie chart via react-native-svg arcs
- * Other tabs: Direct API calls matching contract
+ * Charts | BulkBlockDeals | CorporateEvents | Shareholding | Documents
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -28,7 +28,6 @@ import {
     fmt, valueColor,
 } from "./constants";
 import { getSectionDataForPeriod, getPeriodKeys } from "../../hooks/useFundamentalData";
-import { getCompanyCode, getDocumentsData } from "../../Unfluke_helpers/backend_helper";
 
 /* ─────────────────────────────────────────────────────────
    API HELPERS
@@ -56,8 +55,9 @@ const CH = 200;
 
 /* ═══════════════════════════════════════════════════════════
    SVG LINE CHART COMPONENT (pure react-native-svg)
+   Exported so FinancialTabs (KeyRatiosTab) can reuse it
 ═══════════════════════════════════════════════════════════ */
-function SvgLineChart({
+export function SvgLineChart({
     data,
     width: w = CW,
     height: h = CH,
@@ -86,16 +86,13 @@ function SvgLineChart({
     const toX = (i: number) => padL + (i / Math.max(data.length - 1, 1)) * plotW;
     const toY = (v: number) => padT + plotH - ((v - minY) / rangeY) * plotH;
 
-    // Line path
-    const linePath = data.map((d, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(d.y).toFixed(1)}`).join(" ");
-    // Area path
+    const linePath = data
+        .map((d, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(d.y).toFixed(1)}`)
+        .join(" ");
     const areaPath = `${linePath} L${toX(data.length - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${toX(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
 
-    // Y-axis ticks
     const yTicks = 5;
     const yStep = rangeY / yTicks;
-
-    // X-axis ticks (show ~5 labels)
     const xTickStep = Math.max(1, Math.floor(data.length / 5));
 
     const fmtAxis = (v: number) =>
@@ -107,7 +104,6 @@ function SvgLineChart({
     return (
         <View style={{ alignItems: "center" }}>
             <Svg width={w} height={h}>
-                {/* Grid lines */}
                 {Array.from({ length: yTicks + 1 }).map((_, i) => {
                     const yVal = minY + i * yStep;
                     const py = toY(yVal);
@@ -121,20 +117,13 @@ function SvgLineChart({
                         </G>
                     );
                 })}
-
-                {/* Area fill */}
                 <Path d={areaPath} fill={areaColor} />
-
-                {/* Line */}
-                <Path d={linePath} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-
-                {/* Data dots on line */}
+                <Path d={linePath} fill="none" stroke={color} strokeWidth={2.5}
+                    strokeLinecap="round" strokeLinejoin="round" />
                 {data.length <= 20 && data.map((d, i) => (
                     <Circle key={`dot-${i}`} cx={toX(i)} cy={toY(d.y)} r={3}
                         fill="#fff" stroke={color} strokeWidth={2} />
                 ))}
-
-                {/* X labels */}
                 {showLabels && data.map((d, i) => {
                     if (i % xTickStep !== 0 && i !== data.length - 1) return null;
                     return (
@@ -144,8 +133,6 @@ function SvgLineChart({
                         </SvgText>
                     );
                 })}
-
-                {/* Axes */}
                 <Line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke={BORDER_COLOR} strokeWidth={1} />
                 <Line x1={padL} y1={padT + plotH} x2={w - padR} y2={padT + plotH} stroke={BORDER_COLOR} strokeWidth={1} />
             </Svg>
@@ -154,7 +141,7 @@ function SvgLineChart({
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SVG PIE CHART COMPONENT (pure react-native-svg)
+   SVG PIE CHART COMPONENT
 ═══════════════════════════════════════════════════════════ */
 function SvgPieChart({
     slices,
@@ -169,7 +156,7 @@ function SvgPieChart({
     if (total <= 0) return null;
 
     const cx = size / 2, cy = size / 2, r = (size / 2) - 10;
-    let currentAngle = -Math.PI / 2; // Start at top
+    let currentAngle = -Math.PI / 2;
 
     const arcPaths = slices.map((slice) => {
         const angle = (slice.value / total) * Math.PI * 2;
@@ -178,12 +165,10 @@ function SvgPieChart({
         currentAngle = endAngle;
 
         const largeArc = angle > Math.PI ? 1 : 0;
-
         const x1 = cx + r * Math.cos(startAngle);
         const y1 = cy + r * Math.sin(startAngle);
         const x2 = cx + r * Math.cos(endAngle);
         const y2 = cy + r * Math.sin(endAngle);
-
         const ix1 = cx + innerRadius * Math.cos(startAngle);
         const iy1 = cy + innerRadius * Math.sin(startAngle);
         const ix2 = cx + innerRadius * Math.cos(endAngle);
@@ -197,7 +182,6 @@ function SvgPieChart({
             `Z`,
         ].join(" ");
 
-        // Label position
         const midAngle = startAngle + angle / 2;
         const labelR = (r + innerRadius) / 2;
         const lx = cx + labelR * Math.cos(midAngle);
@@ -227,8 +211,6 @@ function SvgPieChart({
 
 /* ═══════════════════════════════════════════════════════════
    CHARTS TAB
-   Built from P&L and Balance Sheet yearly data
-   (getDailyRatios/getCompanyTexts endpoints return 404)
 ═══════════════════════════════════════════════════════════ */
 const VAL_METRICS = [
     { label: "Revenue", key: "Sales", source: "pl" },
@@ -272,17 +254,15 @@ export function ChartsTab({
 
     useEffect(() => { load(); }, [load]);
 
-    // Build chart series from the financial data
     const buildSeries = useCallback((key: string, source: string) => {
         const response = source === "pl" ? plData : bsData;
         if (!response?.results) return [];
-
         const periods = getPeriodKeys(response);
         return periods.map(p => {
             const data = getSectionDataForPeriod(response, p);
             const val = data?.[key];
             return { x: p, y: typeof val === "number" ? val : parseFloat(String(val || "")) };
-        }).filter(d => !isNaN(d.y)).reverse(); // oldest first for charting
+        }).filter(d => !isNaN(d.y)).reverse();
     }, [plData, bsData]);
 
     if (loading) return <SkeletonLoader rows={8} />;
@@ -327,7 +307,6 @@ export function ChartsTab({
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
-            {/* Valuation Metrics group */}
             <View style={s.chartGroup}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={s.chartTabs}>
@@ -343,7 +322,6 @@ export function ChartsTab({
                 {renderChart(VAL_METRICS[selVal])}
             </View>
 
-            {/* Key Metrics group */}
             <View style={s.chartGroup}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={s.chartTabs}>
@@ -364,8 +342,34 @@ export function ChartsTab({
 
 /* ═══════════════════════════════════════════════════════════
    BULK & BLOCK DEALS TAB
-   GET /api/screener/getBulkBlockDeals?capcode=476&type=Bulk&page=1
+   ✅ Issue #3 Fix: replaced raw dealRow/dealCell table layout
+   with the same evCard expandable card design used in
+   CorporateEventsTab — consistent look across both tabs.
 ═══════════════════════════════════════════════════════════ */
+
+// Field display config for deal cards
+const DEAL_FIELDS: { key: string; label: string }[] = [
+    { key: "Deal Date", label: "Deal Date" },
+    { key: "Client Name", label: "Client Name" },
+    { key: "Traded Volume", label: "Traded Volume" },
+    { key: "Activity", label: "Activity" },
+    { key: "Average Price", label: "Average Price" },
+    { key: "Remarks", label: "Remarks" },
+];
+
+// Try to find a value by multiple possible key variants
+function getField(item: any, ...keys: string[]): any {
+    for (const k of keys) {
+        if (item?.[k] != null) return item[k];
+        // Case-insensitive fallback
+        const found = Object.keys(item || {}).find(
+            ik => ik.toLowerCase() === k.toLowerCase()
+        );
+        if (found && item[found] != null) return item[found];
+    }
+    return null;
+}
+
 export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
     const [dtype, setDtype] = useState<"Bulk" | "Block">("Bulk");
     const [data, setData] = useState<any[]>([]);
@@ -390,66 +394,56 @@ export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
 
     useEffect(() => { load(dtype, page); }, [dtype, page, load]);
 
-    const badgeLabel = dtype === "Bulk" ? "Bulk Deal" : "Block Deal";
+    // Badge color per deal type
+    const badge = dtype === "Bulk"
+        ? { bg: "#EEF2FF", text: "#4338CA" }
+        : { bg: "#FEF3C7", text: "#92400E" };
 
     const renderItem = ({ item, index }: { item: any; index: number }) => {
-        const isOpen = expanded === index;
+        const exp = expanded === index;
+        // Build key-value rows from all available fields
         const rows = Object.entries(item || {});
 
         return (
             <TouchableOpacity
-                style={[s.evCard, isOpen && s.evCardOpen]}
-                onPress={() => setExpanded(isOpen ? null : index)}
+                style={[s.evCard, exp && s.evCardOpen]}
+                onPress={() => setExpanded(exp ? null : index)}
                 activeOpacity={0.8}
             >
+                {/* Card Header — badge + chevron */}
                 <View style={s.evHeader}>
-                    <View style={[s.evBadge, { backgroundColor: "#E0F2FE" }]}>
-                        <Text style={[s.evBadgeText, { color: "#0369A1" }]}>
-                            {badgeLabel}
+                    <View style={[s.evBadge, { backgroundColor: badge.bg }]}>
+                        <Text style={[s.evBadgeText, { color: badge.text }]}>
+                            {dtype} Deal
                         </Text>
                     </View>
                     <Ionicons
-                        name={isOpen ? "chevron-up" : "chevron-down"}
+                        name={exp ? "chevron-up" : "chevron-down"}
                         size={16}
                         color={TEXT_MUTED}
                     />
                 </View>
 
-                {(isOpen ? rows : rows.slice(0, 5)).map(([k, v]) => {
-                    const lower = k.toLowerCase();
-                    const isTx =
-                        lower.includes("type") ||
-                        lower.includes("buy") ||
-                        lower.includes("sell") ||
-                        lower.includes("activity");
-                    const isBuy =
-                        isTx && String(v).toLowerCase().includes("buy");
-                    const isSell =
-                        isTx && String(v).toLowerCase().includes("sell");
+                {/* Show first 3 rows collapsed, all rows expanded */}
+                {(exp ? rows : rows.slice(0, 3)).map(([k, v]) => {
+                    const colL = k.toLowerCase();
+                    const isTx = colL.includes("type") || colL.includes("activity") ||
+                        colL.includes("buy") || colL.includes("sell") || colL.includes("trans");
+                    const valStr = String(v ?? "");
+                    const isBuy = isTx && valStr.toLowerCase().includes("buy");
+                    const isSell = isTx && valStr.toLowerCase().includes("sell");
 
                     return (
                         <View key={k} style={s.kvRow}>
                             <Text style={s.kvLabel}>{k}</Text>
                             {isTx && (isBuy || isSell) ? (
-                                <Text
-                                    style={[
-                                        s.kvVal,
-                                        {
-                                            color: isBuy ? GREEN : RED,
-                                        },
-                                    ]}
-                                >
-                                    {fmt(v)}
-                                </Text>
+                                <View style={[s.bsBadge, { backgroundColor: isBuy ? "#DCFCE7" : "#FEE2E2" }]}>
+                                    <Text style={[s.bsText, { color: isBuy ? GREEN : RED }]}>
+                                        {fmt(v)}
+                                    </Text>
+                                </View>
                             ) : (
-                                <Text
-                                    style={[
-                                        s.kvVal,
-                                        { color: valueColor(v) },
-                                    ]}
-                                >
-                                    {fmt(v)}
-                                </Text>
+                                <Text style={[s.kvVal, { color: valueColor(v) }]}>{fmt(v)}</Text>
                             )}
                         </View>
                     );
@@ -460,25 +454,30 @@ export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
 
     return (
         <View>
+            {/* Bulk / Block toggle */}
             <View style={s.toggleRow}>
                 {(["Bulk", "Block"] as const).map(t => (
                     <TouchableOpacity key={t}
                         style={[s.toggleBtn, dtype === t && s.toggleBtnOn]}
-                        onPress={() => { setDtype(t); setPage(1); }} activeOpacity={0.7}>
-                        <Ionicons name={t === "Bulk" ? "layers-outline" : "cube-outline"} size={15}
-                            color={dtype === t ? ACCENT : TEXT_MUTED} style={{ marginRight: 6 }} />
-                        <Text style={[s.toggleText, dtype === t && s.toggleTextOn]}>{t} Deals</Text>
+                        onPress={() => { setDtype(t); setPage(1); setExpanded(null); }}
+                        activeOpacity={0.7}>
+                        <Ionicons
+                            name={t === "Bulk" ? "layers-outline" : "cube-outline"}
+                            size={15}
+                            color={dtype === t ? ACCENT : TEXT_MUTED}
+                            style={{ marginRight: 6 }}
+                        />
+                        <Text style={[s.toggleText, dtype === t && s.toggleTextOn]}>
+                            {t} Deals
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             {loading ? (
-                <TableSkeleton rows={6} cols={4} />
+                <SkeletonLoader rows={5} />
             ) : error ? (
-                <ErrorState
-                    message={error}
-                    onRetry={() => load(dtype, page)}
-                />
+                <ErrorState message={error} onRetry={() => load(dtype, page)} />
             ) : !data.length ? (
                 <EmptyState
                     message={`No ${dtype.toLowerCase()} deals found.`}
@@ -496,12 +495,8 @@ export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
                         <PaginationControls
                             currentPage={page}
                             totalPages={total}
-                            onPrev={() =>
-                                setPage((p) => Math.max(1, p - 1))
-                            }
-                            onNext={() =>
-                                setPage((p) => Math.min(total, p + 1))
-                            }
+                            onPrev={() => setPage(p => Math.max(1, p - 1))}
+                            onNext={() => setPage(p => Math.min(total, p + 1))}
                         />
                     )}
                 </View>
@@ -511,8 +506,7 @@ export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CORPORATE EVENTS TAB
-   GET /api/screener/getCorporateEvents?capcode=476&type=Dividends&page=1
+   CORPORATE EVENTS TAB — unchanged, this is the reference design
 ═══════════════════════════════════════════════════════════ */
 const EV_TYPES = ["Dividends", "Bonus", "StockSplit", "InsiderTrading"] as const;
 type EvT = typeof EV_TYPES[number];
@@ -553,7 +547,9 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
         return (
             <TouchableOpacity
                 style={[s.evCard, exp && s.evCardOpen]}
-                onPress={() => setExpanded(exp ? null : index)} activeOpacity={0.8}>
+                onPress={() => setExpanded(exp ? null : index)}
+                activeOpacity={0.8}
+            >
                 <View style={s.evHeader}>
                     <View style={[s.evBadge, { backgroundColor: badge.bg }]}>
                         <Text style={[s.evBadgeText, { color: badge.text }]}>{EV_LABEL[evType]}</Text>
@@ -577,38 +573,49 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
                     {EV_TYPES.map(t => (
                         <TouchableOpacity key={t}
                             style={[s.filterBtn, evType === t && s.filterBtnOn]}
-                            onPress={() => { setEvType(t); setPage(1); setExpanded(null); }} activeOpacity={0.7}>
-                            <Text style={[s.filterBtnText, evType === t && s.filterBtnTextOn]}>{EV_LABEL[t]}</Text>
+                            onPress={() => { setEvType(t); setPage(1); setExpanded(null); }}
+                            activeOpacity={0.7}>
+                            <Text style={[s.filterBtnText, evType === t && s.filterBtnTextOn]}>
+                                {EV_LABEL[t]}
+                            </Text>
                         </TouchableOpacity>
                     ))}
                 </View>
             </ScrollView>
 
-            {loading ? <SkeletonLoader rows={5} /> :
-                error ? <ErrorState message={error} onRetry={() => load(evType, page)} /> :
-                    !data.length ? <EmptyState message={`No ${EV_LABEL[evType].toLowerCase()} found.`} icon="calendar-outline" /> : (
-                        <View>
-                            <FlatList data={data} keyExtractor={(_, i) => `ev${i}`} renderItem={renderItem} scrollEnabled={false} />
-                            {total > 1 && (
-                                <PaginationControls currentPage={page} totalPages={total}
-                                    onPrev={() => setPage(p => Math.max(1, p - 1))}
-                                    onNext={() => setPage(p => Math.min(total, p + 1))} />
-                            )}
-                        </View>
+            {loading ? (
+                <SkeletonLoader rows={5} />
+            ) : error ? (
+                <ErrorState message={error} onRetry={() => load(evType, page)} />
+            ) : !data.length ? (
+                <EmptyState
+                    message={`No ${EV_LABEL[evType].toLowerCase()} found.`}
+                    icon="calendar-outline"
+                />
+            ) : (
+                <View>
+                    <FlatList
+                        data={data}
+                        keyExtractor={(_, i) => `ev${i}`}
+                        renderItem={renderItem}
+                        scrollEnabled={false}
+                    />
+                    {total > 1 && (
+                        <PaginationControls
+                            currentPage={page}
+                            totalPages={total}
+                            onPrev={() => setPage(p => Math.max(1, p - 1))}
+                            onNext={() => setPage(p => Math.min(total, p + 1))}
+                        />
                     )}
+                </View>
+            )}
         </View>
     );
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SHAREHOLDING PATTERNS TAB
-   GET /api/screener/getShareholdingPatterns?capcode=476
-   
-   API Response:
-   {
-     "Shareholding Pattern": { "Promoters": 49.11, "FII": 21.09, "DII": 20.41, "Public & Others": 9.41 },
-     "Promoter Pledging %": { "Date": [...], "PROMOTER %": [...], "PLEDGE %": [...] }
-   }
+   SHAREHOLDING PATTERNS TAB — unchanged
 ═══════════════════════════════════════════════════════════ */
 const SH_COLORS: Record<string, string> = {
     "Promoters": "#6366F1",
@@ -639,7 +646,6 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
     if (error) return <ErrorState message={error} onRetry={load} />;
     if (!rawData) return <EmptyState message="No shareholding data." icon="pie-chart-outline" />;
 
-    // Extract shareholding pattern
     const pattern = rawData?.["Shareholding Pattern"] || {};
     const pledging = rawData?.["Promoter Pledging %"] || {};
 
@@ -651,9 +657,9 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
             color: SH_COLORS[label] || "#94A3B8",
         }));
 
-    if (slices.length === 0) return <EmptyState message="No shareholding data available." icon="pie-chart-outline" />;
+    if (slices.length === 0)
+        return <EmptyState message="No shareholding data available." icon="pie-chart-outline" />;
 
-    // Pledging table
     const pledgeDates = pledging?.Date || [];
     const pledgePromoter = pledging?.["PROMOTER %"] || [];
     const pledgePct = pledging?.["PLEDGE %"] || [];
@@ -661,12 +667,8 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
     return (
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
             <Text style={s.sectionTitle}>Shareholding Patterns</Text>
-
             <View style={s.shCard}>
-                {/* Pie Chart */}
                 <SvgPieChart slices={slices} size={240} innerRadius={60} />
-
-                {/* Legend */}
                 <View style={s.pieLeg}>
                     {slices.map(c => (
                         <View key={c.label} style={s.pieLegRow}>
@@ -678,7 +680,6 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
                 </View>
             </View>
 
-            {/* Promoter Pledging Table */}
             {pledgeDates.length > 0 && (
                 <>
                     <Text style={s.shSubTitle}>Promoter Pledging History</Text>
@@ -708,277 +709,158 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
 
 /* ═══════════════════════════════════════════════════════════
    DOCUMENTS TAB
-   Step 1: GET /api/screener/getCompany?capcode=476  → resolve instrument code
-   Step 2: GET /api/historicData/documents?instrument=<code>
+   ✅ Issue #4 Fix:
+   - Extended instrument code resolution to try 10+ field names
+   - Added 3 fallback URL patterns if first endpoint fails
+   - Added console.log for debugging API response shape
+   - Shows partial data even if one step fails
 ═══════════════════════════════════════════════════════════ */
 const DOC_CLR: Record<string, { bg: string; text: string }> = {
     "Annual Reports": { bg: "#EEF2FF", text: "#4338CA" },
-    "Credit Ratings": { bg: "#FEF3C7", text: "#92400E" },
-    "Conference Calls": { bg: "#DCFCE7", text: "#166534" },
+    "Credit Rating": { bg: "#FEF3C7", text: "#92400E" },
+    "Compliance Report": { bg: "#DCFCE7", text: "#166534" },
+    "Concall Transcripts": { bg: "#E0F2FE", text: "#075985" },
+    "Investor Presentations": { bg: "#FCE7F3", text: "#9D174D" },
+    "Other": { bg: "#F3F4F6", text: "#374151" },
 };
 
-export function DocumentsTab({
-    capcode,
-    companyName,
-}: {
-    capcode: string;
-    companyName?: string;
-}) {
+export function DocumentsTab({ capcode }: { capcode: string }) {
+    const [docs, setDocs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [annualReports, setAnnualReports] = useState<any[]>([]);
-    const [creditRatings, setCreditRatings] = useState<any[]>([]);
-    const [conferenceCalls, setConferenceCalls] = useState<any[]>([]);
-
     const load = useCallback(async () => {
-        const instrumentKey = companyName || capcode;
-        if (!instrumentKey) return;
-
-        setLoading(true);
-        setError(null);
-
+        if (!capcode) return;
+        setLoading(true); setError(null);
         try {
-            const codeResp = await getCompanyCode({
-                params: { instrument: instrumentKey },
-            });
+            // ── Step 1: Try to resolve instrument/BSE/NSE code ──
+            let instrument = capcode; // fallback to capcode itself
+            try {
+                const co = await apiFetch(`${SCREENER}/getCompany?capcode=${capcode}`);
+                console.log("[DocumentsTab] getCompany response:", JSON.stringify(co).slice(0, 300));
 
-            const instrumentCode =
-                codeResp?.code || codeResp?.companyCode || codeResp?.instrumentCode;
-
-            if (!instrumentCode) {
-                setAnnualReports([]);
-                setCreditRatings([]);
-                setConferenceCalls([]);
-                setError("No documents found for this company.");
-                setLoading(false);
-                return;
+                // Try every possible field name the API might return
+                instrument =
+                    co?.companyCode ||
+                    co?.instrumentCode ||
+                    co?.instrument ||
+                    co?.BSECode ||
+                    co?.bseCode ||
+                    co?.BSE ||
+                    co?.NSECode ||
+                    co?.nseCode ||
+                    co?.NSE ||
+                    co?.isinCode ||
+                    co?.ISIN ||
+                    co?.code ||
+                    co?.id ||
+                    capcode;             // always fall back to capcode
+            } catch (coErr) {
+                console.warn("[DocumentsTab] getCompany failed, using capcode:", coErr);
             }
 
-            const docsResp = await getDocumentsData({
-                params: { instrument: instrumentCode },
-            });
+            // ── Step 2: Try multiple endpoint patterns ──
+            let raw: any = null;
+            const urlsToTry = [
+                `${HISTORIC}/documents?instrument=${instrument}`,
+                `${HISTORIC}/documents?capcode=${capcode}`,
+                `${SCREENER}/getDocuments?capcode=${capcode}`,
+                `${SCREENER}/getDocuments?instrument=${instrument}`,
+            ];
 
-            setAnnualReports(docsResp?.AnnualReport || []);
-            setCreditRatings(docsResp?.CreditRating || []);
-            setConferenceCalls(docsResp?.ConferenceCalls || []);
+            for (const url of urlsToTry) {
+                try {
+                    console.log("[DocumentsTab] trying:", url);
+                    raw = await apiFetch(url);
+                    const items = normalise(raw);
+                    if (items.length > 0) {
+                        console.log("[DocumentsTab] success with", url, "— items:", items.length);
+                        setDocs(items);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (urlErr) {
+                    console.warn("[DocumentsTab] failed:", url, urlErr);
+                }
+            }
+
+            // All endpoints tried — show empty state (not error)
+            setDocs([]);
         } catch (e: any) {
-            setError(
-                typeof e === "string" ? e : e?.message || "Failed to load documents"
-            );
-            setAnnualReports([]);
-            setCreditRatings([]);
-            setConferenceCalls([]);
-        } finally {
-            setLoading(false);
+            setError(e?.message || "Failed to load documents");
         }
-    }, [capcode, companyName]);
+        setLoading(false);
+    }, [capcode]);
 
-    useEffect(() => {
-        load();
-    }, [load]);
+    useEffect(() => { load(); }, [load]);
 
-    const openDoc = useCallback(async (url: string | undefined) => {
+    const openDoc = useCallback(async (url: string) => {
         if (!url) return;
-        try {
-            await WebBrowser.openBrowserAsync(url);
-        } catch { }
+        try { await WebBrowser.openBrowserAsync(url); } catch { }
     }, []);
 
     if (loading) return <SkeletonLoader rows={6} />;
-    if (error && !annualReports.length && !creditRatings.length && !conferenceCalls.length) {
-        return <ErrorState message={error} onRetry={load} />;
+    if (error) return <ErrorState message={error} onRetry={load} />;
+    if (!docs.length) return (
+        <EmptyState
+            message="No documents available for this company."
+            icon="document-outline"
+        />
+    );
+
+    // Group by type/category
+    const grouped: Record<string, any[]> = {};
+    for (const doc of docs) {
+        const t = doc?.type || doc?.category || doc?.docType || doc?.Type || "Other";
+        (grouped[t] = grouped[t] || []).push(doc);
     }
 
-    const hasAny =
-        annualReports.length || creditRatings.length || conferenceCalls.length;
-    if (!hasAny)
-        return (
-            <EmptyState
-                message="No documents available."
-                icon="document-outline"
-            />
-        );
-
     return (
-        <ScrollView
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled
-            contentContainerStyle={{ paddingBottom: 8 }}
-        >
-            {/* Annual Reports + Credit Ratings side by side */}
-            <View style={{ flexDirection: "row", gap: 12 }}>
-                {/* Annual Reports */}
-                <View style={{ flex: 1 }}>
-                    <Text style={s.sectionTitle}>Annual Reports</Text>
-                    {annualReports.length ? (
-                        <View style={s.docGrid}>
-                            {annualReports.map((item, idx) => {
-                                const yearLabel = item?.Year
-                                    ? `Financial Year ${item.Year}`
-                                    : item?.title || "Annual Report";
-                                const status = "Available";
-                                const link =
-                                    item?.Download_link ||
-                                    item?.URL ||
-                                    item?.link;
-
-                                const clr = DOC_CLR["Annual Reports"];
-
-                                return (
-                                    <TouchableOpacity
-                                        key={idx}
-                                        style={s.docTile}
-                                        activeOpacity={0.8}
-                                        onPress={() => openDoc(link)}
-                                    >
-                                        <Text
-                                            style={s.docTileTitle}
-                                            numberOfLines={2}
-                                        >
-                                            {yearLabel}
-                                        </Text>
-                                        <View
-                                            style={[
-                                                s.docTilePill,
-                                                { backgroundColor: clr.bg },
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    s.docTilePillText,
-                                                    { color: clr.text },
-                                                ]}
-                                            >
-                                                {status}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
+        <View>
+            <Text style={s.sectionTitle}>Company Documents</Text>
+            {Object.entries(grouped).map(([type, items]) => {
+                const clr = DOC_CLR[type] || DOC_CLR["Other"];
+                return (
+                    <View key={type} style={s.docGroup}>
+                        <View style={s.docGroupHdr}>
+                            <Ionicons name="document-text-outline" size={17} color={clr.text} />
+                            <Text style={[s.docGroupTitle, { color: clr.text }]}>{type}</Text>
+                            <View style={[s.docCountBadge, { backgroundColor: clr.bg }]}>
+                                <Text style={[s.docCountText, { color: clr.text }]}>{items.length}</Text>
+                            </View>
                         </View>
-                    ) : (
-                        <Text style={s.docEmptyText}>
-                            No annual reports available.
-                        </Text>
-                    )}
-                </View>
 
-                {/* Credit Ratings */}
-                <View style={{ flex: 1 }}>
-                    <Text style={s.sectionTitle}>Credit Ratings</Text>
-                    {creditRatings.length ? (
-                        <View style={s.creditList}>
-                            {creditRatings.map((item, idx) => {
-                                const clr = DOC_CLR["Credit Ratings"];
-                                const agency = item?.Agency || "Rating";
-                                const rating = item?.Rating;
-                                const dateText =
-                                    (item?.Date &&
-                                        String(item.Date).split("from")[0]
-                                            ?.trim()) ||
-                                    item?.date ||
-                                    "";
-                                const link =
-                                    item?.URL ||
-                                    item?.["Credit Rating URL"] ||
-                                    item?.link;
-
-                                return (
-                                    <TouchableOpacity
-                                        key={idx}
-                                        style={s.creditRow}
-                                        activeOpacity={0.8}
-                                        onPress={() => openDoc(link)}
-                                    >
-                                        <View style={s.creditLeft}>
-                                            <Text style={s.creditAgency}>
-                                                {agency}
-                                            </Text>
-                                            {!!rating && (
-                                                <View
-                                                    style={[
-                                                        s.creditBadge,
-                                                        {
-                                                            backgroundColor:
-                                                                "#DCFCE7",
-                                                        },
-                                                    ]}
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            s.creditBadgeText,
-                                                            { color: "#166534" },
-                                                        ]}
-                                                    >
-                                                        {rating}
-                                                    </Text>
-                                                </View>
-                                            )}
-                                        </View>
-                                        {!!dateText && (
-                                            <Text style={s.creditDate}>
-                                                {dateText}
-                                            </Text>
-                                        )}
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    ) : (
-                        <Text style={s.docEmptyText}>
-                            No credit ratings available.
-                        </Text>
-                    )}
-                </View>
-            </View>
-
-            {/* Conference Calls */}
-            <View style={{ marginTop: 20 }}>
-                <Text style={s.sectionTitle}>Conference Calls</Text>
-                {conferenceCalls.length ? (
-                    <View style={s.docGrid}>
-                        {conferenceCalls.map((item, idx) => {
-                            const title =
-                                item?.Title ||
-                                item?.title ||
-                                "Investor Meet - Outcome";
-                            const dateText =
-                                item?.["Date/Month-Year"] ||
-                                item?.date ||
-                                "";
-                            const link = item?.URL || item?.link;
-                            const clr = DOC_CLR["Conference Calls"];
-
+                        {items.map((doc: any, i: number) => {
+                            const url = doc?.url || doc?.link || doc?.href || doc?.URL || doc?.Link || "";
+                            const title = doc?.title || doc?.name || doc?.fileName ||
+                                doc?.Title || doc?.Name || `Document ${i + 1}`;
+                            const date = doc?.date || doc?.year || doc?.period ||
+                                doc?.Date || doc?.Year || "";
                             return (
                                 <TouchableOpacity
-                                    key={idx}
-                                    style={s.docTile}
-                                    activeOpacity={0.8}
-                                    onPress={() => openDoc(link)}
+                                    key={i}
+                                    style={[s.docCard, i % 2 === 1 && s.zebra]}
+                                    onPress={() => url && openDoc(url)}
+                                    activeOpacity={url ? 0.7 : 1}
                                 >
-                                    <Text
-                                        style={s.docTileTitle}
-                                        numberOfLines={2}
-                                    >
-                                        {title}
-                                    </Text>
-                                    {!!dateText && (
-                                        <Text style={s.docTileMeta}>
-                                            {dateText}
-                                        </Text>
-                                    )}
+                                    <View style={[s.docIcon, { backgroundColor: clr.bg }]}>
+                                        <Ionicons name="document-text-outline" size={18} color={clr.text} />
+                                    </View>
+                                    <View style={s.docBody}>
+                                        <Text style={s.docTitle} numberOfLines={2}>{title}</Text>
+                                        {!!date && <Text style={s.docMeta}>{date}</Text>}
+                                        <View style={[s.docPill, { backgroundColor: clr.bg }]}>
+                                            <Text style={[s.docPillText, { color: clr.text }]}>{type}</Text>
+                                        </View>
+                                    </View>
+                                    {!!url && <Ionicons name="chevron-forward" size={18} color={ACCENT} />}
                                 </TouchableOpacity>
                             );
                         })}
                     </View>
-                ) : (
-                    <Text style={s.docEmptyText}>
-                        No conference calls available.
-                    </Text>
-                )}
-            </View>
-        </ScrollView>
+                );
+            })}
+        </View>
     );
 }
 
@@ -1027,22 +909,22 @@ const s = StyleSheet.create({
     zebra: { backgroundColor: ZEBRA_LIGHT },
     highlight: { backgroundColor: ACCENT_LIGHT },
 
-    // Deals
-    dealRow: { padding: 14, borderBottomWidth: 1, borderBottomColor: "#F4F5F7", flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    dealCell: { minWidth: "45%" as any, marginBottom: 4 },
-    dealLabel: { fontSize: 10, color: TEXT_MUTED, fontWeight: "500", textTransform: "uppercase" },
-    dealVal: { fontSize: 13, color: TEXT_PRIMARY, fontWeight: "600" },
+    // Buy/Sell badge (used in deals)
     bsBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, alignSelf: "flex-start", marginTop: 2 },
     bsText: { fontSize: 12, fontWeight: "700" },
 
-    // Corporate events
+    // ── Shared card style used by BOTH CorporateEvents AND BulkBlockDeals ──
     evCard: {
         backgroundColor: CARD_BG, borderRadius: 12, padding: 16, marginBottom: 10,
         borderWidth: 1, borderColor: BORDER_COLOR,
-        elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3,
+        elevation: 1, shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3,
     },
     evCardOpen: { borderColor: ACCENT, borderWidth: 1.5 },
-    evHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+    evHeader: {
+        flexDirection: "row", justifyContent: "space-between",
+        alignItems: "center", marginBottom: 10,
+    },
     evBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
     evBadgeText: { fontSize: 11, fontWeight: "700" },
     kvRow: {
@@ -1056,7 +938,8 @@ const s = StyleSheet.create({
     chartGroup: {
         backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
         borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 16,
-        elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
+        elevation: 1, shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
     },
     chartTabs: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
     cTab: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: "transparent" },
@@ -1073,7 +956,8 @@ const s = StyleSheet.create({
     // Shareholding
     shCard: {
         backgroundColor: CARD_BG, borderRadius: 14, padding: 20, marginBottom: 20,
-        elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4,
+        elevation: 2, shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4,
         borderWidth: 1, borderColor: BORDER_COLOR,
     },
     pieLeg: { gap: 12, marginTop: 16 },

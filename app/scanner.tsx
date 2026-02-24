@@ -13,9 +13,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native";
+import { ScreenWithHeader } from "../components/AppHeader";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -51,9 +51,8 @@ import { deepCopy } from "../components/UnflukeMain/BasicBacktester/StrategyLegs
 import { backendSocket } from "../socket/socket";
 
 const Scanner = ({ shared }) => {
-  
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+
+  const isDark = false; // Force light mode — app does not use dark mode
   const dynamicStyles = styles(isDark);
 
   const [type, setType] = useState();
@@ -83,7 +82,7 @@ const Scanner = ({ shared }) => {
   const [scannerResults, setScannerResults] = useState([]);
   const [link, setLink] = useState("");
   const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [headers, setHeaders] = useState([]);
 
   const [lastElem, setLastElem] = useState({});
@@ -118,7 +117,7 @@ const Scanner = ({ shared }) => {
     });
     return flattened;
   };
-console.log("state this is",route?.params?.state)
+  console.log("state this is", route?.params?.state)
   // Convert flat index to x,y coordinates
   const flatIndexToCoords = (flatIndex) => {
     let count = 0;
@@ -366,9 +365,9 @@ console.log("state this is",route?.params?.state)
       type === "scanner"
         ? "technical"
         : type === "fundamental"
-        ? "fundamental"
-        : "alert";
-  
+          ? "fundamental"
+          : "alert";
+
     if (checkEquation(expression)) {
       if (scannerState.name.trim() === "") {
         Toast.show({
@@ -385,9 +384,8 @@ console.log("state this is",route?.params?.state)
 
       try {
         let date = new Date();
-        let todaysDate = `${date.getDate()}/${
-          date.getMonth() + 1
-        }/${date.getFullYear()}`;
+        let todaysDate = `${date.getDate()}/${date.getMonth() + 1
+          }/${date.getFullYear()}`;
         let timeAdded = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 
         if (route?.params?.state) {
@@ -425,7 +423,7 @@ console.log("state this is",route?.params?.state)
 
                       setSaving(false);
 
-                                    console.log("yha se 1")
+                      console.log("yha se 1")
 
                       if (res && res.msg) {
                         Toast.show({
@@ -435,11 +433,11 @@ console.log("state this is",route?.params?.state)
                           position: "top",
                           visibilityTime: 5000,
                         });
-                        
+
                         // Navigate after a short delay to show toast
                         setTimeout(() => {
-                          scannerType === "alert"? navigation.navigate("scannerhome",{alertsScanner:"true"}):
-                          navigation.navigate("scannerhome");
+                          scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
+                            navigation.navigate("scannerhome");
                         }, 500);
                       }
 
@@ -460,7 +458,7 @@ console.log("state this is",route?.params?.state)
 
             setSaving(false);
 
-              console.log("yha se 2")
+            console.log("yha se 2")
 
             if (res && res.msg) {
               Toast.show({
@@ -472,9 +470,9 @@ console.log("state this is",route?.params?.state)
               });
               // Navigate after a short delay
               setTimeout(() => {
-                          scannerType === "alert"? navigation.navigate("scannerhome",{alertsScanner:"true"}):
-                          navigation.navigate("scannerhome");
-                        }, 500);
+                scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
+                  navigation.navigate("scannerhome");
+              }, 500);
             }
           }
         } else {
@@ -491,8 +489,8 @@ console.log("state this is",route?.params?.state)
 
           setSaving(false);
 
-              console.log("yha se 3",res,res.msg)
-        
+          console.log("yha se 3", res, res.msg)
+
           if (res && res.msg) {
             Toast.show({
               type: "success",
@@ -501,12 +499,12 @@ console.log("state this is",route?.params?.state)
               position: "top",
               visibilityTime: 5000,
             });
-            
+
             // Navigate after a short delay
             setTimeout(() => {
-                          scannerType === "alert"? navigation.navigate("scannerhome",{alertsScanner:"true"}):
-                          navigation.navigate("scannerhome");
-                        }, 500);
+              scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
+                navigation.navigate("scannerhome");
+            }, 500);
           }
         }
       } catch (error) {
@@ -544,7 +542,7 @@ console.log("state this is",route?.params?.state)
     if (checkEquation(expression) && auth.user) {
       setLoading(true);
 
-     const res = await axios
+      const res = await axios
         .get(`${Config.BACKEND_URL}/api/stocks/`, {
           params: {
             ...scannerState,
@@ -555,13 +553,13 @@ console.log("state this is",route?.params?.state)
         })
         .then((res) => {
           Toast.show({
-                type: "success",
-                text1: "Result is Generating",
-                text2: "Please scroll down to view results",
-                position: "top",
-                visibilityTime: 4000,
-              });
-          if (res ) {
+            type: "success",
+            text1: "Result is Generating",
+            text2: "Please scroll down to view results",
+            position: "top",
+            visibilityTime: 4000,
+          });
+          if (res) {
             setStatusMessage(res.message);
           }
         })
@@ -569,29 +567,29 @@ console.log("state this is",route?.params?.state)
           console.log(err);
           setLoading(false);
           Toast.show({
-                type: "error",
-                text1: "Error",
-                text2: "Failed to submit scanner",
-                position: "top",
-                visibilityTime: 4000,
-              });
+            type: "error",
+            text1: "Error",
+            text2: "Failed to submit scanner",
+            position: "top",
+            visibilityTime: 4000,
+          });
         });
     } else {
-       Toast.show({
-                type: "error",
-                text1: "Error",
-                text2: "Please create a valid expression",
-                position: "top",
-                visibilityTime: 4000,
-              });
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please create a valid expression",
+        position: "top",
+        visibilityTime: 4000,
+      });
     }
   };
 
   const handleAllChanges = (e) => {
     const name = e.target.name;
     const value = e.target.value;
-   console.log("asdfs",name)
-      console.log("asdfs",value)
+    console.log("asdfs", name)
+    console.log("asdfs", value)
     if (name === "segment") {
       dispatch(handleChange({ name, value: parseInt(value) }));
     } else if (name === "duplicate" || name === "showLatestRes") {
@@ -696,7 +694,7 @@ console.log("state this is",route?.params?.state)
           const isValidResult = shared
             ? data.windowId == windowId.current
             : data.userId === auth.user._id &&
-              data.windowId == windowId.current;
+            data.windowId == windowId.current;
 
           if (isValidResult) {
             setLoading(false);
@@ -758,233 +756,235 @@ console.log("state this is",route?.params?.state)
 
   /***** RENDER *****/
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={dynamicStyles.keyboardView}
-    >
-      <ScrollView
-        style={dynamicStyles.container}
-        contentContainerStyle={dynamicStyles.contentContainer}
+    <ScreenWithHeader>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={dynamicStyles.keyboardView}
       >
-        <View style={dynamicStyles.mainContent}>
-          {/* Header */}
-          {!shared && (
-            <View style={dynamicStyles.header}>
-              <Text style={dynamicStyles.headerTitle}>
-  {!type
-    ? ""
-    : type === "scanner"
-    ? "SCANNER HOME"
-    : type === "fundamental"
-    ? "Fundamental Scanner"
-    : "ALERTS HOME"}
-</Text>
-
-            </View>
-          )}
-
-          {/* Scanner Name & Description */}
-          <TouchableOpacity
-            activeOpacity={shared ? 0.7 : 1}
-            onPress={handleSharedPress}
-          >
-            <View style={dynamicStyles.inputContainer}>
-              <Text style={dynamicStyles.label}>
-                {type !== "alerts" ? "Scanner Name" : "Alert Name"}
-              </Text>
-              <TextInput
-                style={dynamicStyles.input}
-                placeholder="Enter scanner name"
-                placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
-                value={scannerState.name}
-                onChangeText={(text) =>
-                  handleAllChanges({ target: { name: "name", value: text } })
-                }
-                editable={!shared}
-              />
-            </View>
-
-            <View style={dynamicStyles.inputContainer}>
-              <Text style={dynamicStyles.label}>
-                {type !== "alerts"
-                  ? "Scanner Description"
-                  : "Alert Description"}
-              </Text>
-              <TextInput
-                style={[dynamicStyles.input, dynamicStyles.textArea]}
-                placeholder="Enter scanner description"
-                placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
-                value={scannerState.description}
-                onChangeText={(text) =>
-                  handleAllChanges({
-                    target: { name: "description", value: text },
-                  })
-                }
-                multiline
-                numberOfLines={4}
-                editable={!shared}
-              />
-            </View>
-          </TouchableOpacity>
-
-          {/* Three Column Layout: Indicators | Filters | Misc */}
-          <TouchableOpacity
-            activeOpacity={shared ? 0.7 : 1}
-            onPress={handleSharedPress}
-          >
-            <View style={dynamicStyles.threeColumnContainer}>
-              {type !== "fundamental" ? (
-                <>
-                  <View style={dynamicStyles.column}>
-                    <IndicatorList
-                      indicators={indicators}
-                      onIndicatorTap={handleIndicatorTap}
-                      type={type}
-                    />
-                  </View>
-                  <View style={dynamicStyles.column}>
-                    <ScannerFilters
-                      scannerState={scannerState}
-                      handleChange={handleAllChanges}
-                      type={type}
-                    />
-                  </View>
-                  <View style={dynamicStyles.column}>
-                    <ScannerMisc onItemTap={handleMiscTap} type={type} />
-                  </View>
-                </>
-              ) : (
-                <>
-                  <View style={dynamicStyles.column}>
-                    <IndicatorList
-                      indicators={indicators}
-                      onIndicatorTap={handleIndicatorTap}
-                      type={type}
-                    />
-                  </View>
-                  <View style={dynamicStyles.column}>
-                    <IndicatorList
-                      indicators={scannerIndicators}
-                      onIndicatorTap={handleIndicatorTap}
-                      type={""}
-                    />
-                  </View>
-                  <View style={dynamicStyles.column}>
-                    <ScannerMisc onItemTap={handleMiscTap} type={type} />
-                  </View>
-                </>
-              )}
-            </View>
-          </TouchableOpacity>
-
-          {/* Expression - AT BOTTOM */}
-          <TouchableOpacity
-            activeOpacity={shared ? 0.7 : 1}
-            onPress={handleSharedPress}
-          >
-            <ScannerExpression
-              expression={expression}
-              cursorPosition={cursorPosition}
-              onCursorChange={setCursorPosition}
-              onRemoveAt={removeElemAt}
-              onEditAt={editElemAt}
-            />
-          </TouchableOpacity>
-          {/* Action Buttons - MOVED HERE (BEFORE EXPRESSION) */}
-          <View style={dynamicStyles.buttonContainer}>
+        <ScrollView
+          style={dynamicStyles.container}
+          contentContainerStyle={dynamicStyles.contentContainer}
+        >
+          <View style={dynamicStyles.mainContent}>
+            {/* Header */}
             {!shared && (
-              <TouchableOpacity
-                style={[dynamicStyles.button, dynamicStyles.buttonSecondary]}
-                onPress={handleSaving}
-                disabled={loading}
-              >
-                <Text style={dynamicStyles.buttonTextSecondary}>Save</Text>
-              </TouchableOpacity>
+              <View style={dynamicStyles.header}>
+                <Text style={dynamicStyles.headerTitle}>
+                  {!type
+                    ? ""
+                    : type === "scanner"
+                      ? "SCANNER HOME"
+                      : type === "fundamental"
+                        ? "Fundamental Scanner"
+                        : "ALERTS HOME"}
+                </Text>
+
+              </View>
             )}
 
-            {(type === "scanner" || type === "alerts") &&
-              auth &&
-              scannerState &&
-              auth.user._id !== scannerState.owner &&
-              !shared && (
+            {/* Scanner Name & Description */}
+            <TouchableOpacity
+              activeOpacity={shared ? 0.7 : 1}
+              onPress={handleSharedPress}
+            >
+              <View style={dynamicStyles.inputContainer}>
+                <Text style={dynamicStyles.label}>
+                  {type !== "alerts" ? "Scanner Name" : "Alert Name"}
+                </Text>
+                <TextInput
+                  style={dynamicStyles.input}
+                  placeholder="Enter scanner name"
+                  placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
+                  value={scannerState.name}
+                  onChangeText={(text) =>
+                    handleAllChanges({ target: { name: "name", value: text } })
+                  }
+                  editable={!shared}
+                />
+              </View>
+
+              <View style={dynamicStyles.inputContainer}>
+                <Text style={dynamicStyles.label}>
+                  {type !== "alerts"
+                    ? "Scanner Description"
+                    : "Alert Description"}
+                </Text>
+                <TextInput
+                  style={[dynamicStyles.input, dynamicStyles.textArea]}
+                  placeholder="Enter scanner description"
+                  placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
+                  value={scannerState.description}
+                  onChangeText={(text) =>
+                    handleAllChanges({
+                      target: { name: "description", value: text },
+                    })
+                  }
+                  multiline
+                  numberOfLines={4}
+                  editable={!shared}
+                />
+              </View>
+            </TouchableOpacity>
+
+            {/* Three Column Layout: Indicators | Filters | Misc */}
+            <TouchableOpacity
+              activeOpacity={shared ? 0.7 : 1}
+              onPress={handleSharedPress}
+            >
+              <View style={dynamicStyles.threeColumnContainer}>
+                {type !== "fundamental" ? (
+                  <>
+                    <View style={dynamicStyles.column}>
+                      <IndicatorList
+                        indicators={indicators}
+                        onIndicatorTap={handleIndicatorTap}
+                        type={type}
+                      />
+                    </View>
+                    <View style={dynamicStyles.column}>
+                      <ScannerFilters
+                        scannerState={scannerState}
+                        handleChange={handleAllChanges}
+                        type={type}
+                      />
+                    </View>
+                    <View style={dynamicStyles.column}>
+                      <ScannerMisc onItemTap={handleMiscTap} type={type} />
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={dynamicStyles.column}>
+                      <IndicatorList
+                        indicators={indicators}
+                        onIndicatorTap={handleIndicatorTap}
+                        type={type}
+                      />
+                    </View>
+                    <View style={dynamicStyles.column}>
+                      <IndicatorList
+                        indicators={scannerIndicators}
+                        onIndicatorTap={handleIndicatorTap}
+                        type={""}
+                      />
+                    </View>
+                    <View style={dynamicStyles.column}>
+                      <ScannerMisc onItemTap={handleMiscTap} type={type} />
+                    </View>
+                  </>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            {/* Expression - AT BOTTOM */}
+            <TouchableOpacity
+              activeOpacity={shared ? 0.7 : 1}
+              onPress={handleSharedPress}
+            >
+              <ScannerExpression
+                expression={expression}
+                cursorPosition={cursorPosition}
+                onCursorChange={setCursorPosition}
+                onRemoveAt={removeElemAt}
+                onEditAt={editElemAt}
+              />
+            </TouchableOpacity>
+            {/* Action Buttons - MOVED HERE (BEFORE EXPRESSION) */}
+            <View style={dynamicStyles.buttonContainer}>
+              {!shared && (
                 <TouchableOpacity
                   style={[dynamicStyles.button, dynamicStyles.buttonSecondary]}
-                  onPress={handleShare}
+                  onPress={handleSaving}
                   disabled={loading}
                 >
-                  <Text style={dynamicStyles.buttonTextSecondary}>Share</Text>
+                  <Text style={dynamicStyles.buttonTextSecondary}>Save</Text>
                 </TouchableOpacity>
               )}
 
-            {(type === "scanner" || type === "fundamental") && (
-              <TouchableOpacity
-                style={[dynamicStyles.button, dynamicStyles.buttonPrimary]}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                <Text style={dynamicStyles.buttonTextPrimary}>Submit</Text>
-              </TouchableOpacity>
+              {(type === "scanner" || type === "alerts") &&
+                auth &&
+                scannerState &&
+                auth.user._id !== scannerState.owner &&
+                !shared && (
+                  <TouchableOpacity
+                    style={[dynamicStyles.button, dynamicStyles.buttonSecondary]}
+                    onPress={handleShare}
+                    disabled={loading}
+                  >
+                    <Text style={dynamicStyles.buttonTextSecondary}>Share</Text>
+                  </TouchableOpacity>
+                )}
+
+              {(type === "scanner" || type === "fundamental") && (
+                <TouchableOpacity
+                  style={[dynamicStyles.button, dynamicStyles.buttonPrimary]}
+                  onPress={handleSubmit}
+                  disabled={loading}
+                >
+                  <Text style={dynamicStyles.buttonTextPrimary}>Submit</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {/* Loading Spinner */}
+            {loading && (
+              <View style={dynamicStyles.loadingCard}>
+                <ActivityIndicator size="large" color="#FFFFFF" />
+                <Text style={dynamicStyles.loadingText}>{statusMessage}</Text>
+              </View>
+            )}
+
+            {/* Results */}
+            {scannerResults.length > 0 && (
+              <View>
+                {resultsMessage ? (
+                  <View style={dynamicStyles.warningCard}>
+                    <Text style={dynamicStyles.warningText}>
+                      {resultsMessage}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <Text style={dynamicStyles.resultsInfo}>
+                  The results are based on a {scannerState.timeframe} timeframe.
+                </Text>
+
+                <ScannerResults
+                  results={scannerResults}
+                  downloadUrl={link}
+                  type={type}
+                  headers={headers}
+                />
+              </View>
             )}
           </View>
-          {/* Loading Spinner */}
-            {loading && (
-          <View style={dynamicStyles.loadingCard}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={dynamicStyles.loadingText}>{statusMessage}</Text>
-          </View>
-        )}
 
-          {/* Results */}
-          {scannerResults.length > 0 && (
-            <View>
-              {resultsMessage ? (
-                <View style={dynamicStyles.warningCard}>
-                  <Text style={dynamicStyles.warningText}>
-                    {resultsMessage}
-                  </Text>
-                </View>
-              ) : null}
-
-              <Text style={dynamicStyles.resultsInfo}>
-                The results are based on a {scannerState.timeframe} timeframe.
-              </Text>
-
-              <ScannerResults
-                results={scannerResults}
-                downloadUrl={link}
-                type={type}
-                headers={headers}
-              />
-            </View>
+          {/* Modals */}
+          {indicatorModalOpen && (
+            <IndicatorModal
+              closeModal={closeModal}
+              settings={lastElem}
+              type={type}
+              stock_symbol={scannerState.segment1a || "Unknown"}
+            />
           )}
-        </View>
+          {numberModalOpen && (
+            <NumberOpModal closeModal={closeModal} settings={lastElem} />
+          )}
+          {ltpModalOpen && (
+            <LTPModal closeModal={closeModal} settings={lastElem} />
+          )}
+          {offsetModalOpen && (
+            <OffsetModal
+              closeModal={closeModal}
+              settings={lastElem}
+              indicators={indicators}
+            />
+          )}
 
-        {/* Modals */}
-        {indicatorModalOpen && (
-          <IndicatorModal
-            closeModal={closeModal}
-            settings={lastElem}
-            type={type}
-            stock_symbol={scannerState.segment1a || "Unknown"}
-          />
-        )}
-        {numberModalOpen && (
-          <NumberOpModal closeModal={closeModal} settings={lastElem} />
-        )}
-        {ltpModalOpen && (
-          <LTPModal closeModal={closeModal} settings={lastElem} />
-        )}
-        {offsetModalOpen && (
-          <OffsetModal
-            closeModal={closeModal}
-            settings={lastElem}
-            indicators={indicators}
-          />
-        )}
-
-        {/* Toast Container */}
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {/* Toast Container */}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenWithHeader>
   );
 };
 
@@ -1000,7 +1000,6 @@ const styles = (isDark) =>
     },
     contentContainer: {
       padding: 12,
-      paddingTop: 90,
     },
     mainContent: {
       flex: 1,
@@ -1035,7 +1034,7 @@ const styles = (isDark) =>
       textAlignVertical: "top",
       minHeight: 100,
     },
-    
+
     threeColumnContainer: {
       flexDirection: "column",
       gap: 12,

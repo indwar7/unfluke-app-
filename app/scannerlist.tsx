@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { ChevronRight, Eye, Plus } from "lucide-react-native";
 import axios from "axios";
+import { ScreenWithHeader } from "../components/AppHeader";
 
 const ScannerList = () => {
   const navigation = useNavigation();
@@ -77,15 +78,15 @@ const ScannerList = () => {
     <TouchableOpacity
       style={styles.scannerItem}
       onPress={() =>
-        navigation.navigate(alerts ? "alert" : "scanner",  {
-          state:item,
-                type:
-                  type === "technical"
-                    ? "scanner"
-                    : type === "fundamental"
-                    ? "fundamental"
-                    : "alerts",
-              })
+        navigation.navigate(alerts ? "alert" : "scanner", {
+          state: item,
+          type:
+            type === "technical"
+              ? "scanner"
+              : type === "fundamental"
+                ? "fundamental"
+                : "alerts",
+        })
       }
     >
       <View style={styles.avatar}>
@@ -138,7 +139,7 @@ const ScannerList = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScreenWithHeader>
       {/* Original Header Container - Kept exactly as you had it */}
       <View style={styles.headerContainer}>
         <View>
@@ -169,8 +170,8 @@ const ScannerList = () => {
                   type === "technical"
                     ? "scanner"
                     : type === "fundamental"
-                    ? "fundamental"
-                    : "alerts",
+                      ? "fundamental"
+                      : "alerts",
               })
             }
           >
@@ -206,16 +207,14 @@ const ScannerList = () => {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+    </ScreenWithHeader>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    // backgroundColor: "#F8FAFC",
+    flex: 1,
     backgroundColor: "#f3f4f6",
-    paddingTop: 85,
     padding: 12,
     paddingBottom: 10,
   },

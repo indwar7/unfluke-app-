@@ -7,8 +7,6 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
-  SafeAreaView,
-  StatusBar,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,7 +29,7 @@ import { fetchBasicStrategyDetails } from "../../apis/BasicBacktester";
 import { ChevronRight, Eye, Plus } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
-import Icon from "react-native-vector-icons/Ionicons";
+import { ScreenWithHeader } from "../AppHeader";
 
 const cardWidth = "100%"; // 2 columns with proper spacing
 
@@ -86,7 +84,7 @@ const BasicBacktesterMainPage = () => {
   };
 
   const navigateToSaved = () => {
-    dispatch(clearValues()); 
+    dispatch(clearValues());
     navigation.navigate("basic-backtester-home");
   };
 
@@ -145,13 +143,13 @@ const BasicBacktesterMainPage = () => {
 
     try {
 
-     const stratDetails = await fetchBasicStrategyDetails(axios,item.user, item._id);
+      const stratDetails = await fetchBasicStrategyDetails(axios, item.user, item._id);
 
-     if(stratDetails){
+      if (stratDetails) {
         navigation.navigate(`basic-backtester`, {
-            state: stratDetails
+          state: stratDetails
         })
-    }
+      }
 
     } catch (error) {
       console.error("Error editing strategy:", error);
@@ -186,7 +184,7 @@ const BasicBacktesterMainPage = () => {
               style={styles.actionButton}
               activeOpacity={0.7}
             >
-              <Icon name="pencil" size={18} color="#6B7280" />
+              <Ionicons name="pencil" size={18} color="#6B7280" />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -194,7 +192,7 @@ const BasicBacktesterMainPage = () => {
               style={styles.actionButton}
               activeOpacity={0.7}
             >
-              <Icon name="eye" size={18} color="#6B7280" />
+              <Ionicons name="eye" size={18} color="#6B7280" />
             </TouchableOpacity>
           </View>
         </View>
@@ -215,7 +213,7 @@ const BasicBacktesterMainPage = () => {
           </View>
 
           <View style={styles.dateSection}>
-            <Icon name="calendar" size={12} color="#9CA3AF" />
+            <Ionicons name="calendar" size={12} color="#9CA3AF" />
             <Text style={styles.dateText}>{item.createdOn}</Text>
           </View>
         </View>
@@ -224,43 +222,42 @@ const BasicBacktesterMainPage = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+    <ScreenWithHeader>
 
       <View style={styles.pageContent}>
         {/* Header Section */}
         <View style={styles.headerContainer}>
-                {/* Left section: Title + breadcrumb */}
-                <View>
-                  <Text style={styles.title}>Backtester Main</Text>
-                  <View style={styles.breadcrumb}>
-                    <Text style={styles.breadcrumbText}>Pages</Text>
-                    <ChevronRight size={13} color="#6B7280" />
-                    <Text style={styles.breadcrumbText}>Basic Backtester</Text>
-                  </View>
-                </View>
-        
-                {/* Right section: Buttons */}
-                <View style={styles.buttonGroup}>
-                  <TouchableOpacity
-                    style={styles.viewSavedButton}
-                    onPress={() => navigateToSaved()}
-                  >
-                    <Eye color="#000" size={12} />
-                    <Text style={styles.viewSavedButtonText}>View saved</Text>
-                  </TouchableOpacity>
-        
-                  <TouchableOpacity
-                    style={styles.createNewButton}
-                    onPress={() => handleClick()}
-                  >
-                    <Plus color="white" size={12} strokeWidth={3} />
-        
-                    <Text style={styles.createNewButtonText}>Create new</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-       
+          {/* Left section: Title + breadcrumb */}
+          <View>
+            <Text style={styles.title}>Backtester Main</Text>
+            <View style={styles.breadcrumb}>
+              <Text style={styles.breadcrumbText}>Pages</Text>
+              <ChevronRight size={13} color="#6B7280" />
+              <Text style={styles.breadcrumbText}>Basic Backtester</Text>
+            </View>
+          </View>
+
+          {/* Right section: Buttons */}
+          <View style={styles.buttonGroup}>
+            <TouchableOpacity
+              style={styles.viewSavedButton}
+              onPress={() => navigateToSaved()}
+            >
+              <Eye color="#000" size={12} />
+              <Text style={styles.viewSavedButtonText}>View saved</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.createNewButton}
+              onPress={() => handleClick()}
+            >
+              <Plus color="white" size={12} strokeWidth={3} />
+
+              <Text style={styles.createNewButtonText}>Create new</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
 
         {/* Content Section */}
         {loading ? (
@@ -306,7 +303,7 @@ const BasicBacktesterMainPage = () => {
           </ScrollView>
         )}
       </View>
-    </SafeAreaView>
+    </ScreenWithHeader>
   );
 };
 
@@ -314,7 +311,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-    paddingTop: 85,
   },
   pageContent: {
     flex: 1,
@@ -326,7 +322,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     flexWrap: "wrap",
-    gap:10
+    gap: 10
   },
   title: {
     fontSize: 17,

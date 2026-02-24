@@ -21,24 +21,25 @@ import { deepCopy } from "../components/UnflukeMain/Utils/common_vars";
 import * as Clipboard from "expo-clipboard";
 import { Config } from "../helpers/config";
 import { useLocalSearchParams } from "expo-router";
+import { ScreenWithHeader } from "../components/AppHeader";
 
-const ScannerHomePage = ({  }) => {
+const ScannerHomePage = ({ }) => {
   const route = useRoute()
   const { alertsSideBar } = useLocalSearchParams();
 
-  const [alertsScanner,setAS] = useState(route?.params?.alertsScanner)
+  const [alertsScanner, setAS] = useState(route?.params?.alertsScanner)
 
-  const [alerts,setAlerts] = useState(alertsSideBar === "true"? alertsSideBar : alertsScanner)
+  const [alerts, setAlerts] = useState(alertsSideBar === "true" ? alertsSideBar : alertsScanner)
 
   useEffect(() => {
-    if (alertsSideBar === "true" || alertsScanner=== "true") {
+    if (alertsSideBar === "true" || alertsScanner === "true") {
       setAlerts(true);
     } else {
       setAlerts(false);
     }
-  }, [alertsSideBar, alertsScanner ]); 
+  }, [alertsSideBar, alertsScanner]);
 
-   console.log("asdfsadf",alerts,alertsSideBar)
+  console.log("asdfsadf", alerts, alertsSideBar)
 
   const navigation = useNavigation();
   const auth = useSelector((state) => state.Login);
@@ -135,18 +136,18 @@ const ScannerHomePage = ({  }) => {
       scanner.scannerType === "technical"
         ? "scanner"
         : scanner.scannerType === "fundamental"
-        ? "scanner"
-        : "alerts";
- console.log()
+          ? "scanner"
+          : "alerts";
+    console.log()
     navigation.navigate(routeName, {
-  state: scanner,
-  type:
-    scanner.scannerType === "technical"
-      ? "scanner"
-      : scanner.scannerType === "fundamental"
-      ? "fundamental"
-      : "alerts",
-});
+      state: scanner,
+      type:
+        scanner.scannerType === "technical"
+          ? "scanner"
+          : scanner.scannerType === "fundamental"
+            ? "fundamental"
+            : "alerts",
+    });
 
   };
 
@@ -242,7 +243,7 @@ const ScannerHomePage = ({  }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScreenWithHeader>
       {/* Delete Confirmation Modal */}
       <Modal
         visible={deleteModalOpen}
@@ -283,7 +284,6 @@ const ScannerHomePage = ({  }) => {
           </Text>
           <View style={styles.breadcrumb}>
             <Text style={styles.breadcrumbText}>Pages / </Text>
-            {/* <ChevronRight size={13} color="#6B7280" /> */}
             <Text style={styles.breadcrumbText}>
               {!alerts ? " Scanners" : "Alerts"}
             </Text>
@@ -299,9 +299,9 @@ const ScannerHomePage = ({  }) => {
               style={styles.createButton}
               onPress={() =>
                 navigation.navigate(
-                 "scanner",
+                  "scanner",
                   {
-                    type: alerts === "true"? "alerts":"scanner",
+                    type: alerts === "true" ? "alerts" : "scanner",
                   }
                 )
               }
@@ -356,73 +356,49 @@ const ScannerHomePage = ({  }) => {
             </View>
           ) : (
             <>
-              {/* Table */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-                <View style={styles.tableContainer}>
-                  {/* Table Header */}
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.headerCell, { width: 180 }]}>
-                      {!alerts ? "Scanner Name" : "Alert Name"}
-                    </Text>
-                    <Text style={[styles.headerCell, { width: 120 }]}>
-                      Type
-                    </Text>
-                    <Text style={[styles.headerCell, { width: 120 }]}>
-                      Creation Date
-                    </Text>
-                    <Text style={[styles.headerCell, { width: 120 }]}>
-                      Actions
+              {/* List cards */}
+              {paginatedData.map((item, index) => (
+                <TouchableOpacity
+                  key={item._id || index}
+                  style={styles.listCard}
+                  onPress={() => handleEdit(item)}
+                  activeOpacity={0.75}
+                >
+                  {/* Avatar */}
+                  <View style={styles.listAvatar}>
+                    <Text style={styles.listAvatarText}>
+                      {(item.name?.[0] || "S").toUpperCase()}
                     </Text>
                   </View>
 
-                  {/* Table Body */}
-                  {paginatedData.map((item, index) => (
-                    <View
-                      key={item._id || index}
-                      style={[
-                        styles.tableRow,
-                        index % 2 === 0 ? styles.evenRow : styles.oddRow,
-                      ]}
+                  {/* Info */}
+                  <View style={styles.listInfo}>
+                    <Text style={styles.listName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.listMeta}>
+                      {getTypeLabel(item.scannerType)}{item.date ? `  ·  ${item.date}` : ""}
+                    </Text>
+                  </View>
+
+                  {/* Actions */}
+                  <View style={styles.listActions}>
+                    <TouchableOpacity
+                      onPress={() => handleShare(item._id)}
+                      style={styles.actionButton}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      {/* Scanner/Alert Name */}
-                      <TouchableOpacity
-                        style={{ width: 180 }}
-                        onPress={() => handleEdit(item)}
-                      >
-                        <Text style={styles.linkText} numberOfLines={2}>
-                          {item.name}
-                        </Text>
-                      </TouchableOpacity>
-
-                      {/* Type */}
-                      <Text style={[styles.cellText, { width: 120 }]}>
-                        {getTypeLabel(item.scannerType)}
-                      </Text>
-
-                      {/* Creation Date */}
-                      <Text style={[styles.cellText, { width: 120 }]}>
-                        {item.date || "-"}
-                      </Text>
-
-                      {/* Actions */}
-                      <View style={[styles.actionsCell, { width: 120 }]}>
-                        <TouchableOpacity
-                          onPress={() => handleShare(item._id)}
-                          style={styles.actionButton}
-                        >
-                          <Ionicons name="share" size={18} color="#3b82f6" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => handleDelete(item._id, item.owner)}
-                          style={styles.actionButton2}
-                        >
-                          <Ionicons name="trash" size={18} color="#dc2626" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
+                      <Ionicons name="share-outline" size={18} color="#3b82f6" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDelete(item._id, item.owner)}
+                      style={styles.actionButton}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                    </TouchableOpacity>
+                    <ChevronRight size={16} color="#9ca3af" />
+                  </View>
+                </TouchableOpacity>
+              ))}
 
               {/* Pagination */}
               {renderPagination()}
@@ -430,7 +406,7 @@ const ScannerHomePage = ({  }) => {
           )}
         </View>
       </ScrollView>
-    </View>
+    </ScreenWithHeader>
   );
 };
 
@@ -438,12 +414,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f9fafb",
-    paddingTop: 60,
   },
   scrollView: {
     flex: 1,
     paddingHorizontal: 12,
-    paddingTop: 24,
+    paddingTop: 16,
   },
   header: {
     marginBottom: 16,
@@ -612,18 +587,56 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingHorizontal: 8,
   },
-  actionsCell: {
+  // ── List card design (replaces table)
+  listCard: {
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  actionButton: {
-    padding: 4,
+  listAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#2563EB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
-  actionButton2: {
-    padding: 4,
-    paddingLeft:8
+  listAvatarText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
   },
+  listInfo: {
+    flex: 1,
+  },
+  listName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 3,
+  },
+  listMeta: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  listActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  actionButton: { padding: 6 },
+  actionButton2: { padding: 6 },
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",

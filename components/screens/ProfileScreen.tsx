@@ -43,8 +43,8 @@ import { KeyboardAvoidingView } from "react-native";
 const Settings = () => {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("1");
-const { width } = useWindowDimensions()
-const isTablet = width >= 768;
+  const { width } = useWindowDimensions()
+  const isTablet = width >= 768;
 
   // Password state
   const [oldPassword, setOldPassword] = useState("");
@@ -108,10 +108,10 @@ const isTablet = width >= 768;
       // Get stored response from AsyncStorage
       const respStorageString = await AsyncStorage.getItem("response");
       const respStorage = respStorageString ? JSON.parse(respStorageString) : null;
-      
+
       // Get stored email from AsyncStorage
       const storedEmail = await AsyncStorage.getItem("email") || email;
-      
+
       if (!respStorage || !respStorage.hash) {
         Toast.show({
           type: "error",
@@ -148,14 +148,14 @@ const isTablet = width >= 768;
 
       // Store updated user in AsyncStorage
       await AsyncStorage.setItem("authUser", JSON.stringify(updatedUser));
-      
+
       // Remove response from AsyncStorage
       await AsyncStorage.removeItem("response");
 
       dispatch(loginSuccess(updatedUser));
       setIsEmailVerified(true);
       setEmail(storedEmail);
-      
+
       Toast.show({
         type: "success",
         text1: verificationResp.msg || "Email verified",
@@ -288,13 +288,13 @@ const isTablet = width >= 768;
       });
       if (resp.phone) {
         resp.email = email;
-        
+
         // Store response in AsyncStorage
         await AsyncStorage.setItem("response", JSON.stringify(resp));
-        
+
         // Store email in AsyncStorage
         await AsyncStorage.setItem("email", email);
-        
+
         toggleModal();
       } else {
         Toast.show({
@@ -326,12 +326,12 @@ const isTablet = width >= 768;
           plan.tier == 0
             ? "Free"
             : plan.tier == 1
-            ? "Basic"
-            : plan.tier == 2
-            ? "Advanced"
-            : plan.tier == 3
-            ? "Pro"
-            : "No Info Found";
+              ? "Basic"
+              : plan.tier == 2
+                ? "Advanced"
+                : plan.tier == 3
+                  ? "Pro"
+                  : "No Info Found";
         setAccountInfo({
           plan: planName,
           totalAlerts: plan.live_scanner_emails,
@@ -354,425 +354,428 @@ const isTablet = width >= 768;
   }, [dispatch]);
 
   return (
-     <KeyboardAvoidingView 
-    style={{ flex: 1 }}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-    keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-  >
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.content}>
-        <View style={isTablet ? styles.rowLayout : styles.columnLayout}>
-          {/* Left Profile Card */}
-          <View style={[isTablet ? styles.leftCard : styles.fullWidthCard,{    width: isTablet ? "25%" : "100%",
-}]}>
-            <View style={styles.card}>
-              {/* User Avatar */}
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <Feather name="user" size={40} color="#9CA3AF" />
-                </View>
-              </View>
-
-              {/* User Name */}
-              <Text style={styles.userName}>{user.name}</Text>
-
-              {/* Account Info */}
-              <View style={styles.accountInfoContainer}>
-                <Text style={styles.accountInfoLabel}>Account Information</Text>
-                <View style={styles.planBadge}>
-                  <Text style={styles.planBadgeText}>{accountInfo.plan}</Text>
-                </View>
-              </View>
-
-              {/* Alerts Notification Section */}
-              <View style={styles.alertsSection}>
-                <Text style={styles.alertsSectionTitle}>Alerts Notification</Text>
-
-                {/* Telegram */}
-                <View style={styles.alertRow}>
-                  <View style={styles.telegramIcon}>
-                    <MaterialCommunityIcons
-                      name="send-circle"
-                      size={18}
-                      color="white"
-                    />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={isTablet ? styles.rowLayout : styles.columnLayout}>
+            {/* Left Profile Card */}
+            <View style={[isTablet ? styles.leftCard : styles.fullWidthCard, {
+              width: isTablet ? "25%" : "100%",
+            }]}>
+              <View style={styles.card}>
+                {/* User Avatar */}
+                <View style={styles.avatarContainer}>
+                  <View style={styles.avatar}>
+                    <Feather name="user" size={40} color="#9CA3AF" />
                   </View>
-                  {user.telegramUsername ? (
-                    <View style={styles.alertInputContainer}>
-                      <TextInput
-                        style={styles.alertInput}
-                        value={user.telegramUsername}
-                        editable={false}
-                        placeholder="Username"
-                      />
-                      <View style={styles.alertActions}>
-                        <TouchableOpacity
-                          style={styles.openButton}
-                          onPress={() => Linking.openURL("https://t.me/unflukebotbot")}
-                        >
-                          <MaterialIcons name="open-in-new" size={14} color="white"/>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.closeButton}
-                          onPress={deactivateTelegram}
-                        >
-                          <Ionicons name="close" size={14} color="white" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ) : (
-                    <View style={styles.alertInputContainer}>
-                      <TextInput
-                        style={styles.alertInput}
-                        placeholder="Username"
-                      />
-                      <TouchableOpacity style={styles.warningButton}>
-                        <Ionicons name="warning" size={14} color="white" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
                 </View>
 
-                {/* Email */}
-                <View style={styles.alertRow}>
-                  <View style={styles.emailIcon}>
-                    <MaterialCommunityIcons name="email" size={18} color="white"/>
+                {/* User Name */}
+                <Text style={styles.userName}>{user.name}</Text>
+
+                {/* Account Info */}
+                <View style={styles.accountInfoContainer}>
+                  <Text style={styles.accountInfoLabel}>Account Information</Text>
+                  <View style={styles.planBadge}>
+                    <Text style={styles.planBadgeText}>{accountInfo.plan}</Text>
                   </View>
-                  {isEmailVerified ? (
-                    <View style={styles.alertInputContainer}>
-                      <TextInput
-                        style={styles.alertInput}
-                        value={email || user.email}
-                        editable={false}
+                </View>
+
+                {/* Alerts Notification Section */}
+                <View style={styles.alertsSection}>
+                  <Text style={styles.alertsSectionTitle}>Alerts Notification</Text>
+
+                  {/* Telegram */}
+                  <View style={styles.alertRow}>
+                    <View style={styles.telegramIcon}>
+                      <MaterialCommunityIcons
+                        name="send-circle"
+                        size={18}
+                        color="white"
                       />
-                      <View style={styles.checkButton}>
-                        <Ionicons name="checkmark" size={14} color="white" />
-                      </View>
                     </View>
-                  ) : (
-                    <View style={styles.alertInputContainer}>
-                      <TextInput
-                        style={styles.alertInput}
-                        value={email}
-                        onChangeText={setEmail}
-                        placeholder="Enter email"
-                      />
-                      <TouchableOpacity
-                        style={styles.warningButton}
-                        onPress={handleSendOtp}
-                        disabled={isSendingOtp}
-                      >
-                        {isSendingOtp ? (
-                          <ActivityIndicator size="small" color="white" />
-                        ) : (
-                          <MaterialIcons name="open-in-new" size={14} color="white" />
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-
-                {/* Email Verification Status */}
-                <View
-                  style={[
-                    styles.verificationBox,
-                    isEmailVerified
-                      ? styles.verificationBoxSuccess
-                      : styles.verificationBoxError,
-                  ]}
-                >
-                  <View style={styles.verificationContent}>
-                    <View style={styles.verificationLeft}>
-                      <View
-                        style={[
-                          styles.verificationIconContainer,
-                          isEmailVerified
-                            ? styles.verificationIconSuccess
-                            : styles.verificationIconError,
-                        ]}
-                      >
-                        {isEmailVerified ? (
-                          <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                        ) : (
-                          <Ionicons name="alert-circle" size={20} color="#EF4444" />
-                        )}
-                      </View>
-                      <View style={styles.verificationTextContainer}>
-                        <Text
-                          style={[
-                            styles.verificationTitle,
-                            isEmailVerified
-                              ? styles.verificationTitleSuccess
-                              : styles.verificationTitleError,
-                          ]}
-                        >
-                          {isEmailVerified ? "Email Verified" : "Email Not Verified"}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.verificationDescription,
-                            isEmailVerified
-                              ? styles.verificationDescSuccess
-                              : styles.verificationDescError,
-                          ]}
-                        >
-                          {isEmailVerified
-                            ? "Your email has been verified"
-                            : "Please verify your email"}
-                        </Text>
-                      </View>
-                    </View>
-                    {!isEmailVerified && (
-                      <TouchableOpacity
-                        style={styles.resendButton}
-                        onPress={handleSendOtp}
-                        disabled={isSendingOtp}
-                      >
-                        <MaterialCommunityIcons name="send" size={16} color="white" />
-                        <Text style={styles.resendButtonText}>
-                          {isSendingOtp ? "Sending..." : "Resend"}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  {!isEmailVerified && (
-                    <View style={styles.verificationFooter}>
-                      <Text style={styles.verificationFooterText}>
-                        Check your inbox and enter the OTP
-                      </Text>
-                      <TouchableOpacity onPress={handleSendOtp}>
-                        <Text style={styles.verifyNowText}>Verify Now</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                  {isEmailVerified && (
-                    <View style={styles.securityFooter}>
-                      <MaterialCommunityIcons name="shield-check" size={16} color="#10B981" />
-                      <Text style={styles.securityText}>Account Security Enhanced</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Right Content Card */}
-          <View style={[isTablet ? styles.rightCard : styles.fullWidthCard,{    width: isTablet ? "75%" : "100%",
-}]}>
-            <View style={[styles.card, styles.rightCardContent]}>
-              {/* Tabs Header */}
-              <View style={styles.tabsContainer}>
-                <View style={styles.tabsWrapper}>
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      activeTab === "1" && styles.tabActive,
-                    ]}
-                    onPress={() => setActiveTab("1")}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        activeTab === "1" && styles.tabTextActive,
-                      ]}
-                    >
-                      Personal Details
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      activeTab === "2" && styles.tabActive,
-                    ]}
-                    onPress={() => setActiveTab("2")}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        activeTab === "2" && styles.tabTextActive,
-                      ]}
-                    >
-                      Change Password
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Tab Content */}
-              <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-                {activeTab === "1" && (
-                  <View>
-                    {/* Personal Info */}
-                    <View style={styles.personalInfoSection}>
-                      <View style={[styles.inputRow,{    flexDirection: isTablet ? "row" : "column",
-}]}>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.label}>Full Name</Text>
-                          <TextInput
-                            style={styles.input}
-                            value={user.name}
-                            editable={false}
-                          />
-                        </View>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.label}>Phone Number</Text>
-                          <TextInput
-                            style={styles.input}
-                            value={user.phoneNos}
-                            editable={false}
-                          />
-                        </View>
-                      </View>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email Address</Text>
+                    {user.telegramUsername ? (
+                      <View style={styles.alertInputContainer}>
                         <TextInput
-                          style={styles.input}
-                          value={user.email}
+                          style={styles.alertInput}
+                          value={user.telegramUsername}
                           editable={false}
+                          placeholder="Username"
                         />
-                      </View>
-                    </View>
-
-                    {/* Bottom Section */}
-                    <View style={styles.bottomSection}>
-                      {/* Pending Credits */}
-                      <View style={styles.creditsCard}>
-                        <View style={styles.creditsHeader}>
-                          <MaterialCommunityIcons
-                            name="equalizer"
-                            size={20}
-                            color="#374151"
-                          />
-                          <Text style={styles.creditsTitle}>Pending Credits</Text>
-                        </View>
-                        <View style={styles.creditsContent}>
-                          {[
-                            {
-                              label: "Alerts",
-                              val: user.backtests,
-                              max: usersTier.backtests,
-                              color: "#06B6D4",
-                            },
-                            {
-                              label: "Scanners",
-                              val: user.scans_limit,
-                              max: usersTier.scans_limit,
-                              color: "#2563EB",
-                            },
-                            {
-                              label: "Advanced Backtest",
-                              val: user.live_scanner_emails,
-                              max: usersTier.live_scanner_emails,
-                              color: "#F97316",
-                            },
-                          ].map((item, i) => (
-                            <View key={i} style={styles.creditItem}>
-                              <Text style={styles.creditLabel}>{item.label}</Text>
-                              <View style={styles.creditValue}>
-                                <View
-                                  style={[
-                                    styles.creditDot,
-                                    { backgroundColor: item.color },
-                                  ]}
-                                />
-                                <Text style={styles.creditText}>
-                                  {item.val}/{item.max} Pending
-                                </Text>
-                              </View>
-                            </View>
-                          ))}
-                        </View>
-                      </View>
-
-                      {/* Share Referral Code */}
-                      <View style={styles.referralCard}>
-                        <View style={styles.referralHeader}>
-                          <MaterialCommunityIcons
-                            name="share-variant"
-                            size={20}
-                            color="#374151"
-                          />
-                          <Text style={styles.referralTitle}>Share your Code</Text>
-                        </View>
-                        <View style={styles.referralContent}>
-                          <Text style={styles.referralCode}>{user.hisReferral}</Text>
-                          <Text style={styles.referralDescription}>
-                            Share the redeem code with others to get extra cashbacks and
-                            rewards
-                          </Text>
+                        <View style={styles.alertActions}>
                           <TouchableOpacity
-                            style={styles.copyButton}
-                            onPress={handleCopyLink}
+                            style={styles.openButton}
+                            onPress={() => Linking.openURL("https://t.me/unflukebotbot")}
                           >
-                            <MaterialCommunityIcons
-                              name="content-copy"
-                              size={16}
-                              color="white"
-                            />
-                            <Text style={styles.copyButtonText}>Copy Link</Text>
+                            <MaterialIcons name="open-in-new" size={14} color="white" />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={deactivateTelegram}
+                          >
+                            <Ionicons name="close" size={14} color="white" />
                           </TouchableOpacity>
                         </View>
                       </View>
-                    </View>
+                    ) : (
+                      <View style={styles.alertInputContainer}>
+                        <TextInput
+                          style={styles.alertInput}
+                          placeholder="Username"
+                        />
+                        <TouchableOpacity style={styles.warningButton}>
+                          <Ionicons name="warning" size={14} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
-                )}
 
-                {activeTab === "2" && (
-                  <View style={styles.passwordSection}>
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Current Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter current password"
-                        secureTextEntry
-                        value={oldPassword}
-                        onChangeText={setOldPassword}
-                      />
+                  {/* Email */}
+                  <View style={styles.alertRow}>
+                    <View style={styles.emailIcon}>
+                      <MaterialCommunityIcons name="email" size={18} color="white" />
                     </View>
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>New Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter new password"
-                        secureTextEntry
-                        value={newPassword}
-                        onChangeText={setNewPassword}
-                      />
+                    {isEmailVerified ? (
+                      <View style={styles.alertInputContainer}>
+                        <TextInput
+                          style={styles.alertInput}
+                          value={email || user.email}
+                          editable={false}
+                        />
+                        <View style={styles.checkButton}>
+                          <Ionicons name="checkmark" size={14} color="white" />
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={styles.alertInputContainer}>
+                        <TextInput
+                          style={styles.alertInput}
+                          value={email}
+                          onChangeText={setEmail}
+                          placeholder="Enter email"
+                        />
+                        <TouchableOpacity
+                          style={styles.warningButton}
+                          onPress={handleSendOtp}
+                          disabled={isSendingOtp}
+                        >
+                          {isSendingOtp ? (
+                            <ActivityIndicator size="small" color="white" />
+                          ) : (
+                            <MaterialIcons name="open-in-new" size={14} color="white" />
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Email Verification Status */}
+                  <View
+                    style={[
+                      styles.verificationBox,
+                      isEmailVerified
+                        ? styles.verificationBoxSuccess
+                        : styles.verificationBoxError,
+                    ]}
+                  >
+                    <View style={styles.verificationContent}>
+                      <View style={styles.verificationLeft}>
+                        <View
+                          style={[
+                            styles.verificationIconContainer,
+                            isEmailVerified
+                              ? styles.verificationIconSuccess
+                              : styles.verificationIconError,
+                          ]}
+                        >
+                          {isEmailVerified ? (
+                            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                          ) : (
+                            <Ionicons name="alert-circle" size={20} color="#EF4444" />
+                          )}
+                        </View>
+                        <View style={styles.verificationTextContainer}>
+                          <Text
+                            style={[
+                              styles.verificationTitle,
+                              isEmailVerified
+                                ? styles.verificationTitleSuccess
+                                : styles.verificationTitleError,
+                            ]}
+                          >
+                            {isEmailVerified ? "Email Verified" : "Email Not Verified"}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.verificationDescription,
+                              isEmailVerified
+                                ? styles.verificationDescSuccess
+                                : styles.verificationDescError,
+                            ]}
+                          >
+                            {isEmailVerified
+                              ? "Your email has been verified"
+                              : "Please verify your email"}
+                          </Text>
+                        </View>
+                      </View>
+                      {!isEmailVerified && (
+                        <TouchableOpacity
+                          style={styles.resendButton}
+                          onPress={handleSendOtp}
+                          disabled={isSendingOtp}
+                        >
+                          <MaterialCommunityIcons name="send" size={16} color="white" />
+                          <Text style={styles.resendButtonText}>
+                            {isSendingOtp ? "Sending..." : "Resend"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Confirm Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Confirm password"
-                        secureTextEntry
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                      />
-                    </View>
+                    {!isEmailVerified && (
+                      <View style={styles.verificationFooter}>
+                        <Text style={styles.verificationFooterText}>
+                          Check your inbox and enter the OTP
+                        </Text>
+                        <TouchableOpacity onPress={handleSendOtp}>
+                          <Text style={styles.verifyNowText}>Verify Now</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    {isEmailVerified && (
+                      <View style={styles.securityFooter}>
+                        <MaterialCommunityIcons name="shield-check" size={16} color="#10B981" />
+                        <Text style={styles.securityText}>Account Security Enhanced</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Right Content Card */}
+            <View style={[isTablet ? styles.rightCard : styles.fullWidthCard, {
+              width: isTablet ? "75%" : "100%",
+            }]}>
+              <View style={[styles.card, styles.rightCardContent]}>
+                {/* Tabs Header */}
+                <View style={styles.tabsContainer}>
+                  <View style={styles.tabsWrapper}>
                     <TouchableOpacity
-                      style={styles.updateButton}
-                      onPress={changeYourPassword}
+                      style={[
+                        styles.tab,
+                        activeTab === "1" && styles.tabActive,
+                      ]}
+                      onPress={() => setActiveTab("1")}
                     >
-                      <Text style={styles.updateButtonText}>Update Password</Text>
+                      <Text
+                        style={[
+                          styles.tabText,
+                          activeTab === "1" && styles.tabTextActive,
+                        ]}
+                      >
+                        Personal Details
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.tab,
+                        activeTab === "2" && styles.tabActive,
+                      ]}
+                      onPress={() => setActiveTab("2")}
+                    >
+                      <Text
+                        style={[
+                          styles.tabText,
+                          activeTab === "2" && styles.tabTextActive,
+                        ]}
+                      >
+                        Change Password
+                      </Text>
                     </TouchableOpacity>
                   </View>
-                )}
-              </ScrollView>
+                </View>
+
+                {/* Tab Content */}
+                <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+                  {activeTab === "1" && (
+                    <View>
+                      {/* Personal Info */}
+                      <View style={styles.personalInfoSection}>
+                        <View style={[styles.inputRow, {
+                          flexDirection: isTablet ? "row" : "column",
+                        }]}>
+                          <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Full Name</Text>
+                            <TextInput
+                              style={styles.input}
+                              value={user.name}
+                              editable={false}
+                            />
+                          </View>
+                          <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Phone Number</Text>
+                            <TextInput
+                              style={styles.input}
+                              value={user.phoneNos}
+                              editable={false}
+                            />
+                          </View>
+                        </View>
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.label}>Email Address</Text>
+                          <TextInput
+                            style={styles.input}
+                            value={user.email}
+                            editable={false}
+                          />
+                        </View>
+                      </View>
+
+                      {/* Bottom Section */}
+                      <View style={styles.bottomSection}>
+                        {/* Pending Credits */}
+                        <View style={styles.creditsCard}>
+                          <View style={styles.creditsHeader}>
+                            <MaterialCommunityIcons
+                              name="equalizer"
+                              size={20}
+                              color="#374151"
+                            />
+                            <Text style={styles.creditsTitle}>Pending Credits</Text>
+                          </View>
+                          <View style={styles.creditsContent}>
+                            {[
+                              {
+                                label: "Alerts",
+                                val: user.backtests,
+                                max: usersTier.backtests,
+                                color: "#06B6D4",
+                              },
+                              {
+                                label: "Scanners",
+                                val: user.scans_limit,
+                                max: usersTier.scans_limit,
+                                color: "#2563EB",
+                              },
+                              {
+                                label: "Advanced Backtest",
+                                val: user.live_scanner_emails,
+                                max: usersTier.live_scanner_emails,
+                                color: "#F97316",
+                              },
+                            ].map((item, i) => (
+                              <View key={i} style={styles.creditItem}>
+                                <Text style={styles.creditLabel}>{item.label}</Text>
+                                <View style={styles.creditValue}>
+                                  <View
+                                    style={[
+                                      styles.creditDot,
+                                      { backgroundColor: item.color },
+                                    ]}
+                                  />
+                                  <Text style={styles.creditText}>
+                                    {item.val}/{item.max} Pending
+                                  </Text>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+
+                        {/* Share Referral Code */}
+                        <View style={styles.referralCard}>
+                          <View style={styles.referralHeader}>
+                            <MaterialCommunityIcons
+                              name="share-variant"
+                              size={20}
+                              color="#374151"
+                            />
+                            <Text style={styles.referralTitle}>Share your Code</Text>
+                          </View>
+                          <View style={styles.referralContent}>
+                            <Text style={styles.referralCode}>{user.hisReferral}</Text>
+                            <Text style={styles.referralDescription}>
+                              Share the redeem code with others to get extra cashbacks and
+                              rewards
+                            </Text>
+                            <TouchableOpacity
+                              style={styles.copyButton}
+                              onPress={handleCopyLink}
+                            >
+                              <MaterialCommunityIcons
+                                name="content-copy"
+                                size={16}
+                                color="white"
+                              />
+                              <Text style={styles.copyButtonText}>Copy Link</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {activeTab === "2" && (
+                    <View style={styles.passwordSection}>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Current Password</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter current password"
+                          secureTextEntry
+                          value={oldPassword}
+                          onChangeText={setOldPassword}
+                        />
+                      </View>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>New Password</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Enter new password"
+                          secureTextEntry
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                        />
+                      </View>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Confirm Password</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Confirm password"
+                          secureTextEntry
+                          value={confirmPassword}
+                          onChangeText={setConfirmPassword}
+                        />
+                      </View>
+                      <TouchableOpacity
+                        style={styles.updateButton}
+                        onPress={changeYourPassword}
+                      >
+                        <Text style={styles.updateButtonText}>Update Password</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </ScrollView>
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      {/* OTP Modal */}
-      <OTPVerificationModal
-        isOpen={isModalOpen}
-        toggle={toggleModal}
-        onVerify={handleVerify}
-        digits={6}
-        title="Verify Your Email"
-      />
-    </ScrollView>
-  </KeyboardAvoidingView>
+        {/* OTP Modal */}
+        <OTPVerificationModal
+          isOpen={isModalOpen}
+          toggle={toggleModal}
+          onVerify={handleVerify}
+          digits={6}
+          title="Verify Your Email"
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -780,7 +783,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F3F4F6",
-    paddingTop: 76,
   },
   content: {
     padding: 12,

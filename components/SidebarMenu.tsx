@@ -26,13 +26,15 @@ const STATUS_BAR_HEIGHT = Platform.OS === "android" ? (StatusBar.currentHeight |
 const MENU_ITEMS = [
     { label: "Dashboard", icon: "🏠", route: "/dashboard" },
     { label: "AI-Bot", icon: "🤖", route: "/chatbot" },
-    { label: "Fundamentals", icon: "📊", route: "/fundamental" },
+    { label: "Fundamental", icon: "📊", route: "/fundamental" },
     { label: "Historical Charts", icon: "📈", route: "/historical" },
-    { label: "Option Simulator", icon: "⚡", route: "/simulator" },
     { label: "Strategy Charts", icon: "🎯", route: "/strategy-charts" },
-    { label: "Scanner", icon: "🔍", route: "/scannermain" },
-    { label: "Time Based Backtest", icon: "⏱️", route: "/basic-backtester-main" },
-    { label: "Indicator Backtest", icon: "📉", route: "/basic-backtester-home" },
+    { label: "Technical Scanner", icon: "🔍", route: "/scannermain" },
+    { label: "Fundamental Scanner", icon: "🔬", route: "/scannerfundamental" },
+    { label: "Alerts", icon: "🔔", route: "/scannerhome?alertsSideBar=true" },
+    { label: "Simple Backtest", icon: "⏱️", route: "/basic-backtester-main" },
+    { label: "Advanced Backtest", icon: "📉", route: "/basic-backtester-home" },
+    { label: "Option Simulator", icon: "⚡", route: "/simulator" },
 ];
 
 const BOTTOM_ITEMS = [
