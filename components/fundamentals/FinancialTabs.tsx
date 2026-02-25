@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, FlatList, TouchableOpacity } from "react-native";
 import { EmptyState } from "./SharedComponents";
+import { SvgLineChart } from "./DataTabs";
 import {
     fmt, valueColor, ACCENT, ACCENT_LIGHT, TEXT_PRIMARY, TEXT_SECONDARY,
     TEXT_MUTED, BORDER_COLOR, ZEBRA_LIGHT, CARD_BG, GREEN, RED,
@@ -244,8 +245,16 @@ export function PLStyleTab({ response, period, emptyMessage }: { response: any; 
 
 /* ═══════════════════════════════════════════════════════════
    KEY RATIOS TAB
-   Uses period passed from parent PeriodPicker (no internal pills)
+   Accordion / expandable design + 3 key metric charts
 ═══════════════════════════════════════════════════════════ */
+
+// Key metrics to chart over time
+const RATIO_CHART_METRICS = [
+    { label: "PE Ratio", key: "PE Ratio", color: "#6366F1" },
+    { label: "ROE (%)", key: "Return on Equity / Networth", color: "#10B981" },
+    { label: "Debt-to-Equity", key: "Total Debt/Equity", color: "#F59E0B" },
+] as const;
+
 export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> | undefined; period: string }) {
     const allPeriods = useMemo(() => {
         try { return getRatioPeriodKeys(ratios) || []; } catch { return []; }
@@ -253,6 +262,8 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
 
     // Use parent period; fall back to first available
     const activePeriod = (period && allPeriods.includes(period)) ? period : (allPeriods[0] || "");
+
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
     if (!ratios || allPeriods.length === 0) return <EmptyState message="No ratio data available." />;
 
@@ -274,27 +285,50 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
         try { return getMergedRatioData(ratios, prevPeriod) || {}; } catch { return {}; }
     }, [ratios, prevPeriod]);
 
-    // Build ratio items from headings or fallback to data keys
-    const ratioItems = useMemo(() => {
-        const items: { label: string; value: any; yoyChange?: number; sectionTitle?: string }[] = [];
+    // Build chart data for key metrics across all periods
+    const chartDataSets = useMemo(() => {
+        const sets: Record<string, { x: string; y: number }[]> = {};
+        for (const metric of RATIO_CHART_METRICS) {
+            const pts: { x: string; y: number }[] = [];
+            // Reverse so oldest is first (left → right)
+            const periodsReversed = [...allPeriods].reverse();
+            for (const pk of periodsReversed) {
+                try {
+                    const periodData = getMergedRatioData(ratios, pk) || {};
+                    const v = periodData?.[metric.key];
+                    if (typeof v === "number" && Number.isFinite(v)) {
+                        pts.push({ x: pk.replace("Annual", "").trim(), y: v });
+                    }
+                } catch { }
+            }
+            sets[metric.key] = pts;
+        }
+        return sets;
+    }, [ratios, allPeriods]);
+
+    // Build accordion sections from headings
+    const sections = useMemo(() => {
+        const result: { title: string; items: { label: string; value: any; yoyChange?: number }[] }[] = [];
         try {
             if (Array.isArray(headings) && headings.length > 0) {
                 for (const heading of headings) {
-                    if (Array.isArray(heading?.children) && heading.children.length > 0) {
-                        items.push({ label: heading.title, value: null, sectionTitle: heading.title });
-                        for (const child of heading.children) {
-                            const currentVal = data?.[child];
-                            const prevVal = prevData?.[child];
-                            let yoyChange: number | undefined;
-                            if (typeof currentVal === "number" && typeof prevVal === "number" && prevVal !== 0) {
-                                yoyChange = ((currentVal - prevVal) / Math.abs(prevVal)) * 100;
-                            }
-                            items.push({ label: child, value: currentVal, yoyChange });
+                    if (!Array.isArray(heading?.children) || heading.children.length === 0) continue;
+                    const items: { label: string; value: any; yoyChange?: number }[] = [];
+                    for (const child of heading.children) {
+                        const currentVal = data?.[child];
+                        const prevVal = prevData?.[child];
+                        let yoyChange: number | undefined;
+                        if (typeof currentVal === "number" && typeof prevVal === "number" && prevVal !== 0) {
+                            yoyChange = ((currentVal - prevVal) / Math.abs(prevVal)) * 100;
                         }
+                        items.push({ label: child, value: currentVal, yoyChange });
                     }
+                    result.push({ title: heading.title, items });
                 }
             }
-            if (items.length === 0 && data && typeof data === "object") {
+            // Fallback: flat list
+            if (result.length === 0 && data && typeof data === "object") {
+                const items: { label: string; value: any; yoyChange?: number }[] = [];
                 for (const [k, v] of Object.entries(data)) {
                     const prevVal = prevData?.[k];
                     let yoyChange: number | undefined;
@@ -303,46 +337,100 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
                     }
                     items.push({ label: k, value: v, yoyChange });
                 }
+                if (items.length > 0) result.push({ title: "All Ratios", items });
             }
-        } catch (e) { console.warn("KeyRatiosTab error:", e); }
-        return items;
+        } catch (e) { console.warn("KeyRatiosTab sections error:", e); }
+        return result;
     }, [headings, data, prevData]);
 
-    const gridItems = ratioItems.filter(item => !item.sectionTitle);
-
-    if (gridItems.length === 0) return <EmptyState message="No ratio data for this period." />;
-
-    const cardW = (CONTENT_W - 12) / 2; // 2 columns with 12px gap
-
-    const renderRatioCard = ({ item }: { item: typeof gridItems[0] }) => {
-        const isPositive = (item.yoyChange ?? 0) >= 0;
-        return (
-            <View style={[rt.card, { width: cardW }]}>
-                <Text style={rt.cardLabel} numberOfLines={2}>{item.label}</Text>
-                <Text style={[rt.cardValue, { color: valueColor(item.value) }]}>{fmt(item.value)}</Text>
-                {item.yoyChange !== undefined && !isNaN(item.yoyChange) && (
-                    <Text style={[rt.cardYoy, { color: isPositive ? GREEN : RED }]}>
-                        {isPositive ? "↑" : "↓"} {Math.abs(item.yoyChange).toFixed(1)}% YoY
-                    </Text>
-                )}
-            </View>
-        );
+    const toggleSection = (title: string) => {
+        setExpandedSections(prev => ({ ...prev, [title]: !prev[title] }));
     };
 
+    if (sections.length === 0) return <EmptyState message="No ratio data for this period." />;
+
     return (
-        <View>
-            {/* 2-column grid */}
-            <FlatList
-                data={gridItems}
-                numColumns={2}
-                keyExtractor={(item, i) => `${item.label}-${i}`}
-                renderItem={renderRatioCard}
-                columnWrapperStyle={rt.colWrap}
-                scrollEnabled={false}
-                removeClippedSubviews={false}
-                ListEmptyComponent={<EmptyState message="No ratio data." />}
-            />
-        </View>
+        <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
+            {/* ── Key Metric Charts ── */}
+            {RATIO_CHART_METRICS.map(metric => {
+                const pts = chartDataSets[metric.key] || [];
+                if (pts.length < 2) return null;
+                const latest = pts[pts.length - 1]?.y ?? 0;
+                const prev = pts[pts.length - 2]?.y ?? latest;
+                const chg = prev !== 0 ? ((latest - prev) / Math.abs(prev)) * 100 : 0;
+                const up = chg >= 0;
+                return (
+                    <View key={metric.key} style={kr.chartCard}>
+                        <Text style={kr.chartLabel}>{metric.label}</Text>
+                        <View style={kr.chartMeta}>
+                            <Text style={kr.chartVal}>{fmt(latest)}</Text>
+                            <View style={[kr.chgBadge, { backgroundColor: up ? "#DCFCE7" : "#FEE2E2" }]}>
+                                <Text style={[kr.chgText, { color: up ? GREEN : RED }]}>
+                                    {up ? "▲" : "▼"} {Math.abs(chg).toFixed(1)}%
+                                </Text>
+                            </View>
+                        </View>
+                        <SvgLineChart
+                            data={pts}
+                            color={metric.color}
+                            areaColor={metric.color + "14"}
+                        />
+                    </View>
+                );
+            })}
+
+            {/* ── Accordion Sections ── */}
+            {sections.map((section, sIdx) => {
+                const isOpen = !!expandedSections[section.title];
+                // Section summary value: first child value
+                const summaryVal = section.items[0]?.value;
+                return (
+                    <View key={sIdx} style={kr.sectionWrap}>
+                        <TouchableOpacity
+                            style={kr.sectionHeader}
+                            onPress={() => toggleSection(section.title)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={kr.sectionLeft}>
+                                <Text style={kr.plusIcon}>{isOpen ? "−" : "+"}</Text>
+                                <Text style={kr.sectionTitle} numberOfLines={2}>{section.title}</Text>
+                            </View>
+                            <View style={kr.sectionRight}>
+                                {summaryVal != null && (
+                                    <Text style={[kr.sectionValue, { color: valueColor(summaryVal) }]}>
+                                        {fmt(summaryVal)}
+                                    </Text>
+                                )}
+                                <Text style={[kr.chevron, isOpen && kr.chevronOpen]}>›</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        {isOpen && (
+                            <View style={kr.childrenWrap}>
+                                {section.items.map((item, i) => {
+                                    const positive = (item.yoyChange ?? 0) >= 0;
+                                    return (
+                                        <View key={i} style={kr.childRow}>
+                                            <Text style={kr.childLabel} numberOfLines={2}>{item.label}</Text>
+                                            <View style={kr.childRight}>
+                                                <Text style={[kr.childValue, { color: valueColor(item.value) }]}>
+                                                    {fmt(item.value)}
+                                                </Text>
+                                                {item.yoyChange !== undefined && !isNaN(item.yoyChange) && (
+                                                    <Text style={[kr.childYoy, { color: positive ? GREEN : RED }]}>
+                                                        {positive ? "↑" : "↓"}{Math.abs(item.yoyChange).toFixed(1)}%
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
+                );
+            })}
+        </ScrollView>
     );
 }
 
@@ -516,4 +604,60 @@ const el = StyleSheet.create({
         fontWeight: '500',
         color: TEXT_PRIMARY,
     },
+});
+
+/* ═══════════════════════════════════════════════════════════
+   KEY RATIOS ACCORDION + CHART STYLES
+═══════════════════════════════════════════════════════════ */
+const kr = StyleSheet.create({
+    // ── Charts ──
+    chartCard: {
+        backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
+        borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 14,
+        elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05, shadowRadius: 3, padding: 16,
+    },
+    chartLabel: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 8 },
+    chartMeta: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
+    chartVal: { fontSize: 22, fontWeight: "800", color: TEXT_PRIMARY },
+    chgBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+    chgText: { fontSize: 11, fontWeight: "700" },
+
+    // ── Accordion sections ──
+    sectionWrap: { marginBottom: 8 },
+    sectionHeader: {
+        flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+        paddingVertical: 12, paddingHorizontal: 12,
+        backgroundColor: CARD_BG, borderRadius: 8,
+        borderWidth: 1, borderColor: BORDER_COLOR,
+    },
+    sectionLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
+    plusIcon: {
+        fontSize: 16, fontWeight: "bold" as const, color: ACCENT,
+        marginRight: 8, width: 16,
+    },
+    sectionTitle: { fontSize: 13, fontWeight: "600", color: TEXT_PRIMARY, flex: 1 },
+    sectionRight: { flexDirection: "row", alignItems: "center" },
+    sectionValue: { fontSize: 13, fontWeight: "700", color: TEXT_PRIMARY, marginRight: 8 },
+    chevron: {
+        fontSize: 18, color: TEXT_MUTED,
+        transform: [{ rotate: "90deg" }], marginLeft: 8,
+    },
+    chevronOpen: { transform: [{ rotate: "-90deg" }] },
+
+    // ── Children ──
+    childrenWrap: {
+        backgroundColor: "#FAFAFA",
+        borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
+        borderWidth: 1, borderColor: BORDER_COLOR, borderTopWidth: 0,
+        marginTop: -4, paddingTop: 8, paddingBottom: 8,
+    },
+    childRow: {
+        flexDirection: "row", justifyContent: "space-between",
+        paddingVertical: 6, paddingHorizontal: 16, paddingLeft: 36,
+    },
+    childLabel: { fontSize: 12, color: TEXT_SECONDARY, flex: 1 },
+    childRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+    childValue: { fontSize: 12, fontWeight: "500", color: TEXT_PRIMARY },
+    childYoy: { fontSize: 10, fontWeight: "600" },
 });

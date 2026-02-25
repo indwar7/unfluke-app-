@@ -1,54 +1,50 @@
-import img1 from '../../assets/images/unfluke/custom/chart-ratings-svgrepo-com.svg'
-import img2 from '../../assets/images/unfluke/custom/barchart-svgrepo-com.svg'
-import img3 from '../../assets/images/unfluke/custom/brazilian-real-svgrepo-com.svg'
-import img4 from '../../assets/images/unfluke/custom/diagram-bar-downtrend-2-svgrepo-com.svg'
-import img5 from '../../assets/images/unfluke/custom/money-business-and-finance-svgrepo-com.svg'
-import img6 from '../../assets/images/unfluke/custom/bar-chart-financial-svgrepo-com.svg'
-import img7 from '../../assets/images/unfluke/custom/candlestick-svgrepo-com.svg'
-import img8 from '../../assets/images/unfluke/custom/chart-stock-svgrepo-com.svg'
-import img9 from '../../assets/images/unfluke/custom/chevron-rank-svgrepo-com.svg'
-import img10 from '../../assets/images/unfluke/custom/indicator-svgrepo-com.svg'
-import img11 from '../../assets/images/unfluke/custom/exchange-trading-svgrepo-com.svg'
-import img12 from '../../assets/images/unfluke/custom/currency-exchange-svgrepo-com.svg'
-import img13 from '../../assets/images/unfluke/custom/robinhood-svgrepo-com.svg'
-import img14 from '../../assets/images/unfluke/custom/options-svgrepo-com.svg'
-import img15 from '../../assets/images/unfluke/custom/sprout-svgrepo-com (1).svg'
-import img16 from '../../assets/images/unfluke/custom/sprout-svgrepo-com.svg'
-import img17 from '../../assets/images/unfluke/custom/stats-financial-svgrepo-com.svg'
-import img18 from '../../assets/images/unfluke/custom/stock-movement-svgrepo-com (1).svg'
-import img19 from '../../assets/images/unfluke/custom/chart-growth-invest-svgrepo-com.svg'
-import img20 from '../../assets/images/unfluke/custom/stats-business-and-finance-svgrepo-com.svg'
-import img21 from '../../assets/images/unfluke/custom/growth-income-investment-svgrepo-com.svg'
-import img22 from '../../assets/images/unfluke/custom/currency-commerce-and-shopping-svgrepo-com.svg'
-import img23 from '../../assets/images/unfluke/custom/film-reel-svgrepo-com.svg'
-import img24 from '../../assets/images/unfluke/custom/options-svgrepo-com (2).svg'
-import img25 from '../../assets/images/unfluke/custom/os-inventory-management-svgrepo-com.svg'
-import img26 from '../../assets/images/unfluke/custom/checked-tick-svgrepo-com (2).svg'
-import img27 from '../../assets/images/unfluke/custom/checked-tick-svgrepo-com (4).svg'
-import img28 from '../../assets/images/unfluke/custom/money-business-and-finance-svgrepo-com (1).svg'
-import img29 from '../../assets/images/unfluke/custom/diagram-bar-downtrend-svgrepo-com.svg'
-import img30 from '../../assets/images/unfluke/custom/chevron-down-svgrepo-com (2).svg'
-import img31 from '../../assets/images/unfluke/custom/chevron-rank-svgrepo-com (2).svg'
-import img32 from '../../assets/images/unfluke/custom/ipo-svgrepo-com.svg'
-import img33 from '../../assets/images/unfluke/custom/money-business-and-finance-svgrepo-com (1).svg'
-import img34 from '../../assets/images/unfluke/custom/sprout-svgrepo-com (16).svg'
-import img35 from '../../assets/images/unfluke/custom/free-bull-svgrepo-com.svg'
+// Replaced SVG imports with icon-based placeholders to avoid metro SVG crash.
+// React Native cannot import .svg files without react-native-svg-transformer.
+// Cards now render a colored icon background instead.
 
+const CARD_CONFIGS = [
+    { bg: '#EFF6FF', icon: 'bar-chart', color: '#3B82F6' },
+    { bg: '#F0FDF4', icon: 'trending-up', color: '#10B981' },
+    { bg: '#FFF7ED', icon: 'cash', color: '#F59E0B' },
+    { bg: '#FDF2F8', icon: 'pie-chart', color: '#EC4899' },
+    { bg: '#F5F3FF', icon: 'stats-chart', color: '#8B5CF6' },
+    { bg: '#ECFDF5', icon: 'arrow-up-circle', color: '#059669' },
+    { bg: '#FEF3C7', icon: 'analytics', color: '#D97706' },
+    { bg: '#E0F2FE', icon: 'pulse', color: '#0284C7' },
+    { bg: '#FCE7F3', icon: 'ribbon', color: '#DB2777' },
+    { bg: '#F0FDF4', icon: 'checkmark-circle', color: '#16A34A' },
+    { bg: '#FFF1F2', icon: 'flame', color: '#E11D48' },
+    { bg: '#F5F3FF', icon: 'diamond', color: '#7C3AED' },
+    { bg: '#ECFEFF', icon: 'swap-horizontal', color: '#0891B2' },
+    { bg: '#FFF7ED', icon: 'options', color: '#EA580C' },
+    { bg: '#F0FDF4', icon: 'leaf', color: '#15803D' },
+    { bg: '#EFF6FF', icon: 'globe', color: '#1D4ED8' },
+    { bg: '#FDF4FF', icon: 'layers', color: '#9333EA' },
+    { bg: '#FFF1F2', icon: 'arrow-down-circle', color: '#BE123C' },
+    { bg: '#F0FDF4', icon: 'trending-up', color: '#166534' },
+    { bg: '#FEFCE8', icon: 'star', color: '#CA8A04' },
+    { bg: '#F5F3FF', icon: 'rocket', color: '#6D28D9' },
+    { bg: '#F0F9FF', icon: 'water', color: '#0369A1' },
+    { bg: '#FFF8F1', icon: 'film', color: '#9A3412' },
+    { bg: '#F5F3FF', icon: 'options-outline', color: '#4F46E5' },
+    { bg: '#F0FDF4', icon: 'list', color: '#14532D' },
+    { bg: '#EFF6FF', icon: 'checkmark-done', color: '#2563EB' },
+    { bg: '#F0FDF4', icon: 'checkmark-done-circle', color: '#15803D' },
+    { bg: '#FFF7ED', icon: 'cash-outline', color: '#B45309' },
+    { bg: '#FDF2F8', icon: 'bar-chart-outline', color: '#9D174D' },
+    { bg: '#F0FDF4', icon: 'arrow-down', color: '#065F46' },
+    { bg: '#F5F3FF', icon: 'chevron-up-circle', color: '#5B21B6' },
+    { bg: '#EFF6FF', icon: 'business', color: '#1E40AF' },
+    { bg: '#FFF7ED', icon: 'cash', color: '#92400E' },
+    { bg: '#F0FDF4', icon: 'leaf-outline', color: '#064E3B' },
+    { bg: '#FEF2F2', icon: 'trending-down', color: '#991B1B' },
+];
 
-
-function getRandomArrIndex(max) {
-    return Math.floor(Math.random() * max);
-}
-
+/**
+ * Returns a config object { bg, icon, color } for a given index.
+ * Use this to render a colored View + Ionicons instead of an Image.
+ */
 export const fetchRandomImage = (i) => {
-    const images = [img1, img2, img3, img4, img5, img6, img7, img8, img9, img10, img11, img12, img13, img14,
-        img15, img16, img17, img18, img19, img20, img21, img22, img23, img24, img25, img26, img27, img28, img29, img30,
-        img31, img32, img33, img34, img35
-    ]
-
-    if(i >= images.length){
-        return images[0]
-    }
-
-    return images[i]
-}
+    const idx = i % CARD_CONFIGS.length;
+    return CARD_CONFIGS[idx];
+};

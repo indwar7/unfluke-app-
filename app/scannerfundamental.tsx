@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { ChevronRight, Eye, Plus } from "lucide-react-native";
+import { ScreenWithHeader } from "../components/AppHeader";
 
 const ScannerFundamental = () => {
   const [defaultScanners, setDefaultScanners] = useState({});
@@ -24,7 +25,7 @@ const ScannerFundamental = () => {
         setLoading(true);
         const response = await fetch(
           "https://api.unfluke.in/api/scanner/getAdminScanners?type=fundamental"
-        // "http://10.184.31.9:80/api/scanner/getAdminScanners?type=fundamental"
+          // "http://10.184.31.9:80/api/scanner/getAdminScanners?type=fundamental"
         );
 
         if (!response.ok) {
@@ -84,7 +85,7 @@ const ScannerFundamental = () => {
             <TouchableOpacity
               key={index}
               style={styles.scannerItem}
-               onPress={() =>
+              onPress={() =>
                 navigation.navigate("scanner", {
                   state: item,
                   type: "fundamental",
@@ -110,63 +111,65 @@ const ScannerFundamental = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        {/* Left section: Title + breadcrumb */}
-        <View>
-          <Text style={styles.title}>Scanner Home</Text>
-          <View style={styles.breadcrumb}>
-            <Text style={styles.breadcrumbText}>Pages</Text>
-            <ChevronRight size={13} color="#6B7280" />
-            <Text style={styles.breadcrumbText}>Fundamental Scanner</Text>
+    <ScreenWithHeader>
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          {/* Left section: Title + breadcrumb */}
+          <View>
+            <Text style={styles.title}>Scanner Home</Text>
+            <View style={styles.breadcrumb}>
+              <Text style={styles.breadcrumbText}>Pages</Text>
+              <ChevronRight size={13} color="#6B7280" />
+              <Text style={styles.breadcrumbText}>Fundamental Scanner</Text>
+            </View>
           </View>
-        </View>
 
-        {/* Right section: Buttons */}
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={styles.viewSavedButton}
-            onPress={() => navigation.navigate("scannerhome")}
-          >
-            <Eye color="#000" size={12} />
-            <Text style={styles.viewSavedButtonText}>View saved</Text>
-          </TouchableOpacity>
+          {/* Right section: Buttons */}
+          <View style={styles.buttonGroup}>
+            <TouchableOpacity
+              style={styles.viewSavedButton}
+              onPress={() => navigation.navigate("scannerhome")}
+            >
+              <Eye color="#000" size={12} />
+              <Text style={styles.viewSavedButtonText}>View saved</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.createNewButton}
-             onPress={() =>
+            <TouchableOpacity
+              style={styles.createNewButton}
+              onPress={() =>
                 navigation.navigate("scanner", {
                   type: "fundamental",
                 })
               }
+            >
+              <Plus color="white" size={12} strokeWidth={3} />
+
+              <Text style={styles.createNewButtonText}>Create new</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text style={styles.loadingText}>Loading scanners...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.scannerGrid}
+            showsVerticalScrollIndicator={false}
           >
-            <Plus color="white" size={12} strokeWidth={3} />
-
-            <Text style={styles.createNewButtonText}>Create new</Text>
-          </TouchableOpacity>
-        </View>
+            {Object.keys(defaultScanners).map((category) => (
+              <ScannerCard
+                key={category}
+                title={category}
+                items={defaultScanners[category]}
+              />
+            ))}
+          </ScrollView>
+        )}
       </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading scanners...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.scannerGrid}
-          showsVerticalScrollIndicator={false}
-        >
-          {Object.keys(defaultScanners).map((category) => (
-            <ScannerCard
-              key={category}
-              title={category}
-              items={defaultScanners[category]}
-            />
-          ))}
-        </ScrollView>
-      )}
-    </View>
+    </ScreenWithHeader>
   );
 };
 
@@ -174,7 +177,6 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: "#f3f4f6",
-    paddingTop: 85,
     padding: 12,
     paddingBottom: 20,
   },
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "space-between",
     flexWrap: "wrap",
-    gap:10
+    gap: 10
   },
   title: {
     fontSize: 17,

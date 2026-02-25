@@ -648,7 +648,7 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
 
               {type !== "fundamental" ? (
                 <View style={dynamicStyles.cardContent}>
-                  <Text style={dynamicStyles.cardTitle}>{item.ticker}</Text>
+                  <Text style={dynamicStyles.cardItemTitle}>{item.ticker}</Text>
                   <View style={dynamicStyles.cardGrid}>
                     <View style={dynamicStyles.cardField}>
                       <Text style={dynamicStyles.cardLabel}>Open:</Text>
@@ -874,7 +874,7 @@ const styles = (isDark) =>
     cardContent: {
       flex: 1,
     },
-    cardTitle: {
+    cardItemTitle: {
       fontSize: 18,
       fontWeight: "700",
       color: isDark ? "#FFFFFF" : "#111827",

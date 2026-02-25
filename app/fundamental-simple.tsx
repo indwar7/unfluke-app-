@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+import { ScreenWithHeader } from "../components/AppHeader";
+
 const API_URL = "https://unfluke.in/in/fundamentals/RELIANCE";
 
 export default function FundamentalScreen() {
@@ -71,66 +73,68 @@ export default function FundamentalScreen() {
   const bookValue = findValue("Book Value (Adjusted)");
 
   return (
-    <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.symbol}>RELIANCE</Text>
-        <Text style={styles.sub}>Fundamental Analysis • {latestYear}</Text>
+    <ScreenWithHeader>
+      <View style={styles.container}>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.symbol}>RELIANCE</Text>
+          <Text style={styles.sub}>Fundamental Analysis • {latestYear}</Text>
+        </View>
+
+        {/* TABS */}
+        <View style={styles.tabs}>
+          {["overview", "pl"].map((t) => (
+            <TouchableOpacity
+              key={t}
+              onPress={() => setTab(t as any)}
+              style={[styles.tab, tab === t && styles.tabActive]}
+            >
+              <Text style={tab === t ? styles.tabTextActive : styles.tabText}>
+                {t === "overview" ? "OVERVIEW" : "P&L"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ padding: 16 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
+          }
+        >
+          {/* OVERVIEW */}
+          {tab === "overview" && (
+            <>
+              <Card>
+                <Metric title="Sales" value={sales} />
+                <Metric title="Net Profit" value={netProfit} />
+              </Card>
+
+              <Card>
+                <Metric title="OPM %" value={opm} />
+                <Metric title="NPM %" value={npm} />
+              </Card>
+
+              <Card>
+                <Metric title="EPS" value={eps} />
+                <Metric title="Book Value" value={bookValue} />
+              </Card>
+            </>
+          )}
+
+          {/* PROFIT & LOSS TABLE */}
+          {tab === "pl" && (
+            <Card>
+              {blocks.map((block: any, idx: number) =>
+                Object.entries(block).map(([k, v]) => (
+                  <Row key={`${idx}-${k}`} label={k} value={v} />
+                ))
+              )}
+            </Card>
+          )}
+        </ScrollView>
       </View>
-
-      {/* TABS */}
-      <View style={styles.tabs}>
-        {["overview", "pl"].map((t) => (
-          <TouchableOpacity
-            key={t}
-            onPress={() => setTab(t as any)}
-            style={[styles.tab, tab === t && styles.tabActive]}
-          >
-            <Text style={tab === t ? styles.tabTextActive : styles.tabText}>
-              {t === "overview" ? "OVERVIEW" : "P&L"}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: 16 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
-        }
-      >
-        {/* OVERVIEW */}
-        {tab === "overview" && (
-          <>
-            <Card>
-              <Metric title="Sales" value={sales} />
-              <Metric title="Net Profit" value={netProfit} />
-            </Card>
-
-            <Card>
-              <Metric title="OPM %" value={opm} />
-              <Metric title="NPM %" value={npm} />
-            </Card>
-
-            <Card>
-              <Metric title="EPS" value={eps} />
-              <Metric title="Book Value" value={bookValue} />
-            </Card>
-          </>
-        )}
-
-        {/* PROFIT & LOSS TABLE */}
-        {tab === "pl" && (
-          <Card>
-            {blocks.map((block: any, idx: number) =>
-              Object.entries(block).map(([k, v]) => (
-                <Row key={`${idx}-${k}`} label={k} value={v} />
-              ))
-            )}
-          </Card>
-        )}
-      </ScrollView>
-    </View>
+    </ScreenWithHeader>
   );
 }
 

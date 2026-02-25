@@ -1,395 +1,318 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Modal,
   ActivityIndicator,
-  Dimensions,
   SafeAreaView,
   Alert,
   Share,
-  Clipboard,
-} from 'react-native';
+} from "react-native";
 import { Switch } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from "expo-router";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { ChevronRight } from "lucide-react-native";
-
 import {
   fetchAdvancedStrategyDetails,
-  goToAdvancedStrategyPage,
   toggleStrategyMonetize,
   toggleStrategyVisibility,
 } from "../../apis/BasicBacktester";
 import { deepCopy } from "../../components/UnflukeMain/Utils/common_vars";
 import { Config } from "../../helpers/config";
 
-
 const AdvancedBacktesterHome = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
 
-  // State variables
   const [savedStrategies, setSavedStrategies] = useState([]);
-  const [purchasedStrats, setPurchasedStrats] = useState([]);
-  const [strategy, setStrategy] = useState({});
   const [listStrategies, setListStrategies] = useState([]);
-  const [publicScanners, setPublicScanners] = useState({});
-  const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("1");
-  const [subUrl, setSubUrl] = useState("");
 
-  const auth = useSelector((state) => state.Login);
-  const globalState = useSelector((store) => store.Layout);
+  const auth = useSelector((state: any) => state.Login);
+  const globalState = useSelector((store: any) => store.Layout);
 
-  // Set subUrl effect
-  useEffect(() => {
-    if (globalState && globalState.appType) {
-      setSubUrl(globalState.appType);
-    }
-  }, [globalState]);
-
-  // Toggle tab
-  const toggleTab = (tab, type) => {
+  const toggleTab = (tab: string, type: string) => {
     if (activeTab !== tab) {
       setActiveTab(tab);
       let tmp = deepCopy(savedStrategies);
-
       if (type === "purchased") {
-        tmp = tmp.filter((strat) => strat.monetize === true);
+        tmp = tmp.filter((strat: any) => strat.monetize === true);
       }
-
       setListStrategies(tmp);
     }
   };
 
-  // Handle delete strategy
-  const handleDeleteStrategy = (strategyId) => {
+  const handleDeleteStrategy = (strategyId: string) => {
     Alert.alert(
       "Delete Strategy",
       "Are you sure you want to delete this strategy? This action cannot be undone.",
       [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
           onPress: () => {
-            if (auth.user && auth.user._id) {
+            if (auth.user?._id) {
               axios
-                .delete(
-                  `${Config.BACKEND_URL}/api/stocks/deleteStrategy`,
-                  {
-                    params: {
-                      user: auth.user._id,
-                      id: strategyId,
-                    },
-                  },
-                )
-                .then((res) => {
-                  const tmp = deepCopy(listStrategies);
-                  const tmp1 = deepCopy(savedStrategies);
-                  setListStrategies(tmp.filter((x) => x._id !== strategyId));
-                  setSavedStrategies(tmp1.filter((x) => x._id !== strategyId));
+                .delete(`${Config.BACKEND_URL}/api/stocks/deleteStrategy`, {
+                  params: { user: auth.user._id, id: strategyId },
+                })
+                .then(() => {
+                  setSavedStrategies((prev: any[]) =>
+                    prev.filter((x) => x._id !== strategyId)
+                  );
+                  setListStrategies((prev: any[]) =>
+                    prev.filter((x) => x._id !== strategyId)
+                  );
                   Alert.alert("Success", "Strategy deleted successfully");
                 })
                 .catch((err) => {
-                  console.log(err);
+                  console.error(err);
                   Alert.alert("Error", "Failed to delete strategy");
                 });
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
-  // Handle private toggle
-  const handlePrivate = async (index, isChecked) => {
-    const newFiles = [...savedStrategies];
+  const handlePrivate = async (index: number, isChecked: boolean) => {
+    const newFiles = [...savedStrategies] as any[];
     newFiles[index].isPrivate = isChecked;
     setSavedStrategies(newFiles);
-    
+    setListStrategies(newFiles);
     try {
       await toggleStrategyVisibility(
         axios,
         newFiles[index].fileName.split(".")[0],
-        true,
+        true
       );
     } catch (error) {
-      console.error("Error toggling private status:", error);
       Alert.alert("Error", "Failed to update privacy settings");
     }
   };
 
-  // Handle monetize toggle
-  const handleMonetize = async (index, isChecked) => {
-    const newFiles = [...savedStrategies];
+  const handleMonetize = async (index: number, isChecked: boolean) => {
+    const newFiles = [...savedStrategies] as any[];
     newFiles[index].monetize = isChecked;
     setSavedStrategies(newFiles);
-
+    setListStrategies(newFiles);
     try {
       await toggleStrategyMonetize(
         axios,
         newFiles[index].fileName.split(".")[0],
-        true,
+        true
       );
-      if (newFiles[index].monetize) {
-        setStrategy(newFiles[index]);
-        setShow(true);
-      }
     } catch (error) {
-      console.error("Error toggling monetize status:", error);
       Alert.alert("Error", "Failed to update monetization settings");
     }
   };
 
-  // Share backtester
-  const shareBacktester = async (fileName) => {
-    if (fileName) {
-      const link = `${Config.PUBLIC_URL}/basic-backtester-view?filename=${fileName.split(".")[0]}&advanced=yes`;
-      
-      try {
-        await Share.share({
-          message: link,
-          url: link,
-        });
-      } catch (error) {
-        Alert.alert("Error", "Could not share link");
-      }
-    } else {
+  const shareBacktester = async (fileName: string) => {
+    if (!fileName) {
       Alert.alert("Error", "Could not generate share link");
+      return;
+    }
+    const link = `${Config.PUBLIC_URL}/basic-backtester-view?filename=${fileName.split(".")[0]
+      }&advanced=yes`;
+    try {
+      await Share.share({ message: link, url: link });
+    } catch {
+      Alert.alert("Error", "Could not share link");
     }
   };
 
-  // Navigate to strategy view
-  const navigateToStrategyView = (fileName) => {
-    navigation.navigate('basic-backtester-view', {
-      filename: fileName.replace(".csv", ""),
-      advanced: "yes"
+  const navigateToStrategyView = (fileName: string) => {
+    router.push({
+      pathname: "/basic-backtester-view",
+      params: {
+        filename: fileName.replace(".csv", ""),
+        advanced: "yes",
+      },
     });
   };
 
-  // Navigate to strategy page
-  const navigateToStrategyPage = async (userId, strategyId) => {
-     const stratDetails = await fetchAdvancedStrategyDetails(axios, userId, strategyId)
-    
-        console.log("stratDetails", stratDetails)
-    
-        if(stratDetails){
-            navigation.navigate(`advanced-backtester`, {
-                state: stratDetails
-            })
-        }
+  const navigateToStrategyPage = async (userId: string, strategyId: string) => {
+    try {
+      const stratDetails = await fetchAdvancedStrategyDetails(
+        axios,
+        userId,
+        strategyId
+      );
+      if (stratDetails) {
+        router.push({
+          pathname: "/advanced-backtester",
+          params: { state: JSON.stringify(stratDetails) },
+        });
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to load strategy");
+    }
   };
 
-  // Format number for display
-  const formatNumber = (raw) => {
-    const num = typeof raw === "number" ? raw : Number(raw);
-    const intVal = Number.isFinite(num) ? Math.trunc(num) : null;
-    return intVal !== null ? intVal.toLocaleString("en-IN") : "-";
-  };
-
-  // Strategy Table Component
-  const StrategyTable = ({ strategies }) => {
-    return (
-      <View style={styles.tableContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tableScrollContent}
-        >
-          <View style={styles.tableWrapper}>
-            {/* Header */}
-            <View style={[styles.tableRow, styles.tableHeader]}>
-              <Text style={[styles.tableCell, styles.headerText, styles.strategyNameCell]}>Strategy Name</Text>
-              <Text style={[styles.tableCell, styles.headerText, styles.switchCell]}>Private</Text>
-              <Text style={[styles.tableCell, styles.headerText, styles.switchCell]}>Monetize</Text>
-              <Text style={[styles.tableCell, styles.headerText, styles.actionCell]}>Actions</Text>
-            </View>
-
-            {/* Data Rows */}
-            {strategies.map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.tableRow2,
-                  index % 2 === 0 ? styles.evenRow : styles.oddRow,
-                ]}
-              >
-                <TouchableOpacity 
-                  style={[styles.tableCell, styles.strategyNameCell]}
-                  onPress={() => navigateToStrategyPage(item.user, item._id)}
-                >
-                  <Text style={styles.strategyNameText}>{item.strategyName}</Text>
-                </TouchableOpacity>
-
-                {/* Private Switch */}
-                <View style={[styles.tableCell, styles.switchCell]}>
-                  <Switch
-                    value={item.isPrivate}
-                    onValueChange={(val) => handlePrivate(index, val)}
-                  />
-                </View>
-
-                {/* Monetize Switch */}
-                <View style={[styles.tableCell, styles.switchCell]}>
-                  <Switch
-                    value={item.monetize}
-                    disabled={item.isPrivate}
-                    onValueChange={(val) => handleMonetize(index, val)}
-                  />
-                </View>
-
-                {/* Actions */}
-                <View style={[styles.tableCell, styles.actionCell]}>
-                  <TouchableOpacity onPress={() => shareBacktester(item.fileName)}>
-                    <Ionicons name="share-outline" size={18} color="#3b82f6" />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigateToStrategyView(item.fileName)}>
-                    <Ionicons name="eye" size={18} color="#16a34a" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => handleDeleteStrategy(item._id)}
-                  >
-                    <Ionicons name="trash" size={18} color="#dc2626" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-    );
-  };
-
-  const TabButton = ({ title, tabId, filterType, isActive, onPress }) => (
-    <TouchableOpacity
-      style={[
-        styles.tabButton,
-        isActive ? styles.activeTabButton : styles.inactiveTabButton
-      ]}
-      onPress={() => onPress(tabId, filterType)}
-    >
-      <Text style={[
-        styles.tabText,
-        isActive ? styles.activeTabText : styles.inactiveTabText
-      ]}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const EmptyState = ({ message }) => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>{message}</Text>
-    </View>
-  );
-
-  const LoadingState = () => (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#3b82f6" />
-      <Text style={styles.loadingText}>Loading strategies...</Text>
-    </View>
-  );
-
-  // Fetch strategies effect
   useEffect(() => {
-    if (auth && auth.user) {
+    if (auth?.user?._id) {
       axios
         .get(
-          `${Config.BACKEND_URL}/api/stocks/getSavedStrategies?user=${auth.user._id}`,
+          `${Config.BACKEND_URL}/api/stocks/getSavedStrategies?user=${auth.user._id}`
         )
         .then((res) => {
-          if (res) {
-            setSavedStrategies(res);
-            setListStrategies(res);
-            setLoading(false);
-          }
+          // ✅ Fixed: use res.data, not res
+          const data = res.data ?? res;
+          const list = Array.isArray(data) ? data : [];
+          setSavedStrategies(list);
+          setListStrategies(list);
+          setLoading(false);
         })
         .catch((err) => {
-          console.log(err);
+          console.error(err);
           setLoading(false);
         });
-
-      axios
-        .get(
-          `${Config.BACKEND_URL}/api/strategy/basic/purchased/?i=${auth.user._id}`,
-        )
-        .then((res) => {
-          if (res && res.data) {
-            const allPurchasedStrategies = res.data;
-            setPurchasedStrats(allPurchasedStrategies);
-          }
-        })
-        .catch((err) => console.log(err));
     }
   }, [auth]);
 
+  const StrategyTable = ({ strategies }: { strategies: any[] }) => (
+    <View style={styles.tableContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.tableWrapper}>
+          {/* Header */}
+          <View style={[styles.tableRow, styles.tableHeader]}>
+            <Text style={[styles.headerCell, { width: 200 }]}>Strategy Name</Text>
+            <Text style={[styles.headerCell, { width: 80 }]}>Private</Text>
+            <Text style={[styles.headerCell, { width: 80 }]}>Monetize</Text>
+            <Text style={[styles.headerCell, { width: 120 }]}>Actions</Text>
+          </View>
+
+          {strategies.map((item, index) => (
+            <View
+              key={item._id ?? index}
+              style={[
+                styles.tableRow,
+                index % 2 === 0 ? styles.evenRow : styles.oddRow,
+              ]}
+            >
+              {/* Name */}
+              <TouchableOpacity
+                style={{ width: 200, paddingVertical: 10 }}
+                onPress={() => navigateToStrategyPage(item.user, item._id)}
+              >
+                <Text style={styles.linkText} numberOfLines={2}>
+                  {item.strategyName ?? item.name ?? "—"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Private */}
+              <View style={styles.switchCell}>
+                <Switch
+                  value={!!item.isPrivate}
+                  onValueChange={(val) => handlePrivate(index, val)}
+                  trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                  thumbColor="#fff"
+                />
+              </View>
+
+              {/* Monetize */}
+              <View style={styles.switchCell}>
+                <Switch
+                  value={!!item.monetize}
+                  disabled={item.isPrivate}
+                  onValueChange={(val) => handleMonetize(index, val)}
+                  trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                  thumbColor="#fff"
+                />
+              </View>
+
+              {/* Actions */}
+              <View style={styles.actionsCell}>
+                <TouchableOpacity onPress={() => shareBacktester(item.fileName)}>
+                  <Ionicons name="share-outline" size={18} color="#3b82f6" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigateToStrategyView(item.fileName)}>
+                  <Ionicons name="eye" size={18} color="#16a34a" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDeleteStrategy(item._id)}>
+                  <Ionicons name="trash" size={18} color="#dc2626" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Backtester Home</Text>
-          <View style={styles.breadcrumb}>
-            <Text style={styles.breadcrumbText}>Pages</Text>
-            <ChevronRight size={13} color="#6B7280" />
-            <Text style={styles.breadcrumbText}>Advanced Backtester</Text>
-          </View>
+      {/* ✅ Single clean header - no paddingTop hack */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Backtester Home</Text>
+        <View style={styles.breadcrumb}>
+          <Text style={styles.breadcrumbText}>Pages</Text>
+          <ChevronRight size={13} color="#9ca3af" />
+          <Text style={styles.breadcrumbText}>Advanced Backtester</Text>
         </View>
+      </View>
 
-        {/* Main Card */}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.card}>
           {/* Card Header */}
-          <View style={styles.cardHeaderSection}>
-            <Text style={styles.cardTitle}>Home</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Your saved strategies</Text>
             <TouchableOpacity
               style={styles.createButton}
-              onPress={() => navigation.navigate('advanced-backtester')}
+              onPress={() => router.push("/advanced-backtester")}
             >
               <Ionicons name="add" size={15} color="white" />
               <Text style={styles.createButtonText}>Create new</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Tab Container */}
+          {/* Tabs */}
           <View style={styles.tabContainer}>
-            <TabButton
-              title="Your strategies"
-              tabId="1"
-              filterType="all"
-              isActive={activeTab === "1"}
-              onPress={toggleTab}
-            />
-            <TabButton
-              title="Purchased strategies"
-              tabId="2"
-              filterType="purchased"
-              isActive={activeTab === "2"}
-              onPress={toggleTab}
-            />
+            {[
+              { id: "1", label: "Your strategies", type: "all" },
+              { id: "2", label: "Purchased strategies", type: "purchased" },
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.id}
+                style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+                onPress={() => toggleTab(tab.id, tab.type)}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === tab.id && styles.activeTabText,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* Content */}
           <View style={styles.content}>
-            {!loading ? (
-              <>
-                {listStrategies.length > 0 ? (
-                  <StrategyTable strategies={listStrategies} />
-                ) : (
-                  <EmptyState message="No strategies found." />
-                )}
-              </>
+            {loading ? (
+              <View style={styles.loaderBox}>
+                <ActivityIndicator size="large" color="#3b82f6" />
+                <Text style={styles.loaderText}>Loading strategies...</Text>
+              </View>
+            ) : listStrategies.length > 0 ? (
+              <StrategyTable strategies={listStrategies} />
             ) : (
-              <LoadingState />
+              <View style={styles.emptyBox}>
+                <Ionicons name="document-outline" size={40} color="#9CA3AF" />
+                <Text style={styles.emptyText}>No strategies found.</Text>
+              </View>
             )}
           </View>
         </View>
@@ -401,203 +324,166 @@ const AdvancedBacktesterHome = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    paddingTop: 85,
-    paddingHorizontal: 12,
+    backgroundColor: "#f9fafb",
+    // ✅ NO paddingTop: 85 — header handles spacing
   },
-  scrollView: {
-    flex: 1,
-    padding: 1,
+
+  /* ── Header ── */
+  header: {
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
-  headerContainer: {
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "bold",
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
     color: "#111827",
   },
   breadcrumb: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 3,
+    gap: 4,
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "#9ca3af",
   },
+
+  /* ── Scroll ── */
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 12, paddingBottom: 30 },
+
+  /* ── Card ── */
   card: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    marginBottom: 16
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    elevation: 1,
+    overflow: "hidden",
   },
-  cardHeaderSection: {
-    paddingHorizontal: 15,
-    paddingVertical: 13,
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderBottomColor: "#e5e7eb",
   },
   cardTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
   createButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 8,
+    backgroundColor: "#3b82f6",
+    paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   createButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "600",
   },
+
+  /* ── Tabs ── */
   tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    margin: 20,
-    marginBottom: 0,
-    borderRadius: 6,
+    flexDirection: "row",
+    backgroundColor: "#f3f4f6",
+    margin: 16,
+    borderRadius: 8,
     padding: 4,
   },
-   tabButton: {
+  tab: {
     flex: 1,
     paddingVertical: 8,
-    paddingHorizontal: 12,
     borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: "center"
+    alignItems: "center",
   },
-  activeTabButton: {
-    backgroundColor: 'white',
-    shadowColor: '#000',
+  activeTab: {
+    backgroundColor: "#fff",
+    elevation: 2,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
   },
-  inactiveTabButton: {
-    backgroundColor: 'transparent',
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: "center"
-  },
-  activeTabText: {
-    color: '#111827',
-  },
-  inactiveTabText: {
-    color: '#64748b',
-  },
-  content: {
-    padding: 20,
-  },
+  tabText: { fontSize: 13, fontWeight: "600", color: "#64748b" },
+  activeTabText: { color: "#111827" },
+
+  content: { padding: 16 },
+
+  /* ── Table ── */
   tableContainer: {
     borderWidth: 1,
     borderColor: "#e5e7eb",
     borderRadius: 8,
     overflow: "hidden",
   },
-  tableScrollContent: {
-    minWidth: '100%',
-  },
-  tableWrapper: {
-    minWidth: 700, // Adjust based on your content
-  },
+  tableWrapper: { minWidth: 480 },
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: "#e5e7eb",
+    paddingHorizontal: 8,
   },
-  tableRow2: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  tableHeader: {
-    backgroundColor: "#f5f7fa",
-  },
-  evenRow: {
-    backgroundColor: "#fff",
-  },
-  oddRow: {
-    backgroundColor: "#f9fafb",
-  },
-  tableCell: {
-    textAlign: "center",
-    fontSize: 13,
-    color: "#374151",
-    paddingHorizontal: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    fontWeight: "600",
-    fontSize: 12,
+  tableHeader: { backgroundColor: "#f5f7fa", paddingVertical: 10 },
+  evenRow: { backgroundColor: "#fff" },
+  oddRow: { backgroundColor: "#f9fafb" },
+  headerCell: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#6b7280",
     textTransform: "uppercase",
-    color: "#374151",
+    textAlign: "center",
   },
-  // Specific cell width styles
-  strategyNameCell: {
-    width: 200,
-    flex: 0,
-    alignItems: 'flex-start',
+  linkText: {
+    fontSize: 13,
+    color: "#3b82f6",
+    fontWeight: "600",
+    textDecorationLine: "underline",
+    paddingHorizontal: 4,
   },
   switchCell: {
     width: 80,
-    flex: 0,
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
   },
-  actionCell: {
+  actionsCell: {
+    width: 120,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    width: 120,
-    flex: 0,
-    gap: 8,
+    paddingVertical: 8,
   },
-  strategyNameText: {
-    fontSize: 14,
-    color: '#3b82f6',
-    fontWeight: '500',
-    textDecorationLine: 'underline',
-  },
-  emptyContainer: {
+
+  /* ── States ── */
+  loaderBox: {
     paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  loadingContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 12,
   },
-  loadingText: {
-    fontSize: 16,
-    color: '#6b7280',
+  loaderText: { fontSize: 14, color: "#6b7280" },
+  emptyBox: {
+    paddingVertical: 40,
+    alignItems: "center",
+    gap: 12,
   },
+  emptyText: { fontSize: 15, color: "#6b7280" },
 });
 
 export default AdvancedBacktesterHome;

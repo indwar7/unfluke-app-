@@ -29,7 +29,7 @@ import { Image } from "expo-image";
 
 const BasicBacktesterMainPage = () => {
   const dispatch = useDispatch();
-  const auth = useSelector((store) => store.Login);
+  const auth = useSelector((store: any) => store.Login);
   const navigation = useNavigation();
   const [defaultStrategies, setDefaultStrategies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +103,7 @@ const BasicBacktesterMainPage = () => {
   //     }
   //   }
   // };
-  
+
   const fetchAllStrategy = async () => {
     const ID = auth.user._id;
     if (ID) {
@@ -215,7 +215,7 @@ const BasicBacktesterMainPage = () => {
               <Image
                 source={fetchRandomImage(index)}
                 style={styles.cardImage}
-                contentFit="cover" 
+                contentFit="cover"
 
               />
             </View>
@@ -280,7 +280,7 @@ const BasicBacktesterMainPage = () => {
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             style={styles.viewSavedButton}
-            // onPress={() => navigation.navigate("BasicBacktesterHome")}
+          // onPress={() => navigation.navigate("BasicBacktesterHome")}
           >
             <Eye color="#000" size={12} />
             <Text style={styles.viewSavedButtonText}>View saved</Text>
@@ -288,7 +288,7 @@ const BasicBacktesterMainPage = () => {
 
           <TouchableOpacity
             style={styles.createNewButton}
-            // onPress={() => navigation.navigate("BasicBacktester")}
+          // onPress={() => navigation.navigate("BasicBacktester")}
           >
             <Plus color="white" size={12} strokeWidth={3} />
 

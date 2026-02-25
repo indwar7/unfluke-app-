@@ -9,13 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   useColorScheme,
-  Platform,
+  SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useSelector, useDispatch } from "react-redux";
 import { Config } from "../../helpers/config";
 import axios from "axios";
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 import { ChevronRight, Trash2, Plus } from "lucide-react-native";
 
 import {
@@ -45,15 +45,14 @@ import { backendSocket } from "../../socket/socket";
 const AdvancedBacktester = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const dynamicStyles = styles(isDark);
+  const dynamicStyles = createStyles(isDark);
 
-  const advancedState = useSelector((store) => store.AdvancedBacktester);
-  const auth = useSelector((store) => store.Login);
-  const globalState = useSelector((store) => store.Layout);
+  const advancedState = useSelector((store: any) => store.AdvancedBacktester);
+  const auth = useSelector((store: any) => store.Login);
+  const globalState = useSelector((store: any) => store.Layout);
 
   const dispatch = useDispatch();
-  const route = useRoute();
-  const navigation = useNavigation();
+  const params = useLocalSearchParams<{ state?: string }>();
 
   const [indicators, setIndicators] = useState([]);
   const [activeTab, setActiveTab] = useState("1");
@@ -64,153 +63,100 @@ const AdvancedBacktester = () => {
 
   const windowId = useRef(new Date().getMilliseconds());
 
-  // Set subUrl from global state
   useEffect(() => {
-    if (globalState && globalState.appType) {
-      setSubUrl(globalState.appType);
-    }
+    if (globalState?.appType) setSubUrl(globalState.appType);
   }, [globalState]);
 
-  // Fetch indicators
   useEffect(() => {
     axios
-      .get(
-        `${Config.BACKEND_URL}/api/scanner/overlap-studies`
-      )
+      .get(`${Config.BACKEND_URL}/api/scanner/overlap-studies`)
       .then((res) => {
-        setIndicators(res);
+        // ✅ Fixed: handle axios response wrapper
+        const data = res?.data ?? res;
+        setIndicators(Array.isArray(data) ? data : []);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => console.error(err));
   }, []);
 
-  // Handle all input changes
-  function handleAllChanges(e) {
-    const name = e.target.name;
-    let value = e.target.value;
-
+  // ✅ Fixed: React Native dispatch helpers (no e.target pattern)
+  const dispatchChange = (name: string, value: any) => {
     switch (name) {
       case "mtm.target":
-        dispatch(
-          handleMTMChange({
-            name: "target",
-            value: parseFloat(value),
-          })
-        );
+        dispatch(handleMTMChange({ name: "target", value: parseFloat(value) || 0 }));
         return;
       case "mtm.stoploss":
-        dispatch(
-          handleMTMChange({
-            name: "stoploss",
-            value: parseFloat(value),
-          })
-        );
+        dispatch(handleMTMChange({ name: "stoploss", value: parseFloat(value) || 0 }));
         return;
       case "mtm.trailX":
-        dispatch(
-          handleMTMChange({
-            name: "trailX",
-            value: parseFloat(value),
-          })
-        );
+        dispatch(handleMTMChange({ name: "trailX", value: parseFloat(value) || 0 }));
         return;
       case "mtm.trailY":
-        dispatch(
-          handleMTMChange({
-            name: "trailY",
-            value: parseFloat(value),
-          })
-        );
+        dispatch(handleMTMChange({ name: "trailY", value: parseFloat(value) || 0 }));
         return;
       case "entries":
-        value = parseInt(value);
-        break;
+        dispatch(handleChange({ name, value: parseInt(value) || 1 }));
+        return;
+      default:
+        dispatch(handleChange({ name, value }));
     }
+  };
 
-    dispatch(handleChange({ name, value }));
+  // ✅ Wrapper so LegTabs / AdvancedMTM still work if they pass e.target style
+  function handleAllChanges(e: any) {
+    if (e && e.target) {
+      dispatchChange(e.target.name, e.target.value);
+    } else if (e && e.name !== undefined) {
+      dispatchChange(e.name, e.value);
+    }
   }
 
-  // Add leg
   function addLeg() {
-    dispatch(
-      handleAddLeg({
-        index: advancedState.totalLegs,
-      })
-    );
+    dispatch(handleAddLeg({ index: advancedState.totalLegs }));
   }
 
-  // Remove leg
   function removeLeg() {
-    Alert.alert(
-      "Delete Leg",
-      "Are you sure you want to delete the current leg?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert("Delete Leg", "Are you sure you want to delete the current leg?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          dispatch(handleRemoveLeg({ index: activeTab }));
+          const next = parseInt(activeTab) - 1;
+          if (next >= 1) setActiveTab(next.toString());
         },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            dispatch(
-              handleRemoveLeg({
-                index: activeTab,
-              })
-            );
-
-            const nextActiveTab = parseInt(activeTab) - 1;
-            if (nextActiveTab >= 1) {
-              setActiveTab(nextActiveTab.toString());
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   }
 
-  // Validation functions
-  const lhsRhsValid = (subEquation) => {
-    const LHS = [];
-    const RHS = [];
+  const lhsRhsValid = (subEquation: any[]) => {
     let op = "";
+    const LHS: string[] = [];
+    const RHS: string[] = [];
 
-    for (let item of subEquation) {
+    for (const item of subEquation) {
       const indicName = item.indicatorName;
-
       if (binaryOperators.indexOf(indicName) !== -1) return true;
-
       if (conditionalOperators.indexOf(indicName) !== -1) {
-        if (op === "") {
-          op = indicName;
-        } else {
-          return false;
-        }
+        if (op === "") op = indicName;
+        else return false;
       } else {
-        if (op !== "") {
-          LHS.push(indicName);
-        } else {
-          RHS.push(indicName);
-        }
+        if (op !== "") LHS.push(indicName);
+        else RHS.push(indicName);
       }
     }
-
     return LHS.length > 0 && RHS.length > 0;
   };
 
-  const checkEquation = (equation) => {
+  const checkEquation = (equation: any[][]) => {
     let pseudoEquation = "";
     let totalLength = 0;
 
-    for (let subEquation of equation) {
+    for (const subEquation of equation) {
       if (!lhsRhsValid(subEquation)) return false;
-
-      for (let item of subEquation) {
+      for (const item of subEquation) {
         const indicName = item.indicatorName;
-
-        if (
-          mathOperators.indexOf(indicName) !== -1 ||
-          conditionalOperators.indexOf(indicName) !== -1
-        ) {
+        if (mathOperators.indexOf(indicName) !== -1 || conditionalOperators.indexOf(indicName) !== -1) {
           pseudoEquation += " " + indicName + " ";
         } else if (advOperators.indexOf(indicName) !== -1) {
           pseudoEquation += " > ";
@@ -219,146 +165,103 @@ const AdvancedBacktester = () => {
         } else {
           pseudoEquation += " 1 ";
         }
-
         totalLength += 1;
       }
     }
 
-    pseudoEquation = pseudoEquation.trim();
-
     if (totalLength <= 1) return false;
 
     try {
-      let evalVal = eval(pseudoEquation) + "";
-      if (evalVal !== "") {
-        return true;
-      }
-    } catch (err) {
+      const evalVal = eval(pseudoEquation.trim()) + "";
+      return evalVal !== "";
+    } catch {
       return false;
     }
-
-    return false;
   };
 
-  // Validate backtester
   function checkIsBacktesterValid() {
-    let invalidBacktesterDialog = "";
-
     for (let i = 0; i < advancedState.totalLegs; i++) {
-      const backtesterLegs = advancedState.legs;
-      const leg = backtesterLegs["entry"][i];
-
-      if (leg.scannerExpr.length <= 0 || !checkEquation(leg.scannerExpr)) {
-        invalidBacktesterDialog =
-          "Please create a valid expression in entry leg " + (i + 1);
-        setErrorDialog(invalidBacktesterDialog);
+      const leg = advancedState.legs["entry"][i];
+      if (!leg.scannerExpr.length || !checkEquation(leg.scannerExpr)) {
+        setErrorDialog(`Please create a valid expression in entry leg ${i + 1}`);
         return false;
       }
     }
-
     for (let i = 0; i < advancedState.totalLegs; i++) {
-      const backtesterLegs = advancedState.legs;
-      const leg = backtesterLegs["exit"][i];
-
-      if (leg.scannerExpr.length <= 0 || !checkEquation(leg.scannerExpr)) {
-        invalidBacktesterDialog =
-          "Please create a valid expression in exit leg " + (i + 1);
-        setErrorDialog(invalidBacktesterDialog);
+      const leg = advancedState.legs["exit"][i];
+      if (!leg.scannerExpr.length || !checkEquation(leg.scannerExpr)) {
+        setErrorDialog(`Please create a valid expression in exit leg ${i + 1}`);
         return false;
       }
     }
-
     return true;
   }
 
-  // Submit handler
   async function handleSubmit() {
     if (advancedState.strategyName.trim() === "") {
       Alert.alert("Error", "Please enter a strategy name");
       return;
     }
 
-    let validBacktester = checkIsBacktesterValid();
+    if (!checkIsBacktesterValid()) return;
 
-    if (validBacktester) {
-      setIsBacktesting(true);
-      setErrorDialog("");
+    setIsBacktesting(true);
+    setErrorDialog("");
 
-      const state = deepCopy(advancedState);
-      state.market = subUrl;
-      state.windowId = windowId.current.toString();
+    const state = deepCopy(advancedState);
+    state.market = subUrl;
+    state.windowId = windowId.current.toString();
 
-      try {
-        const response = await axios.post(
-          `${Config.BACKEND_URL}/api/stocks/advbacktest`,
-          state
-        );
-
-        // if (response) {
-        //   console.log("Response", response);
-        // }
-      } catch (error) {
-        setIsBacktesting(false);
-        Alert.alert("Error", "Failed to submit backtest");
-        console.error(error);
-      }
+    try {
+      await axios.post(`${Config.BACKEND_URL}/api/stocks/advbacktest`, state);
+    } catch (error) {
+      setIsBacktesting(false);
+      Alert.alert("Error", "Failed to submit backtest. Please try again.");
+      console.error(error);
     }
   }
 
-  // Initialize from route params
   useEffect(() => {
     dispatch(clearValues());
-
-    if (route.params?.state) {
-      dispatch(setBacktester(route.params.state));
+    if (params?.state) {
+      try {
+        const parsed = typeof params.state === "string" ? JSON.parse(params.state) : params.state;
+        dispatch(setBacktester(parsed));
+      } catch {
+        dispatch(handleAddLeg({ index: 0 }));
+      }
     } else {
-      dispatch(
-        handleAddLeg({
-          index: 0,
-        })
-      );
+      dispatch(handleAddLeg({ index: 0 }));
     }
-  }, [route.params]);
+  }, [params?.state]);
 
-  // Set user info
   useEffect(() => {
     if (auth?.user) {
       const user = auth.user;
-
-      handleAllChanges({
-        target: {
-          name: "user",
-          value: {
-            backtests: parseInt(user.backtests),
-            _id: user._id,
-            tier: user.tier,
-          },
-        },
+      dispatchChange("user", {
+        backtests: parseInt(user.backtests),
+        _id: user._id,
+        tier: user.tier,
       });
     }
   }, [auth]);
 
-  // Socket listener for results
   useEffect(() => {
     if (auth.user?._id && backendSocket) {
-      const handleAdvancedResults = (data) => {
-        if (data) {
-          if (
-            data.userId === auth.user._id &&
-            data.windowId == windowId.current
-          ) {
-            setIsBacktesting(false);
-            if (data.message && data.message !== "") {
-              setResultsMessage(data.message);
-            } else {
-              Alert.alert("Success", "Results have been sent to your email!");
-            }
+      const handleAdvancedResults = (data: any) => {
+        if (
+          data?.userId === auth.user._id &&
+          data.windowId == windowId.current
+        ) {
+          setIsBacktesting(false);
+          if (data.message && data.message !== "") {
+            setResultsMessage(data.message);
+          } else {
+            Alert.alert("Success", "Results have been sent to your email!");
           }
         }
       };
-
       backendSocket.on("advbacktest-results", handleAdvancedResults);
-
       return () => {
         backendSocket.off("advbacktest-results", handleAdvancedResults);
       };
@@ -366,194 +269,190 @@ const AdvancedBacktester = () => {
   }, [auth.user?._id]);
 
   return (
-    <ScrollView
-      style={dynamicStyles.container}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={dynamicStyles.contentContainer}
-    >
-      {/* Header */}
-      <View style={dynamicStyles.headerContent}>
+    <SafeAreaView style={dynamicStyles.safeArea}>
+      {/* ✅ Single clean header */}
+      <View style={dynamicStyles.header}>
         <Text style={dynamicStyles.headerTitle}>Advanced Backtester</Text>
         <View style={dynamicStyles.breadcrumb}>
           <Text style={dynamicStyles.breadcrumbText}>Pages</Text>
-          <ChevronRight size={13} color="#6B7280" />
+          <ChevronRight size={13} color="#9ca3af" />
           <Text style={dynamicStyles.breadcrumbText}>Advanced Backtester</Text>
         </View>
       </View>
 
-      {/* Strategy Name and Re-entries */}
-      <View style={dynamicStyles.formRow}>
-        {/* Strategy Name */}
-        <View style={dynamicStyles.formGroup}>
-          <Text style={dynamicStyles.label}>Strategy Name</Text>
-          <TextInput
-            style={dynamicStyles.input}
-            placeholder="Enter here"
-            placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
-            value={advancedState.strategyName}
-            onChangeText={(text) =>
-              handleAllChanges({
-                target: { name: "strategyName", value: text },
-              })
-            }
+      <ScrollView
+        style={dynamicStyles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={dynamicStyles.contentContainer}
+      >
+        {/* Strategy Name + Re-entries */}
+        <View style={dynamicStyles.formRow}>
+          <View style={dynamicStyles.formGroup}>
+            <Text style={dynamicStyles.label}>Strategy Name</Text>
+            <TextInput
+              style={dynamicStyles.input}
+              placeholder="Enter here"
+              placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
+              value={advancedState.strategyName}
+              onChangeText={(text) => dispatchChange("strategyName", text)}
+            />
+          </View>
+
+          <View style={dynamicStyles.formGroup}>
+            <Text style={dynamicStyles.label}>Re-entries</Text>
+            <View style={dynamicStyles.pickerContainer}>
+              <Picker
+                selectedValue={advancedState.entries}
+                onValueChange={(val) => dispatchChange("entries", val)}
+                style={dynamicStyles.picker}
+                dropdownIconColor={isDark ? "#FFFFFF" : "#111827"}
+              >
+                {reEntriesGlobal.map((i) => (
+                  <Picker.Item
+                    key={i}
+                    label={(i + 1).toString()}
+                    value={i + 1}
+                    color={isDark ? "#FFFFFF" : "#111827"}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+        </View>
+
+        {/* Entry Section */}
+        <View style={dynamicStyles.section}>
+          <View style={dynamicStyles.sectionHeader}>
+            <Text style={dynamicStyles.sectionTitle}>Entry</Text>
+            <View style={dynamicStyles.buttonGroup}>
+              <TouchableOpacity
+                style={[dynamicStyles.button, dynamicStyles.buttonDanger]}
+                onPress={removeLeg}
+              >
+                <Trash2 size={16} color="#FFFFFF" />
+                <Text style={dynamicStyles.buttonText}>Delete leg</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[dynamicStyles.button, dynamicStyles.buttonPrimary]}
+                onPress={addLeg}
+              >
+                <Plus size={16} color="#FFFFFF" />
+                <Text style={dynamicStyles.buttonText}>Add Leg</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <LegTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            indicators={indicators}
+            entryexit="entry"
           />
         </View>
 
-        {/* Re-entries */}
-        <View style={dynamicStyles.formGroup}>
-          <Text style={dynamicStyles.label}>Re-entries</Text>
-          <View style={dynamicStyles.pickerContainer}>
-            <Picker
-              selectedValue={advancedState.entries}
-              onValueChange={(itemValue) =>
-                handleAllChanges({
-                  target: { name: "entries", value: itemValue },
-                })
-              }
-              style={dynamicStyles.picker}
-              dropdownIconColor={isDark ? "#FFFFFF" : "#111827"}
-            >
-              {reEntriesGlobal.map((i) => (
-                <Picker.Item
-                  key={i + 1}
-                  label={(i + 1).toString()}
-                  value={i + 1}
-                  color={isDark ? "#FFFFFF" : "#111827"}
-                  style={{fontSize:14,borderWidth:1, borderColor:"red"}}
-                />
-              ))}
-            </Picker>
+        {/* Exit Section */}
+        <View style={dynamicStyles.section}>
+          <Text style={dynamicStyles.sectionTitle}>Exit</Text>
+          <LegTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            indicators={indicators}
+            entryexit="exit"
+          />
+        </View>
+
+        {/* MTM */}
+        <AdvancedMTM handleChange={handleAllChanges} />
+
+        {/* Submit */}
+        <TouchableOpacity
+          style={[
+            dynamicStyles.submitButton,
+            isBacktesting && dynamicStyles.submitButtonDisabled,
+          ]}
+          onPress={handleSubmit}
+          disabled={isBacktesting}
+        >
+          {isBacktesting ? (
+            <View style={dynamicStyles.submitRow}>
+              <ActivityIndicator size="small" color="#fff" />
+              <Text style={dynamicStyles.submitButtonText}> Processing...</Text>
+            </View>
+          ) : (
+            <Text style={dynamicStyles.submitButtonText}>Save Strategy</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Alerts */}
+        {isBacktesting && (
+          <View style={dynamicStyles.alertSuccess}>
+            <ActivityIndicator size="small" color="#10B981" />
+            <Text style={dynamicStyles.alertSuccessText}>
+              Your results will be generated soon. Please wait...
+            </Text>
           </View>
-        </View>
-      </View>
+        )}
 
-      {/* Entry Section */}
-      <View style={dynamicStyles.section}>
-        <View style={dynamicStyles.sectionHeader}>
-          <Text style={dynamicStyles.sectionTitle}>Entry</Text>
-          <View style={dynamicStyles.buttonGroup}>
-            <TouchableOpacity
-              style={[dynamicStyles.button, dynamicStyles.buttonDanger]}
-              onPress={removeLeg}
-            >
-              <Trash2 size={16} color="#FFFFFF" />
-              <Text style={dynamicStyles.buttonText}>Delete current leg</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[dynamicStyles.button, dynamicStyles.buttonPrimary]}
-              onPress={addLeg}
-            >
-              <Plus size={16} color="#FFFFFF" />
-              <Text style={dynamicStyles.buttonText}>Add Leg</Text>
-            </TouchableOpacity>
+        {!!resultsMessage && (
+          <View style={dynamicStyles.alertDanger}>
+            <Text style={dynamicStyles.alertDangerText}>{resultsMessage}</Text>
           </View>
-        </View>
+        )}
 
-        <LegTabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          indicators={indicators}
-          entryexit="entry"
-        />
-      </View>
-
-      {/* Exit Section */}
-      <View style={dynamicStyles.section}>
-        <Text style={dynamicStyles.sectionTitle}>Exit</Text>
-        <LegTabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          indicators={indicators}
-          entryexit="exit"
-        />
-      </View>
-
-      {/* MTM Section */}
-      <AdvancedMTM handleChange={handleAllChanges} />
-
-      {/* Submit Button */}
-      <TouchableOpacity
-        style={[
-          dynamicStyles.submitButton,
-          isBacktesting && dynamicStyles.submitButtonDisabled,
-        ]}
-        onPress={handleSubmit}
-        disabled={isBacktesting}
-      >
-        <Text style={dynamicStyles.submitButtonText}>
-          {isBacktesting ? "Processing..." : "Save Strategy"}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Loading State */}
-      {isBacktesting && (
-        <View style={dynamicStyles.alertSuccess}>
-          <ActivityIndicator size="small" color="#10B981" />
-          <Text style={dynamicStyles.alertSuccessText}>
-            Your results will be generated soon and you will be notified, please
-            wait...
-          </Text>
-        </View>
-      )}
-
-      {/* Results Message */}
-      {resultsMessage && (
-        <View style={dynamicStyles.alertDanger}>
-          <Text style={dynamicStyles.alertDangerText}>{resultsMessage}</Text>
-        </View>
-      )}
-
-      {/* Error Dialog */}
-      {errorDialog.trim() !== "" && (
-        <View style={dynamicStyles.alertDanger}>
-          <Text style={dynamicStyles.alertDangerText}>{errorDialog}</Text>
-        </View>
-      )}
-    </ScrollView>
+        {errorDialog.trim() !== "" && (
+          <View style={dynamicStyles.alertDanger}>
+            <Text style={dynamicStyles.alertDangerText}>{errorDialog}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-const styles = (isDark) =>
+const createStyles = (isDark: boolean) =>
   StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
       backgroundColor: isDark ? "#111827" : "#F9FAFB",
     },
-    contentContainer: {
-      padding: 12,
-      paddingTop: 85,
-    },
-    // Header
+
+    /* ── Header ── */
     header: {
-      marginBottom: 24,
-    },
-    headerContent: {
-      paddingBottom: 16,
+      backgroundColor: "#ffffff",
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: "#e5e7eb",
+      elevation: 3,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
     },
     headerTitle: {
-      fontSize: 17,
-      fontWeight: "bold",
+      fontSize: 18,
+      fontWeight: "700",
       color: "#111827",
     },
     breadcrumb: {
       flexDirection: "row",
       alignItems: "center",
-      marginTop: 4,
+      marginTop: 3,
+      gap: 4,
     },
-    breadcrumbText: {
-      fontSize: 12,
-      color: "#6B7280",
+    breadcrumbText: { fontSize: 12, color: "#9ca3af" },
+
+    /* ── Scroll ── */
+    scrollView: { flex: 1 },
+    contentContainer: {
+      padding: 12,
+      paddingBottom: 40,
+      // ✅ NO paddingTop: 85
     },
 
-    // Form
-    formRow: {
-      flexDirection: "column",
-      gap: 16,
-      marginBottom: 24,
-    },
-    formGroup: {
-      flex: 1,
-    },
+    /* ── Form ── */
+    formRow: { flexDirection: "column", gap: 16, marginBottom: 24 },
+    formGroup: { flex: 1 },
     label: {
       fontSize: 14,
       fontWeight: "500",
@@ -576,15 +475,10 @@ const styles = (isDark) =>
       backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
       overflow: "hidden",
     },
-    picker: {
-      color: isDark ? "#FFFFFF" : "#111827",
-      height: 50,
-    },
+    picker: { color: isDark ? "#FFFFFF" : "#111827", height: 50 },
 
-    // Section
-    section: {
-      // marginBottom: 16,
-    },
+    /* ── Sections ── */
+    section: { marginBottom: 24 },
     sectionHeader: {
       flexDirection: "column",
       gap: 12,
@@ -595,13 +489,7 @@ const styles = (isDark) =>
       fontWeight: "bold",
       color: isDark ? "#FFFFFF" : "#111827",
     },
-    buttonGroup: {
-      flexDirection: "row",
-      gap: 8,
-      flexWrap: "wrap",
-    },
-
-    // Buttons
+    buttonGroup: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
     button: {
       flexDirection: "row",
       alignItems: "center",
@@ -610,38 +498,26 @@ const styles = (isDark) =>
       borderRadius: 8,
       gap: 8,
     },
-    buttonPrimary: {
-      backgroundColor: "#3B82F6",
-    },
-    buttonDanger: {
-      backgroundColor: "#EF4444",
-    },
-    buttonText: {
-      color: "#FFFFFF",
-      fontSize: 14,
-      fontWeight: "600",
-    },
+    buttonPrimary: { backgroundColor: "#3B82F6" },
+    buttonDanger: { backgroundColor: "#EF4444" },
+    buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
 
-    // Submit Button
+    /* ── Submit ── */
     submitButton: {
       backgroundColor: "#3B82F6",
       paddingVertical: 14,
       paddingHorizontal: 24,
       borderRadius: 8,
       alignItems: "center",
-      marginBottom: 24,
-      maxWidth: 256,
+      marginBottom: 16,
+      alignSelf: "flex-start",
+      minWidth: 160,
     },
-    submitButtonDisabled: {
-      backgroundColor: "#9CA3AF",
-    },
-    submitButtonText: {
-      color: "#FFFFFF",
-      fontSize: 16,
-      fontWeight: "600",
-    },
+    submitButtonDisabled: { backgroundColor: "#9CA3AF" },
+    submitButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+    submitRow: { flexDirection: "row", alignItems: "center" },
 
-    // Alerts
+    /* ── Alerts ── */
     alertSuccess: {
       flexDirection: "row",
       alignItems: "center",

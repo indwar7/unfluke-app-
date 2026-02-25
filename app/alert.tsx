@@ -1,11 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
+import { ScreenWithHeader } from '../components/AppHeader'
 
 const Alert = () => {
   return (
-    <View>
-      <Text>Alert</Text>
-    </View>
+    <ScreenWithHeader>
+      <View>
+        <Text>Alert</Text>
+      </View>
+    </ScreenWithHeader>
   )
 }
 

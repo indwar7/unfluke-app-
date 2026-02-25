@@ -4,7 +4,7 @@
  * ✅ Reliance Industries (capcode 476) on first open
  * ✅ 10 tabs in exact unfluke.in order
  * ✅ Period picker only on financial tabs
- * ✅ Full reset on stock / S-C change
+ * ✅ Full reset on stock  S-C change
  * ✅ Ratio cards always visible, 4 cards in a horizontal strip
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";

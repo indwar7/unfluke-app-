@@ -57,7 +57,7 @@ const CH = 200;
 /* ═══════════════════════════════════════════════════════════
    SVG LINE CHART COMPONENT (pure react-native-svg)
 ═══════════════════════════════════════════════════════════ */
-function SvgLineChart({
+export function SvgLineChart({
     data,
     width: w = CW,
     height: h = CH,
@@ -713,8 +713,13 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
 ═══════════════════════════════════════════════════════════ */
 const DOC_CLR: Record<string, { bg: string; text: string }> = {
     "Annual Reports": { bg: "#EEF2FF", text: "#4338CA" },
-    "Credit Ratings": { bg: "#FEF3C7", text: "#92400E" },
-    "Conference Calls": { bg: "#DCFCE7", text: "#166534" },
+    "Credit Rating": { bg: "#FEF3C7", text: "#92400E" },
+    "Credit Ratings": { bg: "#FEF3C7", text: "#92400E" }, // Synonym
+    "Compliance Report": { bg: "#DCFCE7", text: "#166534" },
+    "Concall Transcripts": { bg: "#E0F2FE", text: "#075985" },
+    "Conference Calls": { bg: "#E0F2FE", text: "#075985" }, // Synonym
+    "Investor Presentations": { bg: "#FCE7F3", text: "#9D174D" },
+    "Other": { bg: "#F3F4F6", text: "#374151" },
 };
 
 export function DocumentsTab({
@@ -724,12 +729,9 @@ export function DocumentsTab({
     capcode: string;
     companyName?: string;
 }) {
+    const [docs, setDocs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    const [annualReports, setAnnualReports] = useState<any[]>([]);
-    const [creditRatings, setCreditRatings] = useState<any[]>([]);
-    const [conferenceCalls, setConferenceCalls] = useState<any[]>([]);
 
     const load = useCallback(async () => {
         const instrumentKey = companyName || capcode;
@@ -739,36 +741,69 @@ export function DocumentsTab({
         setError(null);
 
         try {
-            const codeResp = await getCompanyCode({
-                params: { instrument: instrumentKey },
-            });
-
-            const instrumentCode =
-                codeResp?.code || codeResp?.companyCode || codeResp?.instrumentCode;
-
-            if (!instrumentCode) {
-                setAnnualReports([]);
-                setCreditRatings([]);
-                setConferenceCalls([]);
-                setError("No documents found for this company.");
-                setLoading(false);
-                return;
+            // First: get numeric capcode if symbol is passed
+            let numericCapcode = instrumentKey;
+            if (isNaN(Number(instrumentKey))) {
+                try {
+                    const symResp = await apiFetch(`${HISTORIC}/getCapcodeByStockSymbol?instrument=${instrumentKey}`);
+                    if (symResp?.code) numericCapcode = symResp.code.toString();
+                } catch (e) {
+                    // silently fail, use original
+                }
             }
 
-            const docsResp = await getDocumentsData({
-                params: { instrument: instrumentCode },
-            });
+            // Second: get companyCode (the specific document instrument ID)
+            let instrument = numericCapcode;
+            try {
+                const coResp = await apiFetch(`${HISTORIC}/companycode?instrument=${numericCapcode}`);
+                if (coResp?.code || coResp?.companyCode) {
+                    instrument = (coResp.code || coResp.companyCode).toString();
+                }
+            } catch (e) {
+                // silently fail, use numeric
+            }
 
-            setAnnualReports(docsResp?.AnnualReport || []);
-            setCreditRatings(docsResp?.CreditRating || []);
-            setConferenceCalls(docsResp?.ConferenceCalls || []);
+            // Third: get documents
+            const data = await apiFetch(`${HISTORIC}/documents?instrument=${instrument}`);
+
+            let rawDocs: any[] = [];
+
+            if (Array.isArray(data)) {
+                let isDocArray = false;
+                for (const item of data) {
+                    if (item && (item.url || item.URL || item.link || item.Download_link || item["Credit Rating URL"])) {
+                        isDocArray = true;
+                        break;
+                    }
+                }
+
+                if (isDocArray) {
+                    rawDocs = [...data];
+                } else {
+                    data.forEach(item => {
+                        if (typeof item === "object" && item !== null) {
+                            for (const [key, val] of Object.entries(item)) {
+                                if (Array.isArray(val)) {
+                                    rawDocs = [...rawDocs, ...val.map((d: any) => ({ ...d, type: d.type || key }))];
+                                }
+                            }
+                        }
+                    });
+                }
+            } else if (data && typeof data === "object") {
+                for (const [key, val] of Object.entries(data)) {
+                    if (Array.isArray(val)) {
+                        rawDocs = [...rawDocs, ...val.map((d: any) => ({ ...d, type: d.type || key }))];
+                    }
+                }
+            }
+
+            setDocs(rawDocs);
         } catch (e: any) {
             setError(
                 typeof e === "string" ? e : e?.message || "Failed to load documents"
             );
-            setAnnualReports([]);
-            setCreditRatings([]);
-            setConferenceCalls([]);
+            setDocs([]);
         } finally {
             setLoading(false);
         }
@@ -786,198 +821,103 @@ export function DocumentsTab({
     }, []);
 
     if (loading) return <SkeletonLoader rows={6} />;
-    if (error && !annualReports.length && !creditRatings.length && !conferenceCalls.length) {
+    if (error) {
         return <ErrorState message={error} onRetry={load} />;
     }
 
-    const hasAny =
-        annualReports.length || creditRatings.length || conferenceCalls.length;
-    if (!hasAny)
+    if (!docs.length) {
         return (
             <EmptyState
                 message="No documents available."
                 icon="document-outline"
             />
         );
+    }
+
+    // Group by type
+    const grouped: Record<string, any[]> = {};
+    for (const doc of docs) {
+        let t = doc?.type || doc?.category || doc?.docType || "Other";
+        // Normalize common keys
+        if (t === "AnnualReport") t = "Annual Reports";
+        if (t === "CreditRating") t = "Credit Ratings";
+        if (t === "ConferenceCalls") t = "Conference Calls";
+
+        (grouped[t] = grouped[t] || []).push(doc);
+    }
 
     return (
         <ScrollView
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled
-            contentContainerStyle={{ paddingBottom: 8 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
         >
-            {/* Annual Reports + Credit Ratings side by side */}
-            <View style={{ flexDirection: "row", gap: 12 }}>
-                {/* Annual Reports */}
-                <View style={{ flex: 1 }}>
-                    <Text style={s.sectionTitle}>Annual Reports</Text>
-                    {annualReports.length ? (
-                        <View style={s.docGrid}>
-                            {annualReports.map((item, idx) => {
-                                const yearLabel = item?.Year
-                                    ? `Financial Year ${item.Year}`
-                                    : item?.title || "Annual Report";
-                                const status = "Available";
-                                const link =
-                                    item?.Download_link ||
-                                    item?.URL ||
-                                    item?.link;
-
-                                const clr = DOC_CLR["Annual Reports"];
-
-                                return (
-                                    <TouchableOpacity
-                                        key={idx}
-                                        style={s.docTile}
-                                        activeOpacity={0.8}
-                                        onPress={() => openDoc(link)}
-                                    >
-                                        <Text
-                                            style={s.docTileTitle}
-                                            numberOfLines={2}
-                                        >
-                                            {yearLabel}
-                                        </Text>
-                                        <View
-                                            style={[
-                                                s.docTilePill,
-                                                { backgroundColor: clr.bg },
-                                            ]}
-                                        >
-                                            <Text
-                                                style={[
-                                                    s.docTilePillText,
-                                                    { color: clr.text },
-                                                ]}
-                                            >
-                                                {status}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
+            <Text style={s.sectionTitle}>Company Documents</Text>
+            {Object.entries(grouped).map(([type, items]) => {
+                const clr = DOC_CLR[type] || DOC_CLR["Other"];
+                return (
+                    <View key={type} style={s.docGroup}>
+                        <View style={s.docGroupHdr}>
+                            <Ionicons name="document-text-outline" size={17} color={clr.text} />
+                            <Text style={[s.docGroupTitle, { color: clr.text }]}>{type}</Text>
+                            <View style={[s.docCountBadge, { backgroundColor: clr.bg }]}>
+                                <Text style={[s.docCountText, { color: clr.text }]}>{items.length}</Text>
+                            </View>
                         </View>
-                    ) : (
-                        <Text style={s.docEmptyText}>
-                            No annual reports available.
-                        </Text>
-                    )}
-                </View>
 
-                {/* Credit Ratings */}
-                <View style={{ flex: 1 }}>
-                    <Text style={s.sectionTitle}>Credit Ratings</Text>
-                    {creditRatings.length ? (
-                        <View style={s.creditList}>
-                            {creditRatings.map((item, idx) => {
-                                const clr = DOC_CLR["Credit Ratings"];
-                                const agency = item?.Agency || "Rating";
-                                const rating = item?.Rating;
-                                const dateText =
-                                    (item?.Date &&
-                                        String(item.Date).split("from")[0]
-                                            ?.trim()) ||
-                                    item?.date ||
-                                    "";
-                                const link =
-                                    item?.URL ||
-                                    item?.["Credit Rating URL"] ||
-                                    item?.link;
+                        {items.map((doc: any, i: number) => {
+                            const url = doc?.url || doc?.link || doc?.href || doc?.Download_link || doc?.["Credit Rating URL"] || "";
 
-                                return (
-                                    <TouchableOpacity
-                                        key={idx}
-                                        style={s.creditRow}
-                                        activeOpacity={0.8}
-                                        onPress={() => openDoc(link)}
-                                    >
-                                        <View style={s.creditLeft}>
-                                            <Text style={s.creditAgency}>
-                                                {agency}
-                                            </Text>
+                            // Check for yearLabel format for Annual Reports
+                            let title = doc?.title || doc?.name || doc?.fileName || doc?.Agency || doc?.Title || doc?.Field1 || `Document ${i + 1}`;
+                            if (type === "Annual Reports" && doc?.Year) {
+                                title = `Financial Year ${doc.Year}`;
+                            }
+
+                            let date = doc?.date || doc?.year || doc?.period || doc?.Year || doc?.["Date/Month-Year"] || doc?.Date || "";
+
+                            if (type === "Credit Ratings" && typeof doc?.Date === "string" && doc.Date.includes("from")) {
+                                const parts = doc.Date.split("from");
+                                date = parts[0].trim();
+                                title = parts[1].trim().toUpperCase();
+                            }
+
+                            if (type === "Conference Calls" && title.startsWith("Document")) {
+                                title = "Investor Meet - Outcome";
+                            }
+
+                            // Check if rating exists for Credit Ratings
+                            const rating = doc?.Rating;
+
+                            return (
+                                <TouchableOpacity key={i}
+                                    style={[s.docCard, i % 2 === 1 && s.zebra]}
+                                    onPress={() => url && openDoc(url)}
+                                    activeOpacity={url ? 0.7 : 1}>
+                                    <View style={[s.docIcon, { backgroundColor: clr.bg }]}>
+                                        <Ionicons name="document-text-outline" size={18} color={clr.text} />
+                                    </View>
+                                    <View style={s.docBody}>
+                                        <Text style={s.docTitle} numberOfLines={2}>{title}</Text>
+                                        {!!date && <Text style={s.docMeta}>{date}</Text>}
+                                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                                            <View style={[s.docPill, { backgroundColor: clr.bg }]}>
+                                                <Text style={[s.docPillText, { color: clr.text }]}>{type}</Text>
+                                            </View>
                                             {!!rating && (
-                                                <View
-                                                    style={[
-                                                        s.creditBadge,
-                                                        {
-                                                            backgroundColor:
-                                                                "#DCFCE7",
-                                                        },
-                                                    ]}
-                                                >
-                                                    <Text
-                                                        style={[
-                                                            s.creditBadgeText,
-                                                            { color: "#166534" },
-                                                        ]}
-                                                    >
-                                                        {rating}
-                                                    </Text>
+                                                <View style={[s.docPill, { backgroundColor: "#DCFCE7" }]}>
+                                                    <Text style={[s.docPillText, { color: "#166534" }]}>{rating}</Text>
                                                 </View>
                                             )}
                                         </View>
-                                        {!!dateText && (
-                                            <Text style={s.creditDate}>
-                                                {dateText}
-                                            </Text>
-                                        )}
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    ) : (
-                        <Text style={s.docEmptyText}>
-                            No credit ratings available.
-                        </Text>
-                    )}
-                </View>
-            </View>
-
-            {/* Conference Calls */}
-            <View style={{ marginTop: 20 }}>
-                <Text style={s.sectionTitle}>Conference Calls</Text>
-                {conferenceCalls.length ? (
-                    <View style={s.docGrid}>
-                        {conferenceCalls.map((item, idx) => {
-                            const title =
-                                item?.Title ||
-                                item?.title ||
-                                "Investor Meet - Outcome";
-                            const dateText =
-                                item?.["Date/Month-Year"] ||
-                                item?.date ||
-                                "";
-                            const link = item?.URL || item?.link;
-                            const clr = DOC_CLR["Conference Calls"];
-
-                            return (
-                                <TouchableOpacity
-                                    key={idx}
-                                    style={s.docTile}
-                                    activeOpacity={0.8}
-                                    onPress={() => openDoc(link)}
-                                >
-                                    <Text
-                                        style={s.docTileTitle}
-                                        numberOfLines={2}
-                                    >
-                                        {title}
-                                    </Text>
-                                    {!!dateText && (
-                                        <Text style={s.docTileMeta}>
-                                            {dateText}
-                                        </Text>
-                                    )}
+                                    </View>
+                                    {!!url && <Ionicons name="chevron-forward" size={18} color={ACCENT} />}
                                 </TouchableOpacity>
                             );
                         })}
                     </View>
-                ) : (
-                    <Text style={s.docEmptyText}>
-                        No conference calls available.
-                    </Text>
-                )}
-            </View>
+                );
+            })}
         </ScrollView>
     );
 }
@@ -1086,7 +1026,7 @@ const s = StyleSheet.create({
     // Documents
     docGroup: { marginBottom: 22 },
     docGroupHdr: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-    docGroupTitle: { fontSize: 15, fontWeight: "700", flex: 1 },
+    docGroupTitle: { fontSize: 15, fontWeight: "700", flex: 1, color: TEXT_PRIMARY },
     docCountBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
     docCountText: { fontSize: 11, fontWeight: "700" },
     docCard: {

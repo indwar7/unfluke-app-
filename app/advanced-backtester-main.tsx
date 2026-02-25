@@ -1,10 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 import AdvancedBacktestMainPage from '../components/AdvancedBacktester/AdvancedBacktestMain'
+import { ScreenWithHeader } from '../components/AppHeader'
 
 const AdvancedBacktesterMain = () => {
   return (
-    <AdvancedBacktestMainPage/>
+    <ScreenWithHeader>
+      <AdvancedBacktestMainPage />
+    </ScreenWithHeader>
   )
 }
 

@@ -24,7 +24,7 @@ import {
 import ProgressBarBacktest from "../UnflukeMain/BasicBacktester/ProgressBarBacktest";
 import { addStrategy } from "../../apis/BasicBacktester";
 import { Alert } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import MessageModal from "./MessageModal";
 
@@ -34,13 +34,13 @@ const BasicBacktester = () => {
   const isDark = colorScheme === "dark";
   const styles = createStyles(isDark);
   const [subUrl, setSubUrl] = useState("");
-  const globalState = useSelector((store) => store.Layout);
-  const backtester = useSelector((store) => store.BasicBacktester);
+  const globalState = useSelector((store: any) => store.Layout);
+  const backtester = useSelector((store: any) => store.BasicBacktester);
   const dispatch = useDispatch();
-  const navigation = useNavigation(); // React Navigation equivalent of useNavigation
-  const route = useRoute(); // React Navigation equivalent of useLocation
+  const router = useRouter();
+  const params = useLocalSearchParams<{ state?: string }>();
   const [isBacktesting, setIsBacktesting] = useState(false);
-  const auth = useSelector((store) => store.Login);
+  const auth = useSelector((store: any) => store.Login);
   const [stratId, setStratId] = useState(new Date().getMilliseconds());
   const [csvFilename, setCsvFilename] = useState("");
 
@@ -61,7 +61,7 @@ const BasicBacktester = () => {
     },
   } = backtester;
 
-    useEffect(() => {
+  useEffect(() => {
     if (globalState && globalState.appType) {
       setSubUrl(globalState.appType);
     }
@@ -69,7 +69,7 @@ const BasicBacktester = () => {
 
   function handleChange(name, value) {
     // Since we don't have event.target in React Native, we pass field name and value directly
-    console.log(name,value)
+    console.log(name, value)
     dispatch(onChange({ name, value }));
   }
 
@@ -117,30 +117,27 @@ const BasicBacktester = () => {
         return;
       }
     }
-    
+
     console.log("Entry hua hai")
 
     const { isEditing, editStrategyId, ...newState } = backtester;
     const ID = auth.user._id;
-    console.log("aaya HamIcon",ID)
-    console.log("This is the new state",newState)
+    console.log("aaya HamIcon", ID)
+    console.log("This is the new state", newState)
 
     if (isEditing) {
-      // return dispatch(setEditStrategy(newState));
-     return dispatch(
-        updateStrategy({ id: editStrategyId, state: newState, navigation }),
-      );
+      newState._id = editStrategyId;
     }
     const res = addStrategy(
       axios,
       newState,
-      navigation,
+      router,
       stratId,
       ID,
       isBacktesting,
       subUrl,
     );
-    console.log("result aaya hai",res)
+    console.log("result aaya hai", res)
 
     if (res) {
       setIsBacktesting(true);
@@ -148,40 +145,34 @@ const BasicBacktester = () => {
   }
 
   useEffect(() => {
-    // React Navigation passes params through route.params instead of location.state
-    if (route.params) {
-      // Coming from screen → editing a saved strategy
-      const backtestDetails = route.params.state;
-      const newState = {};
-
-      for (let prop in backtestDetails) {
-        if (backtester[prop] !== undefined) {
-          newState[prop] = backtestDetails[prop];
+    if (params?.state) {
+      try {
+        const backtestDetails = typeof params.state === "string"
+          ? JSON.parse(params.state)
+          : params.state;
+        const newState: any = {};
+        for (let prop in backtestDetails) {
+          if (backtester[prop] !== undefined) {
+            newState[prop] = backtestDetails[prop];
+          }
         }
+        dispatch(setEditStrategy(newState));
+      } catch (e) {
+        console.error("Failed to parse state param", e);
       }
-
-      dispatch(setEditStrategy(newState));
     }
-  }, [route.params]);
+  }, [params?.state]);
 
   useEffect(() => {
-
-    console.log("ghusss gaya ahai")
     if (resultsMessage === "") {
       if (csvFilename.trim() !== "") {
-        console.log("Yeah its true")
-        // React Navigation navigation
-        navigation.navigate("basic-backtester-view", {
-          filename: csvFilename.replace(".csv", ""),
+        router.push({
+          pathname: "/basic-backtester-view",
+          params: { filename: csvFilename.replace(".csv", "") },
         });
-        // Alternative: if using nested navigators or specific route names
-        // navigation.navigate('BasicBacktesterView', {
-        //   screen: 'Results',
-        //   params: { filename: csvFilename.replace(".csv", "") }
-        // });
       }
     }
-  }, [csvFilename, resultsMessage, navigation,subUrl]);
+  }, [csvFilename, resultsMessage]);
 
   useEffect(() => {
     //console.log("BASIC BACKTESTER", backtester);
@@ -229,7 +220,7 @@ const BasicBacktester = () => {
             />
 
             {/* Strategy Legs */}
-            <StrategyLegs/>
+            <StrategyLegs />
 
             {/* MTM */}
             <MTM />
@@ -275,12 +266,11 @@ const createStyles = (isDark) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#111827" : "#F9FAFB",
+      backgroundColor: "#F9FAFB",
     },
     pageContent: {
       flex: 1,
-      paddingTop: 85, // equivalent to pt-24 (24 * 4)
-      paddingHorizontal: 12, // base padding, will be overridden by responsive styles
+      paddingHorizontal: 12,
     },
     scrollContent: {
       paddingBottom: 20,

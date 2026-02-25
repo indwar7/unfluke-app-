@@ -47,30 +47,30 @@ const ViewStrategy = () => {
   const [analysis2, setAnalysis2] = useState({});
 
   // Redux and Navigation
-  const auth = useSelector((state) => state.Login);
+  const auth = useSelector((state: any) => state.Login);
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const route = useRoute();
 
   // Get strategy data from Redux store
   const legSummaries = useSelector(
-    (store) => store.BasicBacktester.positions.legSummaries
+    (store: any) => store.BasicBacktester.positions.legSummaries
   );
 
   const { name, strategySettings, positions } = useSelector(
-    (state) => state.BasicBacktester
+    (state: any) => state.BasicBacktester
   );
 
   // Parse route params (equivalent to query string parsing)
-  const { 
-    advanced, 
-    strategyName, 
-    reEntry, 
-    sid, 
+  const {
+    advanced,
+    strategyName,
+    reEntry,
+    sid,
     uid,
-    filename 
+    filename
   } = route.params || {};
-  
+
   const isAdvanced = advanced === "yes";
 
   let reEntryParsed = reEntry;
@@ -106,7 +106,7 @@ const ViewStrategy = () => {
     const isPlaceholder =
       name === "strategy_name" &&
       (!positions?.legs || positions.legs.length === 0);
-    
+
     if (isPlaceholder) {
       const loadStoredStrategy = async () => {
         try {
@@ -150,7 +150,7 @@ const ViewStrategy = () => {
             ID: ID,
             advancedBacktester: advanced ? true : false,
           });
-          
+
           // console.log("RECEIVED ANALYSIS FOR THIS STRATEGY", data);
           setLoading(false);
 
@@ -193,15 +193,15 @@ const ViewStrategy = () => {
     try {
       // Get current state - you'll need to adapt this based on your Redux store structure
       const slice = store.getState?.()?.BasicBacktester || {};
-      
+
       const strategyForEdit = {
         ...slice,
         isEditing: true,
         editStrategyId: sid || slice.editStrategyId || slice._id || null,
       };
 
-      navigation.navigate('basic-backtester', { 
-        strategyData: strategyForEdit 
+      navigation.navigate('basic-backtester', {
+        strategyData: strategyForEdit
       });
 
     } catch (error) {
@@ -225,12 +225,12 @@ const ViewStrategy = () => {
       'refresh': 'refresh-outline',
       'activity': 'pulse-outline',
     };
-    
+
     return (
-      <Ionicons 
-        name={iconMap[name] || name} 
-        size={size} 
-        color={color || (isDark ? '#9CA3AF' : '#6B7280')} 
+      <Ionicons
+        name={iconMap[name] || name}
+        size={size}
+        color={color || (isDark ? '#9CA3AF' : '#6B7280')}
       />
     );
   };
@@ -244,29 +244,29 @@ const ViewStrategy = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.pageContent}>
         {/* Header Section */}
-          <View style={styles.headerContainer}>
-                {/* Left section: Title + breadcrumb */}
-                <View>
-                  <Text style={styles.title}>Strategy</Text>
-                  <View style={styles.breadcrumb}>
-                    <Text style={styles.breadcrumbText}>Strategy</Text>
-                    <ChevronRight size={13} color="#6B7280" />
-                    <Text style={styles.breadcrumbText}>view Strategy</Text>
-                  </View>
-                </View>
-         {!isAdvanced && (
-            <TouchableOpacity 
-              style={styles.editButton} 
+        <View style={styles.headerContainer}>
+          {/* Left section: Title + breadcrumb */}
+          <View>
+            <Text style={styles.title}>Strategy</Text>
+            <View style={styles.breadcrumb}>
+              <Text style={styles.breadcrumbText}>Strategy</Text>
+              <ChevronRight size={13} color="#6B7280" />
+              <Text style={styles.breadcrumbText}>view Strategy</Text>
+            </View>
+          </View>
+          {!isAdvanced && (
+            <TouchableOpacity
+              style={styles.editButton}
               onPress={handleEdit}
             >
               {renderIcon('edit', 16, '#FFFFFF')}
               <Text style={styles.editButtonText}>Edit Strategy</Text>
             </TouchableOpacity>
           )}
-                
-              </View>
-          
-         
+
+        </View>
+
+
 
         {/* Main Card */}
         <View style={styles.mainCard}>
@@ -299,14 +299,14 @@ const ViewStrategy = () => {
                       {formatTime(strategySettings?.startTime)}
                     </Text>
                   </View>
-                  
+
                   <View style={styles.summaryItem}>
                     {renderIcon('clock', 16)}
                     <Text style={styles.summaryText}>
                       {formatTime(strategySettings?.endTime)}
                     </Text>
                   </View>
-                  
+
                   <View style={styles.summaryItem}>
                     {renderIcon('refresh', 16)}
                     <Text style={styles.summaryText}>
@@ -380,7 +380,7 @@ const createStyles = (isDark) => StyleSheet.create({
   pageContent: {
     paddingTop: 85,
     paddingHorizontal: 12,
-    paddingBottom:20
+    paddingBottom: 20
   },
   headerLeft: {
     flex: 1,
@@ -390,7 +390,7 @@ const createStyles = (isDark) => StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     flexWrap: "wrap",
-    gap:10
+    gap: 10
   },
   title: {
     fontSize: 17,

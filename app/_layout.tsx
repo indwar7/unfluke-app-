@@ -30,6 +30,13 @@ export default function RootLayout() {
             <Stack.Screen name="profile" />
             <Stack.Screen name="pricing" />
             <Stack.Screen name="leads" />
+            <Stack.Screen name="advanced-backtester-main" />
+            <Stack.Screen name="advanced-backtester-home" />
+            <Stack.Screen name="advanced-backtester" />
+            <Stack.Screen name="basic-backtester-view" />
+            <Stack.Screen name="basic-backtester-home" />
+            <Stack.Screen name="basic-backtester-main" />
+            <Stack.Screen name="basic-backtester" />
           </Stack>
         </QueryClientProvider>
       </Provider>
