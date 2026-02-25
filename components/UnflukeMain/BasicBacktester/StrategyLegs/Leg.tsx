@@ -31,7 +31,7 @@ import {
 const Leg = (props) => {
   //////////////////// VARIABLES ////////////////////
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = false;
   const index = props.index;
 
   const { legs, legOptions } = useSelector(
@@ -66,16 +66,16 @@ const Leg = (props) => {
   });
 
   //////////////////////HELPERS//////////////////////
-const decodeHtml = (str = "") => {
-  return str
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&uarr;/g, "↑")
-    .replace(/&darr;/g, "↓");
-};
+  const decodeHtml = (str = "") => {
+    return str
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&uarr;/g, "↑")
+      .replace(/&darr;/g, "↓");
+  };
 
 
   const getLabel = (list, value) => {
@@ -901,7 +901,7 @@ const decodeHtml = (str = "") => {
                     style={[
                       styles.input,
                       props.trailingStopLoss.type === "None" &&
-                        styles.disabledInput,
+                      styles.disabledInput,
                     ]}
                     editable={props.trailingStopLoss.type !== "None"}
                     keyboardType="numeric"
@@ -920,7 +920,7 @@ const decodeHtml = (str = "") => {
                   style={[
                     styles.input,
                     props.trailingStopLoss.type === "None" &&
-                      styles.disabledInput,
+                    styles.disabledInput,
                   ]}
                   editable={props.trailingStopLoss.type !== "None"}
                   keyboardType="numeric"
@@ -960,7 +960,7 @@ const decodeHtml = (str = "") => {
                     style={[
                       styles.input,
                       props.waitTime.type === "immediate" &&
-                        styles.disabledInput,
+                      styles.disabledInput,
                     ]}
                     editable={props.waitTime.type !== "immediate"}
                     placeholder="Wait Time"
@@ -980,7 +980,7 @@ const decodeHtml = (str = "") => {
                     <Picker
                       selectedValue={props.reEntryCondition?.slType || "asap"}
                       style={styles.picker}
-                                              enabled={false}   // 👈 disables the picker
+                      enabled={false}   // 👈 disables the picker
                       onValueChange={(value) =>
                         handleChange("reEntryCondition.slType", value)
                       }
@@ -1024,7 +1024,7 @@ const decodeHtml = (str = "") => {
                         props.reEntryCondition?.targetType || "asap"
                       }
                       style={styles.picker}
-                        enabled={false}   // 👈 disables the picker
+                      enabled={false}   // 👈 disables the picker
                       onValueChange={(value) =>
                         handleChange("reEntryCondition.targetType", value)
                       }

@@ -26,7 +26,7 @@ import { StyleSheet } from "react-native";
 
 const StrategyFilters = (props) => {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = false;
   const styles = getStyles(isDark);
 
   const { name, handleNameChange } = props;
@@ -198,12 +198,12 @@ const StrategyFilters = (props) => {
     // console.log(fieldName, "This is the field name");
     const timeObj = dateToTimeObject(selectedDate);
     console.log(timeObj, "This is the time object being dispatched");
-const { hour, minute } = timeObj;
+    const { hour, minute } = timeObj;
 
-// Format with leading zeros
-const formattedTime = `${hour.toString().padStart(2, "0")}:${minute
-  .toString()
-  .padStart(2, "0")}`;
+    // Format with leading zeros
+    const formattedTime = `${hour.toString().padStart(2, "0")}:${minute
+      .toString()
+      .padStart(2, "0")}`;
 
     handleTimeChange(fieldName, formattedTime);
   }
@@ -230,7 +230,7 @@ const formattedTime = `${hour.toString().padStart(2, "0")}:${minute
       setEndingTime(value); // 👈 update end time
     }
 
-    console.log(name,value,"adfsdfafsd")
+    console.log(name, value, "adfsdfafsd")
     // still dispatch to redux if needed
     dispatch(onTimeChange({ name, value }));
   }

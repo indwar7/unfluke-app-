@@ -23,7 +23,7 @@ const ProfitTable = (props) => {
   } = props;
 
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = false;
   const styles = createStyles(isDark);
 
   // Handle file download for React Native

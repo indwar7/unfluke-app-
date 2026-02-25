@@ -9,7 +9,7 @@ import {
 
 const BackupTable = ({ backupTable }) => {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = false;
   const styles = createStyles(isDark);
 
   const months = [
@@ -78,7 +78,7 @@ const BackupTable = ({ backupTable }) => {
                   {months.map((month, monthIdx) => {
                     const monthData = data.yearlyData.find(x => x.month === month);
                     const pnl = monthData ? parseInt(monthData.totalPnl) : 0;
-                    
+
                     return (
                       <View key={`data-${data.year}-${month}-${monthIdx}`} style={[styles.dataCell]}>
                         <Text style={[styles.dataText, getTextColor(pnl)]}>

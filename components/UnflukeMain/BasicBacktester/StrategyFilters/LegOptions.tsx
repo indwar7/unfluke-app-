@@ -40,7 +40,7 @@ import * as Crypto from "expo-crypto";
 
 const LegOptions = () => {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = false;
 
   const styles = createStyles(isDark);
   const [reEntryDisabled, setreEntryDisabled] = useState(false);
@@ -102,40 +102,40 @@ const LegOptions = () => {
     }
   }
 
-const handleAddLeg = ({
-}) => {
-  if (legs.length < 10) {
-    // Collapse all existing legs
-    legs.forEach((l) => {
-      dispatch(updateLeg({ id: l.id, name: "expanded", value: false }));
-    });
+  const handleAddLeg = ({
+  }) => {
+    if (legs.length < 10) {
+      // Collapse all existing legs
+      legs.forEach((l) => {
+        dispatch(updateLeg({ id: l.id, name: "expanded", value: false }));
+      });
 
-    // Create a deep copy and assign a unique ID
-    let leg = deepCopy(positions);
-    leg = { id: Crypto.randomUUID(), ...leg }; // ✅ Works in Expo (SDK 49+)
+      // Create a deep copy and assign a unique ID
+      let leg = deepCopy(positions);
+      leg = { id: Crypto.randomUUID(), ...leg }; // ✅ Works in Expo (SDK 49+)
 
-    // Validation check
-    if (leg.strike === "based_on_premium" && leg.strikeDetails === "ATM_0") {
-      Alert.alert("Validation Error", "Please add a valid Premium value.");
-      return;
+      // Validation check
+      if (leg.strike === "based_on_premium" && leg.strikeDetails === "ATM_0") {
+        Alert.alert("Validation Error", "Please add a valid Premium value.");
+        return;
+      }
+
+      delete leg.legOptions;
+
+      // Handle re-entry logic
+      if (reEntrySlTargetExit) {
+        leg.reEntryCondition = {
+          ...leg.reEntryCondition,
+          target: true,
+          sl: true,
+          targetReentries: parseInt(reEntry),
+          slReentries: parseInt(reEntry),
+        };
+      }
+
+      dispatch(addLeg(leg));
     }
-
-    delete leg.legOptions;
-
-    // Handle re-entry logic
-    if (reEntrySlTargetExit) {
-      leg.reEntryCondition = {
-        ...leg.reEntryCondition,
-        target: true,
-        sl: true,
-        targetReentries: parseInt(reEntry),
-        slReentries: parseInt(reEntry),
-      };
-    }
-
-    dispatch(addLeg(leg));
-  }
-};
+  };
 
 
   // Fixed time picker handler
@@ -208,8 +208,8 @@ const handleAddLeg = ({
                 style={[styles.picker]}
                 dropdownIconColor={isDark ? "#fff" : "#000"}
               >
-                <Picker.Item  style={{fontSize:14}} label="Partial" value="partial" />
-                <Picker.Item style={{fontSize:14}} label="Complete" value="complete" />
+                <Picker.Item style={{ fontSize: 14 }} label="Partial" value="partial" />
+                <Picker.Item style={{ fontSize: 14 }} label="Complete" value="complete" />
               </Picker>
             </View>
           </View>
@@ -235,7 +235,7 @@ const handleAddLeg = ({
                     key={entry}
                     label={entry.toString()}
                     value={entry}
-                    style={{fontSize:14}}
+                    style={{ fontSize: 14 }}
                   />
                 ))}
               </Picker>
@@ -365,8 +365,8 @@ const createStyles = (isDark) =>
       borderWidth: 1,
       borderColor: isDark ? "#374151" : "#d1d5db",
       paddingHorizontal: 16,
-      paddingTop:16,
-      paddingBottom:7
+      paddingTop: 16,
+      paddingBottom: 7
     },
     header: {
       flexDirection: "row",
@@ -431,8 +431,8 @@ const createStyles = (isDark) =>
       borderColor: isDark ? "#374151" : "#d1d5db",
       borderRadius: 8,
       backgroundColor: isDark ? "#111827" : "#f4f8fd",
-      fontSize:12,
-      paddingVertical:1
+      fontSize: 12,
+      paddingVertical: 1
     },
     picker: {
       color: isDark ? "#ffffff" : "#000000",

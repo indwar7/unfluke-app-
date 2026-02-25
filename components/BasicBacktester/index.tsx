@@ -31,7 +31,7 @@ import MessageModal from "./MessageModal";
 const BasicBacktester = () => {
 
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = false;
   const styles = createStyles(isDark);
   const [subUrl, setSubUrl] = useState("");
   const globalState = useSelector((store: any) => store.Layout);
