@@ -834,73 +834,164 @@ export function DocumentsTab({
         );
     }
 
-    // Group by type
-    const grouped: Record<string, any[]> = {};
-    for (const doc of docs) {
-        let t = doc?.type || "Other";
-        // Normalize API type keys to display names
-        if (t === "AnnualReport") t = "Annual Reports";
-        else if (t === "CreditRating") t = "Credit Ratings";
-        else if (t === "ConferenceCalls") t = "Conference Calls";
-        else if (t === "ASCR") t = "ASCR";
-        (grouped[t] = grouped[t] || []).push(doc);
-    }
+    // Separate sections
+    const annualReports = docs
+        .filter(d => d.type === "AnnualReport")
+        .sort((a, b) => Number(b.Year || 0) - Number(a.Year || 0));
+
+    const creditRatings = docs
+        .filter(d => d.type === "CreditRating")
+        .map(d => {
+            // Parse "30 Oct 2025 from crisil" → { date: "30 Oct 2025", agency: "CRISIL" }
+            const raw = d.Date || d._date || "";
+            const fromIdx = typeof raw === "string" ? raw.toLowerCase().indexOf(" from ") : -1;
+            const dateStr = fromIdx > -1 ? raw.slice(0, fromIdx).trim() : raw;
+            const agency = fromIdx > -1 ? raw.slice(fromIdx + 6).trim().toUpperCase() : "";
+            return { ...d, _parsedDate: dateStr, _agency: agency };
+        });
+
+    const conferenceCalls = docs.filter(d => d.type === "ConferenceCalls");
+    const announcements = docs.filter(d => !(["AnnualReport", "CreditRating", "ConferenceCalls", "ASCR"].includes(d.type)));
+    const ascr = docs.filter(d => d.type === "ASCR");
+
+    const SectionHeader = ({ icon, title, count, color }: { icon: any; title: string; count: number; color: string }) => (
+        <View style={ds.secHdr}>
+            <Ionicons name={icon} size={18} color={color} />
+            <Text style={[ds.secTitle, { color }]}>{title}</Text>
+            <View style={[ds.countBadge, { backgroundColor: color + "18" }]}>
+                <Text style={[ds.countTxt, { color }]}>{count}</Text>
+            </View>
+        </View>
+    );
 
     return (
-        <ScrollView
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled
-            contentContainerStyle={{ paddingBottom: 20 }}
-        >
-            <Text style={s.sectionTitle}>Company Documents</Text>
-            {Object.entries(grouped).map(([type, items]) => {
-                const clr = DOC_CLR[type] || DOC_CLR["Other"];
-                return (
-                    <View key={type} style={s.docGroup}>
-                        <View style={s.docGroupHdr}>
-                            <Ionicons name="document-text-outline" size={17} color={clr.text} />
-                            <Text style={[s.docGroupTitle, { color: clr.text }]}>{type}</Text>
-                            <View style={[s.docCountBadge, { backgroundColor: clr.bg }]}>
-                                <Text style={[s.docCountText, { color: clr.text }]}>{items.length}</Text>
-                            </View>
-                        </View>
+        <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled contentContainerStyle={{ paddingBottom: 28 }}>
 
-                        {items.map((doc: any, i: number) => {
-                            // Use pre-normalized fields from flattenSection
-                            const url = doc._url || "";
-                            const title = doc._title || `Document ${i + 1}`;
-                            const date = doc._date ? String(doc._date) : "";
-                            const rating = doc?.Rating;
-
+            {/* ── ANNUAL REPORTS ── */}
+            {annualReports.length > 0 && (
+                <View style={ds.section}>
+                    <SectionHeader icon="document-text-outline" title="Annual Reports" count={annualReports.length} color="#2563EB" />
+                    <View style={ds.grid3}>
+                        {annualReports.map((doc, i) => {
+                            const year = doc.Year ? String(doc.Year) : "";
+                            const hasLink = !!doc._url;
+                            const isSummary = !!(doc.Download_link || "").toLowerCase().includes("summary") ||
+                                !!(doc._url || "").toLowerCase().includes("summary");
                             return (
-                                <TouchableOpacity key={i}
-                                    style={[s.docCard, i % 2 === 1 && s.zebra]}
-                                    onPress={() => url && openDoc(url)}
-                                    activeOpacity={url ? 0.7 : 1}>
-                                    <View style={[s.docIcon, { backgroundColor: clr.bg }]}>
-                                        <Ionicons name="document-text-outline" size={18} color={clr.text} />
+                                <TouchableOpacity
+                                    key={i}
+                                    style={ds.arCard}
+                                    onPress={() => hasLink && openDoc(doc._url)}
+                                    activeOpacity={hasLink ? 0.7 : 1}
+                                >
+                                    <Ionicons name="document-attach-outline" size={20} color="#2563EB" style={{ marginBottom: 6 }} />
+                                    <Text style={ds.arYear} numberOfLines={2}>
+                                        {year ? `Financial Year\n${year}` : `Document ${i + 1}`}
+                                    </Text>
+                                    <View style={[ds.arBadge, isSummary ? ds.arBadgeSummary : ds.arBadgeAvail]}>
+                                        <Text style={[ds.arBadgeTxt, isSummary ? ds.arBadgeTxtSum : ds.arBadgeTxtAvail]}>
+                                            {isSummary ? "Summary" : "Available"}
+                                        </Text>
                                     </View>
-                                    <View style={s.docBody}>
-                                        <Text style={s.docTitle} numberOfLines={2}>{title}</Text>
-                                        {!!date && <Text style={s.docMeta}>{date}</Text>}
-                                        <View style={{ flexDirection: 'row', gap: 6 }}>
-                                            <View style={[s.docPill, { backgroundColor: clr.bg }]}>
-                                                <Text style={[s.docPillText, { color: clr.text }]}>{type}</Text>
-                                            </View>
-                                            {!!rating && (
-                                                <View style={[s.docPill, { backgroundColor: "#DCFCE7" }]}>
-                                                    <Text style={[s.docPillText, { color: "#166534" }]}>{rating}</Text>
-                                                </View>
-                                            )}
-                                        </View>
-                                    </View>
-                                    {!!url && <Ionicons name="chevron-forward" size={18} color={ACCENT} />}
                                 </TouchableOpacity>
                             );
                         })}
                     </View>
-                );
-            })}
+                </View>
+            )}
+
+            {/* ── CREDIT RATINGS ── */}
+            {creditRatings.length > 0 && (
+                <View style={ds.section}>
+                    <SectionHeader icon="star-outline" title="Credit Ratings" count={creditRatings.length} color="#F59E0B" />
+                    <View style={ds.grid4}>
+                        {creditRatings.map((doc, i) => (
+                            <TouchableOpacity
+                                key={i}
+                                style={ds.crCard}
+                                onPress={() => openDoc(doc._url)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={ds.crAgency} numberOfLines={1}>{doc._agency || "RATING"}</Text>
+                                <Text style={ds.crDate} numberOfLines={2}>{doc._parsedDate}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            )}
+
+            {/* ── CONFERENCE CALLS ── */}
+            {conferenceCalls.length > 0 && (
+                <View style={ds.section}>
+                    <SectionHeader icon="mic-outline" title="Conference Calls" count={conferenceCalls.length} color="#7C3AED" />
+                    <View style={ds.grid4}>
+                        {conferenceCalls.map((doc, i) => (
+                            <TouchableOpacity
+                                key={i}
+                                style={ds.ccCard}
+                                onPress={() => openDoc(doc._url)}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="recording-outline" size={18} color="#7C3AED" />
+                                <Text style={ds.ccDate} numberOfLines={1}>{doc._date || `Q${i + 1}`}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            )}
+
+            {/* ── ANNOUNCEMENTS (grouped by sub-category) ── */}
+            {announcements.length > 0 && (
+                <View style={ds.section}>
+                    <SectionHeader icon="megaphone-outline" title="Announcements" count={announcements.length} color="#059669" />
+                    {announcements.map((doc, i) => (
+                        <TouchableOpacity
+                            key={i}
+                            style={[ds.annCard, i % 2 === 1 && ds.annCardAlt]}
+                            onPress={() => openDoc(doc._url)}
+                            activeOpacity={doc._url ? 0.7 : 1}
+                        >
+                            <View style={ds.annLeft}>
+                                <View style={ds.annDot} />
+                            </View>
+                            <View style={ds.annBody}>
+                                <Text style={ds.annTitle} numberOfLines={2}>{doc._title || `Announcement ${i + 1}`}</Text>
+                                {!!doc._date && <Text style={ds.annDate}>{doc._date}</Text>}
+                                {!!doc.type && (
+                                    <View style={ds.annPill}>
+                                        <Text style={ds.annPillTxt}>{doc.type}</Text>
+                                    </View>
+                                )}
+                            </View>
+                            {!!doc._url && <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+
+            {/* ── ASCR ── */}
+            {ascr.length > 0 && (
+                <View style={ds.section}>
+                    <SectionHeader icon="shield-checkmark-outline" title="Annual Secretarial Compliance" count={ascr.length} color="#DC2626" />
+                    <View style={ds.grid3}>
+                        {ascr.map((doc, i) => (
+                            <TouchableOpacity
+                                key={i}
+                                style={ds.arCard}
+                                onPress={() => openDoc(doc._url)}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="clipboard-outline" size={20} color="#DC2626" style={{ marginBottom: 6 }} />
+                                <Text style={ds.arYear} numberOfLines={2}>{doc._title || doc._date || `ASCR ${i + 1}`}</Text>
+                                <View style={[ds.arBadge, { backgroundColor: "#FEE2E2" }]}>
+                                    <Text style={[ds.arBadgeTxt, { color: "#DC2626" }]}>View</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            )}
+
         </ScrollView>
     );
 }
@@ -1006,7 +1097,7 @@ const s = StyleSheet.create({
     pieLegVal: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
     shSubTitle: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 10, marginTop: 4 },
 
-    // Documents
+    // Documents legacy styles (kept for non-documents tabs)
     docGroup: { marginBottom: 22 },
     docGroupHdr: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
     docGroupTitle: { fontSize: 15, fontWeight: "700", flex: 1, color: TEXT_PRIMARY },
@@ -1022,4 +1113,138 @@ const s = StyleSheet.create({
     docMeta: { fontSize: 11, color: TEXT_MUTED, marginBottom: 4 },
     docPill: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
     docPillText: { fontSize: 10, fontWeight: "600" },
+});
+
+/* ─────────────────────────────────────────────────────────
+   DOCUMENTS TAB STYLES (professional, matching website)
+───────────────────────────────────────────────────────── */
+const CARD_ITEM_W = (SW - 48 - 16) / 3;   // 3-col grid
+const CARD_CR_W = (SW - 48 - 24) / 4;   // 4-col grid
+
+const ds = StyleSheet.create({
+    section: {
+        backgroundColor: CARD_BG,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: BORDER_COLOR,
+        padding: 16,
+        marginBottom: 16,
+        elevation: 1,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+    },
+    secHdr: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 14,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: BORDER_COLOR,
+    },
+    secTitle: { fontSize: 15, fontWeight: "700", flex: 1 },
+    countBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+    countTxt: { fontSize: 11, fontWeight: "700" },
+
+    // ── Annual Reports: 3-col grid
+    grid3: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    arCard: {
+        width: CARD_ITEM_W,
+        backgroundColor: "#F8FAFF",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#DBEAFE",
+        padding: 12,
+        alignItems: "flex-start",
+    },
+    arYear: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: TEXT_PRIMARY,
+        marginBottom: 8,
+        lineHeight: 17,
+    },
+    arBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    arBadgeAvail: { backgroundColor: "#F3F4F6" },
+    arBadgeSummary: { backgroundColor: "#2563EB" },
+    arBadgeTxt: { fontSize: 10, fontWeight: "600" },
+    arBadgeTxtAvail: { color: "#6B7280" },
+    arBadgeTxtSum: { color: "#fff" },
+
+    // ── Credit Ratings: 4-col grid
+    grid4: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    crCard: {
+        width: CARD_CR_W,
+        backgroundColor: "#FAFAF9",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: BORDER_COLOR,
+        padding: 10,
+        alignItems: "flex-start",
+    },
+    crAgency: {
+        fontSize: 13,
+        fontWeight: "800",
+        color: "#2563EB",
+        marginBottom: 4,
+    },
+    crDate: {
+        fontSize: 10,
+        color: TEXT_MUTED,
+        lineHeight: 14,
+    },
+
+    // ── Conference Calls: 4-col grid
+    ccCard: {
+        width: CARD_CR_W,
+        backgroundColor: "#FAF5FF",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#E9D5FF",
+        padding: 10,
+        alignItems: "center",
+        gap: 4,
+    },
+    ccDate: {
+        fontSize: 10,
+        fontWeight: "600",
+        color: "#7C3AED",
+        textAlign: "center",
+    },
+
+    // ── Announcements: vertical list
+    annCard: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#F3F4F6",
+        gap: 10,
+    },
+    annCardAlt: { backgroundColor: "#FAFAFA" },
+    annLeft: { paddingTop: 5 },
+    annDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: "#059669",
+    },
+    annBody: { flex: 1 },
+    annTitle: { fontSize: 12, fontWeight: "600", color: TEXT_PRIMARY, marginBottom: 3, lineHeight: 17 },
+    annDate: { fontSize: 10, color: TEXT_MUTED, marginBottom: 3 },
+    annPill: {
+        alignSelf: "flex-start",
+        backgroundColor: "#D1FAE5",
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginTop: 2,
+    },
+    annPillTxt: { fontSize: 9, fontWeight: "700", color: "#065F46" },
 });
