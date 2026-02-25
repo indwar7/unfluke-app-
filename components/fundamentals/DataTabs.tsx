@@ -14,7 +14,8 @@ import {
     FlatList, Dimensions, ScrollView, ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
+import * as WebBrowser from "expo-web-browser"; // kept for other tabs if needed
+import { Linking } from "react-native";
 import Svg, { Path, Line, Circle, Text as SvgText, G, Rect } from "react-native-svg";
 import {
     EmptyState, ErrorState, PaginationControls,
@@ -28,7 +29,6 @@ import {
     fmt, valueColor,
 } from "./constants";
 import { getSectionDataForPeriod, getPeriodKeys } from "../../hooks/useFundamentalData";
-import { getCompanyCode, getDocumentsData } from "../../Unfluke_helpers/backend_helper";
 
 /* ─────────────────────────────────────────────────────────
    API HELPERS
@@ -734,80 +734,75 @@ export function DocumentsTab({
     const [error, setError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
-        const instrumentKey = companyName || capcode;
-        if (!instrumentKey) return;
+        // capcode (e.g. 476) is the direct key for /documents — no extra lookup needed
+        if (!capcode) return;
 
         setLoading(true);
         setError(null);
 
         try {
-            // First: get numeric capcode if symbol is passed
-            let numericCapcode = instrumentKey;
-            if (isNaN(Number(instrumentKey))) {
-                try {
-                    const symResp = await apiFetch(`${HISTORIC}/getCapcodeByStockSymbol?instrument=${instrumentKey}`);
-                    if (symResp?.code) numericCapcode = symResp.code.toString();
-                } catch (e) {
-                    // silently fail, use original
-                }
-            }
-
-            // Second: get companyCode (the specific document instrument ID)
-            let instrument = numericCapcode;
-            try {
-                const coResp = await apiFetch(`${HISTORIC}/companycode?instrument=${numericCapcode}`);
-                if (coResp?.code || coResp?.companyCode) {
-                    instrument = (coResp.code || coResp.companyCode).toString();
-                }
-            } catch (e) {
-                // silently fail, use numeric
-            }
-
-            // Third: get documents
-            const data = await apiFetch(`${HISTORIC}/documents?instrument=${instrument}`);
+            const data = await apiFetch(`${HISTORIC}/documents?instrument=${capcode}`);
 
             let rawDocs: any[] = [];
 
-            if (Array.isArray(data)) {
-                let isDocArray = false;
-                for (const item of data) {
-                    if (item && (item.url || item.URL || item.link || item.Download_link || item["Credit Rating URL"])) {
-                        isDocArray = true;
-                        break;
-                    }
-                }
+            const flattenSection = (key: string, val: any) => {
+                if (!Array.isArray(val)) return;
+                val.forEach((item: any) => {
+                    if (!item || typeof item !== "object") return;
 
-                if (isDocArray) {
-                    rawDocs = [...data];
-                } else {
-                    data.forEach(item => {
-                        if (typeof item === "object" && item !== null) {
-                            for (const [key, val] of Object.entries(item)) {
-                                if (Array.isArray(val)) {
-                                    rawDocs = [...rawDocs, ...val.map((d: any) => ({ ...d, type: d.type || key }))];
-                                }
+                    // Announcement has nested: { _id: "Category", docs: [{Field1, URL, ...}] }
+                    if (Array.isArray(item.docs) && item._id) {
+                        item.docs.forEach((doc: any) => {
+                            // Date is hidden inside the ng-scope2 string: "Exchange Received Time DD-MM-YYYY ..."
+                            let parsedDate = "";
+                            if (doc["ng-scope2"]) {
+                                const m = doc["ng-scope2"].match(/Exchange Received Time (\d{2}-\d{2}-\d{4})/);
+                                if (m) parsedDate = m[1];
                             }
-                        }
-                    });
-                }
-            } else if (data && typeof data === "object") {
-                for (const [key, val] of Object.entries(data)) {
-                    if (Array.isArray(val)) {
-                        rawDocs = [...rawDocs, ...val.map((d: any) => ({ ...d, type: d.type || key }))];
+                            rawDocs.push({
+                                ...doc,
+                                type: item._id,
+                                _url: doc.URL || doc.url || doc.link || "",
+                                _title: doc.Field1 || doc.title || doc.name || "",
+                                _date: parsedDate || doc.Date || doc["Date/Month-Year"] || "",
+                            });
+                        });
+                    } else {
+                        // AnnualReport: { Year, Download_link }
+                        // CreditRating: { Date, "Credit Rating URL" }
+                        // ConferenceCalls: { URL, "Date/Month-Year" }
+                        // ASCR: { Year, Field2 (URL) }
+                        rawDocs.push({
+                            ...item,
+                            type: item.type || key,
+                            _url: item.Download_link || item["Credit Rating URL"] || item.URL || item.url || item.Field2 || item.link || "",
+                            _title: (key === "AnnualReport" || key === "ASCR") && item.Year
+                                ? `${key === "ASCR" ? "ASCR" : "Annual Report"} ${item.Year}`
+                                : (item.Title || item.Field1 || item.Agency || item.name || ""),
+                            _date: item.Date || item["Date/Month-Year"] || item.date || (item.Year ? String(item.Year) : ""),
+                        });
                     }
-                }
+                });
+            };
+
+            if (Array.isArray(data)) {
+                data.forEach((item: any) => {
+                    if (item && typeof item === "object") {
+                        for (const [k, v] of Object.entries(item)) flattenSection(k, v);
+                    }
+                });
+            } else if (data && typeof data === "object") {
+                for (const [k, v] of Object.entries(data)) flattenSection(k, v);
             }
 
             setDocs(rawDocs);
         } catch (e: any) {
-            setError(
-                typeof e === "string" ? e : e?.message || "Failed to load documents"
-            );
+            setError(typeof e === "string" ? e : e?.message || "Failed to load documents");
             setDocs([]);
         } finally {
             setLoading(false);
         }
-    }, [capcode, companyName]);
+    }, [capcode]);
 
     useEffect(() => {
         load();
@@ -815,9 +810,14 @@ export function DocumentsTab({
 
     const openDoc = useCallback(async (url: string | undefined) => {
         if (!url) return;
+        // Guard against garbage URLs like '#N/A'
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return;
         try {
-            await WebBrowser.openBrowserAsync(url);
-        } catch { }
+            // Use Linking.openURL to avoid expo-modules CodedError (construct.js crash)
+            await Linking.openURL(url);
+        } catch (e) {
+            // silently ignore
+        }
     }, []);
 
     if (loading) return <SkeletonLoader rows={6} />;
@@ -837,12 +837,12 @@ export function DocumentsTab({
     // Group by type
     const grouped: Record<string, any[]> = {};
     for (const doc of docs) {
-        let t = doc?.type || doc?.category || doc?.docType || "Other";
-        // Normalize common keys
+        let t = doc?.type || "Other";
+        // Normalize API type keys to display names
         if (t === "AnnualReport") t = "Annual Reports";
-        if (t === "CreditRating") t = "Credit Ratings";
-        if (t === "ConferenceCalls") t = "Conference Calls";
-
+        else if (t === "CreditRating") t = "Credit Ratings";
+        else if (t === "ConferenceCalls") t = "Conference Calls";
+        else if (t === "ASCR") t = "ASCR";
         (grouped[t] = grouped[t] || []).push(doc);
     }
 
@@ -866,27 +866,10 @@ export function DocumentsTab({
                         </View>
 
                         {items.map((doc: any, i: number) => {
-                            const url = doc?.url || doc?.link || doc?.href || doc?.Download_link || doc?.["Credit Rating URL"] || "";
-
-                            // Check for yearLabel format for Annual Reports
-                            let title = doc?.title || doc?.name || doc?.fileName || doc?.Agency || doc?.Title || doc?.Field1 || `Document ${i + 1}`;
-                            if (type === "Annual Reports" && doc?.Year) {
-                                title = `Financial Year ${doc.Year}`;
-                            }
-
-                            let date = doc?.date || doc?.year || doc?.period || doc?.Year || doc?.["Date/Month-Year"] || doc?.Date || "";
-
-                            if (type === "Credit Ratings" && typeof doc?.Date === "string" && doc.Date.includes("from")) {
-                                const parts = doc.Date.split("from");
-                                date = parts[0].trim();
-                                title = parts[1].trim().toUpperCase();
-                            }
-
-                            if (type === "Conference Calls" && title.startsWith("Document")) {
-                                title = "Investor Meet - Outcome";
-                            }
-
-                            // Check if rating exists for Credit Ratings
+                            // Use pre-normalized fields from flattenSection
+                            const url = doc._url || "";
+                            const title = doc._title || `Document ${i + 1}`;
+                            const date = doc._date ? String(doc._date) : "";
                             const rating = doc?.Rating;
 
                             return (
