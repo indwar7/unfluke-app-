@@ -250,9 +250,9 @@ export function PLStyleTab({ response, period, emptyMessage }: { response: any; 
 
 // Key metrics to chart over time
 const RATIO_CHART_METRICS = [
-    { label: "PE Ratio", key: "PE Ratio", color: "#6366F1" },
-    { label: "ROE (%)", key: "Return on Equity / Networth", color: "#10B981" },
-    { label: "Debt-to-Equity", key: "Total Debt/Equity", color: "#F59E0B" },
+    { label: "ROCE (%)", key: "ROCE (%)", color: "#6366F1" },
+    { label: "ROE(%)", key: "Return on Equity / Networth", color: "#6366F1" },
+    { label: "PBIDT/Sales(%)", key: "PBIDTM (%)", color: "#6366F1" },
 ] as const;
 
 export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> | undefined; period: string }) {
@@ -351,33 +351,29 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
-            {/* ── Key Metric Charts ── */}
-            {RATIO_CHART_METRICS.map(metric => {
-                const pts = chartDataSets[metric.key] || [];
-                if (pts.length < 2) return null;
-                const latest = pts[pts.length - 1]?.y ?? 0;
-                const prev = pts[pts.length - 2]?.y ?? latest;
-                const chg = prev !== 0 ? ((latest - prev) / Math.abs(prev)) * 100 : 0;
-                const up = chg >= 0;
-                return (
-                    <View key={metric.key} style={kr.chartCard}>
-                        <Text style={kr.chartLabel}>{metric.label}</Text>
-                        <View style={kr.chartMeta}>
-                            <Text style={kr.chartVal}>{fmt(latest)}</Text>
-                            <View style={[kr.chgBadge, { backgroundColor: up ? "#DCFCE7" : "#FEE2E2" }]}>
-                                <Text style={[kr.chgText, { color: up ? GREEN : RED }]}>
-                                    {up ? "▲" : "▼"} {Math.abs(chg).toFixed(1)}%
-                                </Text>
-                            </View>
+            {/* ── Key Metric Charts (Horizontal Scroll) ── */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16, gap: 14, paddingBottom: 16 }}>
+                {RATIO_CHART_METRICS.map(metric => {
+                    const pts = chartDataSets[metric.key] || [];
+                    if (pts.length < 2) return null;
+                    // Try to guess trend
+                    const latest = pts[pts.length - 1]?.y ?? 0;
+                    const prev = pts[pts.length - 2]?.y ?? latest;
+                    const chg = prev !== 0 ? ((latest - prev) / Math.abs(prev)) * 100 : 0;
+                    const up = chg >= 0;
+                    return (
+                        <View key={metric.key} style={kr.chartCard}>
+                            <Text style={kr.chartLabel}>{metric.label}</Text>
+                            <SvgLineChart
+                                data={pts}
+                                color={metric.color}
+                                areaColor={metric.color + "14"}
+                                height={130}
+                            />
                         </View>
-                        <SvgLineChart
-                            data={pts}
-                            color={metric.color}
-                            areaColor={metric.color + "14"}
-                        />
-                    </View>
-                );
-            })}
+                    );
+                })}
+            </ScrollView>
 
             {/* ── Accordion Sections ── */}
             {sections.map((section, sIdx) => {
@@ -613,11 +609,12 @@ const kr = StyleSheet.create({
     // ── Charts ──
     chartCard: {
         backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
-        borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 14,
+        borderWidth: 1, borderColor: BORDER_COLOR,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05, shadowRadius: 3, padding: 16,
+        width: 280, // fixed width for horizontal scroll
     },
-    chartLabel: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 8 },
+    chartLabel: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 12 },
     chartMeta: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
     chartVal: { fontSize: 22, fontWeight: "800", color: TEXT_PRIMARY },
     chgBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
