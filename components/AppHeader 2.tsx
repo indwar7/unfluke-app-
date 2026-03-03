@@ -1,13 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  Pressable,
-  Modal,
-  ScrollView,
+  View, Text, Image, TouchableOpacity, StyleSheet,
+  Pressable, Modal, ScrollView,
 } from "react-native";
 import { Bell, Moon, Sun, User, X } from "lucide-react-native";
 import { router } from "expo-router";
@@ -17,115 +11,75 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SidebarMenu from "./SidebarMenu";
 import { backendSocket } from "../socket/socket";
 
-/* ─────────────────────────────────────────────────────────
-   NOTIFICATION PANEL
-   ✅ No API call — listens to socket events only
-   Stores backtest results + alerts in local state
-───────────────────────────────────────────────────────── */
 interface Notification {
-  id: string;
-  title: string;
-  description?: string;
-  time: Date;
-  read: boolean;
-  type: "backtest" | "alert" | "general";
+  id: string; title: string; description?: string;
+  time: Date; read: boolean; type: "backtest" | "alert" | "general";
 }
 
+/* ═══════════════════════════════════════════════════
+   NOTIFICATION PANEL
+═══════════════════════════════════════════════════ */
 const NotificationPanel = ({
-  visible,
-  onClose,
-  notifications,
-  onMarkAllRead,
+  visible, onClose, notifications, onMarkAllRead,
 }: {
-  visible: boolean;
-  onClose: () => void;
-  notifications: Notification[];
-  onMarkAllRead: () => void;
+  visible: boolean; onClose: () => void;
+  notifications: Notification[]; onMarkAllRead: () => void;
 }) => {
-  if (!visible) return null;
-
-  const formatTime = (date: Date) => {
-    try {
-      return date.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return "";
-    }
-  };
-
   const typeColor: Record<string, { bg: string; text: string }> = {
     backtest: { bg: "#EEF2FF", text: "#4338CA" },
     alert:    { bg: "#FEF3C7", text: "#92400E" },
     general:  { bg: "#F3F4F6", text: "#374151" },
   };
+  const fmtTime = (d: Date) => {
+    try {
+      return d.toLocaleDateString("en-IN", {
+        day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+      });
+    } catch { return ""; }
+  };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable style={styles.notifOverlay} onPress={onClose}>
-        <Pressable style={styles.notifPanel} onPress={(e) => e.stopPropagation()}>
-          {/* Header */}
-          <View style={styles.notifHeader}>
-            <Text style={styles.notifTitle}>Notifications</Text>
-            <View style={styles.notifHeaderRight}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={s.notifOverlay} onPress={onClose}>
+        <Pressable style={s.notifPanel} onPress={e => e.stopPropagation()}>
+          <View style={s.notifHeader}>
+            <Text style={s.notifTitle}>Notifications</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               {notifications.some(n => !n.read) && (
-                <TouchableOpacity onPress={onMarkAllRead} style={styles.markAllBtn}>
-                  <Text style={styles.markAllText}>Mark all read</Text>
+                <TouchableOpacity onPress={onMarkAllRead} style={s.markAllBtn}>
+                  <Text style={s.markAllText}>Mark all read</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity
-                onPress={onClose}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <X size={18} color="#6b7280" />
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Content */}
           {notifications.length === 0 ? (
-            <View style={styles.notifCenter}>
-              <Text style={styles.notifBellEmoji}>🔔</Text>
-              <Text style={styles.notifEmptyText}>No notifications yet</Text>
-              <Text style={styles.notifEmptySubText}>
-                Backtest results and alerts will appear here
-              </Text>
+            <View style={s.notifEmpty}>
+              <Text style={{ fontSize: 32, marginBottom: 10 }}>🔔</Text>
+              <Text style={s.notifEmptyTitle}>No notifications yet</Text>
+              <Text style={s.notifEmptySub}>Backtest results and alerts will appear here</Text>
             </View>
           ) : (
-            <ScrollView style={styles.notifScroll} showsVerticalScrollIndicator={false}>
-              {notifications.map((item) => {
+            <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+              {notifications.map(item => {
                 const clr = typeColor[item.type] || typeColor.general;
                 return (
-                  <View
-                    key={item.id}
-                    style={[styles.notifItem, !item.read && styles.notifItemUnread]}
-                  >
-                    {!item.read && <View style={styles.notifDot} />}
-                    <View style={styles.notifBody}>
-                      <View style={styles.notifTopRow}>
-                        <View style={[styles.notifTypeBadge, { backgroundColor: clr.bg }]}>
-                          <Text style={[styles.notifTypeText, { color: clr.text }]}>
-                            {item.type === "backtest" ? "Backtest" :
-                             item.type === "alert" ? "Alert" : "Info"}
+                  <View key={item.id} style={[s.notifItem, !item.read && s.notifItemUnread]}>
+                    {!item.read && <View style={s.notifDot} />}
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                        <View style={[s.notifBadge, { backgroundColor: clr.bg }]}>
+                          <Text style={[s.notifBadgeText, { color: clr.text }]}>
+                            {item.type === "backtest" ? "Backtest" : item.type === "alert" ? "Alert" : "Info"}
                           </Text>
                         </View>
-                        <Text style={styles.notifItemTime}>{formatTime(item.time)}</Text>
+                        <Text style={s.notifTime}>{fmtTime(item.time)}</Text>
                       </View>
-                      <Text style={styles.notifItemTitle} numberOfLines={2}>
-                        {item.title}
-                      </Text>
+                      <Text style={s.notifItemTitle} numberOfLines={2}>{item.title}</Text>
                       {!!item.description && (
-                        <Text style={styles.notifItemDesc} numberOfLines={2}>
-                          {item.description}
-                        </Text>
+                        <Text style={s.notifItemDesc} numberOfLines={2}>{item.description}</Text>
                       )}
                     </View>
                   </View>
@@ -139,250 +93,235 @@ const NotificationPanel = ({
   );
 };
 
-/* ─────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════
+   PROFILE POPUP — rendered as Modal so it ALWAYS
+   appears above every screen element, no zIndex fights
+═══════════════════════════════════════════════════ */
+const ProfilePopup = ({
+  visible, onClose, user, onLogout, isLoggingOut,
+}: {
+  visible: boolean; onClose: () => void;
+  user: any; onLogout: () => void; isLoggingOut: boolean;
+}) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      {/* Full-screen dismiss area */}
+      <Pressable style={s.profileOverlay} onPress={onClose}>
+        {/* Stop tap propagation on the popup itself */}
+        <Pressable style={s.profilePopup} onPress={e => e.stopPropagation()}>
+          {/* User info */}
+          <View style={s.profileTop}>
+            <View style={s.profileAvatar}><User size={20} color="#fff" /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.profileName} numberOfLines={1}>{user?.name ?? "User"}</Text>
+              <Text style={s.profileEmail} numberOfLines={1}>{user?.email ?? ""}</Text>
+            </View>
+          </View>
+
+          <View style={s.divider} />
+
+          {[
+            { label: "Profile",     icon: "👤", route: "/profile" },
+            { label: "My Earnings", icon: "💰", route: "/leads" },
+            { label: "Pricing",     icon: "💎", route: "/pricing" },
+          ].map(item => (
+            <TouchableOpacity
+              key={item.route}
+              style={s.menuItem}
+              activeOpacity={0.7}
+              onPress={() => { onClose(); router.push(item.route as any); }}
+            >
+              <Text style={s.menuIcon}>{item.icon}</Text>
+              <Text style={s.menuLabel}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+
+          <View style={s.divider} />
+
+          <TouchableOpacity
+            style={s.menuItem}
+            activeOpacity={0.7}
+            onPress={onLogout}
+            disabled={isLoggingOut}
+          >
+            <Text style={s.menuIcon}>🚪</Text>
+            <Text style={[s.menuLabel, { color: "#ef4444" }]}>
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+};
+
+/* ═══════════════════════════════════════════════════
    APP HEADER
-───────────────────────────────────────────────────────── */
+═══════════════════════════════════════════════════ */
 export const AppHeader = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
-
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [profilePopupVisible, setProfilePopupVisible] = useState(false);
-  const [notifVisible, setNotifVisible] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [menuVisible, setMenuVisible]     = useState(false);
+  const [isDarkMode, setIsDarkMode]       = useState(false);
+  const [profileOpen, setProfileOpen]     = useState(false);
+  const [notifOpen, setNotifOpen]         = useState(false);
+  const [isLoggingOut, setIsLoggingOut]   = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const user = useSelector((state: any) => state?.Login?.user ?? null);
-  const isUserLogout = useSelector((state: any) => state?.Login?.isUserLogout ?? false);
+  const user          = useSelector((state: any) => state?.Login?.user ?? null);
+  const isUserLogout  = useSelector((state: any) => state?.Login?.isUserLogout ?? false);
+  const unread        = notifications.filter(n => !n.read).length;
 
-  // ✅ Unread count derived from state — no API needed
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // ✅ Listen to socket events for notifications
   useEffect(() => {
     if (!backendSocket) return;
-
-    // Backtest completed
-    const onBacktestResult = (data: any) => {
-      if (!data) return;
-      const notif: Notification = {
-        id: `bt-${Date.now()}`,
-        title: data.message || "Backtest completed",
-        description: data.strategyName ? `Strategy: ${data.strategyName}` : undefined,
-        time: new Date(),
-        read: false,
-        type: "backtest",
-      };
-      setNotifications(prev => [notif, ...prev].slice(0, 50));
-    };
-
-    // Advanced backtest completed
-    const onAdvBacktestResult = (data: any) => {
-      if (!data) return;
-      const notif: Notification = {
-        id: `adv-${Date.now()}`,
-        title: data.message || "Advanced backtest completed",
-        description: data.strategyName ? `Strategy: ${data.strategyName}` : undefined,
-        time: new Date(),
-        read: false,
-        type: "backtest",
-      };
-      setNotifications(prev => [notif, ...prev].slice(0, 50));
-    };
-
-    // Scanner alert triggered
-    const onScannerAlert = (data: any) => {
-      if (!data) return;
-      const notif: Notification = {
-        id: `alert-${Date.now()}`,
-        title: data.message || data.alert || "Scanner alert triggered",
-        description: data.symbol || data.stockName,
-        time: new Date(),
-        read: false,
-        type: "alert",
-      };
-      setNotifications(prev => [notif, ...prev].slice(0, 50));
-    };
-
-    backendSocket.on("backtest-results", onBacktestResult);
-    backendSocket.on("advbacktest-results", onAdvBacktestResult);
-    backendSocket.on("scanner-alert", onScannerAlert);
-
+    const add = (id: string, title: string, desc?: string, type: Notification["type"] = "backtest") =>
+      setNotifications(prev =>
+        [{ id, title, description: desc, time: new Date(), read: false, type }, ...prev].slice(0, 50)
+      );
+    const onBT    = (d: any) => d && add(`bt-${Date.now()}`,  d.message || "Backtest completed",          d.strategyName ? `Strategy: ${d.strategyName}` : undefined);
+    const onAdv   = (d: any) => d && add(`adv-${Date.now()}`, d.message || "Advanced backtest completed", d.strategyName ? `Strategy: ${d.strategyName}` : undefined);
+    const onAlert = (d: any) => d && add(`alert-${Date.now()}`, d.message || d.alert || "Scanner alert",  d.symbol, "alert");
+    backendSocket.on("backtest-results",    onBT);
+    backendSocket.on("advbacktest-results", onAdv);
+    backendSocket.on("scanner-alert",       onAlert);
     return () => {
-      backendSocket.off("backtest-results", onBacktestResult);
-      backendSocket.off("advbacktest-results", onAdvBacktestResult);
-      backendSocket.off("scanner-alert", onScannerAlert);
+      backendSocket.off("backtest-results",    onBT);
+      backendSocket.off("advbacktest-results", onAdv);
+      backendSocket.off("scanner-alert",       onAlert);
     };
   }, []);
-
-  const handleMarkAllRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, []);
-
-  const handleLogout = useCallback(() => {
-    setIsLoggingOut(true);
-    setProfilePopupVisible(false);
-    dispatch(logoutUser() as any);
-  }, [dispatch]);
 
   useEffect(() => {
     if (isUserLogout && isLoggingOut) {
-      try { router.replace("/login"); } catch (e) { console.error(e); }
+      try { router.replace("/login"); } catch { }
       setIsLoggingOut(false);
     }
   }, [isUserLogout, isLoggingOut]);
 
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    setProfileOpen(false);
+    dispatch(logoutUser() as any);
+  };
+
   return (
     <>
-      <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
-        <View style={styles.headerRow}>
+      <View style={[s.container, { paddingTop: insets.top }]}>
+        <View style={s.row}>
           {/* Hamburger */}
           <TouchableOpacity
             onPress={() => setMenuVisible(true)}
-            style={styles.hamburger}
+            style={s.iconBtn}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.6}
           >
-            <Text style={styles.hamburgerText}>☰</Text>
+            <Text style={s.hamburger}>☰</Text>
           </TouchableOpacity>
 
           {/* Logo */}
-          <TouchableOpacity onPress={() => router.push("/dashboard" as any)} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => router.push("/dashboard" as any)} activeOpacity={0.8}>
             <Image
               source={require("../assets/images/unfluke/UNFLUKE -09-New.png")}
-              style={styles.logo}
+              style={s.logo}
               resizeMode="contain"
             />
           </TouchableOpacity>
 
-          {/* Right Icons */}
-          <View style={styles.rightIcons}>
-            {/* Dark mode */}
+          {/* Right icons */}
+          <View style={s.rightIcons}>
+            {/* Dark mode toggle */}
             <TouchableOpacity
-              onPress={() => setIsDarkMode(!isDarkMode)}
-              style={styles.iconBtn}
+              onPress={() => setIsDarkMode(v => !v)}
+              style={s.iconBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               {isDarkMode ? <Sun size={20} color="#333" /> : <Moon size={20} color="#333" />}
             </TouchableOpacity>
 
-            {/* Bell — opens notification panel */}
+            {/* Bell */}
             <TouchableOpacity
-              style={styles.iconBtn}
+              style={s.iconBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              onPress={() => {
-                setProfilePopupVisible(false);
-                setNotifVisible(true);
-              }}
+              onPress={() => { setProfileOpen(false); setNotifOpen(true); }}
             >
               <Bell size={20} color="#333" />
-              {unreadCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </Text>
+              {unread > 0 && (
+                <View style={s.badge}>
+                  <Text style={s.badgeText}>{unread > 9 ? "9+" : unread}</Text>
                 </View>
               )}
             </TouchableOpacity>
 
-            {/* Profile */}
+            {/* Profile avatar */}
             <TouchableOpacity
-              onPress={() => {
-                setNotifVisible(false);
-                setProfilePopupVisible(prev => !prev);
-              }}
-              style={styles.iconBtn}
+              style={s.iconBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => { setNotifOpen(false); setProfileOpen(v => !v); }}
             >
-              <View style={styles.profileCircle}>
-                <User size={16} color="#fff" />
-              </View>
+              <View style={s.avatar}><User size={16} color="#fff" /></View>
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Profile Popup */}
-        {profilePopupVisible && !isLoggingOut && (
-          <>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setProfilePopupVisible(false)} />
-            <View style={styles.profilePopup}>
-              <Text style={styles.profileName}>
-                Welcome, <Text style={styles.nameHighlight}>{user?.name ?? "User"}</Text>
-              </Text>
-              {[
-                { label: "👤 Profile",     route: "/profile" },
-                { label: "💰 My Earnings", route: "/leads" },
-                { label: "💎 Pricing",     route: "/pricing" },
-              ].map((item) => (
-                <TouchableOpacity
-                  key={item.route}
-                  style={styles.profileMenuItem}
-                  onPress={() => { setProfilePopupVisible(false); router.push(item.route as any); }}
-                >
-                  <Text style={styles.profileMenuText}>{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} disabled={isLoggingOut}>
-                <Text style={styles.logoutText}>
-                  {isLoggingOut ? "Logging out..." : "🚪 Logout"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
       </View>
+
+      {/* ✅ Profile popup as Modal — renders above EVERYTHING, zero zIndex issues */}
+      <ProfilePopup
+        visible={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        user={user}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+      />
+
+      {/* Notification panel */}
+      <NotificationPanel
+        visible={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        notifications={notifications}
+        onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+      />
 
       {/* Sidebar */}
       <SidebarMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
-
-      {/* Notification Panel */}
-      <NotificationPanel
-        visible={notifVisible}
-        onClose={() => setNotifVisible(false)}
-        notifications={notifications}
-        onMarkAllRead={handleMarkAllRead}
-      />
     </>
   );
 };
 
-/* ─────────────────────────────────────────────────────────
-   SCREEN WITH HEADER WRAPPER
-───────────────────────────────────────────────────────── */
-export const ScreenWithHeader: React.FC<{
-  children: React.ReactNode;
-  style?: any;
-}> = ({ children, style }) => (
-  <View style={[styles.screenContainer, style]}>
+/* ═══════════════════════════════════════════════════
+   SCREEN WITH HEADER
+═══════════════════════════════════════════════════ */
+export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => (
+  <View style={[s.screen, style]}>
     <AppHeader />
-    <View style={styles.screenContent}>{children}</View>
+    <View style={s.screenContent}>{children}</View>
   </View>
 );
 
-const styles = StyleSheet.create({
-  headerContainer: {
+/* ═══════════════════════════════════════════════════
+   STYLES
+═══════════════════════════════════════════════════ */
+const s = StyleSheet.create({
+  // Header bar
+  container: {
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
-    zIndex: 100,
     elevation: 4,
+    zIndex: 10,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingBottom: 10,
-    paddingHorizontal: 14,
-    paddingTop: 4,
-    backgroundColor: "#fff",
+  row: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10,
   },
-  hamburger: { padding: 8, marginRight: 8 },
-  hamburgerText: { fontSize: 22, color: "#333" },
+  hamburger: { fontSize: 22, color: "#333" },
   logo: { width: 80, height: 28 },
   rightIcons: { flexDirection: "row", alignItems: "center", marginLeft: "auto", gap: 4 },
   iconBtn: { padding: 8, position: "relative" },
-
-  // Badge
   badge: {
     position: "absolute", top: 4, right: 4,
     backgroundColor: "#ef4444", borderRadius: 8,
@@ -390,35 +329,51 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", paddingHorizontal: 3,
   },
   badgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
-
-  profileCircle: {
-    width: 30, height: 30, borderRadius: 15,
+  avatar: {
+    width: 32, height: 32, borderRadius: 16,
     backgroundColor: "#4f46e5", alignItems: "center", justifyContent: "center",
   },
-  profilePopup: {
-    position: "absolute", top: 60, right: 12,
-    backgroundColor: "#fff", borderRadius: 12,
-    elevation: 8, shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15, shadowRadius: 8,
-    zIndex: 1000, width: 200, paddingVertical: 8,
-    borderWidth: 1, borderColor: "#f0f0f0",
-  },
-  profileName: {
-    paddingHorizontal: 16, paddingVertical: 10,
-    fontSize: 13, color: "#374151",
-    borderBottomWidth: 1, borderBottomColor: "#f3f4f6",
-  },
-  nameHighlight: { color: "#4f46e5", fontWeight: "700" },
-  profileMenuItem: { paddingHorizontal: 16, paddingVertical: 12 },
-  profileMenuText: { fontSize: 14, color: "#374151", fontWeight: "500" },
-  logoutBtn: {
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderTopWidth: 1, borderTopColor: "#f3f4f6", marginTop: 4,
-  },
-  logoutText: { color: "#ef4444", fontWeight: "600", fontSize: 14 },
 
-  // Notification Panel
+  // ✅ Profile popup — Modal-based, positioned top-right like a dropdown
+  profileOverlay: {
+    flex: 1,
+    // transparent background — tapping outside closes it
+    backgroundColor: "transparent",
+    // align popup to top-right corner (where the avatar button is)
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: 60,   // roughly below the header bar
+    paddingRight: 10,
+  },
+  profilePopup: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    width: 230,
+    paddingBottom: 6,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 24,
+  },
+  profileTop: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
+  profileAvatar: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "#4f46e5", alignItems: "center", justifyContent: "center",
+  },
+  profileName: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  profileEmail: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
+  divider: { height: 1, backgroundColor: "#f3f4f6" },
+  menuItem: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 16, paddingVertical: 13, gap: 12,
+  },
+  menuIcon: { fontSize: 16 },
+  menuLabel: { fontSize: 14, color: "#374151", fontWeight: "500" },
+
+  // Notifications
   notifOverlay: {
     flex: 1, backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "flex-start", alignItems: "flex-end",
@@ -429,23 +384,19 @@ const styles = StyleSheet.create({
     width: 300, maxHeight: 440,
     elevation: 10, shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15, shadowRadius: 10,
-    overflow: "hidden",
+    shadowOpacity: 0.15, shadowRadius: 10, overflow: "hidden",
   },
   notifHeader: {
-    flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", paddingHorizontal: 16,
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
   },
   notifTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  notifHeaderRight: { flexDirection: "row", alignItems: "center", gap: 10 },
   markAllBtn: { paddingHorizontal: 8, paddingVertical: 4, backgroundColor: "#EEF2FF", borderRadius: 6 },
   markAllText: { fontSize: 11, color: "#4f46e5", fontWeight: "600" },
-  notifScroll: { maxHeight: 360 },
-  notifCenter: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 20 },
-  notifBellEmoji: { fontSize: 32, marginBottom: 10 },
-  notifEmptyText: { fontSize: 14, fontWeight: "600", color: "#374151", marginTop: 4 },
-  notifEmptySubText: { fontSize: 12, color: "#9ca3af", marginTop: 6, textAlign: "center", lineHeight: 18 },
+  notifEmpty: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 20 },
+  notifEmptyTitle: { fontSize: 14, fontWeight: "600", color: "#374151" },
+  notifEmptySub: { fontSize: 12, color: "#9ca3af", marginTop: 6, textAlign: "center", lineHeight: 18 },
   notifItem: {
     flexDirection: "row", alignItems: "flex-start",
     paddingHorizontal: 16, paddingVertical: 12,
@@ -454,19 +405,16 @@ const styles = StyleSheet.create({
   notifItemUnread: { backgroundColor: "#f0f4ff" },
   notifDot: {
     width: 8, height: 8, borderRadius: 4,
-    backgroundColor: "#4f46e5", marginTop: 6,
-    marginRight: 10, flexShrink: 0,
+    backgroundColor: "#4f46e5", marginTop: 6, marginRight: 10, flexShrink: 0,
   },
-  notifBody: { flex: 1 },
-  notifTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-  notifTypeBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
-  notifTypeText: { fontSize: 10, fontWeight: "700" },
+  notifBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
+  notifBadgeText: { fontSize: 10, fontWeight: "700" },
   notifItemTitle: { fontSize: 13, fontWeight: "600", color: "#111827", lineHeight: 18 },
   notifItemDesc: { fontSize: 12, color: "#6b7280", marginTop: 3, lineHeight: 17 },
-  notifItemTime: { fontSize: 10, color: "#9ca3af" },
+  notifTime: { fontSize: 10, color: "#9ca3af" },
 
   // Screen wrapper
-  screenContainer: { flex: 1, backgroundColor: "#f9fafb" },
+  screen: { flex: 1, backgroundColor: "#f9fafb" },
   screenContent: { flex: 1 },
 });
 

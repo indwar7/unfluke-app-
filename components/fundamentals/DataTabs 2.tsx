@@ -222,6 +222,9 @@ const VAL_METRICS = [
 const RATIO_METRICS = [
     { label: "EPS (Adjusted)", key: "EPS (Adjusted)", source: "pl" },
     { label: "Book Value", key: "Book Value (Adjusted)", source: "pl" },
+
+    
+
     { label: "Total Assets", key: "TOTAL ASSETS", source: "bs" },
     { label: "Total Equity", key: "Total Shareholders Fund", source: "bs" },
 ] as const;

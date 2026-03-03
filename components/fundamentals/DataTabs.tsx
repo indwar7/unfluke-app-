@@ -243,6 +243,8 @@ const RATIO_METRICS = [
     { label: "Total Equity",    key: "Total Shareholders Fund", source: "bs" },
 ] as const;
 
+
+
 export function ChartsTab({ capcode, companyName, stockType }: {
     capcode: string; companyName: string; stockType: "C" | "S";
 }) {
