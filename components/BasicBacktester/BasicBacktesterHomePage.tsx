@@ -172,128 +172,108 @@ const BasicBacktesterHomePage = () => {
         }
     }, [auth]);
 
-    const StrategyTable = ({ strategies }: { strategies: any[] }) => (
-        <View style={styles.tableContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.tableWrapper}>
-                    {/* Header */}
-                    <View style={[styles.tableRow, styles.tableHeader]}>
-                        <Text style={[styles.headerCell, { width: 160 }]}>Strategy Name</Text>
-                        <Text style={[styles.headerCell, { width: 90 }]}>Profit</Text>
-                        <Text style={[styles.headerCell, { width: 110 }]}>Max Drawdown</Text>
-                        <Text style={[styles.headerCell, { width: 120 }]}>Created On</Text>
-                        <Text style={[styles.headerCell, { width: 80 }]}>Private</Text>
-                        <Text style={[styles.headerCell, { width: 80 }]}>Monetize</Text>
-                        <Text style={[styles.headerCell, { width: 130 }]}>Actions</Text>
+    const StrategyCard = ({ item, index }: { item: any; index: number }) => {
+        const profit = item.rateOfInterest;
+        const drawdown = item.maxDrawdown ?? item.max_drawdown;
+        const isPositive = (profit ?? 0) >= 0;
+        const createdOn = item.createdAt
+            ? new Date(item.createdAt).toLocaleDateString("en-IN", {
+                day: "2-digit", month: "short", year: "numeric",
+            })
+            : item.date ?? "—";
+
+        return (
+            <View style={styles.stratCard}>
+                {/* Card Header — Name + Actions */}
+                <View style={styles.stratCardHeader}>
+                    <TouchableOpacity
+                        style={{ flex: 1 }}
+                        onPress={() => handleView(item)}
+                    >
+                        <Text style={styles.stratName} numberOfLines={2}>
+                            {item.name ?? item.strategyName ?? "—"}
+                        </Text>
+                    </TouchableOpacity>
+                    <View style={styles.stratActions}>
+                        <TouchableOpacity style={styles.actionBtn} onPress={() => handleEdit(item)}>
+                            <Ionicons name="pencil" size={15} color="#3b82f6" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.actionBtn} onPress={() => handleView(item)}>
+                            <Ionicons name="eye" size={15} color="#16a34a" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.actionBtn}
+                            onPress={() =>
+                                handleDeleteStrategy(
+                                    item._id,
+                                    item.resultFileName ?? item.fileName ?? ""
+                                )
+                            }
+                        >
+                            <Ionicons name="trash" size={15} color="#dc2626" />
+                        </TouchableOpacity>
                     </View>
-
-                    {strategies.length === 0 ? (
-                        <View style={styles.emptyBox}>
-                            <Ionicons name="document-outline" size={36} color="#9CA3AF" />
-                            <Text style={styles.emptyText}>No strategies found.</Text>
-                        </View>
-                    ) : (
-                        strategies.map((item: any, index: number) => (
-                            <View
-                                key={item._id ?? index}
-                                style={[
-                                    styles.tableRow,
-                                    index % 2 === 0 ? styles.evenRow : styles.oddRow,
-                                ]}
-                            >
-                                {/* Name */}
-                                <TouchableOpacity
-                                    style={{ width: 160, paddingVertical: 10 }}
-                                    onPress={() => handleView(item)}
-                                >
-                                    <Text style={styles.linkText} numberOfLines={2}>
-                                        {item.name ?? item.strategyName ?? "—"}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {/* Profit */}
-                                <Text
-                                    style={[
-                                        styles.cellText,
-                                        { width: 90, color: (item.rateOfInterest ?? 0) >= 0 ? "#16a34a" : "#dc2626" },
-                                    ]}
-                                >
-                                    {item.rateOfInterest != null
-                                        ? `₹${Number(item.rateOfInterest).toFixed(0)}`
-                                        : "—"}
-                                </Text>
-
-                                {/* Max Drawdown */}
-                                <Text
-                                    style={[
-                                        styles.cellText,
-                                        { width: 110, color: "#dc2626" },
-                                    ]}
-                                >
-                                    {item.maxDrawdown != null
-                                        ? `₹${Number(item.maxDrawdown).toFixed(0)}`
-                                        : item.max_drawdown != null
-                                            ? `₹${Number(item.max_drawdown).toFixed(0)}`
-                                            : "—"}
-                                </Text>
-
-                                {/* Created On */}
-                                <Text style={[styles.cellText, { width: 120 }]}>
-                                    {item.createdAt
-                                        ? new Date(item.createdAt).toLocaleDateString("en-IN", {
-                                            day: "2-digit",
-                                            month: "short",
-                                            year: "numeric",
-                                        })
-                                        : item.date ?? "—"}
-                                </Text>
-
-                                {/* Private */}
-                                <View style={styles.switchCell}>
-                                    <Switch
-                                        value={!!item.isPrivate}
-                                        onValueChange={(val) => handlePrivate(index, val)}
-                                        trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
-                                        thumbColor="#fff"
-                                    />
-                                </View>
-
-                                {/* Monetize */}
-                                <View style={styles.switchCell}>
-                                    <Switch
-                                        value={!!item.monetize}
-                                        disabled={item.isPrivate}
-                                        onValueChange={(val) => handleMonetize(index, val)}
-                                        trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
-                                        thumbColor="#fff"
-                                    />
-                                </View>
-
-                                {/* Actions */}
-                                <View style={styles.actionsCell}>
-                                    <TouchableOpacity onPress={() => handleEdit(item)}>
-                                        <Ionicons name="pencil" size={16} color="#3b82f6" />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => handleView(item)}>
-                                        <Ionicons name="eye" size={16} color="#16a34a" />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            handleDeleteStrategy(
-                                                item._id,
-                                                item.resultFileName ?? item.fileName ?? ""
-                                            )
-                                        }
-                                    >
-                                        <Ionicons name="trash" size={16} color="#dc2626" />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        ))
-                    )}
                 </View>
-            </ScrollView>
-        </View>
+
+                {/* Metrics Row */}
+                <View style={styles.metricsRow}>
+                    <View style={styles.metricItem}>
+                        <Text style={styles.metricLabel}>Profit</Text>
+                        <Text style={[styles.metricValue, { color: isPositive ? "#16a34a" : "#dc2626" }]}>
+                            {profit != null ? `₹${Number(profit).toFixed(0)}` : "—"}
+                        </Text>
+                    </View>
+                    <View style={styles.metricItem}>
+                        <Text style={styles.metricLabel}>Max Drawdown</Text>
+                        <Text style={[styles.metricValue, { color: "#dc2626" }]}>
+                            {drawdown != null ? `₹${Number(drawdown).toFixed(0)}` : "—"}
+                        </Text>
+                    </View>
+                    <View style={styles.metricItem}>
+                        <Text style={styles.metricLabel}>Created On</Text>
+                        <Text style={styles.metricValue}>{createdOn}</Text>
+                    </View>
+                </View>
+
+                {/* Toggles Row */}
+                <View style={styles.togglesRow}>
+                    <View style={styles.toggleItem}>
+                        <Text style={styles.toggleLabel}>Private</Text>
+                        <Switch
+                            value={!!item.isPrivate}
+                            onValueChange={(val) => handlePrivate(index, val)}
+                            trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                            thumbColor="#fff"
+                        />
+                    </View>
+                    <View style={styles.toggleItem}>
+                        <Text style={styles.toggleLabel}>Monetize</Text>
+                        <Switch
+                            value={!!item.monetize}
+                            disabled={item.isPrivate}
+                            onValueChange={(val) => handleMonetize(index, val)}
+                            trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                            thumbColor="#fff"
+                        />
+                    </View>
+                </View>
+            </View>
+        );
+    };
+
+    const StrategyList = ({ strategies }: { strategies: any[] }) => (
+        strategies.length === 0 ? (
+            <View style={styles.emptyBox}>
+                <Ionicons name="document-outline" size={36} color="#9CA3AF" />
+                <Text style={styles.emptyText}>No strategies found.</Text>
+            </View>
+        ) : (
+            <View>
+                {strategies.map((item: any, index: number) => (
+                    <StrategyCard key={item._id ?? index} item={item} index={index} />
+                ))}
+            </View>
+        )
     );
 
     return (
@@ -360,7 +340,7 @@ const BasicBacktesterHomePage = () => {
                                 <Text style={styles.loaderText}>Loading strategies...</Text>
                             </View>
                         ) : (
-                            <StrategyTable strategies={listStrategies} />
+                            <StrategyList strategies={listStrategies} />
                         )}
                     </View>
                 </View>
@@ -461,56 +441,84 @@ const styles = StyleSheet.create({
 
     content: { padding: 16 },
 
-    /* ── Table ── */
-    tableContainer: {
+    /* ── Strategy Cards ── */
+    stratCard: {
+        backgroundColor: "#fff",
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: "#e5e7eb",
-        borderRadius: 8,
-        overflow: "hidden",
+        padding: 14,
+        marginBottom: 10,
+        elevation: 1,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
     },
-    tableWrapper: { minWidth: 770 },
-    tableRow: {
+    stratCardHeader: {
         flexDirection: "row",
-        alignItems: "center",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e5e7eb",
-        paddingHorizontal: 8,
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 12,
     },
-    tableHeader: { backgroundColor: "#f5f7fa", paddingVertical: 10 },
-    evenRow: { backgroundColor: "#fff" },
-    oddRow: { backgroundColor: "#f9fafb" },
-    headerCell: {
-        fontSize: 11,
+    stratName: {
+        fontSize: 14,
         fontWeight: "700",
-        color: "#6b7280",
-        textTransform: "uppercase",
-        textAlign: "center",
-    },
-    cellText: {
-        fontSize: 12,
-        color: "#374151",
-        textAlign: "center",
-        paddingVertical: 10,
-    },
-    linkText: {
-        fontSize: 13,
         color: "#3b82f6",
-        fontWeight: "600",
-        textDecorationLine: "underline",
-        paddingHorizontal: 4,
+        flex: 1,
+        marginRight: 8,
     },
-    switchCell: {
-        width: 80,
+    stratActions: {
+        flexDirection: "row",
+        gap: 4,
+    },
+    actionBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 6,
+        backgroundColor: "#f3f4f6",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 8,
     },
-    actionsCell: {
-        width: 130,
+    metricsRow: {
         flexDirection: "row",
-        justifyContent: "space-around",
+        gap: 8,
+        marginBottom: 12,
+    },
+    metricItem: {
+        flex: 1,
+        backgroundColor: "#f9fafb",
+        borderRadius: 8,
+        padding: 10,
+    },
+    metricLabel: {
+        fontSize: 10,
+        fontWeight: "600",
+        color: "#6b7280",
+        textTransform: "uppercase",
+        marginBottom: 4,
+    },
+    metricValue: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#111827",
+    },
+    togglesRow: {
+        flexDirection: "row",
+        gap: 16,
+        borderTopWidth: 1,
+        borderTopColor: "#f0f0f0",
+        paddingTop: 10,
+    },
+    toggleItem: {
+        flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 8,
+        gap: 8,
+    },
+    toggleLabel: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: "#6b7280",
     },
 
     /* ── States ── */

@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  useColorScheme,
   SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
@@ -43,8 +42,7 @@ import { deepCopy } from "../../components/UnflukeMain/BasicBacktester/StrategyL
 import { backendSocket } from "../../socket/socket";
 
 const AdvancedBacktester = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = false;
   const dynamicStyles = createStyles(isDark);
 
   const advancedState = useSelector((store: any) => store.AdvancedBacktester);

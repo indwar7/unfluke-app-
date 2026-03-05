@@ -219,7 +219,9 @@ export const AppHeader = () => {
 
   // Load notifications from API
   const loadNotifications = (pageNum = 1, isInitial = false) => {
-    if (loading || !user?._id) return;
+    if (!user?._id) return;
+    // Skip guard for initial/refresh loads so bell tap always works
+    if (!isInitial && loading) return;
     setLoading(true);
 
     getNotifications({
@@ -229,34 +231,27 @@ export const AppHeader = () => {
     })
       .then((response: any) => {
         const data = response?.data ?? response;
-        if (data && data.notifications) {
+        const list = data?.notifications ?? (Array.isArray(data) ? data : []);
+        if (list.length > 0) {
           if (isInitial) {
-            setNotifications(data.notifications);
+            setNotifications(list);
           } else {
-            setNotifications(prev => [...prev, ...data.notifications]);
+            setNotifications(prev => [...prev, ...list]);
           }
-          setTotalNotifications(data.total || data.notifications.length);
-          setHasMore(!!data.hasMore);
+          setTotalNotifications(data?.total || list.length);
+          setHasMore(!!data?.hasMore || (data?.total > list.length));
           setPage(pageNum);
-          if (data.notifications.some((n: any) => !n.is_read)) {
+          if (list.some((n: any) => !n.is_read)) {
             setBadge(true);
           }
-        } else if (Array.isArray(data)) {
-          // Fallback: API returns array directly
-          if (isInitial) {
-            setNotifications(data);
-          } else {
-            setNotifications(prev => [...prev, ...data]);
-          }
-          setTotalNotifications(data.length);
-          if (data.some((n: any) => !n.is_read)) {
-            setBadge(true);
-          }
+        } else if (isInitial) {
+          setNotifications([]);
+          setTotalNotifications(0);
         }
         setLoading(false);
       })
       .catch((err: any) => {
-        console.error("Error loading notifications:", err);
+        console.error("[Notifications] API error:", err?.message || err);
         setLoading(false);
       });
   };
@@ -288,13 +283,22 @@ export const AppHeader = () => {
     const socket = io(Config.BACKEND_URL, {
       transports: ["websocket"],
       query: { userID: user._id },
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+    });
+
+    socket.on("connect", () => {
+      // Bind user ID on every connect/reconnect
+      socket.emit("setSocketId", user._id);
     });
 
     socket.emit("setSocketId", user._id);
 
     socket.on("new-notification", (data: any) => {
-      if (data && data.notification && data.notification.userID === user._id) {
-        setNotifications(prev => [data.notification, ...prev]);
+      const notif = data?.notification ?? data;
+      if (notif && (notif.userID === user._id || !notif.userID)) {
+        setNotifications(prev => [notif, ...prev]);
         setTotalNotifications(prev => prev + 1);
         setBadge(true);
       }
@@ -324,6 +328,8 @@ export const AppHeader = () => {
   const handleBellPress = () => {
     setProfileOpen(false);
     setNotifOpen(true);
+    // Always re-fetch latest notifications when bell is tapped
+    loadNotifications(1, true);
     if (badge) {
       markAllRead();
     }

@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/adaptive-icon.png",
     "scheme": "unflukeapp",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
