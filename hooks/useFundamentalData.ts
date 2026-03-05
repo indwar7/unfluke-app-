@@ -30,6 +30,7 @@ export type FinancialsData = {
   cashFlow: any;
   quarterly: any;
   ratios: Record<RatioSection, any>;
+  banking: any;
 };
 
 async function get(url: string): Promise<any> {
@@ -60,7 +61,7 @@ export function useFinancials(
       if (!capcode) throw new Error("capcode required");
       const q = `capcode=${capcode}&type=${type}`;
 
-      const [bs, pl, cf, qr, kf, dp, ca, v1, v2, vc] = await Promise.all([
+      const [bs, pl, cf, qr, kf, dp, ca, v1, v2, vc, bk] = await Promise.all([
         get(`${BASE}/getBalanceSheet?${q}`).catch(e => { console.warn("BS", e.message); return null; }),
         get(`${BASE}/getProfitLoss?${q}`).catch(e => { console.warn("PL", e.message); return null; }),
         get(`${BASE}/getCashFlow?${q}`).catch(e => { console.warn("CF", e.message); return null; }),
@@ -71,6 +72,7 @@ export function useFinancials(
         get(`${BASE}/getCFRatio?${q}&section=Valuation1`).catch(() => null),
         get(`${BASE}/getCFRatio?${q}&section=Valuation2`).catch(() => null),
         get(`${BASE}/getCFRatio?${q}&section=ValuationCalculated`).catch(() => null),
+        get(`${BASE}/getBanking?${q}`).catch(() => null),
       ]);
 
       return {
@@ -79,6 +81,7 @@ export function useFinancials(
           KeyFinancial: kf, DuPont: dp, Calculated: ca,
           Valuation1: v1, Valuation2: v2, ValuationCalculated: vc
         },
+        banking: bk,
       };
     },
     enabled: !!capcode,

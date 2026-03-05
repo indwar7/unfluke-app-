@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  useColorScheme,
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -81,8 +80,7 @@ const ViewStrategy = () => {
   }
 
   // Theme
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = false;
   const styles = createStyles(isDark);
 
   // Save strategy to AsyncStorage (localStorage equivalent)
@@ -378,7 +376,7 @@ const createStyles = (isDark) => StyleSheet.create({
     backgroundColor: isDark ? '#111827' : '#F9FAFB',
   },
   pageContent: {
-    paddingTop: 85,
+    paddingTop: 0,
     paddingHorizontal: 12,
     paddingBottom: 20
   },

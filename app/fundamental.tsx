@@ -303,7 +303,7 @@ export default function FundamentalScreen() {
       if (activeTab === "Quarterly Results")
         return <PLStyleTab response={financials.quarterly} period={period} emptyMessage="No quarterly data." />;
       if (activeTab === "Key Ratios")
-        return <KeyRatiosTab ratios={financials.ratios} period={period} />;
+        return <KeyRatiosTab ratios={financials.ratios} period={period} banking={financials.banking} />;
       return null;
     } catch (err) {
       console.error("[FundamentalScreen] renderTab:", err);

@@ -31,6 +31,8 @@ const AdvancedBacktesterHome = () => {
   const [listStrategies, setListStrategies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("1");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const auth = useSelector((state: any) => state.Login);
   const globalState = useSelector((store: any) => store.Layout);
@@ -38,6 +40,7 @@ const AdvancedBacktesterHome = () => {
   const toggleTab = (tab: string, type: string) => {
     if (activeTab !== tab) {
       setActiveTab(tab);
+      setCurrentPage(1);
       let tmp = deepCopy(savedStrategies);
       if (type === "purchased") {
         tmp = tmp.filter((strat: any) => strat.monetize === true);
@@ -252,6 +255,47 @@ const AdvancedBacktesterHome = () => {
     );
   };
 
+  const totalPages = Math.ceil(listStrategies.length / ITEMS_PER_PAGE);
+  const paginatedStrategies = listStrategies.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const PaginationControls = () => {
+    if (totalPages <= 1) return null;
+    const pages: number[] = [];
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+    return (
+      <View style={styles.paginationContainer}>
+        <TouchableOpacity
+          style={[styles.pageBtn, currentPage === 1 && styles.pageBtnDisabled]}
+          onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+        >
+          <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#d1d5db" : "#374151"} />
+        </TouchableOpacity>
+        {pages.map((p) => (
+          <TouchableOpacity
+            key={p}
+            style={[styles.pageBtn, currentPage === p && styles.pageBtnActive]}
+            onPress={() => setCurrentPage(p)}
+          >
+            <Text style={[styles.pageBtnText, currentPage === p && styles.pageBtnTextActive]}>
+              {p}
+            </Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={[styles.pageBtn, currentPage === totalPages && styles.pageBtnDisabled]}
+          onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+        >
+          <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#d1d5db" : "#374151"} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const StrategyList = ({ strategies }: { strategies: any[] }) => (
     strategies.length === 0 ? (
       <View style={styles.emptyBox}>
@@ -260,9 +304,11 @@ const AdvancedBacktesterHome = () => {
       </View>
     ) : (
       <View>
-        {strategies.map((item: any, index: number) => (
-          <StrategyCard key={item._id ?? index} item={item} index={index} />
-        ))}
+        {strategies.map((item: any, index: number) => {
+          const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + index;
+          return <StrategyCard key={item._id ?? index} item={item} index={globalIndex} />;
+        })}
+        <PaginationControls />
       </View>
     )
   );
@@ -327,13 +373,8 @@ const AdvancedBacktesterHome = () => {
                 <ActivityIndicator size="large" color="#3b82f6" />
                 <Text style={styles.loaderText}>Loading strategies...</Text>
               </View>
-            ) : listStrategies.length > 0 ? (
-              <StrategyList strategies={listStrategies} />
             ) : (
-              <View style={styles.emptyBox}>
-                <Ionicons name="document-outline" size={40} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No strategies found.</Text>
-              </View>
+              <StrategyList strategies={paginatedStrategies} />
             )}
           </View>
         </View>
@@ -539,6 +580,37 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: { fontSize: 15, color: "#6b7280" },
+
+  /* ── Pagination ── */
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 16,
+    gap: 6,
+  },
+  pageBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pageBtnActive: {
+    backgroundColor: "#3b82f6",
+  },
+  pageBtnDisabled: {
+    opacity: 0.4,
+  },
+  pageBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  pageBtnTextActive: {
+    color: "#ffffff",
+  },
 });
 
 export default AdvancedBacktesterHome;

@@ -31,7 +31,7 @@ import {
 import Toast from "react-native-toast-message";
 
 // Import images
-const logoLight = require("../assets/images/unfluke/UNFLUKE -05.png");
+const logoLight = require("../assets/images/unfluke/UNFLUKE -05-NEW.png");
 const backgroundImage = require("../assets/images/user-illustarator-2.png");
 
 interface LoginState {

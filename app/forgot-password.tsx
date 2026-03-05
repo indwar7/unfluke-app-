@@ -33,7 +33,7 @@ import Toast from "react-native-toast-message";
 import { useWindowDimensions } from "react-native";
 
 // Import images - same as login
-const logoLight = require("../assets/images/unfluke/UNFLUKE -05.png");
+const logoLight = require("../assets/images/unfluke/UNFLUKE -05-NEW.png");
 const backgroundImage = require("../assets/images/user-illustarator-2.png");
 
 const TRAPEZOID_ANGLE_HEIGHT = 40;

@@ -247,36 +247,16 @@ function findRatioKey(dataKeys: string[], matchKeywords: readonly string[]): str
     return null;
 }
 
-export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> | undefined; period: string }) {
+export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<string, any> | undefined; period: string; banking?: any }) {
     const allPeriods = useMemo(() => {
         try { return getRatioPeriodKeys(ratios) || []; } catch { return []; }
     }, [ratios]);
 
-    const activePeriod = (period && allPeriods.includes(period)) ? period : (allPeriods[0] || "");
-    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-
     if (!ratios || allPeriods.length === 0) return <EmptyState message="No ratio data available." />;
 
-    const data = useMemo(() => {
-        try { return getMergedRatioData(ratios, activePeriod) || {}; } catch { return {}; }
-    }, [ratios, activePeriod]);
+    const activePeriod = (period && allPeriods.includes(period)) ? period : (allPeriods[0] || "");
 
-    const headings = useMemo(() => {
-        try { return getMergedRatioHeadings(ratios) || []; } catch { return []; }
-    }, [ratios]);
-
-    const prevPeriod = useMemo(() => {
-        const idx = allPeriods.indexOf(activePeriod);
-        return idx >= 0 && idx < allPeriods.length - 1 ? allPeriods[idx + 1] : null;
-    }, [allPeriods, activePeriod]);
-
-    const prevData = useMemo(() => {
-        if (!prevPeriod) return {};
-        try { return getMergedRatioData(ratios, prevPeriod) || {}; } catch { return {}; }
-    }, [ratios, prevPeriod]);
-
-    // ✅ Build a flat list of ALL keys present in ratio data (from any period)
-    //    so we can do partial matching even if some periods are missing keys
+    // Build a flat list of ALL keys across all periods for chart partial matching
     const allRatioKeys = useMemo(() => {
         const keySet = new Set<string>();
         for (const pk of allPeriods) {
@@ -288,7 +268,6 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
         return Array.from(keySet);
     }, [ratios, allPeriods]);
 
-    // ✅ Resolve actual API key for each chart metric via partial match
     const resolvedKeys = useMemo(() => {
         const map: Record<string, string | null> = {};
         for (const config of RATIO_CHART_CONFIGS) {
@@ -297,7 +276,7 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
         return map;
     }, [allRatioKeys]);
 
-    // Build chart series using resolved keys
+    // Build chart series
     const chartDataSets = useMemo(() => {
         const sets: Record<string, { x: string; y: number }[]> = {};
         for (const config of RATIO_CHART_CONFIGS) {
@@ -318,51 +297,152 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
         return sets;
     }, [ratios, allPeriods, resolvedKeys]);
 
-    const sections = useMemo(() => {
-        const result: { title: string; items: { label: string; value: any; yoyChange?: number }[] }[] = [];
+    // Headings for section grouping
+    const headings = useMemo(() => {
+        try { return getMergedRatioHeadings(ratios) || []; } catch { return []; }
+    }, [ratios]);
+
+    // Data for selected period + previous period (for YoY)
+    const data = useMemo(() => {
+        try { return getMergedRatioData(ratios, activePeriod) || {}; } catch { return {}; }
+    }, [ratios, activePeriod]);
+
+    const prevPeriod = useMemo(() => {
+        const idx = allPeriods.indexOf(activePeriod);
+        return idx >= 0 && idx < allPeriods.length - 1 ? allPeriods[idx + 1] : null;
+    }, [allPeriods, activePeriod]);
+
+    const prevData = useMemo(() => {
+        if (!prevPeriod) return {};
+        try { return getMergedRatioData(ratios, prevPeriod) || {}; } catch { return {}; }
+    }, [ratios, prevPeriod]);
+
+    // Banking data for the selected period (banks only)
+    if (banking) {
+        console.log("[KeyRatios] Banking data available:", {
+            hasHeadings: !!banking.headings,
+            headingCount: banking.headings?.length,
+            resultKeys: Object.keys(banking.results || {}),
+            headingTitles: banking.headings?.map((h: any) => h?.title),
+        });
+    }
+
+    const bankingHeadings = useMemo(() => {
+        try { return (banking && Array.isArray(banking.headings)) ? banking.headings : []; } catch { return []; }
+    }, [banking]);
+
+    const bankingData = useMemo(() => {
+        if (!banking?.results || !activePeriod) return {};
         try {
-            if (Array.isArray(headings) && headings.length > 0) {
-                for (const heading of headings) {
-                    if (!Array.isArray(heading?.children) || heading.children.length === 0) continue;
-                    const items = heading.children.map((child: string) => {
-                        const currentVal = data?.[child];
-                        const prevVal = prevData?.[child];
-                        let yoyChange: number | undefined;
-                        if (typeof currentVal === "number" && typeof prevVal === "number" && prevVal !== 0)
-                            yoyChange = ((currentVal - prevVal) / Math.abs(prevVal)) * 100;
-                        return { label: child, value: currentVal, yoyChange };
-                    });
-                    result.push({ title: heading.title, items });
+            // Banking API uses year keys like "2024", ratio periods are like "202403"
+            // Try exact match first, then try year-only match
+            if (banking.results[activePeriod]) {
+                const pd = banking.results[activePeriod];
+                if (Array.isArray(pd)) {
+                    const out: Record<string, any> = {};
+                    for (const obj of pd) { if (obj && typeof obj === "object") Object.assign(out, obj); }
+                    return out;
                 }
+                return typeof pd === "object" ? { ...pd } : {};
             }
-            if (result.length === 0 && data && typeof data === "object") {
-                const items = Object.entries(data).map(([k, v]) => {
-                    const prevVal = prevData?.[k];
-                    let yoyChange: number | undefined;
-                    if (typeof v === "number" && typeof prevVal === "number" && prevVal !== 0)
-                        yoyChange = ((v - prevVal) / Math.abs(prevVal)) * 100;
-                    return { label: k, value: v, yoyChange };
+            // Try matching by year portion (e.g. "202403" → "2024")
+            const yearStr = activePeriod.slice(0, 4);
+            if (banking.results[yearStr]) {
+                const pd = banking.results[yearStr];
+                if (Array.isArray(pd)) {
+                    const out: Record<string, any> = {};
+                    for (const obj of pd) { if (obj && typeof obj === "object") Object.assign(out, obj); }
+                    return out;
+                }
+                return typeof pd === "object" ? { ...pd } : {};
+            }
+        } catch { }
+        return {};
+    }, [banking, activePeriod]);
+
+    const prevBankingData = useMemo(() => {
+        if (!banking?.results || !prevPeriod) return {};
+        try {
+            if (banking.results[prevPeriod]) {
+                const pd = banking.results[prevPeriod];
+                if (Array.isArray(pd)) {
+                    const out: Record<string, any> = {};
+                    for (const obj of pd) { if (obj && typeof obj === "object") Object.assign(out, obj); }
+                    return out;
+                }
+                return typeof pd === "object" ? { ...pd } : {};
+            }
+            const yearStr = prevPeriod.slice(0, 4);
+            if (banking.results[yearStr]) {
+                const pd = banking.results[yearStr];
+                if (Array.isArray(pd)) {
+                    const out: Record<string, any> = {};
+                    for (const obj of pd) { if (obj && typeof obj === "object") Object.assign(out, obj); }
+                    return out;
+                }
+                return typeof pd === "object" ? { ...pd } : {};
+            }
+        } catch { }
+        return {};
+    }, [banking, prevPeriod]);
+
+    // Build sections: merge ALL headings into just 2 groups — Profitability Ratios & Valuation Ratios
+    const sections = useMemo(() => {
+        const profitItems: { label: string; value: any; prevValue: any }[] = [];
+        const valuationItems: { label: string; value: any; prevValue: any }[] = [];
+        const seenLabels = new Set<string>();
+
+        const isValuation = (title: string) => /valuation/i.test(title);
+
+        const addItems = (heading: any, dataSource: Record<string, any>, prevSource: Record<string, any>) => {
+            if (!heading?.title || !Array.isArray(heading.children) || heading.children.length === 0) return;
+            const bucket = isValuation(heading.title) ? valuationItems : profitItems;
+            for (const child of heading.children) {
+                if (seenLabels.has(child)) continue;
+                seenLabels.add(child);
+                bucket.push({
+                    label: child,
+                    value: dataSource?.[child],
+                    prevValue: prevSource?.[child],
                 });
-                if (items.length > 0) result.push({ title: "All Ratios", items });
+            }
+        };
+
+        try {
+            // Regular ratio headings
+            if (Array.isArray(headings) && headings.length > 0) {
+                for (const heading of headings) addItems(heading, data, prevData);
+            }
+            // Banking headings (for banks — extra fields)
+            if (Array.isArray(bankingHeadings) && bankingHeadings.length > 0 && Object.keys(bankingData).length > 0) {
+                for (const heading of bankingHeadings) addItems(heading, bankingData, prevBankingData);
             }
         } catch (e) { console.warn("KeyRatiosTab sections error:", e); }
-        return result;
-    }, [headings, data, prevData]);
 
-    const toggleSection = (title: string) =>
-        setExpandedSections(prev => ({ ...prev, [title]: !prev[title] }));
+        const result: { title: string; items: { label: string; value: any; prevValue: any }[] }[] = [];
+        if (profitItems.length > 0) result.push({ title: "Profitability Ratios", items: profitItems });
+        if (valuationItems.length > 0) result.push({ title: "Valuation Ratios", items: valuationItems });
+
+        // Fallback if no headings at all
+        if (result.length === 0 && data && typeof data === "object") {
+            const items = Object.entries(data).map(([k, v]) => ({
+                label: k, value: v, prevValue: prevData?.[k],
+            }));
+            if (items.length > 0) result.push({ title: "All Ratios", items });
+        }
+        return result;
+    }, [headings, data, prevData, bankingHeadings, bankingData, prevBankingData]);
 
     if (sections.length === 0) return <EmptyState message="No ratio data for this period." />;
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
 
-            {/* ✅ 3 charts — vertical stack, full width, partial key matching */}
+            {/* Charts */}
             <Text style={kr.chartsTitle}>Key Ratios</Text>
             <View style={kr.chartsContainer}>
                 {RATIO_CHART_CONFIGS.map(config => {
                     const pts = chartDataSets[config.label] || [];
-                    // ✅ Show placeholder card even if pts < 2 so user knows chart exists
                     const hasData = pts.length >= 2;
                     const latest = hasData ? (pts[pts.length - 1]?.y ?? 0) : 0;
                     const prev   = hasData ? (pts[pts.length - 2]?.y ?? latest) : 0;
@@ -396,14 +476,6 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
                             ) : (
                                 <View style={kr.noDataBox}>
                                     <Text style={kr.noDataText}>No data available</Text>
-                                    {/* Debug: show resolved key so you can verify */}
-                                    {__DEV__ && (
-                                        <Text style={kr.debugText}>
-                                            Looking for: {config.matchKeywords.join(", ")}{"\n"}
-                                            Resolved: {resolvedKeys[config.label] ?? "NOT FOUND"}{"\n"}
-                                            Available keys (first 5): {allRatioKeys.slice(0, 5).join(", ")}
-                                        </Text>
-                                    )}
                                 </View>
                             )}
                         </View>
@@ -411,55 +483,81 @@ export function KeyRatiosTab({ ratios, period }: { ratios: Record<string, any> |
                 })}
             </View>
 
-            {/* Accordion Sections */}
-            {sections.map((section, sIdx) => {
-                const isOpen = !!expandedSections[section.title];
-                const summaryVal = section.items[0]?.value;
-                return (
-                    <View key={sIdx} style={kr.sectionWrap}>
-                        <TouchableOpacity
-                            style={kr.sectionHeader}
-                            onPress={() => toggleSection(section.title)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={kr.sectionLeft}>
-                                <Text style={kr.plusIcon}>{isOpen ? "−" : "+"}</Text>
-                                <Text style={kr.sectionTitle} numberOfLines={2}>{section.title}</Text>
-                            </View>
-                            <View style={kr.sectionRight}>
-                                {summaryVal != null && (
-                                    <Text style={[kr.sectionValue, { color: valueColor(summaryVal) }]}>
-                                        {fmt(summaryVal)}
+            {/* Selected period badge */}
+            <View style={kr.periodBadgeRow}>
+                <Text style={kr.periodBadgeLabel}>Showing data for</Text>
+                <View style={kr.periodBadge}>
+                    <Text style={kr.periodBadgeTxt}>{formatPeriodLabel(activePeriod)}</Text>
+                </View>
+            </View>
+
+            {/* Data sections — single-period table per section */}
+            {sections.map((section, sIdx) => (
+                <View key={sIdx} style={kr.sectionCard}>
+                    {/* Section header */}
+                    <View style={kr.sectionHeader}>
+                        <View style={kr.sectionAccent} />
+                        <Text style={kr.sectionTitle}>{section.title}</Text>
+                    </View>
+
+                    {/* Table header */}
+                    <View style={kr.tblHeaderRow}>
+                        <Text style={kr.tblHeaderLabel}>RATIO</Text>
+                        <Text style={kr.tblHeaderVal}>{formatPeriodLabel(activePeriod)}</Text>
+                        {prevPeriod && <Text style={kr.tblHeaderVal}>{formatPeriodLabel(prevPeriod)}</Text>}
+                        <Text style={kr.tblHeaderYoy}>YoY</Text>
+                    </View>
+
+                    {/* Metric rows */}
+                    {section.items.map((item, i) => {
+                        const cur = item.value;
+                        const prev = item.prevValue;
+                        const isNum = typeof cur === "number";
+                        const isPos = isNum && cur > 0;
+                        const isNeg = isNum && cur < 0;
+                        let yoy: number | undefined;
+                        if (typeof cur === "number" && typeof prev === "number" && prev !== 0) {
+                            yoy = ((cur - prev) / Math.abs(prev)) * 100;
+                        }
+                        const yoyUp = (yoy ?? 0) >= 0;
+
+                        return (
+                            <View key={i} style={[kr.metricRow, i % 2 === 0 && kr.metricRowAlt]}>
+                                <Text style={kr.metricLabel} numberOfLines={2}>{item.label}</Text>
+                                <View style={[
+                                    kr.metricValCell,
+                                    isPos && kr.valCellPos,
+                                    isNeg && kr.valCellNeg,
+                                ]}>
+                                    <Text style={[
+                                        kr.metricVal,
+                                        isPos && { color: GREEN },
+                                        isNeg && { color: RED },
+                                    ]}>
+                                        {fmt(cur)}
+                                    </Text>
+                                </View>
+                                {prevPeriod && (
+                                    <Text style={[kr.prevVal, { color: valueColor(prev) }]}>
+                                        {fmt(prev)}
                                     </Text>
                                 )}
-                                <Text style={[kr.chevron, isOpen && kr.chevronOpen]}>›</Text>
-                            </View>
-                        </TouchableOpacity>
-                        {isOpen && (
-                            <View style={kr.childrenWrap}>
-                                {section.items.map((item, i) => {
-                                    const positive = (item.yoyChange ?? 0) >= 0;
-                                    return (
-                                        <View key={i} style={kr.childRow}>
-                                            <Text style={kr.childLabel} numberOfLines={2}>{item.label}</Text>
-                                            <View style={kr.childRight}>
-                                                <Text style={[kr.childValue, { color: valueColor(item.value) }]}>
-                                                    {fmt(item.value)}
-                                                </Text>
-                                                {item.yoyChange !== undefined && !isNaN(item.yoyChange) && (
-                                                    <Text style={[kr.childYoy, { color: positive ? GREEN : RED }]}>
-                                                        {positive ? "↑" : "↓"}{Math.abs(item.yoyChange).toFixed(1)}%
-                                                    </Text>
-                                                )}
-                                            </View>
+                                <View style={kr.yoyCell}>
+                                    {yoy !== undefined && !isNaN(yoy) ? (
+                                        <View style={[kr.yoyBadge, { backgroundColor: yoyUp ? "#DCFCE7" : "#FEE2E2" }]}>
+                                            <Text style={[kr.yoyTxt, { color: yoyUp ? GREEN : RED }]}>
+                                                {yoyUp ? "▲" : "▼"}{Math.abs(yoy).toFixed(1)}%
+                                            </Text>
                                         </View>
-                                    );
-                                })}
+                                    ) : (
+                                        <Text style={kr.yoyDash}>—</Text>
+                                    )}
+                                </View>
                             </View>
-                        )}
-                    </View>
-                );
-            })}
+                        );
+                    })}
+                </View>
+            ))}
         </ScrollView>
     );
 }
@@ -518,15 +616,14 @@ const el = StyleSheet.create({
    KEY RATIOS STYLES
 ═══════════════════════════════════════════════════════════ */
 const kr = StyleSheet.create({
+    // Charts
     chartsTitle: { fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 12 },
-    // ✅ Vertical stack — no horizontal scroll, all 3 always visible
     chartsContainer: { gap: 14, marginBottom: 20 },
     chartCard: {
         backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
         borderWidth: 1, borderColor: BORDER_COLOR,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05, shadowRadius: 3, padding: 16,
-        // ✅ No width set — stretches full screen width
     },
     chartHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
     chartLabel: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
@@ -536,29 +633,61 @@ const kr = StyleSheet.create({
     chgText: { fontSize: 11, fontWeight: "700" },
     noDataBox: { height: 80, justifyContent: "center", alignItems: "center" },
     noDataText: { fontSize: 13, color: TEXT_MUTED },
-    debugText: { fontSize: 9, color: TEXT_MUTED, marginTop: 6, textAlign: "center", lineHeight: 14 },
-    // Accordion
-    sectionWrap: { marginBottom: 8 },
+    // Period badge
+    periodBadgeRow: {
+        flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 8,
+    },
+    periodBadgeLabel: { fontSize: 12, color: TEXT_MUTED },
+    periodBadge: {
+        backgroundColor: ACCENT, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
+    },
+    periodBadgeTxt: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
+    // Section card
+    sectionCard: {
+        backgroundColor: CARD_BG, borderRadius: 10, overflow: "hidden",
+        borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 14,
+        elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04, shadowRadius: 2,
+    },
     sectionHeader: {
-        flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-        paddingVertical: 12, paddingHorizontal: 12,
-        backgroundColor: CARD_BG, borderRadius: 8, borderWidth: 1, borderColor: BORDER_COLOR,
+        flexDirection: "row", alignItems: "center",
+        backgroundColor: "#F1F5F9", paddingVertical: 11, paddingHorizontal: 14,
+        borderBottomWidth: 1, borderBottomColor: BORDER_COLOR,
     },
-    sectionLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
-    plusIcon: { fontSize: 16, fontWeight: "bold" as const, color: ACCENT, marginRight: 8, width: 16 },
-    sectionTitle: { fontSize: 13, fontWeight: "600", color: TEXT_PRIMARY, flex: 1 },
-    sectionRight: { flexDirection: "row", alignItems: "center" },
-    sectionValue: { fontSize: 13, fontWeight: "700", color: TEXT_PRIMARY, marginRight: 8 },
-    chevron: { fontSize: 18, color: TEXT_MUTED, transform: [{ rotate: "90deg" }], marginLeft: 8 },
-    chevronOpen: { transform: [{ rotate: "-90deg" }] },
-    childrenWrap: {
-        backgroundColor: "#FAFAFA", borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
-        borderWidth: 1, borderColor: BORDER_COLOR, borderTopWidth: 0,
-        marginTop: -4, paddingTop: 8, paddingBottom: 8,
+    sectionAccent: {
+        width: 4, height: 18, borderRadius: 2,
+        backgroundColor: ACCENT, marginRight: 10,
     },
-    childRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, paddingHorizontal: 16, paddingLeft: 36 },
-    childLabel: { fontSize: 12, color: TEXT_SECONDARY, flex: 1 },
-    childRight: { flexDirection: "row", alignItems: "center", gap: 6 },
-    childValue: { fontSize: 12, fontWeight: "500", color: TEXT_PRIMARY },
-    childYoy: { fontSize: 10, fontWeight: "600" },
+    sectionTitle: {
+        fontSize: 14, fontWeight: "700", color: "#1E293B",
+    },
+    // Table header row
+    tblHeaderRow: {
+        flexDirection: "row", alignItems: "center",
+        backgroundColor: "#F8FAFC", paddingVertical: 8, paddingHorizontal: 12,
+        borderBottomWidth: 1, borderBottomColor: "#E2E8F0",
+    },
+    tblHeaderLabel: { flex: 1, fontSize: 10, fontWeight: "700", color: "#94A3B8", textTransform: "uppercase", letterSpacing: 0.4 },
+    tblHeaderVal: { width: 68, fontSize: 10, fontWeight: "700", color: "#94A3B8", textAlign: "right", textTransform: "uppercase" },
+    tblHeaderYoy: { width: 58, fontSize: 10, fontWeight: "700", color: "#94A3B8", textAlign: "right", textTransform: "uppercase" },
+    // Metric rows
+    metricRow: {
+        flexDirection: "row", alignItems: "center",
+        paddingVertical: 11, paddingHorizontal: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#F1F5F9",
+    },
+    metricRowAlt: { backgroundColor: "#FAFBFC" },
+    metricLabel: { flex: 1, fontSize: 12, color: "#334155", fontWeight: "500", paddingRight: 6 },
+    metricValCell: {
+        width: 68, alignItems: "flex-end", justifyContent: "center",
+        paddingVertical: 3, paddingHorizontal: 6, borderRadius: 5,
+    },
+    valCellPos: { backgroundColor: "rgba(34,197,94,0.10)" },
+    valCellNeg: { backgroundColor: "rgba(239,68,68,0.10)" },
+    metricVal: { fontSize: 13, fontWeight: "700", color: TEXT_PRIMARY, textAlign: "right" },
+    prevVal: { width: 68, fontSize: 12, fontWeight: "500", textAlign: "right" },
+    yoyCell: { width: 58, alignItems: "flex-end", justifyContent: "center" },
+    yoyBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
+    yoyTxt: { fontSize: 10, fontWeight: "700" },
+    yoyDash: { fontSize: 12, color: "#CBD5E1" },
 });

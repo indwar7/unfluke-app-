@@ -32,7 +32,7 @@ import {
 import { useWindowDimensions } from "react-native";
 
 // Import images
-const logoLight = require("../assets/images/unfluke/UNFLUKE -05.png");
+const logoLight = require("../assets/images/unfluke/UNFLUKE -05-NEW.png");
 const backgroundImage = require("../assets/images/user-illustarator-2.png");
 
 const ResetPassword = () => {

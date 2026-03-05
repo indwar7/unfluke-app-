@@ -33,7 +33,7 @@ import { postVerifyPhoneOtp } from '../Unfluke_helpers/backend_helper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OTPVerificationModal from '@/components/UnflukeMain/Authentication/OtpVerification';
 
-const logoLight = require("../assets/images/unfluke/UNFLUKE -05.png");
+const logoLight = require("../assets/images/unfluke/UNFLUKE -05-NEW.png");
 const backgroundImage = require("../assets/images/user-illustarator-2.png");
 
 interface FormValues {

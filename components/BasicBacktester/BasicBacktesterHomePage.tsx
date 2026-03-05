@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     View,
     Text,
@@ -10,6 +10,7 @@ import {
     Alert,
     Switch,
     Share,
+    TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -36,12 +37,25 @@ const BasicBacktesterHomePage = () => {
     const [listStrategies, setListStrategies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("1");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const ITEMS_PER_PAGE = 10;
+
+    // Filter strategies by search query
+    const filteredStrategies = useMemo(() => {
+        if (!searchQuery.trim()) return listStrategies;
+        const q = searchQuery.toLowerCase();
+        return listStrategies.filter((s: any) =>
+            (s.name || s.strategyName || "").toLowerCase().includes(q)
+        );
+    }, [listStrategies, searchQuery]);
 
     const auth = useSelector((state: any) => state.Login);
 
     const toggleTab = (tab: string, type: string) => {
         if (activeTab !== tab) {
             setActiveTab(tab);
+            setCurrentPage(1);
             let tmp = deepCopy(savedStrategies);
             if (type === "purchased") {
                 tmp = tmp.filter((strat: any) => strat.monetize === true);
@@ -159,6 +173,7 @@ const BasicBacktesterHomePage = () => {
                 .then((res: any) => {
                     const data = res?.data ?? res;
                     const list = Array.isArray(data) ? data : [];
+                    if (list.length > 0) console.log("[BasicBacktester] strategy keys:", Object.keys(list[0]));
                     setSavedStrategies(list);
                     setListStrategies(list);
                     setLoading(false);
@@ -173,14 +188,31 @@ const BasicBacktesterHomePage = () => {
     }, [auth]);
 
     const StrategyCard = ({ item, index }: { item: any; index: number }) => {
-        const profit = item.rateOfInterest;
-        const drawdown = item.maxDrawdown ?? item.max_drawdown;
+        const profit = item.rateOfInterest ?? item.profit ?? item.pnl;
+        const drawdown = item.maxDrawdown ?? item.max_drawdown ?? item.maxDrawDown
+            ?? item.MaxDrawdown ?? item.max_dd ?? item.drawdown;
+        const sellingPrice = item.sellingPrice ?? item.selling_price ?? item.price
+            ?? item.SellingPrice ?? item.cost;
         const isPositive = (profit ?? 0) >= 0;
-        const createdOn = item.createdAt
-            ? new Date(item.createdAt).toLocaleDateString("en-IN", {
-                day: "2-digit", month: "short", year: "numeric",
-            })
-            : item.date ?? "—";
+
+        // Try multiple date fields
+        const rawDate = item.createdAt ?? item.created_at ?? item.createdDate
+            ?? item.date ?? item.Date ?? item.updatedAt ?? item.updated_at;
+        let createdOn = "—";
+        if (rawDate) {
+            try {
+                const d = new Date(rawDate);
+                if (!isNaN(d.getTime())) {
+                    createdOn = d.toLocaleDateString("en-IN", {
+                        day: "2-digit", month: "short", year: "numeric",
+                    });
+                } else {
+                    createdOn = String(rawDate);
+                }
+            } catch {
+                createdOn = String(rawDate);
+            }
+        }
 
         return (
             <View style={styles.stratCard}>
@@ -229,9 +261,17 @@ const BasicBacktesterHomePage = () => {
                             {drawdown != null ? `₹${Number(drawdown).toFixed(0)}` : "—"}
                         </Text>
                     </View>
+                </View>
+                <View style={styles.metricsRow}>
                     <View style={styles.metricItem}>
                         <Text style={styles.metricLabel}>Created On</Text>
                         <Text style={styles.metricValue}>{createdOn}</Text>
+                    </View>
+                    <View style={styles.metricItem}>
+                        <Text style={styles.metricLabel}>Selling Price</Text>
+                        <Text style={[styles.metricValue, { color: "#6366f1" }]}>
+                            {sellingPrice != null ? `₹${Number(sellingPrice).toFixed(0)}` : "—"}
+                        </Text>
                     </View>
                 </View>
 
@@ -261,6 +301,47 @@ const BasicBacktesterHomePage = () => {
         );
     };
 
+    const totalPages = Math.ceil(filteredStrategies.length / ITEMS_PER_PAGE);
+    const paginatedStrategies = filteredStrategies.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const PaginationControls = () => {
+        if (totalPages <= 1) return null;
+        const pages: number[] = [];
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+        return (
+            <View style={styles.paginationContainer}>
+                <TouchableOpacity
+                    style={[styles.pageBtn, currentPage === 1 && styles.pageBtnDisabled]}
+                    onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                >
+                    <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#d1d5db" : "#374151"} />
+                </TouchableOpacity>
+                {pages.map((p) => (
+                    <TouchableOpacity
+                        key={p}
+                        style={[styles.pageBtn, currentPage === p && styles.pageBtnActive]}
+                        onPress={() => setCurrentPage(p)}
+                    >
+                        <Text style={[styles.pageBtnText, currentPage === p && styles.pageBtnTextActive]}>
+                            {p}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                    style={[styles.pageBtn, currentPage === totalPages && styles.pageBtnDisabled]}
+                    onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                >
+                    <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#d1d5db" : "#374151"} />
+                </TouchableOpacity>
+            </View>
+        );
+    };
+
     const StrategyList = ({ strategies }: { strategies: any[] }) => (
         strategies.length === 0 ? (
             <View style={styles.emptyBox}>
@@ -269,9 +350,11 @@ const BasicBacktesterHomePage = () => {
             </View>
         ) : (
             <View>
-                {strategies.map((item: any, index: number) => (
-                    <StrategyCard key={item._id ?? index} item={item} index={index} />
-                ))}
+                {strategies.map((item: any, index: number) => {
+                    const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + index;
+                    return <StrategyCard key={item._id ?? index} item={item} index={globalIndex} />;
+                })}
+                <PaginationControls />
             </View>
         )
     );
@@ -301,12 +384,29 @@ const BasicBacktesterHomePage = () => {
                             style={styles.createButton}
                             onPress={() => {
                                 dispatch(clearValues());
-                                router.push("/basic-backtester");
+                                requestAnimationFrame(() => router.push("/basic-backtester"));
                             }}
                         >
                             <Ionicons name="add" size={15} color="white" />
                             <Text style={styles.createButtonText}>Create new</Text>
                         </TouchableOpacity>
+                    </View>
+
+                    {/* Search Bar */}
+                    <View style={styles.searchContainer}>
+                        <Ionicons name="search" size={16} color="#9ca3af" style={{ marginRight: 8 }} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search strategies..."
+                            placeholderTextColor="#9ca3af"
+                            value={searchQuery}
+                            onChangeText={(text) => { setSearchQuery(text); setCurrentPage(1); }}
+                        />
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity onPress={() => { setSearchQuery(""); setCurrentPage(1); }}>
+                                <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     {/* Tabs */}
@@ -340,7 +440,7 @@ const BasicBacktesterHomePage = () => {
                                 <Text style={styles.loaderText}>Loading strategies...</Text>
                             </View>
                         ) : (
-                            <StrategyList strategies={listStrategies} />
+                            <StrategyList strategies={paginatedStrategies} />
                         )}
                     </View>
                 </View>
@@ -413,6 +513,26 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     createButtonText: { color: "white", fontSize: 13, fontWeight: "600" },
+
+    /* ── Search ── */
+    searchContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#f3f4f6",
+        borderRadius: 8,
+        marginHorizontal: 16,
+        marginTop: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 13,
+        color: "#111827",
+        padding: 0,
+    },
 
     /* ── Tabs ── */
     tabContainer: {
@@ -526,6 +646,37 @@ const styles = StyleSheet.create({
     loaderText: { fontSize: 14, color: "#6b7280" },
     emptyBox: { paddingVertical: 40, alignItems: "center", gap: 12 },
     emptyText: { fontSize: 15, color: "#6b7280" },
+
+    /* ── Pagination ── */
+    paginationContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 16,
+        gap: 6,
+    },
+    pageBtn: {
+        width: 34,
+        height: 34,
+        borderRadius: 8,
+        backgroundColor: "#f3f4f6",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    pageBtnActive: {
+        backgroundColor: "#3b82f6",
+    },
+    pageBtnDisabled: {
+        opacity: 0.4,
+    },
+    pageBtnText: {
+        fontSize: 13,
+        fontWeight: "600",
+        color: "#374151",
+    },
+    pageBtnTextActive: {
+        color: "#ffffff",
+    },
 });
 
 export default BasicBacktesterHomePage;

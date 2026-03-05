@@ -133,6 +133,110 @@ function getFieldValue(item: any, fieldNames: string[]): any {
     return "-";
 }
 
+/** Month name → 0-based index (Hermes-safe, no reliance on new Date(string)) */
+const MONTH_MAP: Record<string, number> = {
+    jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2,
+    apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6,
+    aug: 7, august: 7, sep: 8, september: 8, oct: 9, october: 9,
+    nov: 10, november: 10, dec: 11, december: 11,
+};
+
+/** Parse any date format the API returns into a timestamp for sorting.
+ *  Hermes-safe: does NOT rely on new Date(string) for non-ISO formats. */
+function parseDate(raw: any): number {
+    if (raw == null || raw === "" || raw === "-") return 0;
+    const s = String(raw).trim();
+    if (!s || s === "null" || s === "undefined") return 0;
+
+    // ISO: 2024-01-15 or 2024-01-15T00:00:00Z  (Hermes supports ISO fine)
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        const t = new Date(s).getTime();
+        return isNaN(t) ? 0 : t;
+    }
+
+    // DD-MM-YYYY or DD/MM/YYYY (all numeric)
+    const ddmmyyyy = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (ddmmyyyy) {
+        const t = new Date(+ddmmyyyy[3], +ddmmyyyy[2] - 1, +ddmmyyyy[1]).getTime();
+        return isNaN(t) ? 0 : t;
+    }
+
+    // YYYYMMDD
+    if (/^\d{8}$/.test(s)) {
+        const t = new Date(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8)).getTime();
+        return isNaN(t) ? 0 : t;
+    }
+
+    // "15 Jan 2024" or "15-Jan-2024" or "15/Jan/2024" (DD Mon YYYY)
+    const dmy = s.match(/^(\d{1,2})[\s\-/]+([A-Za-z]+)[\s\-/]+(\d{4})$/);
+    if (dmy) {
+        const m = MONTH_MAP[dmy[2].toLowerCase()];
+        if (m !== undefined) return new Date(+dmy[3], m, +dmy[1]).getTime();
+    }
+
+    // "Jan 15, 2024" or "January 15 2024" (Mon DD, YYYY)
+    const mdy = s.match(/^([A-Za-z]+)[\s\-/]+(\d{1,2})[,\s]*[\s\-/]+(\d{4})$/);
+    if (mdy) {
+        const m = MONTH_MAP[mdy[1].toLowerCase()];
+        if (m !== undefined) return new Date(+mdy[3], m, +mdy[2]).getTime();
+    }
+
+    // "2024 Jan 15" (YYYY Mon DD)
+    const ymd = s.match(/^(\d{4})[\s\-/]+([A-Za-z]+)[\s\-/]+(\d{1,2})$/);
+    if (ymd) {
+        const m = MONTH_MAP[ymd[2].toLowerCase()];
+        if (m !== undefined) return new Date(+ymd[1], m, +ymd[3]).getTime();
+    }
+
+    // Last resort: try new Date() (works on V8, may fail on Hermes)
+    const t = new Date(s).getTime();
+    return isNaN(t) ? 0 : t;
+}
+
+/** Date field candidates used for sorting */
+const DATE_FIELDS = [
+    "Date", "Trade Date", "TradeDate", "Transaction Date",
+    "Deal Date", "DealDate", "Dt", "Deal Dt",
+    "Ex Dividend Date", "Ex Bonus Date", "ExBonusDate",
+    "Stock Split Date", "StockSplitDate", "Split Date",
+    "Source Date", "SourceDate", "Record Date", "RecordDate",
+    "date", "createdAt", "created_at",
+];
+
+/** Find the best date value from an item — try known fields first, then scan all keys */
+function extractDate(item: any): number {
+    if (!item || typeof item !== "object") return 0;
+    // Try known date fields first
+    const known = getFieldValue(item, DATE_FIELDS);
+    if (known !== "-") {
+        const t = parseDate(known);
+        if (t > 0) return t;
+    }
+    // Fallback: scan all keys for any key containing "date" or "dt"
+    for (const [k, v] of Object.entries(item)) {
+        const kl = k.toLowerCase();
+        if (kl.includes("date") || kl === "dt" || kl.includes("_dt")) {
+            const t = parseDate(v);
+            if (t > 0) return t;
+        }
+    }
+    // Last resort: try Serial No or any numeric ordering field
+    return 0;
+}
+
+/** Sort array by date descending (latest first) */
+function sortByDateDesc(items: any[]): any[] {
+    if (!items.length) return items;
+    const withDates = items.map((item, i) => ({ item, date: extractDate(item), idx: i }));
+    const anyDatesFound = withDates.some(w => w.date > 0);
+    if (anyDatesFound) {
+        withDates.sort((a, b) => b.date - a.date);
+        return withDates.map(w => w.item);
+    }
+    // API likely returns latest first already — preserve original order
+    return items;
+}
+
 const { width: SW } = Dimensions.get("window");
 const CW = SW - 48;
 const CH = 200;
@@ -412,6 +516,8 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
     const [error, setError] = useState<string | null>(null);
     const [expanded, setExpanded] = useState<number | null>(null);
     const abortRef = useRef<AbortController | null>(null);
+    // Cache totalPages per deal type so we only need 1 extra request per type
+    const pagesCache = useRef<Record<string, number>>({});
 
     const load = useCallback(async (type: string, pg: number) => {
         if (!capcode) return;
@@ -421,13 +527,38 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
 
         setLoading(true); setError(null);
         try {
+            let knownPages = pagesCache.current[type];
+
+            // First time for this type — fetch page 1 to discover totalPages
+            if (knownPages === undefined) {
+                const probe = await apiFetch(
+                    `${SCREENER}/getBulkBlockDeals?capcode=${capcode}&type=${type}&page=1`,
+                    ctrl.signal
+                );
+                if (ctrl.signal.aborted) return;
+                knownPages = Math.max(1, probe?.pages ?? probe?.totalPages ?? probe?.total_pages ?? 1);
+                pagesCache.current[type] = knownPages;
+                setTotalPages(knownPages);
+
+                // If only 1 page, use this data directly (no second request needed)
+                if (knownPages === 1) {
+                    setData(sortByDateDesc(normalise(probe)));
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // Reverse page mapping: UI page 1 → API last page (newest data)
+            const apiPage = Math.max(1, knownPages - pg + 1);
+            console.log(`[BulkBlock] UI page ${pg} → API page ${apiPage} (totalPages: ${knownPages})`);
+
             const raw = await apiFetch(
-                `${SCREENER}/getBulkBlockDeals?capcode=${capcode}&type=${type}&page=${pg}`,
+                `${SCREENER}/getBulkBlockDeals?capcode=${capcode}&type=${type}&page=${apiPage}`,
                 ctrl.signal
             );
             if (!ctrl.signal.aborted) {
-                setData(normalise(raw));
-                const pages = raw?.pages ?? raw?.totalPages ?? raw?.total_pages ?? 1;
+                setData(sortByDateDesc(normalise(raw)));
+                const pages = raw?.pages ?? raw?.totalPages ?? raw?.total_pages ?? knownPages;
                 setTotalPages(Math.max(1, pages));
             }
         } catch (e: any) {
@@ -436,6 +567,9 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
         }
         if (!ctrl.signal.aborted) setLoading(false);
     }, [capcode]);
+
+    // Reset pages cache when capcode changes
+    useEffect(() => { pagesCache.current = {}; }, [capcode]);
 
     useEffect(() => { load(dtype, page); return () => abortRef.current?.abort(); }, [dtype, page, load]);
 
@@ -554,7 +688,7 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
                 ctrl.signal
             );
             if (!ctrl.signal.aborted) {
-                setData(normalise(raw));
+                setData(sortByDateDesc(normalise(raw)));
                 const pages = raw?.pages ?? raw?.totalPages ?? raw?.total_pages ??
                     (raw?.total ? Math.ceil(raw.total / 10) : 1);
                 setTotal(Math.max(1, pages));
