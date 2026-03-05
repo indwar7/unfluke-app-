@@ -7,7 +7,7 @@
     "icon": "./assets/adaptive-icon.png",
     "scheme": "unflukeapp",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
