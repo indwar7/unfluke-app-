@@ -72,10 +72,10 @@ export const unflukeAPI = {
 
   // Charts
   getDailyRatios: (capcode: string, type: StockType = "C") =>
-    api(`${HISTORIC}/getDailyRatios?capcode=${capcode}&type=${type}`).then(toArray),
+    api(`${HISTORIC}/dailyratios?instrument=${capcode}&mode=${type}`).then(toArray),
 
   getCompanyTexts: (companyName: string, type: StockType = "C") =>
-    api(`${HISTORIC}/getCompanyTexts?name=${encodeURIComponent(companyName)}&type=${type}`).then(toArray),
+    api(`${SCREENER}/getCompanyTexts?companyname=${encodeURIComponent(companyName)}&type=${type}`).then(toArray),
 
   // Deals
   getBulkDeals: (capcode: string, page = 1) =>
@@ -93,21 +93,21 @@ export const unflukeAPI = {
 
   // Shareholding
   getShareholdingPatterns: (capcode: string) =>
-    api(`${SCREENER}/getShareholdingPatterns?capcode=${capcode}`).then(toArray),
+    api(`${SCREENER}/getShareholdingPatterns?capcode=${capcode}`),
 
   // Documents — step 1: resolve instrument code
   getCompanyCode: async (capcode: string): Promise<string> => {
     try {
-      const co = await api(`${SCREENER}/getCompany?capcode=${capcode}`);
-      return co?.companyCode || co?.instrumentCode ||
-        co?.BSECode || co?.bseCode ||
-        co?.NSECode || capcode;
+      const co = await api(`${HISTORIC}/companycode?instrument=${capcode}`);
+      if (co == null) return capcode;
+      if (typeof co === "number" || typeof co === "string") return String(co);
+      return co?.code ?? co?.companyCode ?? co?.instrument ?? co?.result ?? capcode;
     } catch { return capcode; }
   },
 
   // Documents — step 2
   getDocuments: (instrument: string) =>
-    api(`${HISTORIC}/documents?instrument=${instrument}`).then(toArray),
+    api(`${HISTORIC}/documents?instrument=${instrument}`),
 };
 
 /* ── Response types ──────────────────────────────────────── */

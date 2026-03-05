@@ -182,65 +182,102 @@ const AdvancedBacktesterHome = () => {
         <View style={styles.tableWrapper}>
           {/* Header */}
           <View style={[styles.tableRow, styles.tableHeader]}>
-            <Text style={[styles.headerCell, { width: 200 }]}>Strategy Name</Text>
+            <Text style={[styles.headerCell, { width: 160 }]}>Strategy Name</Text>
+            <Text style={[styles.headerCell, { width: 110 }]}>Max Drawdown</Text>
+            <Text style={[styles.headerCell, { width: 120 }]}>Created On</Text>
             <Text style={[styles.headerCell, { width: 80 }]}>Private</Text>
             <Text style={[styles.headerCell, { width: 80 }]}>Monetize</Text>
-            <Text style={[styles.headerCell, { width: 120 }]}>Actions</Text>
+            <Text style={[styles.headerCell, { width: 130 }]}>Actions</Text>
           </View>
 
-          {strategies.map((item, index) => (
-            <View
-              key={item._id ?? index}
-              style={[
-                styles.tableRow,
-                index % 2 === 0 ? styles.evenRow : styles.oddRow,
-              ]}
-            >
-              {/* Name */}
-              <TouchableOpacity
-                style={{ width: 200, paddingVertical: 10 }}
-                onPress={() => navigateToStrategyPage(item.user, item._id)}
-              >
-                <Text style={styles.linkText} numberOfLines={2}>
-                  {item.strategyName ?? item.name ?? "—"}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Private */}
-              <View style={styles.switchCell}>
-                <Switch
-                  value={!!item.isPrivate}
-                  onValueChange={(val) => handlePrivate(index, val)}
-                  trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
-                  thumbColor="#fff"
-                />
-              </View>
-
-              {/* Monetize */}
-              <View style={styles.switchCell}>
-                <Switch
-                  value={!!item.monetize}
-                  disabled={item.isPrivate}
-                  onValueChange={(val) => handleMonetize(index, val)}
-                  trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
-                  thumbColor="#fff"
-                />
-              </View>
-
-              {/* Actions */}
-              <View style={styles.actionsCell}>
-                <TouchableOpacity onPress={() => shareBacktester(item.fileName)}>
-                  <Ionicons name="share-outline" size={18} color="#3b82f6" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigateToStrategyView(item.fileName)}>
-                  <Ionicons name="eye" size={18} color="#16a34a" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeleteStrategy(item._id)}>
-                  <Ionicons name="trash" size={18} color="#dc2626" />
-                </TouchableOpacity>
-              </View>
+          {strategies.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Ionicons name="document-outline" size={36} color="#9CA3AF" />
+              <Text style={styles.emptyText}>No strategies found.</Text>
             </View>
-          ))}
+          ) : (
+            strategies.map((item: any, index: number) => (
+              <View
+                key={item._id ?? index}
+                style={[
+                  styles.tableRow,
+                  index % 2 === 0 ? styles.evenRow : styles.oddRow,
+                ]}
+              >
+                {/* Name */}
+                <TouchableOpacity
+                  style={{ width: 160, paddingVertical: 10 }}
+                  onPress={() => navigateToStrategyPage(item.user, item._id)}
+                >
+                  <Text style={styles.linkText} numberOfLines={2}>
+                    {item.strategyName ?? item.name ?? "—"}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Max Drawdown */}
+                <Text
+                  style={[
+                    styles.cellText,
+                    { width: 110, color: "#dc2626" },
+                  ]}
+                >
+                  {item.maxDrawdown != null
+                    ? `₹${Number(item.maxDrawdown).toFixed(0)}`
+                    : item.max_drawdown != null
+                      ? `₹${Number(item.max_drawdown).toFixed(0)}`
+                      : "—"}
+                </Text>
+
+                {/* Created On */}
+                <Text style={[styles.cellText, { width: 120 }]}>
+                  {item.createdAt
+                    ? new Date(item.createdAt).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                    : item.date ?? "—"}
+                </Text>
+
+                {/* Private */}
+                <View style={styles.switchCell}>
+                  <Switch
+                    value={!!item.isPrivate}
+                    onValueChange={(val) => handlePrivate(index, val)}
+                    trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                    thumbColor="#fff"
+                  />
+                </View>
+
+                {/* Monetize */}
+                <View style={styles.switchCell}>
+                  <Switch
+                    value={!!item.monetize}
+                    disabled={item.isPrivate}
+                    onValueChange={(val) => handleMonetize(index, val)}
+                    trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                    thumbColor="#fff"
+                  />
+                </View>
+
+                {/* Actions */}
+                <View style={styles.actionsCell}>
+                  <TouchableOpacity onPress={() => navigateToStrategyPage(item.user, item._id)}>
+                    <Ionicons name="pencil" size={16} color="#3b82f6" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => shareBacktester(item.fileName)}>
+                    <Ionicons name="share-outline" size={16} color="#6366f1" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => navigateToStrategyView(item.fileName)}>
+                    <Ionicons name="eye" size={16} color="#16a34a" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeleteStrategy(item._id)}>
+                    <Ionicons name="trash" size={16} color="#dc2626" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
@@ -432,7 +469,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
-  tableWrapper: { minWidth: 480 },
+  tableWrapper: { minWidth: 680 },
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -457,6 +494,12 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     paddingHorizontal: 4,
   },
+  cellText: {
+    fontSize: 12,
+    color: "#374151",
+    textAlign: "center",
+    paddingVertical: 10,
+  },
   switchCell: {
     width: 80,
     alignItems: "center",
@@ -464,7 +507,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   actionsCell: {
-    width: 120,
+    width: 130,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",

@@ -178,8 +178,10 @@ const BasicBacktesterHomePage = () => {
                 <View style={styles.tableWrapper}>
                     {/* Header */}
                     <View style={[styles.tableRow, styles.tableHeader]}>
-                        <Text style={[styles.headerCell, { width: 180 }]}>Strategy Name</Text>
+                        <Text style={[styles.headerCell, { width: 160 }]}>Strategy Name</Text>
                         <Text style={[styles.headerCell, { width: 90 }]}>Profit</Text>
+                        <Text style={[styles.headerCell, { width: 110 }]}>Max Drawdown</Text>
+                        <Text style={[styles.headerCell, { width: 120 }]}>Created On</Text>
                         <Text style={[styles.headerCell, { width: 80 }]}>Private</Text>
                         <Text style={[styles.headerCell, { width: 80 }]}>Monetize</Text>
                         <Text style={[styles.headerCell, { width: 130 }]}>Actions</Text>
@@ -201,7 +203,7 @@ const BasicBacktesterHomePage = () => {
                             >
                                 {/* Name */}
                                 <TouchableOpacity
-                                    style={{ width: 180, paddingVertical: 10 }}
+                                    style={{ width: 160, paddingVertical: 10 }}
                                     onPress={() => handleView(item)}
                                 >
                                     <Text style={styles.linkText} numberOfLines={2}>
@@ -219,6 +221,31 @@ const BasicBacktesterHomePage = () => {
                                     {item.rateOfInterest != null
                                         ? `₹${Number(item.rateOfInterest).toFixed(0)}`
                                         : "—"}
+                                </Text>
+
+                                {/* Max Drawdown */}
+                                <Text
+                                    style={[
+                                        styles.cellText,
+                                        { width: 110, color: "#dc2626" },
+                                    ]}
+                                >
+                                    {item.maxDrawdown != null
+                                        ? `₹${Number(item.maxDrawdown).toFixed(0)}`
+                                        : item.max_drawdown != null
+                                            ? `₹${Number(item.max_drawdown).toFixed(0)}`
+                                            : "—"}
+                                </Text>
+
+                                {/* Created On */}
+                                <Text style={[styles.cellText, { width: 120 }]}>
+                                    {item.createdAt
+                                        ? new Date(item.createdAt).toLocaleDateString("en-IN", {
+                                            day: "2-digit",
+                                            month: "short",
+                                            year: "numeric",
+                                        })
+                                        : item.date ?? "—"}
                                 </Text>
 
                                 {/* Private */}
@@ -441,7 +468,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: "hidden",
     },
-    tableWrapper: { minWidth: 560 },
+    tableWrapper: { minWidth: 770 },
     tableRow: {
         flexDirection: "row",
         alignItems: "center",

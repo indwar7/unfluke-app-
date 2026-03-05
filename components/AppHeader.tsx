@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, Image, TouchableOpacity, StyleSheet,
   Pressable, Modal, ScrollView,
@@ -9,43 +9,66 @@ import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../redux/Unfluke_slices/thunks";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SidebarMenu from "./SidebarMenu";
-import { backendSocket } from "../socket/socket";
+import { io } from "socket.io-client";
+import { Config } from "../helpers/config";
+import {
+  getNotifications,
+  postReadNotifications,
+} from "../Unfluke_helpers/backend_helper";
 
-interface Notification {
-  id: string; title: string; description?: string;
-  time: Date; read: boolean; type: "backtest" | "alert" | "general";
+interface NotifItem {
+  _id?: string;
+  content: string;
+  is_read: boolean;
+  createdAt: string;
+  userID?: string;
 }
 
 /* ═══════════════════════════════════════════════════
    NOTIFICATION PANEL
 ═══════════════════════════════════════════════════ */
 const NotificationPanel = ({
-  visible, onClose, notifications, onMarkAllRead,
+  visible, onClose, notifications, totalCount, hasMore,
+  onMarkAllRead, onLoadMore, loading,
 }: {
   visible: boolean; onClose: () => void;
-  notifications: Notification[]; onMarkAllRead: () => void;
+  notifications: NotifItem[]; totalCount: number; hasMore: boolean;
+  onMarkAllRead: () => void; onLoadMore: () => void; loading: boolean;
 }) => {
-  const typeColor: Record<string, { bg: string; text: string }> = {
-    backtest: { bg: "#EEF2FF", text: "#4338CA" },
-    alert:    { bg: "#FEF3C7", text: "#92400E" },
-    general:  { bg: "#F3F4F6", text: "#374151" },
-  };
-  const fmtTime = (d: Date) => {
+  const fmtTime = (d: string) => {
     try {
-      return d.toLocaleDateString("en-IN", {
-        day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+      const date = new Date(d);
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "just now";
+      if (mins < 60) return `${mins}m ago`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days}d ago`;
+      return date.toLocaleDateString("en-IN", {
+        day: "2-digit", month: "short",
       });
     } catch { return ""; }
   };
+
+  const stripHtml = (html: string) => {
+    return html?.replace(/<[^>]*>/g, "")?.trim() || "";
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={s.notifOverlay} onPress={onClose}>
         <Pressable style={s.notifPanel} onPress={e => e.stopPropagation()}>
           <View style={s.notifHeader}>
-            <Text style={s.notifTitle}>Notifications</Text>
+            <Text style={s.notifTitle}>
+              NOTIFICATIONS {totalCount > 0 ? `(${totalCount})` : ""}
+            </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              {notifications.some(n => !n.read) && (
+              {unreadCount > 0 && (
                 <TouchableOpacity onPress={onMarkAllRead} style={s.markAllBtn}>
                   <Text style={s.markAllText}>Mark all read</Text>
                 </TouchableOpacity>
@@ -55,36 +78,44 @@ const NotificationPanel = ({
               </TouchableOpacity>
             </View>
           </View>
-          {notifications.length === 0 ? (
+          {notifications.length === 0 && !loading ? (
             <View style={s.notifEmpty}>
               <Text style={{ fontSize: 32, marginBottom: 10 }}>🔔</Text>
-              <Text style={s.notifEmptyTitle}>No notifications yet</Text>
+              <Text style={s.notifEmptyTitle}>No new notifications</Text>
               <Text style={s.notifEmptySub}>Backtest results and alerts will appear here</Text>
             </View>
           ) : (
             <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-              {notifications.map(item => {
-                const clr = typeColor[item.type] || typeColor.general;
-                return (
-                  <View key={item.id} style={[s.notifItem, !item.read && s.notifItemUnread]}>
-                    {!item.read && <View style={s.notifDot} />}
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                        <View style={[s.notifBadge, { backgroundColor: clr.bg }]}>
-                          <Text style={[s.notifBadgeText, { color: clr.text }]}>
-                            {item.type === "backtest" ? "Backtest" : item.type === "alert" ? "Alert" : "Info"}
-                          </Text>
-                        </View>
-                        <Text style={s.notifTime}>{fmtTime(item.time)}</Text>
+              {notifications.map((item, idx) => (
+                <View key={item._id || `n-${idx}`} style={[s.notifItem, !item.is_read && s.notifItemUnread]}>
+                  {!item.is_read && <View style={s.notifDot} />}
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <View style={[s.notifBadge, {
+                        backgroundColor: item.content?.includes("Alert") ? "#FEF3C7" : "#EEF2FF"
+                      }]}>
+                        <Text style={[s.notifBadgeText, {
+                          color: item.content?.includes("Alert") ? "#92400E" : "#4338CA"
+                        }]}>
+                          {item.content?.includes("Alert") ? "Alert" : "Message"}
+                        </Text>
                       </View>
-                      <Text style={s.notifItemTitle} numberOfLines={2}>{item.title}</Text>
-                      {!!item.description && (
-                        <Text style={s.notifItemDesc} numberOfLines={2}>{item.description}</Text>
-                      )}
+                      <Text style={s.notifTime}>{fmtTime(item.createdAt)}</Text>
                     </View>
+                    <Text style={s.notifItemTitle} numberOfLines={3}>
+                      {stripHtml(item.content)}
+                    </Text>
                   </View>
-                );
-              })}
+                </View>
+              ))}
+
+              {hasMore && !loading && (
+                <TouchableOpacity onPress={onLoadMore} style={{ paddingVertical: 12 }}>
+                  <Text style={{ textAlign: "center", fontSize: 12, fontWeight: "700", color: "#4f46e5" }}>
+                    Load More ({totalCount - notifications.length} remaining)
+                  </Text>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           )}
         </Pressable>
@@ -126,9 +157,9 @@ const ProfilePopup = ({
           <View style={s.divider} />
 
           {[
-            { label: "Profile",     icon: "👤", route: "/profile" },
+            { label: "Profile", icon: "👤", route: "/profile" },
             { label: "My Earnings", icon: "💰", route: "/leads" },
-            { label: "Pricing",     icon: "💎", route: "/pricing" },
+            { label: "Pricing", icon: "💎", route: "/pricing" },
           ].map(item => (
             <TouchableOpacity
               key={item.route}
@@ -166,35 +197,116 @@ const ProfilePopup = ({
 export const AppHeader = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
-  const [menuVisible, setMenuVisible]     = useState(false);
-  const [isDarkMode, setIsDarkMode]       = useState(false);
-  const [profileOpen, setProfileOpen]     = useState(false);
-  const [notifOpen, setNotifOpen]         = useState(false);
-  const [isLoggingOut, setIsLoggingOut]   = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const user          = useSelector((state: any) => state?.Login?.user ?? null);
-  const isUserLogout  = useSelector((state: any) => state?.Login?.isUserLogout ?? false);
-  const unread        = notifications.filter(n => !n.read).length;
+  // Notification state — matches web version
+  const [notifications, setNotifications] = useState<NotifItem[]>([]);
+  const [badge, setBadge] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [totalNotifications, setTotalNotifications] = useState(0);
 
+  const user = useSelector((state: any) => state?.Login?.user ?? null);
+  const isUserLogout = useSelector((state: any) => state?.Login?.isUserLogout ?? false);
+  const unread = notifications.filter(n => !n.is_read).length;
+
+  const socketRef = useRef<any>(null);
+
+  // Load notifications from API
+  const loadNotifications = (pageNum = 1, isInitial = false) => {
+    if (loading || !user?._id) return;
+    setLoading(true);
+
+    getNotifications({
+      userID: user._id,
+      page: pageNum,
+      limit: 50,
+    })
+      .then((response: any) => {
+        const data = response?.data ?? response;
+        if (data && data.notifications) {
+          if (isInitial) {
+            setNotifications(data.notifications);
+          } else {
+            setNotifications(prev => [...prev, ...data.notifications]);
+          }
+          setTotalNotifications(data.total || data.notifications.length);
+          setHasMore(!!data.hasMore);
+          setPage(pageNum);
+          if (data.notifications.some((n: any) => !n.is_read)) {
+            setBadge(true);
+          }
+        } else if (Array.isArray(data)) {
+          // Fallback: API returns array directly
+          if (isInitial) {
+            setNotifications(data);
+          } else {
+            setNotifications(prev => [...prev, ...data]);
+          }
+          setTotalNotifications(data.length);
+          if (data.some((n: any) => !n.is_read)) {
+            setBadge(true);
+          }
+        }
+        setLoading(false);
+      })
+      .catch((err: any) => {
+        console.error("Error loading notifications:", err);
+        setLoading(false);
+      });
+  };
+
+  // Mark all as read
+  const markAllRead = () => {
+    if (!user?._id) return;
+    postReadNotifications({ userID: user._id }).then(() => {
+      setBadge(false);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    });
+  };
+
+  // Load more notifications
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      loadNotifications(page + 1, false);
+    }
+  };
+
+  // Fetch notifications + setup socket when user is available
   useEffect(() => {
-    if (!backendSocket) return;
-    const add = (id: string, title: string, desc?: string, type: Notification["type"] = "backtest") =>
-      setNotifications(prev =>
-        [{ id, title, description: desc, time: new Date(), read: false, type }, ...prev].slice(0, 50)
-      );
-    const onBT    = (d: any) => d && add(`bt-${Date.now()}`,  d.message || "Backtest completed",          d.strategyName ? `Strategy: ${d.strategyName}` : undefined);
-    const onAdv   = (d: any) => d && add(`adv-${Date.now()}`, d.message || "Advanced backtest completed", d.strategyName ? `Strategy: ${d.strategyName}` : undefined);
-    const onAlert = (d: any) => d && add(`alert-${Date.now()}`, d.message || d.alert || "Scanner alert",  d.symbol, "alert");
-    backendSocket.on("backtest-results",    onBT);
-    backendSocket.on("advbacktest-results", onAdv);
-    backendSocket.on("scanner-alert",       onAlert);
+    if (!user?._id) return;
+
+    // Load persisted notifications from API
+    loadNotifications(1, true);
+
+    // Setup dedicated socket connection with userID query param
+    const socket = io(Config.BACKEND_URL, {
+      transports: ["websocket"],
+      query: { userID: user._id },
+    });
+
+    socket.emit("setSocketId", user._id);
+
+    socket.on("new-notification", (data: any) => {
+      if (data && data.notification && data.notification.userID === user._id) {
+        setNotifications(prev => [data.notification, ...prev]);
+        setTotalNotifications(prev => prev + 1);
+        setBadge(true);
+      }
+    });
+
+    socketRef.current = socket;
+
     return () => {
-      backendSocket.off("backtest-results",    onBT);
-      backendSocket.off("advbacktest-results", onAdv);
-      backendSocket.off("scanner-alert",       onAlert);
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, []);
+  }, [user?._id]);
 
   useEffect(() => {
     if (isUserLogout && isLoggingOut) {
@@ -207,6 +319,14 @@ export const AppHeader = () => {
     setIsLoggingOut(true);
     setProfileOpen(false);
     dispatch(logoutUser() as any);
+  };
+
+  const handleBellPress = () => {
+    setProfileOpen(false);
+    setNotifOpen(true);
+    if (badge) {
+      markAllRead();
+    }
   };
 
   return (
@@ -247,12 +367,12 @@ export const AppHeader = () => {
             <TouchableOpacity
               style={s.iconBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              onPress={() => { setProfileOpen(false); setNotifOpen(true); }}
+              onPress={handleBellPress}
             >
               <Bell size={20} color="#333" />
-              {unread > 0 && (
+              {(unread > 0 || badge) && (
                 <View style={s.badge}>
-                  <Text style={s.badgeText}>{unread > 9 ? "9+" : unread}</Text>
+                  <Text style={s.badgeText}>{unread > 9 ? "9+" : unread > 0 ? unread : "•"}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -283,7 +403,11 @@ export const AppHeader = () => {
         visible={notifOpen}
         onClose={() => setNotifOpen(false)}
         notifications={notifications}
-        onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+        totalCount={totalNotifications}
+        hasMore={hasMore}
+        onMarkAllRead={markAllRead}
+        onLoadMore={handleLoadMore}
+        loading={loading}
       />
 
       {/* Sidebar */}

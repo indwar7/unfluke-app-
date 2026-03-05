@@ -33,7 +33,7 @@ const MENU_ITEMS = [
     { label: "Fundamental Scanner", icon: "🔬", route: "/scannerfundamental" },
     { label: "Alerts", icon: "🔔", route: "/scannerhome?alertsSideBar=true" },
     { label: "Simple Backtest", icon: "⏱️", route: "/basic-backtester-main" },
-    { label: "Advanced Backtest", icon: "📉", route: "/basic-backtester-home" },
+    { label: "Advanced Backtest", icon: "📉", route: "/advanced-backtester-main" },
     { label: "Option Simulator", icon: "⚡", route: "/simulator" },
 ];
 

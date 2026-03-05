@@ -1,9 +1,10 @@
 /**
  * FundamentalScreen.tsx
- * ✅ Removed ScreenWithHeader (was causing duplicate navbar)
- * ✅ Uses SafeAreaView instead
+ * ✅ Uses ScreenWithHeader for consistent navbar
  * ✅ All 10 tabs in correct order
- * ✅ Search bar, S/C toggle, ratio cards strip
+ * ✅ Search bar with proper AbortController cleanup
+ * ✅ S/C toggle correctly passed to BulkBlockDealsTab
+ * ✅ Ratio cards strip
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
@@ -22,6 +23,7 @@ import {
 import {
   ACCENT, ACCENT_LIGHT, BG, CARD_BG,
   TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, BORDER_COLOR, RED, GREEN,
+  fmt,
 } from "../components/fundamentals/constants";
 import { ScreenWithHeader } from "../components/AppHeader";
 import { BalanceSheetTab, PLStyleTab, KeyRatiosTab } from "../components/fundamentals/FinancialTabs";
@@ -29,7 +31,6 @@ import {
   ChartsTab, BulkBlockDealsTab, CorporateEventsTab,
   ShareholdingPatternsTab, DocumentsTab,
 } from "../components/fundamentals/DataTabs";
-import { fmt } from "../components/fundamentals/constants";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const SEARCH_URL = "https://api.unfluke.in/api/historicData/search?searchQuery=";
@@ -154,7 +155,7 @@ export default function FundamentalScreen() {
     if (stock.name) setQuery(stock.name);
   }, [stock.name, capcode]);
 
-  // ── Search ──
+  // ── Search with proper cleanup ──
   useEffect(() => {
     abortRef.current?.abort();
     const q = query.trim();
@@ -165,6 +166,7 @@ export default function FundamentalScreen() {
     fetch(`${SEARCH_URL}${encodeURIComponent(q)}`, { signal: ctrl.signal })
       .then(r => r.json())
       .then((data: any) => {
+        if (ctrl.signal.aborted) return;
         const list: SearchResult[] =
           Array.isArray(data) ? data :
             Array.isArray(data?.data) ? data.data :
@@ -172,10 +174,19 @@ export default function FundamentalScreen() {
         setResults(list);
         setShowDrop(list.length > 0);
       })
-      .catch(e => { if (e?.name !== "AbortError") { setResults([]); setShowDrop(false); } })
-      .finally(() => setSearching(false));
+      .catch(e => {
+        if (e?.name !== "AbortError") { setResults([]); setShowDrop(false); }
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setSearching(false);
+      });
     return () => ctrl.abort();
   }, [query]);
+
+  // ✅ Cleanup abort on unmount
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   const { data: company, isLoading: loadCo } = useCompany(capcode);
   const { data: financials, isLoading: loadFin, refetch: refetchFin } = useFinancials(capcode, stockType);
@@ -194,11 +205,11 @@ export default function FundamentalScreen() {
   const currentResponse = useMemo(() => {
     if (!financials) return undefined;
     switch (activeTab) {
-      case "Balance Sheet":     return financials.balanceSheet;
-      case "Profit & Loss":     return financials.profitLoss;
-      case "Cash Flow":         return financials.cashFlow;
+      case "Balance Sheet": return financials.balanceSheet;
+      case "Profit & Loss": return financials.profitLoss;
+      case "Cash Flow": return financials.cashFlow;
       case "Quarterly Results": return financials.quarterly;
-      default:                  return undefined;
+      default: return undefined;
     }
   }, [financials, activeTab]);
 
@@ -225,10 +236,10 @@ export default function FundamentalScreen() {
       const cur = getMergedRatioData(financials.ratios, allP[0]) || {};
       const prev = allP[1] ? getMergedRatioData(financials.ratios, allP[1]) || {} : {};
       const CARD_KEYS = [
-        { label: "Current Ratio",             key: "Current Ratio" },
-        { label: "Debt-Equity",               key: "Debt-Equity Ratio" },
-        { label: "Interest Cover",            key: "Interest Cover Ratio" },
-        { label: "Total Asset Turnover",      key: "Total Asset Turnover Ratio" },
+        { label: "Current Ratio", key: "Current Ratio" },
+        { label: "Debt-Equity", key: "Debt-Equity Ratio" },
+        { label: "Interest Cover", key: "Interest Cover Ratio" },
+        { label: "Total Asset Turnover", key: "Total Asset Turnover Ratio" },
       ];
       return CARD_KEYS
         .filter(c => cur[c.key] != null)
@@ -274,7 +285,7 @@ export default function FundamentalScreen() {
       if (activeTab === "Charts")
         return <ChartsTab capcode={capcode} companyName={companyName} stockType={stockType} />;
       if (activeTab === "Bulk and Block Deals")
-        return <BulkBlockDealsTab capcode={capcode} />;
+        return <BulkBlockDealsTab capcode={capcode} stockType={stockType} />;
       if (activeTab === "Corporate Events")
         return <CorporateEventsTab capcode={capcode} />;
       if (activeTab === "Shareholding Patterns")
@@ -309,7 +320,6 @@ export default function FundamentalScreen() {
   };
 
   return (
-    
     <ScreenWithHeader>
       <KeyboardAvoidingView
         style={{ flex: 1 }}

@@ -1,11 +1,12 @@
 /**
  * DataTabs.tsx
  * ✅ DocumentsTab — fixed API flow: companycode?instrument=capcode → documents?instrument={code}
- * ✅ BulkBlockDealsTab — fixed date formatting
+ * ✅ BulkBlockDealsTab — fixed date formatting + AbortController cleanup + correct API
  * ✅ CorporateEventsTab — fixed date formatting + totalPages fallback
+ * ✅ All tabs use AbortController to prevent state updates on unmounted components
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
     View, Text, StyleSheet, TouchableOpacity,
     FlatList, Dimensions, ScrollView, ActivityIndicator,
@@ -31,7 +32,7 @@ import { getSectionDataForPeriod, getPeriodKeys } from "../../hooks/useFundament
    API HELPERS
 ───────────────────────────────────────────────────────── */
 const SCREENER = "https://api.unfluke.in/api/screener";
-const HISTORIC  = "https://api.unfluke.in/api/historicData";
+const HISTORIC = "https://api.unfluke.in/api/historicData";
 
 async function apiFetch(url: string, signal?: AbortSignal): Promise<any> {
     const res = await fetch(url, signal ? { signal } : undefined);
@@ -47,10 +48,26 @@ function normalise(raw: any): any[] {
     return [];
 }
 
+/**
+ * Resolve the company code from the historic API.
+ * The response can be: a number, a string, { code: ... }, { companyCode: ... }, or something else.
+ */
+function resolveCompanyCode(response: any, fallback: string): string {
+    if (response == null) return fallback;
+    if (typeof response === "number" || typeof response === "string") return String(response);
+    if (response?.code != null) return String(response.code);
+    if (response?.companyCode != null) return String(response.companyCode);
+    // Some APIs return { instrument: "..." } or { result: "..." }
+    if (response?.instrument != null) return String(response.instrument);
+    if (response?.result != null) return String(response.result);
+    return fallback;
+}
+
 // ✅ Fixed date formatter — handles all common API date formats
 function formatDate(raw: any): string {
-    if (!raw) return "-";
+    if (raw == null || raw === "") return "-";
     const s = String(raw).trim();
+    if (!s || s === "null" || s === "undefined") return "-";
 
     // Already formatted like "15 Jan 2024"
     if (/^\d{1,2}\s[A-Za-z]{3}\s\d{4}$/.test(s)) return s;
@@ -59,8 +76,11 @@ function formatDate(raw: any): string {
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
         try {
             const d = new Date(s);
-            return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-        } catch { return s; }
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+            }
+        } catch { /* fall through */ }
+        return s;
     }
 
     // DD-MM-YYYY or DD/MM/YYYY
@@ -68,26 +88,49 @@ function formatDate(raw: any): string {
         const [dd, mm, yyyy] = s.split(/[-/]/);
         try {
             const d = new Date(`${yyyy}-${mm}-${dd}`);
-            return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-        } catch { return s; }
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+            }
+        } catch { /* fall through */ }
+        return s;
     }
 
     // YYYYMMDD
     if (/^\d{8}$/.test(s)) {
         try {
-            const d = new Date(`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`);
-            return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-        } catch { return s; }
+            const d = new Date(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`);
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+            }
+        } catch { /* fall through */ }
+        return s;
     }
+
+    // Just a year like "2024"
+    if (/^\d{4}$/.test(s)) return s;
 
     return s;
 }
 
-// Format value — apply date formatting for date-like keys
+// Format value — apply date formatting for date-like keys, handle objects safely
 function fmtVal(key: string, val: any): string {
+    if (val == null) return "-";
+    // If value is an object/array, stringify it
+    if (typeof val === "object") {
+        try { return JSON.stringify(val); } catch { return "-"; }
+    }
     const k = key.toLowerCase();
     if (k.includes("date") || k.includes("dt") || k === "on") return formatDate(val);
     return fmt(val);
+}
+
+// Helper: try multiple field names for a value (handles API key variants)
+function getFieldValue(item: any, fieldNames: string[]): any {
+    if (!item) return "-";
+    for (const name of fieldNames) {
+        if (item[name] !== undefined && item[name] !== null) return item[name];
+    }
+    return "-";
 }
 
 const { width: SW } = Dimensions.get("window");
@@ -134,9 +177,9 @@ export function SvgLineChart({
 
     const fmtAxis = (v: number) =>
         Math.abs(v) >= 1e7 ? `${(v / 1e7).toFixed(0)}Cr` :
-        Math.abs(v) >= 1e5 ? `${(v / 1e5).toFixed(0)}L` :
-        Math.abs(v) >= 1e3 ? `${(v / 1e3).toFixed(0)}K` :
-        v % 1 === 0 ? v.toString() : v.toFixed(1);
+            Math.abs(v) >= 1e5 ? `${(v / 1e5).toFixed(0)}L` :
+                Math.abs(v) >= 1e3 ? `${(v / 1e3).toFixed(0)}K` :
+                    v % 1 === 0 ? v.toString() : v.toFixed(1);
 
     return (
         <View style={{ alignItems: "center" }}>
@@ -196,15 +239,17 @@ function SvgPieChart({ slices, size = 220, innerRadius = 55 }: {
         currentAngle = endAngle;
         const largeArc = angle > Math.PI ? 1 : 0;
         const x1 = cx + r * Math.cos(startAngle); const y1 = cy + r * Math.sin(startAngle);
-        const x2 = cx + r * Math.cos(endAngle);   const y2 = cy + r * Math.sin(endAngle);
+        const x2 = cx + r * Math.cos(endAngle); const y2 = cy + r * Math.sin(endAngle);
         const ix1 = cx + innerRadius * Math.cos(startAngle); const iy1 = cy + innerRadius * Math.sin(startAngle);
-        const ix2 = cx + innerRadius * Math.cos(endAngle);   const iy2 = cy + innerRadius * Math.sin(endAngle);
+        const ix2 = cx + innerRadius * Math.cos(endAngle); const iy2 = cy + innerRadius * Math.sin(endAngle);
         const d = [`M ${x1} ${y1}`, `A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`,
-            `L ${ix2} ${iy2}`, `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix1} ${iy1}`, `Z`].join(" ");
+        `L ${ix2} ${iy2}`, `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix1} ${iy1}`, `Z`].join(" ");
         const midAngle = startAngle + angle / 2;
         const labelR = (r + innerRadius) / 2;
-        return { ...slice, d, lx: cx + labelR * Math.cos(midAngle), ly: cy + labelR * Math.sin(midAngle),
-            pct: ((slice.value / total) * 100).toFixed(1) };
+        return {
+            ...slice, d, lx: cx + labelR * Math.cos(midAngle), ly: cy + labelR * Math.sin(midAngle),
+            pct: ((slice.value / total) * 100).toFixed(1)
+        };
     });
 
     return (
@@ -230,20 +275,18 @@ function SvgPieChart({ slices, size = 220, innerRadius = 55 }: {
    CHARTS TAB
 ═══════════════════════════════════════════════════════════ */
 const VAL_METRICS = [
-    { label: "Revenue",          key: "Sales",            source: "pl" },
-    { label: "Net Profit",       key: "Net Profit",       source: "pl" },
+    { label: "Revenue", key: "Sales", source: "pl" },
+    { label: "Net Profit", key: "Net Profit", source: "pl" },
     { label: "Operating Profit", key: "Operating Profit", source: "pl" },
-    { label: "EBITDA",           key: "EBITDA",           source: "pl" },
+    { label: "EBITDA", key: "EBITDA", source: "pl" },
 ] as const;
 
 const RATIO_METRICS = [
-    { label: "EPS (Adjusted)",  key: "EPS (Adjusted)",          source: "pl" },
-    { label: "Book Value",      key: "Book Value (Adjusted)",   source: "pl" },
-    { label: "Total Assets",    key: "TOTAL ASSETS",            source: "bs" },
-    { label: "Total Equity",    key: "Total Shareholders Fund", source: "bs" },
+    { label: "EPS (Adjusted)", key: "EPS (Adjusted)", source: "pl" },
+    { label: "Book Value", key: "Book Value (Adjusted)", source: "pl" },
+    { label: "Total Assets", key: "TOTAL ASSETS", source: "bs" },
+    { label: "Total Equity", key: "Total Shareholders Fund", source: "bs" },
 ] as const;
-
-
 
 export function ChartsTab({ capcode, companyName, stockType }: {
     capcode: string; companyName: string; stockType: "C" | "S";
@@ -254,22 +297,30 @@ export function ChartsTab({ capcode, companyName, stockType }: {
     const [error, setError] = useState<string | null>(null);
     const [selVal, setSelVal] = useState(0);
     const [selRatio, setSelRatio] = useState(0);
+    const abortRef = useRef<AbortController | null>(null);
 
     const load = useCallback(async () => {
         if (!capcode) return;
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
         setLoading(true); setError(null);
         try {
             const q = `capcode=${capcode}&type=${stockType}`;
             const [pl, bs] = await Promise.all([
-                apiFetch(`${SCREENER}/getProfitLoss?${q}`).catch(() => null),
-                apiFetch(`${SCREENER}/getBalanceSheet?${q}`).catch(() => null),
+                apiFetch(`${SCREENER}/getProfitLoss?${q}`, ctrl.signal).catch(() => null),
+                apiFetch(`${SCREENER}/getBalanceSheet?${q}`, ctrl.signal).catch(() => null),
             ]);
-            setPlData(pl); setBsData(bs);
-        } catch (e: any) { setError(e?.message || "Failed to load chart data"); }
-        setLoading(false);
+            if (!ctrl.signal.aborted) {
+                setPlData(pl); setBsData(bs);
+            }
+        } catch (e: any) {
+            if (e?.name !== "AbortError") setError(e?.message || "Failed to load chart data");
+        }
+        if (!ctrl.signal.aborted) setLoading(false);
     }, [capcode, stockType]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); return () => abortRef.current?.abort(); }, [load]);
 
     const buildSeries = useCallback((key: string, source: string) => {
         const response = source === "pl" ? plData : bsData;
@@ -295,8 +346,8 @@ export function ChartsTab({ capcode, companyName, stockType }: {
         const up = chg >= 0;
         const fmtV = (v: number) =>
             Math.abs(v) >= 1e7 ? `${(v / 1e7).toFixed(1)}Cr` :
-            Math.abs(v) >= 1e5 ? `${(v / 1e5).toFixed(1)}L` :
-            Math.abs(v) >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(1);
+                Math.abs(v) >= 1e5 ? `${(v / 1e5).toFixed(1)}L` :
+                    Math.abs(v) >= 1e3 ? `${(v / 1e3).toFixed(1)}K` : v.toFixed(1);
         return (
             <View style={s.chartPanel}>
                 <Text style={s.chartLabel}>{metric.label}</Text>
@@ -348,42 +399,59 @@ export function ChartsTab({ capcode, companyName, stockType }: {
 
 /* ═══════════════════════════════════════════════════════════
    BULK & BLOCK DEALS TAB
-   ✅ Fixed: date fields now formatted correctly
+   ✅ Correct API: screener/getBulkBlockDeals?capcode=X&type=Bulk&page=1
+   ✅ Server-side pagination with pages from API response
+   ✅ AbortController for cleanup
 ═══════════════════════════════════════════════════════════ */
-export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
+export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: string; stockType?: "C" | "S" }) {
     const [dtype, setDtype] = useState<"Bulk" | "Block">("Bulk");
     const [data, setData] = useState<any[]>([]);
     const [page, setPage] = useState(1);
-    const [total, setTotal] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [expanded, setExpanded] = useState<number | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     const load = useCallback(async (type: string, pg: number) => {
         if (!capcode) return;
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
+
         setLoading(true); setError(null);
         try {
             const raw = await apiFetch(
-                `${SCREENER}/getBulkBlockDeals?capcode=${capcode}&type=${type}&page=${pg}`
+                `${SCREENER}/getBulkBlockDeals?capcode=${capcode}&type=${type}&page=${pg}`,
+                ctrl.signal
             );
-            setData(normalise(raw));
-            // ✅ Fixed: better totalPages fallback
-            const pages = raw?.totalPages ?? raw?.total_pages ??
-                (raw?.total ? Math.ceil(raw.total / 10) : 1);
-            setTotal(Math.max(1, pages));
-        } catch (e: any) { setError(e?.message || "Failed to load deals"); }
-        setLoading(false);
+            if (!ctrl.signal.aborted) {
+                setData(normalise(raw));
+                const pages = raw?.pages ?? raw?.totalPages ?? raw?.total_pages ?? 1;
+                setTotalPages(Math.max(1, pages));
+            }
+        } catch (e: any) {
+            if (e?.name === "AbortError") return;
+            if (!ctrl.signal.aborted) setError(e?.message || "Failed to load deals");
+        }
+        if (!ctrl.signal.aborted) setLoading(false);
     }, [capcode]);
 
-    useEffect(() => { load(dtype, page); }, [dtype, page, load]);
+    useEffect(() => { load(dtype, page); return () => abortRef.current?.abort(); }, [dtype, page, load]);
 
     const badge = dtype === "Bulk"
         ? { bg: "#EEF2FF", text: "#4338CA" }
         : { bg: "#FEF3C7", text: "#92400E" };
 
+    const HIDDEN_HEADERS = ["Company Name", "Capitaline Code", "_id", "Serial No", "__v"];
+
     const renderItem = ({ item, index }: { item: any; index: number }) => {
         const exp = expanded === index;
-        const rows = Object.entries(item || {});
+
+        const rows = Object.entries(item || {}).filter(
+            ([k]) => !HIDDEN_HEADERS.includes(k) && !k.startsWith("_")
+        );
+
         return (
             <TouchableOpacity
                 style={[s.evCard, exp && s.evCardOpen]}
@@ -400,7 +468,6 @@ export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
                     const colL = k.toLowerCase();
                     const isTx = colL.includes("type") || colL.includes("activity") ||
                         colL.includes("buy") || colL.includes("sell") || colL.includes("trans");
-                    // ✅ Format dates properly
                     const displayVal = fmtVal(k, v);
                     const isBuy = isTx && String(v ?? "").toLowerCase().includes("buy");
                     const isSell = isTx && String(v ?? "").toLowerCase().includes("sell");
@@ -437,25 +504,25 @@ export function BulkBlockDealsTab({ capcode }: { capcode: string }) {
             </View>
             {loading ? <SkeletonLoader rows={5} />
                 : error ? <ErrorState message={error} onRetry={() => load(dtype, page)} />
-                : !data.length ? <EmptyState message={`No ${dtype.toLowerCase()} deals found.`} icon="albums-outline" />
-                : (
-                    <View>
-                        <FlatList data={data} keyExtractor={(_, i) => `d${i}`}
-                            renderItem={renderItem} scrollEnabled={false} />
-                        {total > 1 && (
-                            <PaginationControls currentPage={page} totalPages={total}
-                                onPrev={() => setPage(p => Math.max(1, p - 1))}
-                                onNext={() => setPage(p => Math.min(total, p + 1))} />
+                    : !data.length ? <EmptyState message={`No ${dtype.toLowerCase()} deals found.`} icon="albums-outline" />
+                        : (
+                            <View>
+                                <FlatList data={data} keyExtractor={(_, i) => `d-${dtype}-${page}-${i}`}
+                                    renderItem={renderItem} scrollEnabled={false} />
+                                {totalPages > 1 && (
+                                    <PaginationControls currentPage={page} totalPages={totalPages}
+                                        onPrev={() => { setPage(p => Math.max(1, p - 1)); setExpanded(null); }}
+                                        onNext={() => { setPage(p => Math.min(totalPages, p + 1)); setExpanded(null); }} />
+                                )}
+                            </View>
                         )}
-                    </View>
-                )}
         </View>
     );
 }
 
 /* ═══════════════════════════════════════════════════════════
    CORPORATE EVENTS TAB
-   ✅ Fixed: date formatting + totalPages fallback
+   ✅ Fixed: date formatting + totalPages fallback + AbortController
 ═══════════════════════════════════════════════════════════ */
 const EV_TYPES = ["Dividends", "Bonus", "StockSplit", "InsiderTrading"] as const;
 type EvT = typeof EV_TYPES[number];
@@ -472,49 +539,150 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [expanded, setExpanded] = useState<number | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     const load = useCallback(async (type: string, pg: number) => {
         if (!capcode) return;
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
+
         setLoading(true); setError(null);
         try {
             const raw = await apiFetch(
-                `${SCREENER}/getCorporateEvents?capcode=${capcode}&type=${type}&page=${pg}`
+                `${SCREENER}/getCorporateEvents?capcode=${capcode}&type=${type}&page=${pg}`,
+                ctrl.signal
             );
-            setData(normalise(raw));
-            // ✅ Fixed: better totalPages fallback
-            const pages = raw?.totalPages ?? raw?.total_pages ??
-                (raw?.total ? Math.ceil(raw.total / 10) : 1);
-            setTotal(Math.max(1, pages));
-        } catch (e: any) { setError(e?.message || "Failed to load events"); }
-        setLoading(false);
+            if (!ctrl.signal.aborted) {
+                setData(normalise(raw));
+                const pages = raw?.pages ?? raw?.totalPages ?? raw?.total_pages ??
+                    (raw?.total ? Math.ceil(raw.total / 10) : 1);
+                setTotal(Math.max(1, pages));
+            }
+        } catch (e: any) {
+            if (e?.name === "AbortError") return;
+            if (!ctrl.signal.aborted) setError(e?.message || "Failed to load events");
+        }
+        if (!ctrl.signal.aborted) setLoading(false);
     }, [capcode]);
 
-    useEffect(() => { load(evType, page); }, [evType, page, load]);
+    useEffect(() => { load(evType, page); return () => abortRef.current?.abort(); }, [evType, page, load]);
 
     const badge = (EVENT_BADGE_COLORS as any)?.[evType] || { bg: "#EEF2FF", text: "#4338CA" };
 
+    const renderKV = (label: string, value: any, opts?: { isDate?: boolean; isPrice?: boolean }) => (
+        <View key={label} style={s.kvRow}>
+            <Text style={s.kvLabel}>{label}</Text>
+            <Text style={[s.kvVal, opts?.isPrice ? { color: GREEN } : { color: valueColor(value) }]}>
+                {value === "-" ? "-" : opts?.isPrice ? `₹${fmt(value)}` : opts?.isDate ? formatDate(value) : fmt(value)}
+            </Text>
+        </View>
+    );
+
+    const renderTxBadge = (label: string, value: string) => {
+        const isBuy = String(value).toLowerCase().includes("buy");
+        return (
+            <View key={label} style={s.kvRow}>
+                <Text style={s.kvLabel}>{label}</Text>
+                <View style={[s.bsBadge, { backgroundColor: isBuy ? "#DCFCE7" : "#FEE2E2" }]}>
+                    <Text style={[s.bsText, { color: isBuy ? GREEN : RED }]}>{value || "-"}</Text>
+                </View>
+            </View>
+        );
+    };
+
     const renderItem = ({ item, index }: { item: any; index: number }) => {
         const exp = expanded === index;
-        const rows = Object.entries(item || {});
+
+        // Header text per type
+        let headerText = "";
+        if (evType === "InsiderTrading") {
+            headerText = String(getFieldValue(item, ["Buyer/Seller", "Name", "Acquirer/Seller", "Person Name"]));
+        } else if (evType === "Dividends") {
+            headerText = formatDate(getFieldValue(item, ["Ex Dividend Date"]));
+        } else {
+            headerText = formatDate(getFieldValue(item, ["Source Date", "SourceDate", "Date"]));
+        }
+
+        const isExpandable = evType === "InsiderTrading";
+
+        const renderFields = () => {
+            switch (evType) {
+                case "Dividends":
+                    return (
+                        <>
+                            {renderKV("Ex-Date", getFieldValue(item, ["Ex Dividend Date"]), { isDate: true })}
+                            {renderKV("Security Type", getFieldValue(item, ["Security Type", "SecurityType"]))}
+                            {renderKV("Type", getFieldValue(item, ["Type", "Dividend Type", "DividendType"]))}
+                            {renderKV("Dividend %", getFieldValue(item, ["Dividend %", "Dividend Percentage", "DividendPercentage"]))}
+                            {renderKV("Dividend Per Share", getFieldValue(item, ["Dividend Per Share", "DividendPerShare", "Amount"]), { isPrice: true })}
+                        </>
+                    );
+                case "Bonus":
+                    return (
+                        <>
+                            {renderKV("Ex-Date", getFieldValue(item, ["Ex Bonus Date", "ExBonusDate", "Ex-Date"]), { isDate: true })}
+                            {renderKV("Record Date", getFieldValue(item, ["Record Date", "RecordDate"]), { isDate: true })}
+                            {renderKV("Ratio", getFieldValue(item, ["Ratio", "Bonus Ratio", "BonusRatio"]))}
+                        </>
+                    );
+                case "StockSplit":
+                    return (
+                        <>
+                            {renderKV("Stock Split Date", getFieldValue(item, ["Stock Split Date", "StockSplitDate", "Split Date"]), { isDate: true })}
+                            {renderKV("Record Date", getFieldValue(item, ["Record Date", "RecordDate"]), { isDate: true })}
+                            {renderKV("Ratio", getFieldValue(item, ["Ratio", "Split Ratio", "SplitRatio"]))}
+                        </>
+                    );
+                case "InsiderTrading": {
+                    const txVal = String(getFieldValue(item, ["Transaction Type", "Type", "Buy/Sale"]) ?? "");
+                    if (!exp) {
+                        return (
+                            <>
+                                {renderKV("Trade Date", getFieldValue(item, ["Trade Date", "TradeDate", "Date", "Transaction Date"]), { isDate: true })}
+                                {renderTxBadge("Transaction Type", txVal)}
+                                {renderKV("Total Value", getFieldValue(item, ["Total Value", "Value", "Transaction Value"]), { isPrice: true })}
+                            </>
+                        );
+                    }
+                    return (
+                        <>
+                            {renderKV("Trade Date", getFieldValue(item, ["Trade Date", "TradeDate", "Date", "Transaction Date"]), { isDate: true })}
+                            {renderKV("Category", getFieldValue(item, ["Category", "Category of person", "Person Category"]))}
+                            {renderKV("Prior Quantity", getFieldValue(item, ["Prior trade Quantity", "Prior Quantity", "Pre-Transaction Quantity"]))}
+                            {renderKV("Prior %", getFieldValue(item, ["Prior trade %", "Prior Percentage", "Pre-Transaction %"]))}
+                            {renderTxBadge("Transaction Type", txVal)}
+                            {renderKV("Total Value", getFieldValue(item, ["Total Value", "Value", "Transaction Value"]), { isPrice: true })}
+                            {renderKV("Post Quantity", getFieldValue(item, ["Post trade Quantity", "Post Quantity", "Post-Transaction Quantity"]))}
+                            {renderKV("Post %", getFieldValue(item, ["Post trade %", "Post Percentage", "Post-Transaction %"]))}
+                        </>
+                    );
+                }
+                default:
+                    return null;
+            }
+        };
+
         return (
             <TouchableOpacity
-                style={[s.evCard, exp && s.evCardOpen]}
-                onPress={() => setExpanded(exp ? null : index)}
-                activeOpacity={0.8}
+                style={[s.evCard, isExpandable && exp && s.evCardOpen]}
+                onPress={isExpandable ? () => setExpanded(exp ? null : index) : undefined}
+                activeOpacity={isExpandable ? 0.8 : 1}
             >
                 <View style={s.evHeader}>
                     <View style={[s.evBadge, { backgroundColor: badge.bg }]}>
                         <Text style={[s.evBadgeText, { color: badge.text }]}>{EV_LABEL[evType]}</Text>
                     </View>
-                    <Ionicons name={exp ? "chevron-up" : "chevron-down"} size={16} color={TEXT_MUTED} />
-                </View>
-                {/* ✅ Fixed: format dates in event rows */}
-                {(exp ? rows : rows.slice(0, 3)).map(([k, v]) => (
-                    <View key={k} style={s.kvRow}>
-                        <Text style={s.kvLabel}>{k}</Text>
-                        <Text style={[s.kvVal, { color: valueColor(v) }]}>{fmtVal(k, v)}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        {headerText && headerText !== "-" && (
+                            <Text style={{ fontSize: 11, color: TEXT_MUTED }}>{headerText}</Text>
+                        )}
+                        {isExpandable && (
+                            <Ionicons name={exp ? "chevron-up" : "chevron-down"} size={16} color={TEXT_MUTED} />
+                        )}
                     </View>
-                ))}
+                </View>
+                {renderFields()}
             </TouchableOpacity>
         );
     };
@@ -537,24 +705,24 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
             </ScrollView>
             {loading ? <SkeletonLoader rows={5} />
                 : error ? <ErrorState message={error} onRetry={() => load(evType, page)} />
-                : !data.length ? <EmptyState message={`No ${EV_LABEL[evType].toLowerCase()} found.`} icon="calendar-outline" />
-                : (
-                    <View>
-                        <FlatList data={data} keyExtractor={(_, i) => `ev${i}`}
-                            renderItem={renderItem} scrollEnabled={false} />
-                        {total > 1 && (
-                            <PaginationControls currentPage={page} totalPages={total}
-                                onPrev={() => setPage(p => Math.max(1, p - 1))}
-                                onNext={() => setPage(p => Math.min(total, p + 1))} />
+                    : !data.length ? <EmptyState message={`No ${EV_LABEL[evType].toLowerCase()} found.`} icon="calendar-outline" />
+                        : (
+                            <View>
+                                <FlatList data={data} keyExtractor={(_, i) => `ev-${evType}-${page}-${i}`}
+                                    renderItem={renderItem} scrollEnabled={false} />
+                                {total > 1 && (
+                                    <PaginationControls currentPage={page} totalPages={total}
+                                        onPrev={() => { setPage(p => Math.max(1, p - 1)); setExpanded(null); }}
+                                        onNext={() => { setPage(p => Math.min(total, p + 1)); setExpanded(null); }} />
+                                )}
+                            </View>
                         )}
-                    </View>
-                )}
         </View>
     );
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SHAREHOLDING PATTERNS TAB — unchanged
+   SHAREHOLDING PATTERNS TAB
 ═══════════════════════════════════════════════════════════ */
 const SH_COLORS: Record<string, string> = {
     "Promoters": "#6366F1", "FII": "#F59E0B",
@@ -565,18 +733,29 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
     const [rawData, setRawData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     const load = useCallback(async () => {
         if (!capcode) return;
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
+
         setLoading(true); setError(null);
         try {
-            const raw = await apiFetch(`${SCREENER}/getShareholdingPatterns?capcode=${capcode}`);
-            setRawData(raw);
-        } catch (e: any) { setError(e?.message || "Failed to load shareholding"); }
-        setLoading(false);
+            const raw = await apiFetch(
+                `${SCREENER}/getShareholdingPatterns?capcode=${capcode}`,
+                ctrl.signal
+            );
+            if (!ctrl.signal.aborted) setRawData(raw);
+        } catch (e: any) {
+            if (e?.name === "AbortError") return;
+            if (!ctrl.signal.aborted) setError(e?.message || "Failed to load shareholding");
+        }
+        if (!ctrl.signal.aborted) setLoading(false);
     }, [capcode]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); return () => abortRef.current?.abort(); }, [load]);
 
     if (loading) return <SkeletonLoader rows={6} />;
     if (error) return <ErrorState message={error} onRetry={load} />;
@@ -620,7 +799,6 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
                         </View>
                         {pledgeDates.map((date: string, i: number) => (
                             <View key={i} style={[s.tRow, i % 2 === 1 && s.zebra, i === 0 && s.highlight]}>
-                                {/* ✅ Format date in shareholding table too */}
                                 <Text style={[s.tdCell, { flex: 1 }]}>{formatDate(date)}</Text>
                                 <Text style={[s.tdCell, { flex: 1 }]}>
                                     {pledgePromoter[i] != null ? pledgePromoter[i].toFixed(2) : "-"}
@@ -642,14 +820,15 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
    ✅ Fixed API flow:
    Step 1: GET companycode?instrument={capcode}  → gets BSE company code
    Step 2: GET documents?instrument={companyCode} → gets documents
+   ✅ AbortController for cleanup
 ═══════════════════════════════════════════════════════════ */
 const DOC_CLR: Record<string, { bg: string; text: string }> = {
-    "Annual Reports":         { bg: "#EEF2FF", text: "#4338CA" },
-    "Credit Rating":          { bg: "#FEF3C7", text: "#92400E" },
-    "Compliance Report":      { bg: "#DCFCE7", text: "#166534" },
-    "Concall Transcripts":    { bg: "#E0F2FE", text: "#075985" },
+    "Annual Reports": { bg: "#EEF2FF", text: "#4338CA" },
+    "Credit Rating": { bg: "#FEF3C7", text: "#92400E" },
+    "Compliance Report": { bg: "#DCFCE7", text: "#166534" },
+    "Concall Transcripts": { bg: "#E0F2FE", text: "#075985" },
     "Investor Presentations": { bg: "#FCE7F3", text: "#9D174D" },
-    "Other":                  { bg: "#F3F4F6", text: "#374151" },
+    "Other": { bg: "#F3F4F6", text: "#374151" },
 };
 
 // ─── Document category config ───────────────────────────
@@ -664,7 +843,6 @@ const DOC_CATEGORY_CONFIG: Record<string, {
         label: "Annual Reports",
         color: { bg: "#EEF2FF", text: "#4338CA" },
         getItems: (arr: any[]) => {
-            // Deduplicate by Download_link, then sort newest first
             const seen = new Set<string>();
             return arr
                 .filter(d => {
@@ -685,7 +863,7 @@ const DOC_CATEGORY_CONFIG: Record<string, {
         label: "Conference Calls",
         color: { bg: "#E0F2FE", text: "#075985" },
         getItems: (arr: any[]) =>
-            arr.map((d, i) => ({
+            arr.map((d) => ({
                 title: "Investor Meet - Outcome",
                 url: d.URL || "",
                 date: d["Date/Month-Year"] || "",
@@ -696,7 +874,6 @@ const DOC_CATEGORY_CONFIG: Record<string, {
         color: { bg: "#FEF3C7", text: "#92400E" },
         getItems: (arr: any[]) =>
             arr.map(d => {
-                // Extract agency name from date string e.g. "30 Oct 2025 from crisil"
                 const match = (d.Date || "").match(/from\s+(\w+)/i);
                 const agency = match ? match[1].toUpperCase() : "Rating";
                 const dateStr = (d.Date || "").replace(/\s+from\s+\w+/i, "").trim();
@@ -707,17 +884,6 @@ const DOC_CATEGORY_CONFIG: Record<string, {
                 };
             }),
     },
-    ASCR: {
-        label: "Annual Secretarial Compliance",
-        color: { bg: "#DCFCE7", text: "#166534" },
-        getItems: (arr: any[]) =>
-            arr.map(d => ({
-                title: `ASCR ${d.Year || ""}`,
-                url: (d.Field2 || "").trim(),
-                date: d.Year || "",
-            })),
-    },
-    // ✅ Announcement intentionally excluded — not shown on website
 };
 
 export function DocumentsTab({ capcode, companyName }: {
@@ -726,26 +892,30 @@ export function DocumentsTab({ capcode, companyName }: {
     const [grouped, setGrouped] = useState<Record<string, { title: string; url: string; date: string }[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     const load = useCallback(async () => {
         if (!capcode) return;
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
+
         setLoading(true); setError(null);
 
         try {
             // Step 1: Resolve company code
             let companyCode = capcode;
             try {
-                const co = await apiFetch(`${HISTORIC}/companycode?instrument=${capcode}`);
-                if (typeof co === "number" || typeof co === "string") companyCode = String(co);
-                else if (co?.code) companyCode = String(co.code);
-                else if (co?.companyCode) companyCode = String(co.companyCode);
-            } catch { /* use capcode as fallback */ }
+                const co = await apiFetch(`${HISTORIC}/companycode?instrument=${capcode}`, ctrl.signal);
+                companyCode = resolveCompanyCode(co, capcode);
+            } catch (e: any) {
+                if (e?.name === "AbortError") throw e;
+            }
 
             // Step 2: Fetch documents
-            const raw = await apiFetch(`${HISTORIC}/documents?instrument=${companyCode}`);
+            const raw = await apiFetch(`${HISTORIC}/documents?instrument=${companyCode}`, ctrl.signal);
 
             // Step 3: Parse the categorised response
-            // API returns: { AnnualReport: [...], ConferenceCalls: [...], ASCR: [...], Announcement: [...], CreditRating: [...] }
             const result: Record<string, { title: string; url: string; date: string }[]> = {};
 
             for (const [key, config] of Object.entries(DOC_CATEGORY_CONFIG)) {
@@ -759,20 +929,20 @@ export function DocumentsTab({ capcode, companyName }: {
                 }
             }
 
-            setGrouped(result);
+            if (!ctrl.signal.aborted) setGrouped(result);
         } catch (e: any) {
+            if (e?.name === "AbortError") return;
             console.error("[DocumentsTab] error:", e);
-            setError(e?.message || "Failed to load documents");
+            if (!ctrl.signal.aborted) setError(e?.message || "Failed to load documents");
         }
-        setLoading(false);
+        if (!ctrl.signal.aborted) setLoading(false);
     }, [capcode]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); return () => abortRef.current?.abort(); }, [load]);
 
     const openDoc = useCallback(async (url: string) => {
         if (!url || url === "#N/A") return;
         try {
-            // Try in-app browser first, fallback to system browser
             const result = await WebBrowser.openBrowserAsync(url);
             if (result.type === "cancel") return;
         } catch {
@@ -796,7 +966,6 @@ export function DocumentsTab({ capcode, companyName }: {
 
                 return (
                     <View key={key} style={s.docGroup}>
-                        {/* Section Header */}
                         <View style={s.docGroupHdr}>
                             <Ionicons name="document-text-outline" size={17} color={clr.text} />
                             <Text style={[s.docGroupTitle, { color: clr.text }]}>{label}</Text>
@@ -805,10 +974,9 @@ export function DocumentsTab({ capcode, companyName }: {
                             </View>
                         </View>
 
-                        {/* Document Cards */}
                         {items.map((doc, i) => (
                             <TouchableOpacity
-                                key={i}
+                                key={`${key}-${i}`}
                                 style={[s.docCard, i % 2 === 1 && s.zebra]}
                                 onPress={() => doc.url && openDoc(doc.url)}
                                 activeOpacity={doc.url ? 0.7 : 1}
@@ -843,45 +1011,59 @@ export function DocumentsTab({ capcode, companyName }: {
 const s = StyleSheet.create({
     sectionTitle: { fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 14 },
     toggleRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
-    toggleBtn: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10,
-        borderRadius: 10, backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: BORDER_COLOR },
+    toggleBtn: {
+        flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10,
+        borderRadius: 10, backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: BORDER_COLOR
+    },
     toggleBtnOn: { backgroundColor: ACCENT_LIGHT, borderColor: ACCENT },
     toggleText: { fontSize: 14, fontWeight: "600", color: TEXT_MUTED },
     toggleTextOn: { color: ACCENT },
     filterRow: { flexDirection: "row", gap: 8, marginBottom: 14, paddingRight: 16 },
-    filterBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-        backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: BORDER_COLOR },
+    filterBtn: {
+        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+        backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: BORDER_COLOR
+    },
     filterBtnOn: { backgroundColor: ACCENT, borderColor: ACCENT },
     filterBtnText: { fontSize: 12, fontWeight: "600", color: TEXT_MUTED },
     filterBtnTextOn: { color: "#fff" },
-    tableCard: { backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
+    tableCard: {
+        backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
         elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06, shadowRadius: 4, borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 8 },
+        shadowOpacity: 0.06, shadowRadius: 4, borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 8
+    },
     tHead: { flexDirection: "row", backgroundColor: ACCENT, paddingVertical: 11, paddingHorizontal: 12 },
     thCell: { fontSize: 11, fontWeight: "700", color: "#fff", textAlign: "center", textTransform: "uppercase" },
-    tRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#F0F1F3",
-        paddingVertical: 10, paddingHorizontal: 12 },
+    tRow: {
+        flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#F0F1F3",
+        paddingVertical: 10, paddingHorizontal: 12
+    },
     tdCell: { fontSize: 12, color: TEXT_SECONDARY, textAlign: "center" },
     zebra: { backgroundColor: ZEBRA_LIGHT },
     highlight: { backgroundColor: ACCENT_LIGHT },
     bsBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, alignSelf: "flex-start", marginTop: 2 },
     bsText: { fontSize: 12, fontWeight: "700" },
-    evCard: { backgroundColor: CARD_BG, borderRadius: 12, padding: 16, marginBottom: 10,
+    evCard: {
+        backgroundColor: CARD_BG, borderRadius: 12, padding: 16, marginBottom: 10,
         borderWidth: 1, borderColor: BORDER_COLOR,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04, shadowRadius: 3 },
+        shadowOpacity: 0.04, shadowRadius: 3
+    },
     evCardOpen: { borderColor: ACCENT, borderWidth: 1.5 },
     evHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
     evBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
     evBadgeText: { fontSize: 11, fontWeight: "700" },
-    kvRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-        paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: "#F4F5F7" },
+    kvRow: {
+        flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+        paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: "#F4F5F7"
+    },
     kvLabel: { fontSize: 12, color: TEXT_MUTED, flex: 1, fontWeight: "500" },
     kvVal: { fontSize: 12, color: TEXT_PRIMARY, fontWeight: "600", textAlign: "right", flex: 1 },
-    chartGroup: { backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
+    chartGroup: {
+        backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
         borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 16,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05, shadowRadius: 3 },
+        shadowOpacity: 0.05, shadowRadius: 3
+    },
     chartTabs: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
     cTab: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: "transparent" },
     cTabOn: { borderBottomColor: ACCENT },
@@ -893,9 +1075,11 @@ const s = StyleSheet.create({
     chartVal: { fontSize: 22, fontWeight: "800", color: TEXT_PRIMARY },
     chgBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
     chgText: { fontSize: 11, fontWeight: "700" },
-    shCard: { backgroundColor: CARD_BG, borderRadius: 14, padding: 20, marginBottom: 20,
+    shCard: {
+        backgroundColor: CARD_BG, borderRadius: 14, padding: 20, marginBottom: 20,
         elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06, shadowRadius: 4, borderWidth: 1, borderColor: BORDER_COLOR },
+        shadowOpacity: 0.06, shadowRadius: 4, borderWidth: 1, borderColor: BORDER_COLOR
+    },
     pieLeg: { gap: 12, marginTop: 16 },
     pieLegRow: { flexDirection: "row", alignItems: "center" },
     pieDot: { width: 14, height: 14, borderRadius: 7, marginRight: 10 },
@@ -907,8 +1091,10 @@ const s = StyleSheet.create({
     docGroupTitle: { fontSize: 15, fontWeight: "700", flex: 1 },
     docCountBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
     docCountText: { fontSize: 11, fontWeight: "700" },
-    docCard: { backgroundColor: CARD_BG, borderRadius: 10, padding: 14, marginBottom: 6,
-        borderWidth: 1, borderColor: BORDER_COLOR, flexDirection: "row", alignItems: "center" },
+    docCard: {
+        backgroundColor: CARD_BG, borderRadius: 10, padding: 14, marginBottom: 6,
+        borderWidth: 1, borderColor: BORDER_COLOR, flexDirection: "row", alignItems: "center"
+    },
     docIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", marginRight: 12 },
     docBody: { flex: 1 },
     docTitle: { fontSize: 13, fontWeight: "600", color: TEXT_PRIMARY, marginBottom: 3 },
