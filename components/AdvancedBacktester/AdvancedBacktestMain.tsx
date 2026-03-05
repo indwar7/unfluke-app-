@@ -80,6 +80,7 @@ const AdvancedBacktestMainPage = () => {
             else copy.strategyName = name;
             return copy;
           });
+          if (normalized.length > 0) console.log("ADV STRATEGY KEYS:", Object.keys(normalized[0]));
           setDefaultStrategies(normalized);
         }
       } catch (error) {
@@ -137,7 +138,7 @@ const AdvancedBacktestMainPage = () => {
         </View>
         <View style={styles.dateSection}>
           <Ionicons name="calendar" size={12} color="#9CA3AF" />
-          <Text style={styles.dateText}>{item.createdOn ?? "—"}</Text>
+          <Text style={styles.dateText}>{item.createdAt ?? item.createdOn ?? "—"}</Text>
         </View>
       </View>
     </View>

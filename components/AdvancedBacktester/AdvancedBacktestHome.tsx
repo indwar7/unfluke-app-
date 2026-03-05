@@ -168,6 +168,7 @@ const AdvancedBacktesterHome = () => {
           // ✅ Fixed: use res.data, not res
           const data = res.data ?? res;
           const list = Array.isArray(data) ? data : [];
+          if (list.length > 0) console.log("STRATEGY ITEM KEYS:", JSON.stringify(list[0], null, 2));
           setSavedStrategies(list);
           setListStrategies(list);
           setLoading(false);
@@ -182,9 +183,7 @@ const AdvancedBacktesterHome = () => {
   const StrategyCard = ({ item, index }: { item: any; index: number }) => {
     const drawdown = item.maxDrawdown ?? item.max_drawdown;
     const createdOn = item.createdAt
-      ? new Date(item.createdAt).toLocaleDateString("en-IN", {
-        day: "2-digit", month: "short", year: "numeric",
-      })
+      ? new Date(item.createdAt).toISOString()
       : item.date ?? "—";
 
     return (
