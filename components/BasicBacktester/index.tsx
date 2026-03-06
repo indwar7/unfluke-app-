@@ -164,15 +164,13 @@ const BasicBacktester = () => {
   }, [params?.state]);
 
   useEffect(() => {
-    if (resultsMessage === "") {
-      if (csvFilename.trim() !== "") {
-        router.push({
-          pathname: "/basic-backtester-view",
-          params: { filename: csvFilename.replace(".csv", "") },
-        });
-      }
+    if (csvFilename.trim() !== "") {
+      router.push({
+        pathname: "/basic-backtester-view",
+        params: { filename: csvFilename.replace(".csv", "") },
+      });
     }
-  }, [csvFilename, resultsMessage]);
+  }, [csvFilename]);
 
   useEffect(() => {
     //console.log("BASIC BACKTESTER", backtester);

@@ -14,6 +14,7 @@ import {
     getMergedRatioHeadings,
     formatPeriodLabel,
     getRatioPeriodKeys,
+    type RatioSection,
 } from "../../hooks/useFundamentalData";
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -433,12 +434,49 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
         return result;
     }, [headings, data, prevData, bankingHeadings, bankingData, prevBankingData]);
 
-    if (sections.length === 0) return <EmptyState message="No ratio data for this period." />;
+    // Exact ratio names matching the website
+    const PROFITABILITY_KEYS = [
+        "ROCE (%)", "RONW (%)", "Payout (%)", "PBIDT/Sales(%)",
+        "PBDIT/Net Assets", "PAT/PBIDT(%)", "ROE(%)",
+        "Return on Assets (ROA)", "Earning Power",
+    ];
+
+    // Exact valuation ratio names matching the website
+    const VALUATION_KEYS = [
+        "Price Earning (P/E)", "Price to Book Value ( P/BV)", "Price/Cash EPS (P/CEPS)",
+        "EV/EBIDTA", "Market Cap/Sales", "Price to Free Cash Flows to Equity",
+        "Price to Free Cash Flows to the Firm", "Dividend Yield", "Graham Number",
+        "Industry PE", "Industry PBV",
+    ];
+
+    const ratioGroups = useMemo(() => {
+        const allData = data || {};
+        const profitItems = PROFITABILITY_KEYS.filter(k => allData[k] !== undefined);
+        const valuationItems = VALUATION_KEYS.filter(k => allData[k] !== undefined);
+
+        const result: { title: string; items: string[] }[] = [];
+        if (profitItems.length > 0) result.push({ title: "Profitability Ratios", items: profitItems });
+        if (valuationItems.length > 0) result.push({ title: "Valuation Ratios", items: valuationItems });
+        return result;
+    }, [data]);
+
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+    const toggleGroup = (title: string) =>
+        setExpandedGroups(prev => ({ ...prev, [title]: !prev[title] }));
+
+    const getVal = (label: string) => {
+        const val = data?.[label] ?? bankingData?.[label];
+        return val !== undefined && val !== null ? fmt(val) : "—";
+    };
+
+    if (ratioGroups.length === 0)
+        return <EmptyState message="No ratio data for this period." />;
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
 
-            {/* Charts */}
+            {/* Charts — UNTOUCHED */}
             <Text style={kr.chartsTitle}>Key Ratios</Text>
             <View style={kr.chartsContainer}>
                 {RATIO_CHART_CONFIGS.map(config => {
@@ -491,73 +529,38 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
                 </View>
             </View>
 
-            {/* Data sections — single-period table per section */}
-            {sections.map((section, sIdx) => (
-                <View key={sIdx} style={kr.sectionCard}>
-                    {/* Section header */}
-                    <View style={kr.sectionHeader}>
-                        <View style={kr.sectionAccent} />
-                        <Text style={kr.sectionTitle}>{section.title}</Text>
-                    </View>
-
-                    {/* Table header */}
-                    <View style={kr.tblHeaderRow}>
-                        <Text style={kr.tblHeaderLabel}>RATIO</Text>
-                        <Text style={kr.tblHeaderVal}>{formatPeriodLabel(activePeriod)}</Text>
-                        {prevPeriod && <Text style={kr.tblHeaderVal}>{formatPeriodLabel(prevPeriod)}</Text>}
-                        <Text style={kr.tblHeaderYoy}>YoY</Text>
-                    </View>
-
-                    {/* Metric rows */}
-                    {section.items.map((item, i) => {
-                        const cur = item.value;
-                        const prev = item.prevValue;
-                        const isNum = typeof cur === "number";
-                        const isPos = isNum && cur > 0;
-                        const isNeg = isNum && cur < 0;
-                        let yoy: number | undefined;
-                        if (typeof cur === "number" && typeof prev === "number" && prev !== 0) {
-                            yoy = ((cur - prev) / Math.abs(prev)) * 100;
-                        }
-                        const yoyUp = (yoy ?? 0) >= 0;
-
-                        return (
-                            <View key={i} style={[kr.metricRow, i % 2 === 0 && kr.metricRowAlt]}>
-                                <Text style={kr.metricLabel} numberOfLines={2}>{item.label}</Text>
-                                <View style={[
-                                    kr.metricValCell,
-                                    isPos && kr.valCellPos,
-                                    isNeg && kr.valCellNeg,
-                                ]}>
-                                    <Text style={[
-                                        kr.metricVal,
-                                        isPos && { color: GREEN },
-                                        isNeg && { color: RED },
-                                    ]}>
-                                        {fmt(cur)}
-                                    </Text>
-                                </View>
-                                {prevPeriod && (
-                                    <Text style={[kr.prevVal, { color: valueColor(prev) }]}>
-                                        {fmt(prev)}
-                                    </Text>
-                                )}
-                                <View style={kr.yoyCell}>
-                                    {yoy !== undefined && !isNaN(yoy) ? (
-                                        <View style={[kr.yoyBadge, { backgroundColor: yoyUp ? "#DCFCE7" : "#FEE2E2" }]}>
-                                            <Text style={[kr.yoyTxt, { color: yoyUp ? GREEN : RED }]}>
-                                                {yoyUp ? "▲" : "▼"}{Math.abs(yoy).toFixed(1)}%
-                                            </Text>
-                                        </View>
-                                    ) : (
-                                        <Text style={kr.yoyDash}>—</Text>
-                                    )}
-                                </View>
+            {/* Ratio groups — flat list under each, like website */}
+            {ratioGroups.map((group, gIdx) => {
+                const isOpen = !!expandedGroups[group.title];
+                return (
+                    <View key={gIdx} style={kr.collapseGroupWrap}>
+                        <TouchableOpacity
+                            style={kr.collapseGroupHeader}
+                            onPress={() => toggleGroup(group.title)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={kr.collapseGroupLeft}>
+                                <View style={kr.sectionAccent} />
+                                <Text style={kr.collapseGroupTitle}>{group.title}</Text>
                             </View>
-                        );
-                    })}
-                </View>
-            ))}
+                            <Text style={[kr.collapseChevron, isOpen && kr.collapseChevronOpen]}>›</Text>
+                        </TouchableOpacity>
+
+                        {isOpen && (
+                            <View style={kr.collapseGroupBody}>
+                                {group.items.map((item, i) => (
+                                    <View key={i} style={[kr.ratioRow, i % 2 === 0 && kr.ratioRowAlt]}>
+                                        <Text style={kr.ratioLabel} numberOfLines={2}>{item}</Text>
+                                        <Text style={[kr.ratioValue, { color: valueColor(data?.[item] ?? bankingData?.[item]) }]}>
+                                            {getVal(item)}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                );
+            })}
         </ScrollView>
     );
 }
@@ -642,52 +645,45 @@ const kr = StyleSheet.create({
         backgroundColor: ACCENT, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
     },
     periodBadgeTxt: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
-    // Section card
-    sectionCard: {
-        backgroundColor: CARD_BG, borderRadius: 10, overflow: "hidden",
-        borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 14,
-        elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04, shadowRadius: 2,
-    },
-    sectionHeader: {
-        flexDirection: "row", alignItems: "center",
-        backgroundColor: "#F1F5F9", paddingVertical: 11, paddingHorizontal: 14,
-        borderBottomWidth: 1, borderBottomColor: BORDER_COLOR,
-    },
     sectionAccent: {
         width: 4, height: 18, borderRadius: 2,
         backgroundColor: ACCENT, marginRight: 10,
     },
-    sectionTitle: {
-        fontSize: 14, fontWeight: "700", color: "#1E293B",
+    // Collapsible group boxes
+    collapseGroupWrap: {
+        marginBottom: 14,
+        borderRadius: 10, overflow: "hidden",
+        borderWidth: 1, borderColor: BORDER_COLOR,
+        backgroundColor: CARD_BG,
+        elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04, shadowRadius: 2,
     },
-    // Table header row
-    tblHeaderRow: {
-        flexDirection: "row", alignItems: "center",
-        backgroundColor: "#F8FAFC", paddingVertical: 8, paddingHorizontal: 12,
-        borderBottomWidth: 1, borderBottomColor: "#E2E8F0",
+    collapseGroupHeader: {
+        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+        backgroundColor: "#F1F5F9", paddingVertical: 14, paddingHorizontal: 14,
     },
-    tblHeaderLabel: { flex: 1, fontSize: 10, fontWeight: "700", color: "#94A3B8", textTransform: "uppercase", letterSpacing: 0.4 },
-    tblHeaderVal: { width: 68, fontSize: 10, fontWeight: "700", color: "#94A3B8", textAlign: "right", textTransform: "uppercase" },
-    tblHeaderYoy: { width: 58, fontSize: 10, fontWeight: "700", color: "#94A3B8", textAlign: "right", textTransform: "uppercase" },
-    // Metric rows
-    metricRow: {
-        flexDirection: "row", alignItems: "center",
-        paddingVertical: 11, paddingHorizontal: 12,
+    collapseGroupLeft: {
+        flexDirection: "row", alignItems: "center", flex: 1,
+    },
+    collapseGroupTitle: {
+        fontSize: 15, fontWeight: "700", color: "#1E293B",
+    },
+    collapseChevron: {
+        fontSize: 22, color: TEXT_MUTED, fontWeight: "600",
+        transform: [{ rotate: "0deg" }],
+    },
+    collapseChevronOpen: {
+        transform: [{ rotate: "90deg" }],
+    },
+    collapseGroupBody: {
+        paddingVertical: 4,
+    },
+    ratioRow: {
+        flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+        paddingVertical: 11, paddingHorizontal: 16,
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#F1F5F9",
     },
-    metricRowAlt: { backgroundColor: "#FAFBFC" },
-    metricLabel: { flex: 1, fontSize: 12, color: "#334155", fontWeight: "500", paddingRight: 6 },
-    metricValCell: {
-        width: 68, alignItems: "flex-end", justifyContent: "center",
-        paddingVertical: 3, paddingHorizontal: 6, borderRadius: 5,
-    },
-    valCellPos: { backgroundColor: "rgba(34,197,94,0.10)" },
-    valCellNeg: { backgroundColor: "rgba(239,68,68,0.10)" },
-    metricVal: { fontSize: 13, fontWeight: "700", color: TEXT_PRIMARY, textAlign: "right" },
-    prevVal: { width: 68, fontSize: 12, fontWeight: "500", textAlign: "right" },
-    yoyCell: { width: 58, alignItems: "flex-end", justifyContent: "center" },
-    yoyBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
-    yoyTxt: { fontSize: 10, fontWeight: "700" },
-    yoyDash: { fontSize: 12, color: "#CBD5E1" },
+    ratioRowAlt: { backgroundColor: "#FAFBFC" },
+    ratioLabel: { flex: 1, fontSize: 13, color: "#334155", fontWeight: "500", paddingRight: 8 },
+    ratioValue: { fontSize: 13, fontWeight: "700", textAlign: "right" },
 });

@@ -13,7 +13,7 @@ import {
     TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import axios from "axios";
@@ -167,52 +167,35 @@ const BasicBacktesterHomePage = () => {
         }
     };
 
-    useEffect(() => {
-        if (auth?.user?._id) {
-            fetchStrategies(axios, { ID: auth.user._id })
-                .then((res: any) => {
-                    const data = res?.data ?? res;
-                    const list = Array.isArray(data) ? data : [];
-                    if (list.length > 0) console.log("[BasicBacktester] strategy keys:", Object.keys(list[0]));
-                    setSavedStrategies(list);
-                    setListStrategies(list);
-                    setLoading(false);
-                })
-                .catch((err: any) => {
-                    console.error(err);
-                    setLoading(false);
-                });
-        } else {
-            setLoading(false);
-        }
-    }, [auth]);
+    useFocusEffect(
+        React.useCallback(() => {
+            if (auth?.user?._id) {
+                setLoading(true);
+                fetchStrategies(axios, { ID: auth.user._id })
+                    .then((res: any) => {
+                        const data = res?.data ?? res;
+                        const list = Array.isArray(data) ? data : [];
+                        if (list.length > 0) console.log("[BasicBacktester] strategy keys:", Object.keys(list[0]));
+                        setSavedStrategies(list);
+                        setListStrategies(list);
+                        setLoading(false);
+                    })
+                    .catch((err: any) => {
+                        console.error(err);
+                        setLoading(false);
+                    });
+            } else {
+                setLoading(false);
+            }
+        }, [auth])
+    );
 
     const StrategyCard = ({ item, index }: { item: any; index: number }) => {
         const profit = item.rateOfInterest ?? item.profit ?? item.pnl;
-        const drawdown = item.maxDrawdown ?? item.max_drawdown ?? item.maxDrawDown
-            ?? item.MaxDrawdown ?? item.max_dd ?? item.drawdown;
-        const sellingPrice = item.sellingPrice ?? item.selling_price ?? item.price
-            ?? item.SellingPrice ?? item.cost;
+        const drawdown = item.maxDD ?? item.analysis0?.maxDDDays ?? item.maxDrawdown;
+        const sellingPrice = item.sellPrice ?? item.sellingPrice;
         const isPositive = (profit ?? 0) >= 0;
-
-        // Try multiple date fields
-        const rawDate = item.createdAt ?? item.created_at ?? item.createdDate
-            ?? item.date ?? item.Date ?? item.updatedAt ?? item.updated_at;
-        let createdOn = "—";
-        if (rawDate) {
-            try {
-                const d = new Date(rawDate);
-                if (!isNaN(d.getTime())) {
-                    createdOn = d.toLocaleDateString("en-IN", {
-                        day: "2-digit", month: "short", year: "numeric",
-                    });
-                } else {
-                    createdOn = String(rawDate);
-                }
-            } catch {
-                createdOn = String(rawDate);
-            }
-        }
+        const createdOn = item.createdOn ?? "—";
 
         return (
             <View style={styles.stratCard}>

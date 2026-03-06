@@ -9,7 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system/next';
 import * as Sharing from 'expo-sharing';
 
 const ProfitTable = (props) => {
@@ -31,20 +31,24 @@ const ProfitTable = (props) => {
     try {
       if (!url) return;
 
-      // Show loading state
       Alert.alert('Downloading', 'Please wait while we download your file...');
 
-      // Download the file
-      const fileUri = FileSystem.documentDirectory + filename;
-      const { uri } = await FileSystem.downloadAsync(url, fileUri);
+      // Fetch the file content
+      const response = await fetch(url);
+      const content = await response.text();
 
-      // Check if sharing is available
+      // Write to a local file using the new expo-file-system API
+      const file = new File(Paths.cache, filename);
+      file.create();
+      file.write(content);
+
+      // Share the file
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri);
+        await Sharing.shareAsync(file.uri);
       } else {
         Alert.alert(
           'Download Complete',
-          `File saved to: ${uri}`,
+          `File saved successfully.`,
           [{ text: 'OK' }]
         );
       }
