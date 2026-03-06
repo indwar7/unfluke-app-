@@ -11,7 +11,6 @@ import {
     getHeadings,
     getPeriodKeys,
     getMergedRatioData,
-    getMergedRatioHeadings,
     formatPeriodLabel,
     getRatioPeriodKeys,
     type RatioSection,
@@ -298,39 +297,10 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
         return sets;
     }, [ratios, allPeriods, resolvedKeys]);
 
-    // Headings for section grouping
-    const headings = useMemo(() => {
-        try { return getMergedRatioHeadings(ratios) || []; } catch { return []; }
-    }, [ratios]);
-
-    // Data for selected period + previous period (for YoY)
+    // Data for selected period
     const data = useMemo(() => {
         try { return getMergedRatioData(ratios, activePeriod) || {}; } catch { return {}; }
     }, [ratios, activePeriod]);
-
-    const prevPeriod = useMemo(() => {
-        const idx = allPeriods.indexOf(activePeriod);
-        return idx >= 0 && idx < allPeriods.length - 1 ? allPeriods[idx + 1] : null;
-    }, [allPeriods, activePeriod]);
-
-    const prevData = useMemo(() => {
-        if (!prevPeriod) return {};
-        try { return getMergedRatioData(ratios, prevPeriod) || {}; } catch { return {}; }
-    }, [ratios, prevPeriod]);
-
-    // Banking data for the selected period (banks only)
-    if (banking) {
-        console.log("[KeyRatios] Banking data available:", {
-            hasHeadings: !!banking.headings,
-            headingCount: banking.headings?.length,
-            resultKeys: Object.keys(banking.results || {}),
-            headingTitles: banking.headings?.map((h: any) => h?.title),
-        });
-    }
-
-    const bankingHeadings = useMemo(() => {
-        try { return (banking && Array.isArray(banking.headings)) ? banking.headings : []; } catch { return []; }
-    }, [banking]);
 
     const bankingData = useMemo(() => {
         if (!banking?.results || !activePeriod) return {};
@@ -361,79 +331,6 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
         return {};
     }, [banking, activePeriod]);
 
-    const prevBankingData = useMemo(() => {
-        if (!banking?.results || !prevPeriod) return {};
-        try {
-            if (banking.results[prevPeriod]) {
-                const pd = banking.results[prevPeriod];
-                if (Array.isArray(pd)) {
-                    const out: Record<string, any> = {};
-                    for (const obj of pd) { if (obj && typeof obj === "object") Object.assign(out, obj); }
-                    return out;
-                }
-                return typeof pd === "object" ? { ...pd } : {};
-            }
-            const yearStr = prevPeriod.slice(0, 4);
-            if (banking.results[yearStr]) {
-                const pd = banking.results[yearStr];
-                if (Array.isArray(pd)) {
-                    const out: Record<string, any> = {};
-                    for (const obj of pd) { if (obj && typeof obj === "object") Object.assign(out, obj); }
-                    return out;
-                }
-                return typeof pd === "object" ? { ...pd } : {};
-            }
-        } catch { }
-        return {};
-    }, [banking, prevPeriod]);
-
-    // Build sections: merge ALL headings into just 2 groups — Profitability Ratios & Valuation Ratios
-    const sections = useMemo(() => {
-        const profitItems: { label: string; value: any; prevValue: any }[] = [];
-        const valuationItems: { label: string; value: any; prevValue: any }[] = [];
-        const seenLabels = new Set<string>();
-
-        const isValuation = (title: string) => /valuation/i.test(title);
-
-        const addItems = (heading: any, dataSource: Record<string, any>, prevSource: Record<string, any>) => {
-            if (!heading?.title || !Array.isArray(heading.children) || heading.children.length === 0) return;
-            const bucket = isValuation(heading.title) ? valuationItems : profitItems;
-            for (const child of heading.children) {
-                if (seenLabels.has(child)) continue;
-                seenLabels.add(child);
-                bucket.push({
-                    label: child,
-                    value: dataSource?.[child],
-                    prevValue: prevSource?.[child],
-                });
-            }
-        };
-
-        try {
-            // Regular ratio headings
-            if (Array.isArray(headings) && headings.length > 0) {
-                for (const heading of headings) addItems(heading, data, prevData);
-            }
-            // Banking headings (for banks — extra fields)
-            if (Array.isArray(bankingHeadings) && bankingHeadings.length > 0 && Object.keys(bankingData).length > 0) {
-                for (const heading of bankingHeadings) addItems(heading, bankingData, prevBankingData);
-            }
-        } catch (e) { console.warn("KeyRatiosTab sections error:", e); }
-
-        const result: { title: string; items: { label: string; value: any; prevValue: any }[] }[] = [];
-        if (profitItems.length > 0) result.push({ title: "Profitability Ratios", items: profitItems });
-        if (valuationItems.length > 0) result.push({ title: "Valuation Ratios", items: valuationItems });
-
-        // Fallback if no headings at all
-        if (result.length === 0 && data && typeof data === "object") {
-            const items = Object.entries(data).map(([k, v]) => ({
-                label: k, value: v, prevValue: prevData?.[k],
-            }));
-            if (items.length > 0) result.push({ title: "All Ratios", items });
-        }
-        return result;
-    }, [headings, data, prevData, bankingHeadings, bankingData, prevBankingData]);
-
     // Exact ratio names matching the website
     const PROFITABILITY_KEYS = [
         "ROCE (%)", "RONW (%)", "Payout (%)", "PBIDT/Sales(%)",
@@ -449,6 +346,47 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
         "Industry PE", "Industry PBV",
     ];
 
+    // Banking section titles matching the website (array index → section title)
+    const BANKING_SECTION_TITLES = [
+        "Regulatory & Capital Adequacy Overview",
+        "Loan Book & Advance Distribution",
+        "Asset Quality (NPAs)",
+        "Profitability & Margin Performance",
+        "Risk & Liquidity Ratios",
+    ];
+
+    // Hardcoded keys for sections 4 & 5 to match website exactly
+    const PROFITABILITY_MARGIN_KEYS = [
+        "Net Interest Income", "Net Interest Margin (%)",
+        "Return on Assets (%)", "Return on Equity (ROE) (%)",
+    ];
+    const RISK_LIQUIDITY_KEYS = [
+        "CASA Ratio (%)", "Debt Equity Ratio",
+        "Debt Service Coverage Ratio", "Interest Service Coverage Ratio",
+        "Provision Coverage Ratio (%)",
+    ];
+
+    // Extract banking data as array of sections (preserving per-section grouping)
+    const bankingSectionsArray = useMemo(() => {
+        if (!banking?.results || !activePeriod) return [];
+        try {
+            const yearStr = activePeriod.slice(0, 4);
+            const pd = banking.results[activePeriod] || banking.results[yearStr];
+            if (!Array.isArray(pd)) return [];
+            return pd.map((obj: any, idx: number) => {
+                const title = BANKING_SECTION_TITLES[idx] || `Banking Section ${idx + 1}`;
+                // For sections 4 & 5, use hardcoded keys matching the website
+                if (idx === 3) return { title, items: PROFITABILITY_MARGIN_KEYS };
+                if (idx === 4) return { title, items: RISK_LIQUIDITY_KEYS };
+                // For sections 1-3, use dynamic keys from API
+                return {
+                    title,
+                    items: obj && typeof obj === "object" ? Object.keys(obj) : [],
+                };
+            }).filter((s: any) => s.items.length > 0);
+        } catch { return []; }
+    }, [banking, activePeriod]);
+
     const ratioGroups = useMemo(() => {
         const allData = data || {};
         const profitItems = PROFITABILITY_KEYS.filter(k => allData[k] !== undefined);
@@ -457,8 +395,14 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
         const result: { title: string; items: string[] }[] = [];
         if (profitItems.length > 0) result.push({ title: "Profitability Ratios", items: profitItems });
         if (valuationItems.length > 0) result.push({ title: "Valuation Ratios", items: valuationItems });
+
+        // Add banking sections for bank companies
+        for (const sec of bankingSectionsArray) {
+            result.push({ title: sec.title, items: sec.items });
+        }
+
         return result;
-    }, [data]);
+    }, [data, bankingSectionsArray]);
 
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 

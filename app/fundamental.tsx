@@ -136,7 +136,7 @@ export default function FundamentalScreen() {
   const redux = useSelector((s: any) => s.GlobalStock?.selectedStock);
 
   useEffect(() => {
-    if (!redux?.capcode) dispatch(setSelectedStock(DEFAULT_STOCK));
+    dispatch(setSelectedStock(DEFAULT_STOCK));
   }, []);
 
   const stock = redux?.capcode ? redux : DEFAULT_STOCK;
@@ -191,6 +191,7 @@ export default function FundamentalScreen() {
   const { data: company, isLoading: loadCo } = useCompany(capcode);
   const { data: financials, isLoading: loadFin, refetch: refetchFin } = useFinancials(capcode, stockType);
 
+
   useEffect(() => {
     setPeriod("");
     setActiveTab("Balance Sheet");
@@ -235,12 +236,24 @@ export default function FundamentalScreen() {
       if (!allP.length) return [];
       const cur = getMergedRatioData(financials.ratios, allP[0]) || {};
       const prev = allP[1] ? getMergedRatioData(financials.ratios, allP[1]) || {} : {};
-      const CARD_KEYS = [
-        { label: "Current Ratio", key: "Current Ratio" },
-        { label: "Debt-Equity", key: "Debt-Equity Ratio" },
-        { label: "Interest Cover", key: "Interest Cover Ratio" },
-        { label: "Total Asset Turnover", key: "Total Asset Turnover Ratio" },
-      ];
+      // Detect bank: use banking API data (must have actual period data), or fallback heuristic
+      const bankingResults = financials.banking?.results;
+      const hasBankingData = bankingResults && typeof bankingResults === "object" && Object.keys(bankingResults).length > 0;
+      const isBank = hasBankingData ||
+        ((cur["Current Ratio"] == null || cur["Current Ratio"] === 0) && cur["Price Earning (P/E)"] != null);
+      const CARD_KEYS = isBank
+        ? [
+            { label: "PE Ratio", key: "Price Earning (P/E)" },
+            { label: "Price to Book Value Ratio", key: "Price to Book Value ( P/BV)" },
+            { label: "Price/Cash EPS Ratio", key: "Price/Cash EPS (P/CEPS)" },
+            { label: "ROE Ratio", key: "ROE(%)" },
+          ]
+        : [
+            { label: "Current Ratio", key: "Current Ratio" },
+            { label: "Debt-Equity", key: "Debt-Equity Ratio" },
+            { label: "Interest Cover", key: "Interest Cover Ratio" },
+            { label: "Total Asset Turnover", key: "Total Asset Turnover Ratio" },
+          ];
       return CARD_KEYS
         .filter(c => cur[c.key] != null)
         .map(c => {
