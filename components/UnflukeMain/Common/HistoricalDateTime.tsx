@@ -94,8 +94,13 @@ const HistoricalDateTime = () => {
   useEffect(() => {
     async function getLastDate() {
       try {
-        const date = await getHistoricTradingLastDate();
-        setLastDate(date.date);
+        const result = await getHistoricTradingLastDate();
+        if (result?.date) {
+          const d = new Date(result.date);
+          if (!isNaN(d.getTime())) {
+            setLastDate(d);
+          }
+        }
       } catch (error) {
         console.error('Error fetching last date:', error);
       }
@@ -187,21 +192,25 @@ const HistoricalDateTime = () => {
         </Text>
       )}
 
-      <DateTimePickerModal
-        isVisible={isDatePickerVisible}
-        mode="date"
-        onConfirm={handleDateConfirm}
-        onCancel={() => setDatePickerVisibility(false)}
-        minimumDate={getMinDate()}
-        maximumDate={lastDate}
-      />
+      {isDatePickerVisible && (
+        <DateTimePickerModal
+          isVisible={true}
+          mode="date"
+          onConfirm={handleDateConfirm}
+          onCancel={() => setDatePickerVisibility(false)}
+          minimumDate={getMinDate()}
+          maximumDate={lastDate instanceof Date && !isNaN(lastDate.getTime()) ? lastDate : new Date()}
+        />
+      )}
 
-      <DateTimePickerModal
-        isVisible={isTimePickerVisible}
-        mode="time"
-        onConfirm={handleTimeConfirm}
-        onCancel={() => setTimePickerVisibility(false)}
-      />
+      {isTimePickerVisible && (
+        <DateTimePickerModal
+          isVisible={true}
+          mode="time"
+          onConfirm={handleTimeConfirm}
+          onCancel={() => setTimePickerVisibility(false)}
+        />
+      )}
     </View>
   );
 };

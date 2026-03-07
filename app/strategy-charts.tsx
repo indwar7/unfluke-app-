@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, TextInput, Modal, FlatList, Dimensions,
-  RefreshControl, Alert,
+  Alert,
 } from "react-native";
 import { ScreenWithHeader } from "@/components/AppHeader";
 import { WebView } from "react-native-webview";
@@ -35,128 +35,316 @@ const safeFetch = async (url: string, token?: string | null) => {
   } catch { return null; }
 };
 
-// ─── Embedded TradingView Chart (always works) ─────────────────────────────
-function StrategyTVChart({ symbol }: { symbol: string }) {
-  const [loading, setLoading] = useState(true);
-  const webRef = useRef<WebView>(null);
-  const cleanSymbol = symbol || "NSE:NIFTY";
-
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { width:100%; height:100%; background:#fff; overflow:hidden; }
-    #tv_chart { width:100%; height:100%; }
-    .tv-loading { display:flex; align-items:center; justify-content:center; height:100%; color:#666; font-family:sans-serif; font-size:14px; flex-direction:column; gap:10px; }
-    .tv-dot { width:8px; height:8px; border-radius:50%; background:#4f46e5; display:inline-block; animation:bounce 1.2s infinite ease-in-out; }
-    .tv-dot:nth-child(2) { animation-delay:0.2s; }
-    .tv-dot:nth-child(3) { animation-delay:0.4s; }
-    @keyframes bounce { 0%,80%,100% { transform:scale(0); } 40% { transform:scale(1); } }
-  </style>
-</head>
-<body>
-  <div id="tv_chart">
-    <div class="tv-loading">
-      <div style="display:flex;gap:6px">
-        <span class="tv-dot"></span>
-        <span class="tv-dot"></span>
-        <span class="tv-dot"></span>
-      </div>
-      <span>Loading Chart...</span>
-    </div>
-  </div>
-  <script>
-    var sym = "${cleanSymbol.replace(/"/g, '\\"')}";
-    var loaded = false;
-    
-    function loadTV() {
-      var script = document.createElement('script');
-      script.src = 'https://s3.tradingview.com/tv.js';
-      script.onload = function() { initChart(); };
-      script.onerror = function() {
-        document.getElementById('tv_chart').innerHTML = '<div class="tv-loading" style="color:#ef4444;">⚠️ Chart library failed to load.<br>Check internet connection.</div>';
-        if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ERROR');
-      };
-      document.head.appendChild(script);
-    }
-
-    function initChart() {
-      if (typeof TradingView === 'undefined') { setTimeout(initChart, 300); return; }
-      if (loaded) return;
-      loaded = true;
-      try {
-        document.getElementById('tv_chart').innerHTML = '';
-        new TradingView.widget({
-          "autosize": true,
-          "symbol": sym,
-          "interval": "1",
-          "timezone": "Asia/Kolkata",
-          "theme": "light",
-          "style": "1",
-          "locale": "in",
-          "toolbar_bg": "#f3f4f6",
-          "enable_publishing": false,
-          "allow_symbol_change": false,
-          "container_id": "tv_chart",
-          "hide_side_toolbar": false,
-          "save_image": false,
-          "hide_legend": false,
-          "studies": [],
-          "show_popup_button": false,
-          "withdateranges": true
-        });
-        if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage('LOADED');
-      } catch(e) {
-        document.getElementById('tv_chart').innerHTML = '<div class="tv-loading" style="color:#ef4444;">⚠️ ' + e.message + '</div>';
-        if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ERROR');
-      }
-    }
-
-    loadTV();
-  </script>
-</body>
-</html>`;
-
-  return (
-    <View style={{ flex: 1, minHeight: 380 }}>
-      {loading && (
-        <View style={styles.chartLoader}>
-          <ActivityIndicator color="#4f46e5" size="large" />
-          <Text style={styles.chartLoaderText}>Loading chart for {cleanSymbol}...</Text>
-        </View>
-      )}
-      <WebView
-        ref={webRef}
-        source={{ html }}
-        style={[{ flex: 1 }, loading && { opacity: 0 }]}
-        originWhitelist={["*"]}
-        javaScriptEnabled
-        domStorageEnabled
-        allowsInlineMediaPlayback
-        mixedContentMode="always"
-        scalesPageToFit={false}
-        scrollEnabled={false}
-        androidLayerType="hardware"
-        onMessage={(e) => {
-          if (e.nativeEvent.data === "LOADED" || e.nativeEvent.data === "ERROR") {
-            setLoading(false);
-          }
-        }}
-        onLoadEnd={() => setTimeout(() => setLoading(false), 3000)}
-        onError={() => setLoading(false)}
-      />
-    </View>
-  );
+function formatNow(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
+// Build the TradingView chart HTML with custom Unfluke datafeed
+function buildChartHTML(): string {
+  return `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#fff;}
+#tv_chart_container{width:100%;height:100%;}
+.tv-loading{display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-family:sans-serif;font-size:14px;flex-direction:column;gap:10px;}
+</style>
+</head><body>
+<div id="tv_chart_container">
+  <div class="tv-loading">Loading TradingView Chart...</div>
+</div>
+<script src="https://unfluke.in/charting_library/charting_library.standalone.js"><\/script>
+<script>
+var AUTH = { token: '', userId: '', mrkt: '' };
+var CHART_STATE = { chartType: 'Options Chart', formData: null, symbolNames: '' };
+var tvWidget = null;
+var chartCreated = false;
+var fullName = '';
+var prevLots = '1,1';
+var prevName = '';
+var cachedBars = [];
+
+function dbg(msg) {}
+
+function formatDate(date) {
+  var y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,'0'),
+      d=String(date.getDate()).padStart(2,'0'), h=String(date.getHours()).padStart(2,'0'),
+      mi=String(date.getMinutes()).padStart(2,'0'), s=String(date.getSeconds()).padStart(2,'0');
+  return y+'-'+m+'-'+d+' '+h+':'+mi+':'+s;
+}
+
+function apiFetch(url) {
+  var headers = {};
+  if (AUTH.token) headers['Authorization'] = 'Bearer ' + AUTH.token;
+  if (AUTH.mrkt) headers['mrkt'] = AUTH.mrkt;
+  dbg('FETCH: ' + url.substring(0, 120));
+  return fetch(url, { headers: headers })
+    .then(function(r) {
+      dbg('FETCH OK status=' + r.status);
+      return r.json();
+    })
+    .catch(function(err) {
+      dbg('FETCH ERROR: ' + (err.message || err));
+      throw err;
+    });
+}
+
+function getChartTypeLots() {
+  if (!CHART_STATE.formData) return '1,1';
+  var fd = CHART_STATE.formData;
+  switch (CHART_STATE.chartType) {
+    case 'Straddle Chart': return (fd.putLots||'1')+','+(fd.callLots||'1');
+    case 'Spread Chart': return '-1,1';
+    case 'Butterfly Chart': return '1,-2,1';
+    case 'Iron Fly Chart': return '1,-1,-1,1';
+    case 'Double Calendar Chart': return '1,-1,1,-1';
+    default: return '0';
+  }
+}
+
+var Datafeed = {
+  onReady: function(cb) {
+    setTimeout(function() {
+      cb({ supported_resolutions: ['1','3','5','15','30','60','120','240'] });
+    }, 0);
+  },
+  searchSymbols: function(input, exchange, type, cb) { cb([]); },
+  resolveSymbol: function(symbolName, onResolve, onError) {
+    dbg('resolveSymbol: ' + symbolName);
+    apiFetch('${BASE}/api/historicData/getInstrument?instrument=' + encodeURIComponent(symbolName))
+    .then(function(item) {
+      dbg('resolveSymbol result: ' + JSON.stringify(item).substring(0, 200));
+      if (!item || item.Error) { dbg('resolveSymbol: no data'); onError('No symbol found'); return; }
+      var name, ticker, type, exchange;
+      if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; }
+      else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; }
+      else if (item.type === 'OPT') { name=item.option; type='option'; exchange='NFO'; ticker=item.option; }
+      else { name=item.future; type='future'; exchange='NFO'; ticker=item.future; }
+      var stub = {
+        name: name.split(':')[1] || name,
+        full_name: name,
+        description: ticker,
+        type: type,
+        session: '0915-1530',
+        timezone: 'Asia/Kolkata',
+        instrument_token: item.instrument_token,
+        ticker: ticker,
+        exchange: exchange,
+        minmov: 1,
+        pricescale: 100,
+        has_intraday: true,
+        has_daily: false,
+        intraday_multipliers: ['1','60'],
+        has_no_volume: true,
+        supported_resolutions: ['1','3','5','15','30','60','120','240'],
+        data_status: 'endofday',
+      };
+      setTimeout(function() { onResolve(stub); }, 0);
+    })
+    .catch(function(err) { onError(err.message || 'Resolve error'); });
+  },
+  getBars: function(symbolInfo, resolution, periodParams, onResult, onError) {
+    var from = periodParams.from, to = periodParams.to, first = periodParams.firstDataRequest;
+    var id = AUTH.userId;
+    var chartType = CHART_STATE.chartType;
+    var lots = getChartTypeLots();
+    dbg('getBars: symbol=' + symbolInfo.full_name + ' type=' + symbolInfo.type + ' userId=' + id + ' chartType=' + chartType);
+
+    if ((fullName === symbolInfo.full_name) && lots === prevLots && cachedBars.length > 0) {
+      onResult(cachedBars, { noData: false });
+      return;
+    }
+
+    var url, params;
+    if (symbolInfo.full_name === 'NSE:NIFTY 50' && symbolInfo.type === 'index') {
+      url = '${BASE}/api/historicData/data/historicalChartIndexMinute';
+      params = 'i='+id+'&e='+encodeURIComponent(symbolInfo.instrument_token)
+        +'&currentDateTime='+encodeURIComponent(formatDate(new Date()))
+        +'&type='+symbolInfo.type+'&name='+encodeURIComponent(symbolInfo.name)
+        +'&resolution='+resolution+'&nxt='+(prevName===symbolInfo.full_name);
+    } else if (symbolInfo.type === 'option' && CHART_STATE.formData) {
+      var fd = CHART_STATE.formData;
+      var symNames = fd.symbolNames || symbolInfo.name;
+      var commonP = 'i='+id+'&name='+encodeURIComponent(symNames)+'&resolution='+resolution+'&nxt=false';
+      switch (chartType) {
+        case 'Options Chart':
+          url = '${BASE}/api/historicData/data/historicalChartMinute';
+          commonP = 'i='+id+'&name='+encodeURIComponent(symbolInfo.name)+'&type=option&resolution='+resolution+'&nxt=false';
+          break;
+        case 'Straddle Chart':
+        case 'Spread Chart':
+          url = '${BASE}/api/historicData/data/stradleChartMinute';
+          var lotsArr = lots.split(',');
+          commonP += '&putLots='+lotsArr[0]+'&callLots='+lotsArr[1];
+          break;
+        case 'Butterfly Chart':
+          url = '${BASE}/api/historicData/data/butterFlyChartMinute';
+          var bLots = lots.split(',');
+          commonP += '&l1='+bLots[0]+'&l2='+bLots[1]+'&l3='+bLots[2];
+          break;
+        case 'Iron Fly Chart':
+          url = '${BASE}/api/historicData/data/ironFlyChartMinute';
+          var iLots = lots.split(',');
+          commonP += '&l1='+iLots[0]+'&l2='+iLots[1]+'&l3='+iLots[2]+'&l4='+iLots[3];
+          break;
+        case 'Double Calendar Chart':
+          url = '${BASE}/api/historicData/data/dCalChartMinute';
+          var dLots = lots.split(',');
+          commonP += '&l1='+dLots[0]+'&l2='+dLots[1]+'&l3='+dLots[2]+'&l4='+dLots[3];
+          break;
+        case 'Straddle Combo Chart':
+          url = '${BASE}/api/historicData/data/comboChartMinute';
+          break;
+        default:
+          onResult([], { noData: true }); return;
+      }
+      params = commonP;
+    } else {
+      onResult([], { noData: true }); return;
+    }
+
+    dbg('getBars fetching: ' + url + '?' + params.substring(0, 80));
+    apiFetch(url + '?' + params)
+    .then(function(data) {
+      dbg('getBars response: isArray=' + Array.isArray(data) + ' length=' + (Array.isArray(data) ? data.length : 'N/A') + ' error=' + (data && data.Error));
+      if (!data || data.Error || !Array.isArray(data) || data.length === 0) {
+        dbg('getBars: no valid data, returning noData');
+        onResult([], { noData: true }); return;
+      }
+      var bars = data.map(function(el) {
+        return {
+          time: new Date(el.a).getTime(),
+          low: Number(el.b),
+          high: Number(el.c),
+          open: Number(el.d),
+          close: Number(el.e),
+          volume: Number(el.f),
+        };
+      });
+      fullName = symbolInfo.full_name;
+      prevLots = lots;
+      prevName = symbolInfo.full_name;
+      cachedBars = bars;
+      dbg('getBars: success, ' + bars.length + ' bars');
+      onResult(bars, { noData: false });
+    })
+    .catch(function(err) {
+      dbg('getBars error: ' + (err.message || err));
+      onResult([], { noData: true });
+    });
+  },
+  subscribeBars: function(symbolInfo, resolution, onTick, uid, onReset) {
+    if (onReset) onReset();
+  },
+  unsubscribeBars: function(uid) {},
+  calculateHistoryDepth: function(resolution) {},
+  getMarks: function() {},
+  getTimeScaleMarks: function() {},
+  getServerTime: function() {},
+};
+
+function createChart() {
+  if (chartCreated) { dbg('createChart: already created, skipping'); return; }
+  if (typeof TradingView === 'undefined' || !TradingView.widget) {
+    dbg('createChart: TradingView not loaded yet, retrying...');
+    setTimeout(createChart, 500);
+    return;
+  }
+  if (!AUTH.token && !AUTH.userId) {
+    dbg('createChart: no auth yet, retrying...');
+    setTimeout(createChart, 500);
+    return;
+  }
+  chartCreated = true;
+  dbg('createChart: creating widget with userId=' + AUTH.userId);
+  tvWidget = new TradingView.widget({
+    symbol: 'NSE:NIFTY 50',
+    datafeed: Datafeed,
+    interval: '1',
+    container: 'tv_chart_container',
+    library_path: 'https://unfluke.in/charting_library/',
+    locale: 'en',
+    disabled_features: ['use_localstorage_for_settings','header_symbol_search'],
+    enabled_features: ['study_templates','fix_left_edge','side_toolbar_in_fullscreen_mode','header_in_fullscreen_mode'],
+    charts_storage_url: 'https://saveload.tradingview.com',
+    charts_storage_api_version: '1.1',
+    client_id: 'tradingview.com',
+    user_id: AUTH.userId || 'public_user_id',
+    fullscreen: false,
+    autosize: true,
+    studies_overrides: {},
+    timezone: 'Asia/Kolkata',
+    theme: 'Light',
+    debug: false,
+  });
+
+  tvWidget.onChartReady(function() {
+    tvWidget.activeChart().setChartType(2); // line chart
+    tvWidget.headerReady().then(function() {
+      var button = tvWidget.createButton();
+      button.setAttribute('title','Check API');
+      button.textContent = 'Check API';
+      button.addEventListener('click', function() {
+        tvWidget.showNoticeDialog({
+          title: 'API Status',
+          body: 'Connected to Unfluke API',
+          callback: function() {}
+        });
+      });
+    });
+    if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('LOADED');
+  });
+}
+
+// Listen for messages from React Native
+function handleMsg(raw) {
+  try {
+    var msg = JSON.parse(raw);
+    if (msg.type === 'INIT') {
+      AUTH.token = msg.token || '';
+      AUTH.userId = msg.userId || '';
+      AUTH.mrkt = msg.mrkt || '';
+      createChart();
+    } else if (msg.type === 'SET_SYMBOL') {
+      CHART_STATE.chartType = msg.chartType || 'Options Chart';
+      CHART_STATE.formData = msg.formData || null;
+      cachedBars = [];
+      fullName = '';
+      prevLots = '';
+      if (tvWidget && tvWidget.activeChart) {
+        try {
+          var sym = msg.symbol || 'NSE:NIFTY 50';
+          tvWidget.activeChart().setSymbol(sym, function() {
+            tvWidget.activeChart().setChartType(2);
+          });
+        } catch(e) { console.error('setSymbol error:', e); }
+      }
+    }
+  } catch(e) { console.error('handleMsg error:', e); }
+}
+
+document.addEventListener('message', function(e) { handleMsg(e.data); });
+window.addEventListener('message', function(e) { handleMsg(e.data); });
+
+// Send READY signal
+if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('READY');
+<\/script>
+</body></html>`;
+}
+
+// ============================================================
+// Main Screen
+// ============================================================
 export default function StrategyChartsScreen() {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [mrkt, setMrkt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(false);
+  const [chartReady, setChartReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -188,10 +376,8 @@ export default function StrategyChartsScreen() {
   const [callLots, setCallLots] = useState("1");
   const [putLots, setPutLots] = useState("1");
 
-  // The resolved TradingView symbol after submit
-  const [tvSymbol, setTvSymbol] = useState("NSE:NIFTY");
-  const [chartKey, setChartKey] = useState(0); // force re-render chart when symbol changes
-  const [chartReady, setChartReady] = useState(true); // show chart immediately
+  const webRef = useRef<WebView>(null);
+  const autoSubmittedRef = useRef(false);
 
   // @ts-ignore
   const globalSelectedStock = useSelector((s) => s.GlobalStock?.selectedStock);
@@ -202,7 +388,9 @@ export default function StrategyChartsScreen() {
       try {
         const t = await AsyncStorage.getItem("access");
         const userStr = await AsyncStorage.getItem("authUser");
+        const m = await AsyncStorage.getItem("mkt");
         setToken(t);
+        setMrkt(m);
         if (userStr) {
           const u = JSON.parse(userStr);
           setUserId(u._id || u.id || "");
@@ -211,8 +399,21 @@ export default function StrategyChartsScreen() {
     })();
   }, []);
 
+  const initSentRef = useRef(false);
+
+  // Send INIT to WebView once ready via injectJavaScript (postMessage is unreliable in RN)
+  const sendInit = useCallback(() => {
+    if (initSentRef.current) return;
+    if (webRef.current && token) {
+      initSentRef.current = true;
+      const msg = JSON.stringify(JSON.stringify({ type: "INIT", token, userId, mrkt: mrkt || "" }));
+      webRef.current.injectJavaScript(`handleMsg(${msg}); true;`);
+    }
+  }, [token, userId, mrkt]);
+
   // Load instruments
   useEffect(() => {
+    if (!token) return;
     (async () => {
       setLoading(true);
       try {
@@ -226,12 +427,7 @@ export default function StrategyChartsScreen() {
         if (names.length === 0) names = FALLBACK;
         setOptionNames(names);
 
-        let defaultSelect = names[0] || "NIFTY";
-        if (globalSelectedStock?.symbol) {
-          const clean = globalSelectedStock.symbol.replace(/^NSE:/, "").replace(/^BSE:/, "");
-          const found = names.find((n) => n.toUpperCase() === clean.toUpperCase());
-          if (found) defaultSelect = found;
-        }
+        const defaultSelect = names.includes("NIFTY") ? "NIFTY" : (names[0] || "NIFTY");
         setSelectedInstrument(defaultSelect);
       } catch {
         setOptionNames(["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS"]);
@@ -274,7 +470,7 @@ export default function StrategyChartsScreen() {
 
   // Fetch expiries when instrument / chartType / optionType changes
   useEffect(() => {
-    if (!selectedInstrument) return;
+    if (!selectedInstrument || !token) return;
     const uid = userId || "default";
     (async () => {
       setChartLoading(true);
@@ -312,7 +508,15 @@ export default function StrategyChartsScreen() {
     })();
   }, [selectedInstrument, chartType, optionType, userId, token, refreshKey]);
 
-  // When expiry changes manually, reload strikes
+  // Auto-submit when default values are ready (first load)
+  useEffect(() => {
+    if (autoSubmittedRef.current) return;
+    if (!chartReady || !token || !selectedInstrument || !selectedExpiry || !s1) return;
+    autoSubmittedRef.current = true;
+    // Small delay to ensure WebView is fully ready
+    setTimeout(() => handleSubmit(), 500);
+  }, [chartReady, token, selectedInstrument, selectedExpiry, s1]);
+
   const onExpiryChange = async (exp: string) => {
     setSelectedExpiry(exp);
     setLongExpiry(exp);
@@ -329,6 +533,7 @@ export default function StrategyChartsScreen() {
     setError(null);
 
     try {
+      // Step 1: Get option symbols from strategy API
       let url = "";
       switch (chartType) {
         case "Options Chart":
@@ -364,35 +569,42 @@ export default function StrategyChartsScreen() {
           return;
       }
 
-      console.log("[StrategyChart] Fetching:", url);
       const result = await safeFetch(url, token);
-      console.log("[StrategyChart] Result:", JSON.stringify(result)?.slice(0, 200));
 
       if (!result || result?.Error) {
         setError(result?.Error || "No data found. Try different parameters.");
       } else {
-        // Extract the TradingView symbol from result
-        let resolvedSymbol: string = "";
-        if (typeof result === "string") {
-          resolvedSymbol = result;
+        let optionSymbols: string[] = [];
+        if (result?.option) {
+          optionSymbols = Array.isArray(result.option) ? result.option : [result.option];
         } else if (Array.isArray(result)) {
-          resolvedSymbol = result[0];
-        } else if (result?.option) {
-          resolvedSymbol = Array.isArray(result.option) ? result.option[0] : result.option;
-        } else if (result?.symbol) {
-          resolvedSymbol = result.symbol;
-        } else if (result?.data) {
-          const d = Array.isArray(result.data) ? result.data : [result.data];
-          resolvedSymbol = d[0]?.symbol || d[0] || "";
+          optionSymbols = result;
         }
 
-        if (!resolvedSymbol) {
-          setError("No chart symbol returned. Try different parameters.");
+        if (optionSymbols.length === 0) {
+          setError("No chart data returned. Try different parameters.");
         } else {
-          // Ensure NSE prefix
-          const finalSymbol = resolvedSymbol.includes(":") ? resolvedSymbol : `NSE:${resolvedSymbol}`;
-          setTvSymbol(finalSymbol);
-          setChartKey((k) => k + 1);
+          // Step 2: Tell TradingView to switch symbol
+          const symbolName = chartType === "Options Chart"
+            ? optionSymbols[0]
+            : optionSymbols[0]; // first symbol for resolve
+
+          const formData = {
+            chartType,
+            symbolNames: optionSymbols.join(","),
+            selectedSymbol: chartType === "Options Chart" ? optionSymbols[0] : optionSymbols,
+            putLots, callLots,
+          };
+
+          if (webRef.current) {
+            const setMsg = JSON.stringify(JSON.stringify({
+              type: "SET_SYMBOL",
+              symbol: symbolName,
+              chartType,
+              formData,
+            }));
+            webRef.current.injectJavaScript(`handleMsg(${setMsg}); true;`);
+          }
           setError(null);
         }
       }
@@ -402,7 +614,7 @@ export default function StrategyChartsScreen() {
     setChartLoading(false);
   };
 
-  // ── Compact Picker Modal ───────────────────────────────────────────────────
+  // ── Picker Modal ───────────────────────────────────────────
   const PickerModal = ({ visible, onClose, data, selected, onSelect, title, searchable = false }: any) => {
     const [search, setSearch] = useState("");
     const filtered = searchable ? data.filter((i: string) => i.toLowerCase().includes(search.toLowerCase())) : data;
@@ -446,7 +658,7 @@ export default function StrategyChartsScreen() {
     );
   };
 
-  // ── Form Field ──────────────────────────────────────────────────────────────
+  // ── Form Field ─────────────────────────────────────────────
   const FormField = ({ label, value, onPress, disabled = false }: any) => (
     <View style={styles.fieldGroup}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -461,7 +673,6 @@ export default function StrategyChartsScreen() {
     </View>
   );
 
-  // Strike selector via Alert
   const PickStrike = ({ label, value, list, onSet }: any) => {
     const [showModal, setShowModal] = useState(false);
     return (
@@ -506,16 +717,7 @@ export default function StrategyChartsScreen() {
     );
   };
 
-  if (loading) {
-    return (
-      <ScreenWithHeader>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#4f46e5" />
-          <Text style={{ marginTop: 12, color: "#6b7280", fontWeight: "600" }}>Loading instruments...</Text>
-        </View>
-      </ScreenWithHeader>
-    );
-  }
+  const chartHTML = buildChartHTML();
 
   return (
     <ScreenWithHeader>
@@ -523,16 +725,57 @@ export default function StrategyChartsScreen() {
       <View style={styles.headerBar}>
         <View>
           <Text style={styles.headerTitle}>Strategy Charts</Text>
-          <Text style={styles.headerSub}>{selectedInstrument} • {chartType}</Text>
+          <Text style={styles.headerSub}>{selectedInstrument} - {chartType}</Text>
         </View>
         <TouchableOpacity onPress={() => setRefreshKey((k) => k + 1)} style={styles.refreshBtn}>
           <Ionicons name="refresh" size={18} color="#4f46e5" />
         </TouchableOpacity>
       </View>
 
-      {/* Chart (always visible) */}
+      {/* TradingView Chart */}
       <View style={styles.chartContainer}>
-        <StrategyTVChart key={`chart-${chartKey}`} symbol={tvSymbol} />
+        {!chartReady && (
+          <View style={styles.chartLoader}>
+            <ActivityIndicator color="#4f46e5" size="large" />
+            <Text style={styles.chartLoaderText}>Loading TradingView...</Text>
+          </View>
+        )}
+        {chartLoading && chartReady && (
+          <View style={styles.chartLoadingOverlay}>
+            <View style={styles.chartLoadingToast}>
+              <ActivityIndicator color="#fff" size="small" />
+              <Text style={styles.chartLoadingToastText}>Chart is loading...</Text>
+            </View>
+          </View>
+        )}
+        <WebView
+          ref={webRef}
+          source={{ html: chartHTML, baseUrl: "https://unfluke.in" }}
+          style={[{ flex: 1 }, !chartReady && { opacity: 0 }]}
+          originWhitelist={["*"]}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
+          allowUniversalAccessFromFileURLs={true}
+          allowFileAccessFromFileURLs={true}
+          mixedContentMode="always"
+          scalesPageToFit={false}
+          scrollEnabled={false}
+          androidLayerType="hardware"
+          onMessage={(e) => {
+            const msg = e.nativeEvent.data;
+            if (msg === "READY") {
+              sendInit();
+            } else if (msg === "LOADED") {
+              setChartReady(true);
+            }
+          }}
+          onLoadEnd={() => {
+            setTimeout(() => sendInit(), 3000);
+            setTimeout(() => setChartReady(true), 15000);
+          }}
+          onError={() => setChartReady(true)}
+        />
       </View>
 
       {/* Form */}
@@ -542,7 +785,7 @@ export default function StrategyChartsScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>⚙️ Configure Strategy</Text>
+          <Text style={styles.sectionTitle}>Configure Strategy</Text>
 
           <FormField
             label="Chart Type"
@@ -588,9 +831,9 @@ export default function StrategyChartsScreen() {
             <PickExpiry label="Expiry" value={selectedExpiry} onSet={(v: string) => onExpiryChange(v)} />
           )}
 
-          {/* Strikes */}
+          {/* Strikes per chart type */}
           {chartType === "Options Chart" && (
-            <PickStrike label="StrikePrice" value={s1} list={strikes} onSet={setS1} />
+            <PickStrike label="Strike Price" value={s1} list={strikes} onSet={setS1} />
           )}
 
           {chartType === "Straddle Chart" && (
@@ -681,12 +924,6 @@ export default function StrategyChartsScreen() {
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
-
-        {/* Current symbol info */}
-        <View style={styles.symbolCard}>
-          <Ionicons name="analytics-outline" size={16} color="#4f46e5" />
-          <Text style={styles.symbolText}>Active symbol: <Text style={{ fontWeight: "700", color: "#4f46e5" }}>{tvSymbol}</Text></Text>
-        </View>
       </ScrollView>
 
       {/* Modals */}
@@ -715,8 +952,6 @@ export default function StrategyChartsScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
-
   headerBar: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     paddingHorizontal: 16, paddingVertical: 12,
@@ -730,7 +965,7 @@ const styles = StyleSheet.create({
   },
 
   chartContainer: {
-    height: 380,
+    height: 420,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
@@ -745,6 +980,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chartLoaderText: { fontSize: 13, color: "#6b7280", marginTop: 4 },
+  chartLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject as any,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 20,
+  },
+  chartLoadingToast: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.78)",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 10,
+  },
+  chartLoadingToastText: { color: "#fff", fontSize: 14, fontWeight: "600" },
 
   card: {
     backgroundColor: "#fff", borderRadius: 14, padding: 16, marginBottom: 14,
@@ -787,13 +1039,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#fecaca", marginBottom: 12,
   },
   errorText: { color: "#ef4444", fontWeight: "600", fontSize: 13, flex: 1 },
-
-  symbolCard: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "#eef2ff", borderRadius: 10, padding: 12,
-    borderWidth: 1, borderColor: "#c7d2fe", marginBottom: 12,
-  },
-  symbolText: { color: "#374151", fontSize: 12, flex: 1 },
 
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   modalContent: {

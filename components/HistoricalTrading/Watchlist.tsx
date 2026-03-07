@@ -7,11 +7,10 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Dimensions,
   Alert,
+  Keyboard,
 } from 'react-native';
-import { Trash2, TrendingUp } from 'lucide-react-native';
-
+import { Trash2, TrendingUp, Search, X } from 'lucide-react-native';
 
 import { CustomSelect } from "../../components/OptionSimulator/Selects";
 
@@ -45,10 +44,8 @@ import { setSelectedStock } from "../../redux/Unfluke_slices/globalStock/reducer
 const Watchlist = () => {
   const dispatch = useDispatch();
 
-  const [tooltipOpen, setTooltipOpen] = useState({});
   const [activeCardIndex, setActiveCardIndex] = useState(null);
   const [search, setSearch] = useState("");
-  const [colSize, setColSize] = useState("col-4");
   const [selectMarket, setSelectMarket] = useState("Equity");
   const [buyModelOpen, setBuyModelOpen] = useState(false);
   const [sellModelOpen, setSellModelOpen] = useState(false);
@@ -73,9 +70,8 @@ const Watchlist = () => {
   });
   const [currentDate, setCurrentDate] = useState("");
   const [currentTime, setCurrentTime] = useState("");
-  const [itemOne, setItemOne] = useState(currentDate);
-  const [itemTwo, setItemTwo] = useState(currentTime);
   const [loader, setLoader] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState("");
   const [optionNames, setOptionNames] = useState([]);
   const [optionName, setOptionName] = useState("");
@@ -87,6 +83,7 @@ const Watchlist = () => {
   const [priceData, setPriceData] = useState({});
 
   const prevDateTime = useRef("");
+  const searchTimeout = useRef(null);
 
   const auth = createSelector(
     (state) => state.Login,
@@ -107,13 +104,11 @@ const Watchlist = () => {
   const user = useSelector(auth);
 
   useEffect(() => {
-    const val = watchlist?.map((item) => {
-      return {
-        ...item,
-        feed: 0,
-        change: 0,
-      };
-    });
+    const val = watchlist?.map((item) => ({
+      ...item,
+      feed: 0,
+      change: 0,
+    }));
     setTradeWatch(val);
   }, [watchlist]);
 
@@ -127,38 +122,24 @@ const Watchlist = () => {
   }, [selectedSymbol]);
 
   useEffect(() => {
-    console.log("cur", currentDateTime);
-  }, [selectMarket, currentDateTime]);
-
-  useEffect(() => {
-    console.log(
-      "MARKET",
-      selectMarket,
-      typeof currentDateTime,
-      currentDateTime,
-    );
-
     if (
       currentDateTime &&
       currentDateTime !== "" &&
       currentDateTime !== "Invalid Date"
     ) {
       const date = new Date(currentDateTime);
-
       if (!isNaN(date.getTime())) {
+        const dateISO = date.toJSON();
+        if (!dateISO) return;
         getOptionNames({
-          selectedDate: date.toJSON().split("T")[0],
+          selectedDate: dateISO.split("T")[0],
         }).then((data) => {
           setOptionNames([
             {
-              options: data.map((x) => {
-                return { label: x, value: x };
-              }),
+              options: data.map((x) => ({ label: x, value: x })),
             },
           ]);
         });
-      } else {
-        console.error("Invalid Date:", currentDateTime);
       }
     }
   }, [currentDateTime]);
@@ -183,74 +164,95 @@ const Watchlist = () => {
     },
   ];
 
+  const getDateString = () => {
+    const d = currentDateTime ? new Date(currentDateTime) : new Date();
+    return d.toJSON()?.split("T")[0] || new Date().toISOString().split("T")[0];
+  };
+
   const getSearchResults = (e) => {
     setSearch(e);
     if (!e) {
-      return setMarketList([]);
+      setMarketList([]);
+      setSearchLoading(false);
+      return;
     }
-    e.length > 1 &&
-      getWatchlistSearchResults({
-        market: selectMarket.toLowerCase(),
-        search: e,
-        date: new Date(currentDateTime).toJSON().split("T")[0],
-      }).then((data) => {
-        if (!data.length) {
-          setMarketList([
-            {
-              _id: "6487edc360f836ebbf7a4023",
-              type: "equity",
-              equity: "NSE:Symbol Unavailable",
-              tablename: "eq_aplltd_1min",
-              database: "unfluke_equity",
-              leverage: 1,
-              multiple: 1,
-              instrument_token: "uf-a-1648650242937",
-            },
-          ]);
-          return [];
-        }
-        const reduceRedundancyData = data.filter((listItem) => {
-          if (
-            !tradeWatch.some(
-              (trade) => trade.instrument_token == listItem.instrument_token,
-            )
-          )
-            return listItem;
+
+    // Debounce search
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    if (e.length > 1) {
+      setSearchLoading(true);
+      searchTimeout.current = setTimeout(() => {
+        getWatchlistSearchResults({
+          market: selectMarket.toLowerCase(),
+          search: e,
+          date: getDateString(),
+        }).then((data) => {
+          setSearchLoading(false);
+          if (!data || !data.length) {
+            setMarketList([]);
+            return;
+          }
+          // Show all results - even if already in watchlist (user can still switch chart)
+          setMarketList(data);
+        }).catch(() => {
+          setSearchLoading(false);
+          setMarketList([]);
         });
-        setMarketList(reduceRedundancyData);
-      });
+      }, 300);
+    }
   };
 
   const addToWatchList = (marketListItem) => {
-    if (
-      marketListItem.type == "equity" &&
-      marketListItem.equity.split(":")[1] == "Symbol Unavailable"
-    ) {
-      return;
+    let itemName, itemExch;
+    if (selectMarket == "Option") {
+      itemName = marketListItem.option?.split(":")[1];
+      itemExch = marketListItem.option?.split(":")[0];
+    } else {
+      const fullName = marketListItem[marketListItem.type];
+      itemName = fullName?.split(":")[1];
+      itemExch = fullName?.split(":")[0];
     }
+
+    if (!itemName || !itemExch) return;
+
+    // Switch chart to this symbol immediately
+    const symbol = `${itemExch}:${itemName}`;
+    setSelectedSymbol(symbol);
+    dispatch(setSelectedStock({ symbol, name: itemName }));
+
+    // Clear search
+    setSearch("");
+    setMarketList([]);
+    Keyboard.dismiss();
+
+    // Check if already in watchlist — if so, skip the API call
+    const alreadyInWatchlist = tradeWatch?.some(
+      (trade) => trade.instrument_token === marketListItem.instrument_token,
+    );
+    if (alreadyInWatchlist) return;
+
     const data = {
       userID: user._id,
       instrument_token: marketListItem.instrument_token,
       type: marketListItem.type,
-      date: currentDateTime,
+      date: currentDateTime || new Date().toISOString(),
     };
     if (selectMarket == "Option") {
-      data["name"] = marketListItem.option.split(":")[1];
-      data["exch"] = marketListItem.option.split(":")[0];
+      data["name"] = itemName;
+      data["exch"] = itemExch;
       data["expiry"] = expiryDate;
     } else {
-      data["name"] = marketListItem[marketListItem.type].split(":")[1];
-      data["exch"] = marketListItem[marketListItem.type].split(":")[0];
+      data["name"] = itemName;
+      data["exch"] = itemExch;
     }
-    postHistoricalWatchlist(data).then((data) => {
-      if (data) {
-        const val = data.watchlist.map((item) => {
-          return {
-            ...item,
-            feed: 0,
-            change: 0,
-          };
-        });
+    postHistoricalWatchlist(data).then((resp) => {
+      if (resp) {
+        const val = resp.watchlist.map((item) => ({
+          ...item,
+          feed: 0,
+          change: 0,
+        }));
         setTradeWatch(val);
       }
     });
@@ -263,7 +265,7 @@ const Watchlist = () => {
     };
     deleteHistoricalWatchlist({ data }).then((data) => {
       setTradeWatch(data.watchlist);
-      setActiveCardIndex(null); // Hide action buttons after delete
+      setActiveCardIndex(null);
     });
   };
 
@@ -286,13 +288,10 @@ const Watchlist = () => {
     await postHistoricalFeed({
       time,
       userID: user._id,
-      currentDate: new Date(currentDateTime).toJSON().split("T")[0],
+      currentDate: getDateString(),
       prevDateTime: prevDateTime.current,
     }).then((data) => {
-      console.log("current feed==>", data);
       setLoader(false);
-
-      // Update price data state instead of manipulating DOM
       const newPriceData = {};
       data.forEach((feed) => {
         if (feed) {
@@ -318,9 +317,7 @@ const Watchlist = () => {
     }).then((data) => {
       setExpiryDates([
         {
-          options: data.expiry_date.map((x) => {
-            return { label: x, value: x };
-          }),
+          options: data.expiry_date.map((x) => ({ label: x, value: x })),
         },
       ]);
     });
@@ -340,9 +337,7 @@ const Watchlist = () => {
         {
           options: data.strike_price
             .sort((a, b) => a - b)
-            .map((x) => {
-              return { label: x, value: x };
-            }),
+            .map((x) => ({ label: x, value: x })),
         },
       ]);
     });
@@ -350,18 +345,17 @@ const Watchlist = () => {
 
   const getOptionData = (e) => {
     setStrikePrice(e);
-    console.table([expiryDate, optionName, optionType, e]);
     getWatchlistOptionsResults({
       expiryDate: expiryDate,
       optionName: optionName,
       optionType: optionType,
       strikePrice: e,
-      date: new Date(currentDateTime).toJSON().split("T")[0],
+      date: getDateString(),
     }).then((data) => {
       setStrikePrice(0);
       const reduceRedundancyData = data.filter((listItem) => {
         if (
-          !tradeWatch.some(
+          !tradeWatch?.some(
             (trade) => trade.instrument_token == listItem.instrument_token,
           )
         )
@@ -377,13 +371,11 @@ const Watchlist = () => {
 
   const handleCardPress = (index) => {
     if (activeCardIndex === index) {
-      setActiveCardIndex(null); // Hide if already active
+      setActiveCardIndex(null);
     } else {
-      setActiveCardIndex(index); // Show for this card
+      setActiveCardIndex(index);
     }
   };
-
-  /* import { setSelectedStock } from "../../redux/Unfluke_slices/globalStock/reducer"; -- moved top */
 
   const handleChartPress = (tradeWatchItem) => {
     setIsDisabled(true);
@@ -393,10 +385,9 @@ const Watchlist = () => {
       dispatch(setSelectedStock({
         symbol: symbol,
         name: tradeWatchItem.name,
-        // Exchange might differ or be implicit in symbol for TVChart
       }));
     }
-    setActiveCardIndex(null); // Hide action buttons
+    setActiveCardIndex(null);
     setTimeout(() => {
       setIsDisabled(false);
     }, 2000);
@@ -404,14 +395,14 @@ const Watchlist = () => {
 
   const handleDeletePress = (instrument_token) => {
     deleteTrade(instrument_token);
-    // Action buttons will be hidden in deleteTrade function
   };
 
-  console.log(tradeWatch[0], "nifty");
+  const showSearchDropdown = search.length > 1;
 
   return (
     <View style={styles.container}>
-      <View style={styles.marketSelectWrapper}>
+      {/* Market selector */}
+      <View style={styles.topSection}>
         <CustomSelect
           placeholder="Select"
           name="choices-instrument-default"
@@ -420,179 +411,205 @@ const Watchlist = () => {
           onChange={setSelectMarket}
           disableTyping={true}
         />
-
-        {selectMarket !== "Option" && (
-          <View style={styles.searchInputWrapper}>
-            <TextInput
-              style={styles.searchInput}
-              value={search}
-              placeholder="Search e.g. Nifty, Infy"
-              onChangeText={getSearchResults}
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-        )}
       </View>
 
-      {loader && (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#EF4444" />
+      {/* Option filters */}
+      {selectMarket === "Option" && optionNames.length > 0 && (
+        <View style={styles.optionsContainer}>
+          <View style={styles.selectItem}>
+            <Text style={styles.selectLabel}>Name</Text>
+            <CustomSelect
+              placeholder="Select Name"
+              options={optionNames[0]?.options || []}
+              selected={optionName}
+              onChange={(val) => {
+                setOptionName(val);
+                getOptionsExpiryDate(val);
+              }}
+            />
+          </View>
+          <View style={styles.selectItem}>
+            <Text style={styles.selectLabel}>Expiry</Text>
+            <CustomSelect
+              placeholder="Select Expiry"
+              options={expiryDates[0]?.options || []}
+              selected={expiryDate}
+              onChange={setExpiryDate}
+            />
+          </View>
+          <View style={styles.selectItem}>
+            <Text style={styles.selectLabel}>Type</Text>
+            <CustomSelect
+              placeholder="Select Type"
+              options={optionTypes[0]?.options || []}
+              selected={optionType}
+              onChange={(val) => {
+                setOptionType(val);
+                getOptionStrikePrice(val);
+              }}
+            />
+          </View>
+          {strikePrices && strikePrices.length > 0 && (
+            <View style={styles.selectItem}>
+              <Text style={styles.selectLabel}>Strike</Text>
+              <CustomSelect
+                placeholder="Select Strike"
+                options={strikePrices[0]?.options || []}
+                selected={strikePrice}
+                onChange={(val) => {
+                  setStrikePrice(val);
+                  getOptionData(val);
+                }}
+              />
+            </View>
+          )}
         </View>
       )}
 
-      {selectMarket === "Option" ? (
-        optionNames.length > 0 ? (
-          <>
-            <View style={styles.optionsContainer}>
-              <View style={styles.selectItem}>
-                <Text style={styles.selectLabel}>Name</Text>
-                <CustomSelect
-                  placeholder="Select Name"
-                  options={optionNames[0]?.options || []}
-                  selected={optionName}
-                  onChange={(val) => {
-                    setOptionName(val);
-                    getOptionsExpiryDate(val);
-                  }}
-                />
-              </View>
+      {/* Search bar */}
+      {selectMarket !== "Option" && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBarWrapper}>
+            <Search size={16} color="#9CA3AF" style={{ marginLeft: 12 }} />
+            <TextInput
+              style={styles.searchInput}
+              value={search}
+              placeholder="Search e.g. Nifty, Reliance, TCS"
+              onChangeText={getSearchResults}
+              placeholderTextColor="#9CA3AF"
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+            {search.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearch("");
+                  setMarketList([]);
+                  Keyboard.dismiss();
+                }}
+                style={styles.clearBtn}
+              >
+                <X size={16} color="#6B7280" />
+              </TouchableOpacity>
+            )}
+          </View>
 
-              <View style={styles.selectItem}>
-                <Text style={styles.selectLabel}>Expiry</Text>
-                <CustomSelect
-                  placeholder="Select Expiry"
-                  options={expiryDates[0]?.options || []}
-                  selected={expiryDate}
-                  onChange={setExpiryDate}
-                />
-              </View>
-
-              <View style={styles.selectItem}>
-                <Text style={styles.selectLabel}>Type</Text>
-                <CustomSelect
-                  placeholder="Select Type"
-                  options={optionTypes[0]?.options || []}
-                  selected={optionType}
-                  onChange={(val) => {
-                    setOptionType(val);
-                    getOptionStrikePrice(val);
-                  }}
-                />
-              </View>
-
-              {strikePrices && strikePrices.length > 0 && (
-                <View style={styles.selectItem}>
-                  <Text style={styles.selectLabel}>Strike</Text>
-                  <CustomSelect
-                    placeholder="Select Strike"
-                    options={strikePrices[0]?.options || []}
-                    selected={strikePrice}
-                    onChange={(val) => {
-                      setStrikePrice(val);
-                      getOptionData(val);
-                    }}
-                  />
+          {/* Search results dropdown */}
+          {showSearchDropdown && (
+            <View style={styles.searchDropdown}>
+              {searchLoading ? (
+                <View style={styles.searchLoading}>
+                  <ActivityIndicator size="small" color="#4f46e5" />
+                  <Text style={styles.searchLoadingText}>Searching...</Text>
                 </View>
+              ) : marketList.length === 0 ? (
+                <View style={styles.searchLoading}>
+                  <Text style={styles.searchLoadingText}>No results found</Text>
+                </View>
+              ) : (
+                <ScrollView
+                  style={styles.searchResultsList}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled
+                >
+                  {marketList.map((marketListItem, index) => {
+                    const displayName = marketListItem[marketListItem.type]
+                      ?.split(":")[1]
+                      ?.toUpperCase();
+                    const alreadyAdded = tradeWatch?.some(
+                      (t) => t.instrument_token === marketListItem.instrument_token,
+                    );
+                    return (
+                      <TouchableOpacity
+                        key={marketListItem[marketListItem.type] || index}
+                        style={styles.searchResultItem}
+                        onPress={() => addToWatchList(marketListItem)}
+                      >
+                        <Text style={styles.searchResultText}>
+                          {displayName || "Unknown"}
+                        </Text>
+                        <Text style={styles.searchResultAdd}>
+                          {alreadyAdded ? "View" : "+ Add"}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               )}
             </View>
-
-            <ScrollView style={styles.marketListContainer}>
-              {marketList.map((marketListItem, index) => (
-                <TouchableOpacity
-                  key={marketListItem.option || index}
-                  style={styles.marketListItem}
-                  onPress={() => {
-                    addToWatchList(marketListItem);
-                    setMarketList([]);
-                  }}
-                >
-                  <Text style={styles.marketListText}>
-                    {marketListItem.option}
-                  </Text>
-                  <Text style={styles.addIcon}>+</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </>
-        ) : (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#EF4444" />
-          </View>
-        )
-      ) : (
-        <>
-          {search && marketList.length === 0 ? (
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="large" color="#EF4444" />
-            </View>
-          ) : (
-            <ScrollView style={styles.marketListScrollContainer}>
-              {marketList.map((marketListItem, index) => (
-                <TouchableOpacity
-                  key={marketListItem[marketListItem.type] || index}
-                  style={styles.marketListItem}
-                  onPress={() => {
-                    addToWatchList(marketListItem);
-                    setMarketList([]);
-                  }}
-                >
-                  <Text style={styles.marketListText}>
-                    {marketListItem[marketListItem.type]
-                      ?.split(":")[1]
-                      ?.toUpperCase()}
-                  </Text>
-                  <Text style={styles.addIcon}>+</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
           )}
-        </>
+        </View>
       )}
 
-      <View style={styles.tradeWatchContainer}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Option search results */}
+      {selectMarket === "Option" && marketList.length > 0 && (
+        <ScrollView style={styles.optionResultsList} keyboardShouldPersistTaps="handled">
+          {marketList.map((marketListItem, index) => (
+            <TouchableOpacity
+              key={marketListItem.option || index}
+              style={styles.searchResultItem}
+              onPress={() => addToWatchList(marketListItem)}
+            >
+              <Text style={styles.searchResultText}>{marketListItem.option}</Text>
+              <Text style={styles.searchResultAdd}>+ Add</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {loader && (
+        <View style={styles.loaderRow}>
+          <ActivityIndicator size="small" color="#4f46e5" />
+        </View>
+      )}
+
+      {/* Watchlist */}
+      <View style={styles.watchlistContainer}>
+        <Text style={styles.watchlistTitle}>Watchlist</Text>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {tradeWatch?.length === 0 && (
+            <Text style={styles.emptyText}>No items in watchlist. Search and add stocks above.</Text>
+          )}
           {tradeWatch?.map((tradeWatchItem, index) => (
             <TouchableOpacity
               key={index}
               style={[
-                styles.tradeWatchItem,
-                activeCardIndex === index && styles.tradeWatchItemActive
+                styles.watchItem,
+                activeCardIndex === index && styles.watchItemActive,
               ]}
               onPress={() => handleCardPress(index)}
-              activeOpacity={0.9}
+              activeOpacity={0.8}
             >
-              <View style={styles.tradeWatchContent}>
-                <View style={styles.tradeWatchHeader}>
-                  <Text style={styles.tradeName}>
-                    {tradeWatchItem.name.toUpperCase()}
-                  </Text>
-                  <Text style={styles.tradePrice}>
-                    {priceData[tradeWatchItem.instrument_token] || "0.0"}
-                  </Text>
-                </View>
-
-                {activeCardIndex === index && (
-                  <View style={styles.actionButtonsContainer}>
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity
-                        style={styles.chartButton}
-                        disabled={isDisabled}
-                        onPress={() => handleChartPress(tradeWatchItem)}
-                      >
-                        <TrendingUp size={16} color="#101010" />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        disabled={loader}
-                        onPress={() => handleDeletePress(tradeWatchItem.instrument_token)}
-                      >
-                        <Trash2 size={16} color="#EF4444" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
+              <View style={styles.watchItemRow}>
+                <Text style={styles.watchItemName} numberOfLines={1}>
+                  {tradeWatchItem.name?.toUpperCase()}
+                </Text>
+                <Text style={styles.watchItemPrice}>
+                  {priceData[tradeWatchItem.instrument_token] || "--"}
+                </Text>
               </View>
+
+              {activeCardIndex === index && (
+                <View style={styles.watchItemActions}>
+                  <TouchableOpacity
+                    style={styles.actionBtnChart}
+                    disabled={isDisabled}
+                    onPress={() => handleChartPress(tradeWatchItem)}
+                  >
+                    <TrendingUp size={14} color="#4f46e5" />
+                    <Text style={styles.actionBtnText}>Chart</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionBtnDelete}
+                    disabled={loader}
+                    onPress={() => handleDeletePress(tradeWatchItem.instrument_token)}
+                  >
+                    <Trash2 size={14} color="#EF4444" />
+                    <Text style={styles.actionBtnDeleteText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -603,159 +620,207 @@ const Watchlist = () => {
 
 const styles = StyleSheet.create({
   container: {
-    maxWidth: 400,
-    height: '100%',
+    flex: 1,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#CECECE',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 8,
   },
-  marketSelectWrapper: {
-    padding: 16,
-    backgroundColor: '#FFFFFF',
+  topSection: {
+    padding: 12,
+    paddingBottom: 8,
   },
-  searchInputWrapper: {
-    marginTop: 16,
+  searchContainer: {
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    zIndex: 10,
   },
-  searchInput: {
-    backgroundColor: '#F4F8FD',
+  searchBarWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#111827',
+    height: 42,
   },
-  loaderContainer: {
+  searchInput: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
+    fontSize: 14,
+    color: '#111827',
+    height: 42,
   },
-  optionsContainer: {
-    padding: 16,
-    gap: 16,
+  clearBtn: {
+    padding: 10,
   },
-  selectItem: {
-    marginBottom: 4,
-  },
-  selectLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
-  marketListContainer: {
-    paddingHorizontal: 16,
+  searchDropdown: {
+    marginTop: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
     maxHeight: 200,
   },
-  marketListScrollContainer: {
-    paddingHorizontal: 16,
-    maxHeight: 400,
-    minHeight: 100,
+  searchLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
   },
-  marketListItem: {
+  searchLoadingText: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  searchResultsList: {
+    maxHeight: 200,
+  },
+  searchResultItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  marketListText: {
-    fontSize: 16,
+  searchResultDisabled: {
+    opacity: 0.5,
+  },
+  searchResultText: {
+    fontSize: 14,
     color: '#111827',
     fontWeight: '500',
+    flex: 1,
   },
-  addIcon: {
-    fontSize: 20,
+  searchResultTextDisabled: {
+    color: '#9CA3AF',
+  },
+  searchResultAdd: {
+    fontSize: 13,
+    color: '#4f46e5',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  optionsContainer: {
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  selectItem: {
+    marginBottom: 2,
+  },
+  selectLabel: {
+    fontSize: 11,
     color: '#6B7280',
-    fontWeight: 'bold',
+    marginBottom: 4,
+    paddingHorizontal: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  tradeWatchContainer: {
+  optionResultsList: {
+    paddingHorizontal: 12,
+    maxHeight: 180,
+  },
+  loaderRow: {
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  watchlistContainer: {
     flex: 1,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    marginTop: 8,
-    paddingTop: 8,
-    maxHeight: 410,
   },
-  tradeWatchItem: {
-    paddingVertical: 16,
+  watchlistTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    paddingVertical: 20,
     paddingHorizontal: 16,
+  },
+  watchItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    position: 'relative',
+    borderBottomColor: '#F3F4F6',
   },
-  tradeWatchItemActive: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#3B82F6',
-    borderWidth: 1,
+  watchItemActive: {
+    backgroundColor: '#F0F4FF',
   },
-  tradeWatchContent: {
-    position: 'relative',
-  },
-  tradeWatchHeader: {
+  watchItemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  tradeName: {
-    fontSize: 16,
+  watchItemName: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#111827',
     flex: 1,
   },
-  tradePrice: {
-    fontSize: 16,
+  watchItemPrice: {
+    fontSize: 14,
     fontWeight: '500',
     color: '#111827',
-    textAlign: 'right',
     marginLeft: 8,
   },
-  actionButtonsContainer: {
-    position: 'absolute',
-    top: -10,
-    right: 0,
+  watchItemActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
-  actionButtons: {
+  actionBtnChart: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  chartButton: {
-    padding: 8,
-    borderRadius: 4,
-    backgroundColor: '#F3F4F6',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#EEF2FF',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: '#C7D2FE',
   },
-  deleteButton: {
-    padding: 8,
-    borderRadius: 4,
+  actionBtnText: {
+    fontSize: 12,
+    color: '#4f46e5',
+    fontWeight: '600',
+  },
+  actionBtnDelete: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
+  },
+  actionBtnDeleteText: {
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '600',
   },
 });
 
