@@ -40,7 +40,22 @@ function formatNow(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
-// Find the expiry date closest to today (but >= today) from a list of date strings
+// Parse "DD-Mon-YY" format (e.g. "10-Mar-26") — Hermes can't parse this natively
+const MONTHS: Record<string, number> = {
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+};
+function parseExpiry(s: string): Date | null {
+  const parts = s.split("-");
+  if (parts.length !== 3) return null;
+  const day = parseInt(parts[0], 10);
+  const mon = MONTHS[parts[1]];
+  const yr = parseInt(parts[2], 10);
+  if (isNaN(day) || mon === undefined || isNaN(yr)) return null;
+  return new Date(yr < 100 ? 2000 + yr : yr, mon, day);
+}
+
+// Find the expiry date closest to today (>= today)
 function findNearestExpiry(dates: string[]): string {
   if (dates.length === 0) return "";
   const now = new Date();
@@ -51,17 +66,14 @@ function findNearestExpiry(dates: string[]): string {
   let bestDiff = Infinity;
 
   for (let i = 0; i < dates.length; i++) {
-    const parsed = new Date(dates[i]);
-    if (isNaN(parsed.getTime())) continue;
-    parsed.setHours(0, 0, 0, 0);
+    const parsed = parseExpiry(dates[i]);
+    if (!parsed) continue;
     const diff = parsed.getTime() - nowMs;
-    // Prefer dates >= today; if diff >= 0 and smaller than best, pick it
     if (diff >= 0 && diff < bestDiff) {
       bestDiff = diff;
       bestIdx = i;
     }
   }
-  // If no future date found, fall back to the first
   if (bestDiff === Infinity) return dates[0];
   return dates[bestIdx];
 }
@@ -474,11 +486,11 @@ export default function StrategyChartsScreen() {
 
   // Load instruments
   useEffect(() => {
-    if (!token) return;
+    if (!token || !userId) return;
     (async () => {
       setLoading(true);
       try {
-        const uid = userId || "default";
+        const uid = userId;
         const data = await safeFetch(`${BASE}/api/historicalChart/getOptionNames?id=${uid}`, token);
         let names: string[] = [];
         if (Array.isArray(data)) names = data;
@@ -499,7 +511,7 @@ export default function StrategyChartsScreen() {
   }, [token, userId, refreshKey]);
 
   const fetchStrikes = async (exp: string, type: string, instrument: string) => {
-    const uid = userId || "default";
+    const uid = userId || "";
     const res = await safeFetch(
       `${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${encodeURIComponent(exp)}&optionName=${instrument}&optionType=${encodeURIComponent(type)}&id=${uid}`,
       token
@@ -531,8 +543,8 @@ export default function StrategyChartsScreen() {
 
   // Fetch expiries when instrument / chartType / optionType changes
   useEffect(() => {
-    if (!selectedInstrument || !token) return;
-    const uid = userId || "default";
+    if (!selectedInstrument || !token || !userId) return;
+    const uid = userId;
     (async () => {
       setChartLoading(true);
       setS1(""); setS2(""); setS3(""); setS4(""); setS5(""); setS6("");
@@ -586,7 +598,7 @@ export default function StrategyChartsScreen() {
   };
 
   const handleSubmit = async (silent = false) => {
-    const uid = userId || "default";
+    const uid = userId || "";
     if (!selectedInstrument) { if (!silent) Alert.alert("Error", "Please select an instrument"); return; }
     if (!selectedExpiry && chartType !== "None") { if (!silent) Alert.alert("Error", "Please wait for expiry dates to load"); return; }
 
