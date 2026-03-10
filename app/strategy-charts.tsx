@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, TextInput, Modal, FlatList, Dimensions,
@@ -40,6 +40,32 @@ function formatNow(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
+// Find the expiry date closest to today (but >= today) from a list of date strings
+function findNearestExpiry(dates: string[]): string {
+  if (dates.length === 0) return "";
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const nowMs = now.getTime();
+
+  let bestIdx = 0;
+  let bestDiff = Infinity;
+
+  for (let i = 0; i < dates.length; i++) {
+    const parsed = new Date(dates[i]);
+    if (isNaN(parsed.getTime())) continue;
+    parsed.setHours(0, 0, 0, 0);
+    const diff = parsed.getTime() - nowMs;
+    // Prefer dates >= today; if diff >= 0 and smaller than best, pick it
+    if (diff >= 0 && diff < bestDiff) {
+      bestDiff = diff;
+      bestIdx = i;
+    }
+  }
+  // If no future date found, fall back to the first
+  if (bestDiff === Infinity) return dates[0];
+  return dates[bestIdx];
+}
+
 // Build the TradingView chart HTML with custom Unfluke datafeed
 function buildChartHTML(): string {
   return `<!DOCTYPE html>
@@ -54,9 +80,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#fff;}
 </style>
 </head><body>
 <div id="tv_chart_container">
-  <div class="tv-loading">Loading TradingView Chart...</div>
+  <div class="tv-loading" id="tv_loading_msg">Loading TradingView Chart...</div>
 </div>
-<script src="https://unfluke.in/charting_library/charting_library.standalone.js"><\/script>
+<script>
+function dbg(msg) { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('DBG:' + msg); }
+window.onerror = function(msg, url, line) { dbg('JS_ERROR: ' + msg + ' at ' + url + ':' + line); };
+dbg('HTML_LOADED');
+<\/script>
+<script src="https://unfluke.in/charting_library/charting_library.standalone.js" onload="dbg('TV_SCRIPT_LOADED')" onerror="dbg('TV_SCRIPT_LOAD_FAILED'); document.getElementById('tv_loading_msg').innerText='Failed to load TradingView library';" ><\/script>
 <script>
 var AUTH = { token: '', userId: '', mrkt: '' };
 var CHART_STATE = { chartType: 'Options Chart', formData: null, symbolNames: '' };
@@ -66,8 +97,7 @@ var fullName = '';
 var prevLots = '1,1';
 var prevName = '';
 var cachedBars = [];
-
-function dbg(msg) {}
+var symbolCache = {};
 
 function formatDate(date) {
   var y=date.getFullYear(), m=String(date.getMonth()+1).padStart(2,'0'),
@@ -80,12 +110,8 @@ function apiFetch(url) {
   var headers = {};
   if (AUTH.token) headers['Authorization'] = 'Bearer ' + AUTH.token;
   if (AUTH.mrkt) headers['mrkt'] = AUTH.mrkt;
-  dbg('FETCH: ' + url.substring(0, 120));
   return fetch(url, { headers: headers })
-    .then(function(r) {
-      dbg('FETCH OK status=' + r.status);
-      return r.json();
-    })
+    .then(function(r) { return r.json(); })
     .catch(function(err) {
       dbg('FETCH ERROR: ' + (err.message || err));
       throw err;
@@ -113,11 +139,15 @@ var Datafeed = {
   },
   searchSymbols: function(input, exchange, type, cb) { cb([]); },
   resolveSymbol: function(symbolName, onResolve, onError) {
-    dbg('resolveSymbol: ' + symbolName);
+    if (symbolCache[symbolName]) {
+      var cached = symbolCache[symbolName];
+      delete symbolCache[symbolName];
+      setTimeout(function() { onResolve(cached); }, 0);
+      return;
+    }
     apiFetch('${BASE}/api/historicData/getInstrument?instrument=' + encodeURIComponent(symbolName))
     .then(function(item) {
-      dbg('resolveSymbol result: ' + JSON.stringify(item).substring(0, 200));
-      if (!item || item.Error) { dbg('resolveSymbol: no data'); onError('No symbol found'); return; }
+      if (!item || item.Error) { dbg('resolveSymbol error: ' + symbolName); onError('No symbol found'); return; }
       var name, ticker, type, exchange;
       if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; }
       else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; }
@@ -151,7 +181,6 @@ var Datafeed = {
     var id = AUTH.userId;
     var chartType = CHART_STATE.chartType;
     var lots = getChartTypeLots();
-    dbg('getBars: symbol=' + symbolInfo.full_name + ' type=' + symbolInfo.type + ' userId=' + id + ' chartType=' + chartType);
 
     if ((fullName === symbolInfo.full_name) && lots === prevLots && cachedBars.length > 0) {
       onResult(cachedBars, { noData: false });
@@ -206,12 +235,9 @@ var Datafeed = {
       onResult([], { noData: true }); return;
     }
 
-    dbg('getBars fetching: ' + url + '?' + params.substring(0, 80));
     apiFetch(url + '?' + params)
     .then(function(data) {
-      dbg('getBars response: isArray=' + Array.isArray(data) + ' length=' + (Array.isArray(data) ? data.length : 'N/A') + ' error=' + (data && data.Error));
       if (!data || data.Error || !Array.isArray(data) || data.length === 0) {
-        dbg('getBars: no valid data, returning noData');
         onResult([], { noData: true }); return;
       }
       var bars = data.map(function(el) {
@@ -228,13 +254,9 @@ var Datafeed = {
       prevLots = lots;
       prevName = symbolInfo.full_name;
       cachedBars = bars;
-      dbg('getBars: success, ' + bars.length + ' bars');
       onResult(bars, { noData: false });
     })
-    .catch(function(err) {
-      dbg('getBars error: ' + (err.message || err));
-      onResult([], { noData: true });
-    });
+    .catch(function() { onResult([], { noData: true }); });
   },
   subscribeBars: function(symbolInfo, resolution, onTick, uid, onReset) {
     if (onReset) onReset();
@@ -247,19 +269,16 @@ var Datafeed = {
 };
 
 function createChart() {
-  if (chartCreated) { dbg('createChart: already created, skipping'); return; }
+  if (chartCreated) return;
   if (typeof TradingView === 'undefined' || !TradingView.widget) {
-    dbg('createChart: TradingView not loaded yet, retrying...');
     setTimeout(createChart, 500);
     return;
   }
   if (!AUTH.token && !AUTH.userId) {
-    dbg('createChart: no auth yet, retrying...');
     setTimeout(createChart, 500);
     return;
   }
   chartCreated = true;
-  dbg('createChart: creating widget with userId=' + AUTH.userId);
   tvWidget = new TradingView.widget({
     symbol: 'NSE:NIFTY 50',
     datafeed: Datafeed,
@@ -317,10 +336,34 @@ function handleMsg(raw) {
       if (tvWidget && tvWidget.activeChart) {
         try {
           var sym = msg.symbol || 'NSE:NIFTY 50';
+          var parts = sym.split(':');
+          var exchange = parts.length > 1 ? parts[0] : 'NFO';
+          var shortName = parts.length > 1 ? parts[1] : sym;
+          var symType = 'option';
+          if (exchange === 'NSE') symType = shortName.indexOf('NIFTY') >= 0 ? 'index' : 'equity';
+          symbolCache[sym] = {
+            name: shortName,
+            full_name: sym,
+            description: shortName,
+            type: symType,
+            session: '0915-1530',
+            timezone: 'Asia/Kolkata',
+            ticker: sym,
+            exchange: exchange,
+            minmov: 1,
+            pricescale: 100,
+            has_intraday: true,
+            has_daily: false,
+            intraday_multipliers: ['1','60'],
+            has_no_volume: true,
+            supported_resolutions: ['1','3','5','15','30','60','120','240'],
+            data_status: 'endofday',
+          };
+          dbg('SET_SYMBOL: cached info for ' + sym + ' type=' + symType);
           tvWidget.activeChart().setSymbol(sym, function() {
             tvWidget.activeChart().setChartType(2);
           });
-        } catch(e) { console.error('setSymbol error:', e); }
+        } catch(e) { dbg('setSymbol error: ' + (e.message || e)); }
       }
     }
   } catch(e) { console.error('handleMsg error:', e); }
@@ -400,16 +443,34 @@ export default function StrategyChartsScreen() {
   }, []);
 
   const initSentRef = useRef(false);
+  const tokenRef = useRef(token);
+  const userIdRef = useRef(userId);
+  const mrktRef = useRef(mrkt);
+  tokenRef.current = token;
+  userIdRef.current = userId;
+  mrktRef.current = mrkt;
 
-  // Send INIT to WebView once ready via injectJavaScript (postMessage is unreliable in RN)
+  // Send INIT to WebView — reads from refs so callers don't need to re-bind
   const sendInit = useCallback(() => {
     if (initSentRef.current) return;
-    if (webRef.current && token) {
+    if (webRef.current && tokenRef.current) {
       initSentRef.current = true;
-      const msg = JSON.stringify(JSON.stringify({ type: "INIT", token, userId, mrkt: mrkt || "" }));
+      const msg = JSON.stringify(JSON.stringify({
+        type: "INIT",
+        token: tokenRef.current,
+        userId: userIdRef.current,
+        mrkt: mrktRef.current || "",
+      }));
       webRef.current.injectJavaScript(`handleMsg(${msg}); true;`);
     }
-  }, [token, userId, mrkt]);
+  }, []); // stable — never changes
+
+  // Retry sendInit when token loads (WebView may have loaded before token was available)
+  useEffect(() => {
+    if (token && !initSentRef.current) {
+      sendInit();
+    }
+  }, [token, sendInit]);
 
   // Load instruments
   useEffect(() => {
@@ -492,7 +553,7 @@ export default function StrategyChartsScreen() {
         const dates: string[] = expiryData?.expiry_date || [];
         setExpiries(dates);
         if (dates.length > 0) {
-          const first = dates[0];
+          const first = findNearestExpiry(dates);
           setSelectedExpiry(first);
           setLongExpiry(first);
           setShortExpiry(first);
@@ -513,8 +574,8 @@ export default function StrategyChartsScreen() {
     if (autoSubmittedRef.current) return;
     if (!chartReady || !token || !selectedInstrument || !selectedExpiry || !s1) return;
     autoSubmittedRef.current = true;
-    // Small delay to ensure WebView is fully ready
-    setTimeout(() => handleSubmit(), 500);
+    // Small delay to ensure WebView is fully ready; silent=true to suppress alerts
+    setTimeout(() => handleSubmit(true), 500);
   }, [chartReady, token, selectedInstrument, selectedExpiry, s1]);
 
   const onExpiryChange = async (exp: string) => {
@@ -524,10 +585,10 @@ export default function StrategyChartsScreen() {
     await updateStrikesForExpiry(exp, selectedInstrument, chartType);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (silent = false) => {
     const uid = userId || "default";
-    if (!selectedInstrument) { Alert.alert("Error", "Please select an instrument"); return; }
-    if (!selectedExpiry && chartType !== "None") { Alert.alert("Error", "Please wait for expiry dates to load"); return; }
+    if (!selectedInstrument) { if (!silent) Alert.alert("Error", "Please select an instrument"); return; }
+    if (!selectedExpiry && chartType !== "None") { if (!silent) Alert.alert("Error", "Please wait for expiry dates to load"); return; }
 
     setChartLoading(true);
     setError(null);
@@ -537,31 +598,31 @@ export default function StrategyChartsScreen() {
       let url = "";
       switch (chartType) {
         case "Options Chart":
-          if (!s1) { Alert.alert("Error", "Please select a Strike Price"); setChartLoading(false); return; }
+          if (!s1) { if (!silent) Alert.alert("Error", "Please select a Strike Price"); setChartLoading(false); return; }
           url = `${BASE}/api/historicalChart/getHistoricOptionsResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${encodeURIComponent(selectedExpiry)}&optionType=${encodeURIComponent(optionType)}&strikePrice=${s1}`;
           break;
         case "Straddle Chart":
-          if (!s1 || !s4) { Alert.alert("Error", "Please select Call and Put strike prices"); setChartLoading(false); return; }
+          if (!s1 || !s4) { if (!silent) Alert.alert("Error", "Please select Call and Put strike prices"); setChartLoading(false); return; }
           url = `${BASE}/api/historicalChart/getStradleOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${encodeURIComponent(selectedExpiry)}&callLots=${callLots}&putLots=${putLots}&callStrikePrice=${s1}&putStrikePrice=${s4}`;
           break;
         case "Spread Chart":
-          if (!s1 || !s2) { Alert.alert("Error", "Please select Long and Short strike prices"); setChartLoading(false); return; }
+          if (!s1 || !s2) { if (!silent) Alert.alert("Error", "Please select Long and Short strike prices"); setChartLoading(false); return; }
           url = `${BASE}/api/historicalChart/getSpreadOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&optionType=${encodeURIComponent(optionType)}&shortExpiryDate=${encodeURIComponent(shortExpiry || selectedExpiry)}&longExpiryDate=${encodeURIComponent(longExpiry || selectedExpiry)}&shortStrikePrice=${s2}&longStrikePrice=${s1}&shortLots=-1&longLots=1`;
           break;
         case "Butterfly Chart":
-          if (!s1 || !s2 || !s3) { Alert.alert("Error", "Please select all 3 strike prices"); setChartLoading(false); return; }
+          if (!s1 || !s2 || !s3) { if (!silent) Alert.alert("Error", "Please select all 3 strike prices"); setChartLoading(false); return; }
           url = `${BASE}/api/historicalChart/getButterFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${encodeURIComponent(selectedExpiry)}&optionType=${encodeURIComponent(optionType)}&s1=${s1}&s2=${s2}&s3=${s3}`;
           break;
         case "Iron Fly Chart":
-          if (!s1 || !s2 || !s4 || !s5) { Alert.alert("Error", "Please select all strike prices"); setChartLoading(false); return; }
+          if (!s1 || !s2 || !s4 || !s5) { if (!silent) Alert.alert("Error", "Please select all strike prices"); setChartLoading(false); return; }
           url = `${BASE}/api/historicalChart/getIronFlyResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${encodeURIComponent(selectedExpiry)}&s1=${s1}&s2=${s2}&s3=${s4}&s4=${s5}`;
           break;
         case "Double Calendar Chart":
-          if (!s1 || !s2 || !s4 || !s5) { Alert.alert("Error", "Please select all strike prices"); setChartLoading(false); return; }
+          if (!s1 || !s2 || !s4 || !s5) { if (!silent) Alert.alert("Error", "Please select all strike prices"); setChartLoading(false); return; }
           url = `${BASE}/api/historicalChart/getDCalResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&shortExpiryDate=${encodeURIComponent(shortExpiry)}&longExpiryDate=${encodeURIComponent(longExpiry)}&s1=${s1}&s2=${s2}&s3=${s4}&s4=${s5}`;
           break;
         case "Straddle Combo Chart":
-          if (!s1 || !s2 || !s3 || !s4 || !s5 || !s6) { Alert.alert("Error", "Please select all 6 strike prices"); setChartLoading(false); return; }
+          if (!s1 || !s2 || !s3 || !s4 || !s5 || !s6) { if (!silent) Alert.alert("Error", "Please select all 6 strike prices"); setChartLoading(false); return; }
           url = `${BASE}/api/historicalChart/getComboResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${encodeURIComponent(selectedExpiry)}&s1=${s1}&s2=${s2}&s3=${s3}&s4=${s4}&s5=${s5}&s6=${s6}`;
           break;
         default:
@@ -717,7 +778,25 @@ export default function StrategyChartsScreen() {
     );
   };
 
-  const chartHTML = buildChartHTML();
+  const chartHTML = useMemo(() => buildChartHTML(), []);
+  const chartSource = useMemo(() => ({ html: chartHTML, baseUrl: "https://unfluke.in" }), [chartHTML]);
+
+  const handleWebViewMessage = useCallback((e: any) => {
+    const msg = e.nativeEvent.data;
+    if (msg === "READY") {
+      initSentRef.current = false; // WebView reloaded — allow re-sending INIT
+      sendInit();
+    } else if (msg === "LOADED") {
+      setChartReady(true);
+    }
+  }, [sendInit]);
+
+  const handleWebViewLoadEnd = useCallback(() => {
+    setTimeout(() => sendInit(), 3000);
+    setTimeout(() => setChartReady(true), 15000);
+  }, [sendInit]); // sendInit is stable, so this is stable too
+
+  const handleWebViewError = useCallback(() => setChartReady(true), []);
 
   return (
     <ScreenWithHeader>
@@ -750,7 +829,7 @@ export default function StrategyChartsScreen() {
         )}
         <WebView
           ref={webRef}
-          source={{ html: chartHTML, baseUrl: "https://unfluke.in" }}
+          source={chartSource}
           style={[{ flex: 1 }, !chartReady && { opacity: 0 }]}
           originWhitelist={["*"]}
           javaScriptEnabled
@@ -762,19 +841,9 @@ export default function StrategyChartsScreen() {
           scalesPageToFit={false}
           scrollEnabled={false}
           androidLayerType="hardware"
-          onMessage={(e) => {
-            const msg = e.nativeEvent.data;
-            if (msg === "READY") {
-              sendInit();
-            } else if (msg === "LOADED") {
-              setChartReady(true);
-            }
-          }}
-          onLoadEnd={() => {
-            setTimeout(() => sendInit(), 3000);
-            setTimeout(() => setChartReady(true), 15000);
-          }}
-          onError={() => setChartReady(true)}
+          onMessage={handleWebViewMessage}
+          onLoadEnd={handleWebViewLoadEnd}
+          onError={handleWebViewError}
         />
       </View>
 
@@ -905,7 +974,7 @@ export default function StrategyChartsScreen() {
           {/* Submit Button */}
           <TouchableOpacity
             style={[styles.primaryBtn, chartLoading && { opacity: 0.65 }]}
-            onPress={handleSubmit}
+            onPress={() => handleSubmit()}
             disabled={chartLoading}
             activeOpacity={0.8}
           >

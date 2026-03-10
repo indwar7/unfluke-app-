@@ -103,6 +103,13 @@ const Watchlist = () => {
   const watchlist = useSelector(watchlistData);
   const user = useSelector(auth);
 
+  // Fetch watchlist on mount so it shows by default
+  useEffect(() => {
+    if (user?._id) {
+      dispatch(UserHistoricalWatchlist(user._id));
+    }
+  }, [user?._id]);
+
   useEffect(() => {
     const val = watchlist?.map((item) => ({
       ...item,
@@ -401,6 +408,7 @@ const Watchlist = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.sectionTitle}>Watchlist</Text>
       {/* Market selector */}
       <View style={styles.topSection}>
         <CustomSelect
@@ -563,9 +571,8 @@ const Watchlist = () => {
         </View>
       )}
 
-      {/* Watchlist */}
+      {/* Stock List */}
       <View style={styles.watchlistContainer}>
-        <Text style={styles.watchlistTitle}>Watchlist</Text>
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {tradeWatch?.length === 0 && (
             <Text style={styles.emptyText}>No items in watchlist. Search and add stocks above.</Text>
@@ -622,10 +629,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    overflow: 'hidden',
   },
   topSection: {
     padding: 12,
@@ -716,15 +719,15 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   selectItem: {
-    marginBottom: 2,
+    marginBottom: 12,
   },
   selectLabel: {
     fontSize: 11,
+    fontWeight: '600',
     color: '#6B7280',
-    marginBottom: 4,
-    paddingHorizontal: 2,
+    marginBottom: 6,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   optionResultsList: {
     paddingHorizontal: 12,
@@ -739,15 +742,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },
-  watchlistTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6B7280',
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 14,
   },
   emptyText: {
     fontSize: 13,

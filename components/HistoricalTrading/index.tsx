@@ -402,24 +402,38 @@ const Trading = () => {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.headerBar}>
         <View>
           <Text style={styles.headerTitle}>Historical Charts</Text>
           <Text style={styles.headerSub}>{displaySymbol}</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => setSidebarOpen(true)}
-          style={styles.headerBtn}
-        >
-          <Ionicons name="list" size={18} color="#4f46e5" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => {
+              initSentRef.current = false;
+              lastSymbolSentRef.current = "";
+              setChartReady(false);
+            }}
+            style={styles.refreshBtn}
+          >
+            <Ionicons name="refresh" size={18} color="#4f46e5" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setSidebarOpen(true)}
+            style={styles.refreshBtn}
+          >
+            <Ionicons name="list" size={18} color="#4f46e5" />
+          </TouchableOpacity>
+        </View>
       </View>
 
+      {/* TradingView Chart */}
       <View style={styles.chartContainer}>
         {!chartReady && (
           <View style={styles.chartLoader}>
             <ActivityIndicator color="#4f46e5" size="large" />
-            <Text style={styles.chartLoaderText}>Loading Chart...</Text>
+            <Text style={styles.chartLoaderText}>Loading TradingView...</Text>
           </View>
         )}
         <WebView
@@ -457,11 +471,16 @@ const Trading = () => {
         />
       </View>
 
-      <View style={{ flex: 1 }}>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}>
+      {/* Watchlist */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.card}>
           <Watchlist />
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
 
       <SidebarModal sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
     </View>
@@ -485,7 +504,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
   headerSub: { fontSize: 12, color: "#6b7280", marginTop: 2 },
-  headerBtn: {
+  refreshBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -494,7 +513,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chartContainer: {
-    height: 400,
+    height: 420,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
@@ -509,6 +528,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chartLoaderText: { fontSize: 13, color: "#6b7280", marginTop: 4 },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: "#f3f4f6",
+  },
 });
 
 export default Trading;
