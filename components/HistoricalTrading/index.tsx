@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
@@ -311,6 +312,7 @@ const authSelector = createSelector(
 );
 
 const Trading = () => {
+  const insets = useSafeAreaInsets();
   // @ts-ignore
   const selectedStock = useSelector((state) => state.GlobalStock.selectedStock);
   const user = useSelector(authSelector);
@@ -401,7 +403,7 @@ const Trading = () => {
   const chartHTML = buildHistoricalChartHTML();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       {/* Header */}
       <View style={styles.headerBar}>
         <View>
@@ -471,8 +473,8 @@ const Trading = () => {
         />
       </View>
 
-      {/* Watchlist */}
-      <ScrollView
+      {/* Watchlist - commented out per manager request */}
+      {/* <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
@@ -480,7 +482,7 @@ const Trading = () => {
         <View style={styles.card}>
           <Watchlist />
         </View>
-      </ScrollView>
+      </ScrollView> */}
 
       <SidebarModal sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
     </View>
@@ -513,7 +515,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chartContainer: {
-    height: 420,
+    flex: 1,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
