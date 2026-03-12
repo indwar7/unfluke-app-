@@ -14,6 +14,7 @@ import {
   Alert,
   useWindowDimensions,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from "@expo/vector-icons";
@@ -1137,7 +1138,7 @@ const styles = StyleSheet.create({
   },
   chatContent: {
     paddingVertical: 16,
-    minHeight: 550,
+    flexGrow: 1,
   },
   explanationContainer: {
     flex: 1,

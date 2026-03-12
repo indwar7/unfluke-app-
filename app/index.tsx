@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width, height } = Dimensions.get('window');
 
 export default function IndexScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
-    // Prevent multiple navigations
     if (isNavigating) return;
 
     const checkAndRedirect = async () => {
@@ -15,8 +16,8 @@ export default function IndexScreen() {
         setIsNavigating(true);
         const hasCompleted = await AsyncStorage.getItem("hasCompletedOnboarding");
 
-        // Small delay to ensure navigation is ready in production builds
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Show splash for 2 seconds before navigating
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         if (hasCompleted === "true") {
           router.replace("/dashboard");
@@ -32,10 +33,13 @@ export default function IndexScreen() {
     checkAndRedirect();
   }, [isNavigating]);
 
-  // Show a loading indicator instead of null to prevent "Custom Layout View"
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#4A9782" />
+      <Image
+        source={require('../assets/splash.png')}
+        style={styles.splashImage}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -46,5 +50,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
+  },
+  splashImage: {
+    width: width * 0.7,
+    height: height * 0.4,
   },
 });
