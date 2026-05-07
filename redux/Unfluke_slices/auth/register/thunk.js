@@ -35,12 +35,25 @@ export const registerUser = (user) => async (dispatch) => {
       // yield put(registerUserSuccessful(response));
     } else if (Config.DEFAULT_AUTH === "jwt") {
       response = await postJwtRegister('/api/user/register', user);
+      console.log("registerUser response:", response);
 
-      if (response?.hash) {
-        await AsyncStorage.setItem("response", JSON.stringify(response));
+      const otpData = response?.hash
+        ? response
+        : response?.data?.hash
+        ? response.data
+        : null;
+
+      if (otpData) {
+        await AsyncStorage.setItem("response", JSON.stringify(otpData));
         dispatch(resetVerificationOtpSent());
       } else {
-        dispatch(registerUserFailed(response?.message || "Registration failed. Please try again."));
+        const msg =
+          response?.message ||
+          response?.msg ||
+          response?.error ||
+          response?.data?.message ||
+          "Registration failed. Please try again.";
+        dispatch(registerUserFailed(msg));
       }
     //   if (response=="Verify your email"){
     //       dispatch(resetVerificationMailSent())

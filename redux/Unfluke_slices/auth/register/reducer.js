@@ -37,6 +37,9 @@ const registerSlice = createSlice({
     resetVerificationOtpSent(state) {
       state.verificationOtpSent = true;
     },
+    clearVerificationOtpSent(state) {
+      state.verificationOtpSent = false;
+    },
     apiErrorChange(state, action){
       state.error = action.payload;
       state.loading = false;
@@ -51,7 +54,8 @@ export const {
   resetRegisterFlagChange,
   apiErrorChange,
   resetVerificationMailSent,
-  resetVerificationOtpSent
+  resetVerificationOtpSent,
+  clearVerificationOtpSent
 } = registerSlice.actions;
 
 export default registerSlice.reducer;

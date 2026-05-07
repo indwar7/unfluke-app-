@@ -25,6 +25,7 @@ import { useNavigation } from '@react-navigation/native';
 
 // Actions
 import { registerUser, apiError, resetRegisterFlag } from '../redux/Unfluke_slices/thunks';
+import { clearVerificationOtpSent } from '../redux/Unfluke_slices/auth/register/reducer';
 
 // Import images
 import { createSelector } from 'reselect';
@@ -49,7 +50,8 @@ interface AccountState {
   verificationMailSent: boolean;
   verificationOtpSent: boolean;
   success: boolean;
-  error: string | null;
+  error: any;
+  registrationError: any;
 }
 
 const UnflukeRegister = () => {
@@ -59,7 +61,13 @@ const UnflukeRegister = () => {
 
   const { width, height } = useWindowDimensions();
 
-  const toggleModal = () => setIsModalOpen(!isModalOpen);
+  const toggleModal = () => {
+    setIsModalOpen((prev) => {
+      const next = !prev;
+      if (!next) dispatch(clearVerificationOtpSent());
+      return next;
+    });
+  };
 
   const handleVerify = async (otpValue: string) => {
     try {
@@ -140,16 +148,17 @@ const UnflukeRegister = () => {
     otpSent: account.verificationOtpSent,
     success: account.success,
     error: account.error,
+    registrationError: account.registrationError,
   }));
 
-  const { error, success, mailSent, otpSent } = useSelector(registerdatatype);
+  const { error, success, mailSent, otpSent, registrationError } = useSelector(registerdatatype);
 
   useEffect(() => {
     dispatch(apiError(''));
   }, [dispatch]);
 
   useEffect(() => {
-    otpSent && toggleModal();
+    if (otpSent && !isModalOpen) setIsModalOpen(true);
   }, [otpSent]);
 
   useEffect(() => {
@@ -178,11 +187,23 @@ const UnflukeRegister = () => {
   };
 
   const showErrorAlert = () => {
-    if (error) {
+    if (error || registrationError) {
+      const raw = registrationError ?? error;
+      let message = 'Registration failed. Please try again.';
+      if (typeof raw === 'string' && raw.trim()) {
+        message = raw;
+      } else if (raw && typeof raw === 'object') {
+        message =
+          raw.message ||
+          raw.msg ||
+          raw.error ||
+          raw.data?.message ||
+          message;
+      }
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Mobile Number has been registered before, Please use another mobile number',
+        text2: message,
       });
     }
   };
@@ -193,7 +214,7 @@ const UnflukeRegister = () => {
 
   useEffect(() => {
     showErrorAlert();
-  }, [error]);
+  }, [error, registrationError]);
 
   console.log("ajsdfkahsdf ", isModalOpen)
   console.log("fausfdgsdf", otpSent)

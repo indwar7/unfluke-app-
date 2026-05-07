@@ -24,6 +24,7 @@ import {
 import { CustomExpirySelect, CustomSelect } from './Selects';
 import { createSelector } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
+import { StrategyChartInstruments } from '../../redux/Unfluke_slices/strategyCharts/thunk';
 
 const data = createSelector(
   (state) => state.StrategyCharts,
@@ -164,7 +165,13 @@ const OptionSimulator = () => {
   };
 
   useEffect(() => {
-    if (instrumentList.length > 0) {
+    if (!instrumentList || instrumentList.length === 0) {
+      dispatch(StrategyChartInstruments());
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (instrumentList && instrumentList.length > 0) {
       setInstruments([{ options: instrumentList.map((item) => ({ label: item, value: item })) }]);
     }
   }, [instrumentList]);

@@ -185,9 +185,19 @@ const AdvancedBacktesterHome = () => {
 
   const StrategyCard = ({ item, index }: { item: any; index: number }) => {
     const drawdown = item.maxDrawdown ?? item.max_drawdown;
+    const formatDate = (value: any): string => {
+      if (value == null || value === "") return "—";
+      const d = new Date(value);
+      if (isNaN(d.getTime())) {
+        return typeof value === "string" ? value : "—";
+      }
+      return d.toISOString().slice(0, 10);
+    };
     const createdOn = item.createdAt
-      ? new Date(item.createdAt).toISOString()
-      : item.date ?? "—";
+      ? formatDate(item.createdAt)
+      : item.date
+      ? formatDate(item.date)
+      : "—";
 
     return (
       <View style={styles.stratCard}>
