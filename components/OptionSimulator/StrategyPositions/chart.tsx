@@ -74,33 +74,37 @@ const PayoffChart = ({
     const maxPrice = parseInt(currentPrice + selectedInstrument.multiple * 45);
 
     const fetchChartData = async () => {
-      const data = await postPayOffChartData({
-        minPrice,
-        maxPrice,
-        optionsPositions: positions.filter((x) => x.isActive),
-      });
-
-      let maxProfit = 0;
-      let maxLoss = 0;
-      let breakevensList = [];
-
-      if (data) {
-        const sorted = [...data].sort((a, b) => a.totalPayoff - b.totalPayoff);
-        const prepared = data.map((item) => {
-          if (item.totalPayoff <= positions[0].lotSize && item.totalPayoff > 0) {
-            breakevensList.push(item.price);
-          }
-          maxProfit = Math.max(maxProfit, item.totalPayoff);
-          maxLoss = Math.min(maxLoss, item.totalPayoff);
-          return { price: item.price, pnl: item.totalPayoff };
+      try {
+        const data = await postPayOffChartData({
+          minPrice,
+          maxPrice,
+          optionsPositions: positions.filter((x) => x.isActive),
         });
 
-        setPlData(prepared);
-        updatePNLData(maxLoss, maxProfit, breakevensList);
+        let maxProfit = 0;
+        let maxLoss = 0;
+        let breakevensList = [];
+
+        if (data) {
+          const lotSize = positions[0]?.lotSize ?? 0;
+          const prepared = data.map((item) => {
+            if (item.totalPayoff <= lotSize && item.totalPayoff > 0) {
+              breakevensList.push(item.price);
+            }
+            maxProfit = Math.max(maxProfit, item.totalPayoff);
+            maxLoss = Math.min(maxLoss, item.totalPayoff);
+            return { price: item.price, pnl: item.totalPayoff };
+          });
+
+          setPlData(prepared);
+          updatePNLData(maxLoss, maxProfit, breakevensList);
+        }
+      } catch (err) {
+        console.error("PayoffChart fetch error:", err);
       }
     };
 
-    fetchChartData();
+    if (positions.length > 0) fetchChartData();
   }, [positions, currentPrice]);
 
   useEffect(() => {

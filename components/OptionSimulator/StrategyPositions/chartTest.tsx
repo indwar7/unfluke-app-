@@ -417,7 +417,7 @@ const { width: screenWidth } = useWindowDimensions();
 
       // Check for breakeven points
       if (
-        item.totalPayoff <= positions[0].lotSize &&
+        item.totalPayoff <= (positions[0]?.lotSize ?? 0) &&
         item.totalPayoff > 0
       ) {
         breakevensList.push(item.price);

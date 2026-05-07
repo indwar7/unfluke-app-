@@ -6,14 +6,6 @@ android/app/build/
 ios/
 *.log
 .DS_Store
-**/*.svg
-**/*.webp
 assets/fonts/
 assets/gifs/
 assets/scss/
-assets/images/Bitcoin.svg
-assets/images/Ethereum.svg
-assets/images/Solana.svg
-assets/onboarding.svg
-assets/onboarding2.svg
-assets/onboarding3.svg

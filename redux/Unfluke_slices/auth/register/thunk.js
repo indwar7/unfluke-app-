@@ -36,9 +36,11 @@ export const registerUser = (user) => async (dispatch) => {
     } else if (Config.DEFAULT_AUTH === "jwt") {
       response = await postJwtRegister('/api/user/register', user);
 
-      if (response.hash){
-        AsyncStorage.setItem("response",JSON.stringify(response))
-          dispatch(resetVerificationOtpSent())
+      if (response?.hash) {
+        await AsyncStorage.setItem("response", JSON.stringify(response));
+        dispatch(resetVerificationOtpSent());
+      } else {
+        dispatch(registerUserFailed(response?.message || "Registration failed. Please try again."));
       }
     //   if (response=="Verify your email"){
     //       dispatch(resetVerificationMailSent())

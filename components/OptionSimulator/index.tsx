@@ -64,6 +64,7 @@ const OptionSimulator = () => {
   const [instruments, setInstruments] = useState(null);
   const [isSearchingData, setIsSearchingData] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [expiriesError, setExpiriesError] = useState(false);
   const tempDateTimeRef = useRef(null);
 
   useEffect(() => {
@@ -183,6 +184,7 @@ const OptionSimulator = () => {
   useEffect(() => {
     const fetchExpiries = async () => {
       if (!user || !selectedInstrument.name) return;
+      setExpiriesError(false);
       try {
         const res = await getSimulatorExpiries({
           params: { optionName: selectedInstrument.name, optionType: 'CE - Call', id: user._id },
@@ -191,8 +193,13 @@ const OptionSimulator = () => {
           const newExpiries = [{ options: res.expiry_date.map((item) => ({ label: item.to_expiry.split('-').join('').toUpperCase(), value: item })) }];
           setExpiries(newExpiries);
           if (newExpiries[0]?.options[0]?.value) setExpiry(newExpiries[0].options[0].value);
+        } else {
+          setExpiriesError(true);
         }
-      } catch { }
+      } catch (e) {
+        console.error('fetchExpiries error:', e);
+        setExpiriesError(true);
+      }
     };
     fetchExpiries();
   }, [selectedInstrument.name, user]);
@@ -376,6 +383,10 @@ const OptionSimulator = () => {
                 <Text style={styles.actionButtonText}>Get Option Chain →</Text>
               )}
             </TouchableOpacity>
+          </View>
+        ) : expiriesError ? (
+          <View style={styles.loaderBox}>
+            <Text style={[styles.loaderText, { color: '#ef4444' }]}>Failed to load data. Please check your connection and try again.</Text>
           </View>
         ) : (
           <View style={styles.loaderBox}>

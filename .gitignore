@@ -1,5 +1,9 @@
 node_modules/
-android/
+# android/ — tracked for EAS bare workflow builds
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
 ios/
 .expo/
 *.lock
@@ -17,3 +21,5 @@ dist/
 
 expo-env.d.ts
 # @end expo-cli
+.codegraphy/
+node_modules/

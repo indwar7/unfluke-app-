@@ -118,8 +118,8 @@ const UnflukeRegister = () => {
         .matches(/^\d{10}$/, 'Please enter 10 digit phone number')
         .required('Please Enter Your Phone number'),
       email: Yup.string()
-        .optional()
-        .matches(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/, "Invalid emails."),
+        .required('Please Enter Your Email')
+        .matches(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/, "Invalid email."),
       referral: Yup.string(),
       password: Yup.string()
         .required('Please enter your password')

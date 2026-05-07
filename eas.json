@@ -4,12 +4,12 @@
   },
   "build": {
     "development": {
-      "node": "20.18.0",
+      "node": "22.14.0",
       "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {
-      "node": "20.18.0",
+      "node": "22.14.0",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
@@ -19,7 +19,7 @@
       }
     },
     "production": {
-      "node": "20.18.0",
+      "node": "22.14.0",
       "android": {
         "buildType": "app-bundle"
       },
@@ -28,7 +28,7 @@
       }
     },
     "apk": {
-      "node": "20.18.0",
+      "node": "22.14.0",
       "android": {
         "buildType": "apk"
       }

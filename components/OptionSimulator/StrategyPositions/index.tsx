@@ -242,14 +242,14 @@ console.log("position",positionalPnlData)
 
               {/* Tab Content */}
               <View style={styles.tabContent}>
-                {/* {activeTab === "chart" && (
+                {activeTab === "chart" && (
                   <PayoffChart
                     selectedInstrument={selectedInstrument}
                     currentPrice={currentPrice}
                     positions={positions}
                     updatePNLData={updatePNLData}
                   />
-                )} */}
+                )}
 
                 {activeTab === "greeks" && (
                   <GreeksTable positions={positions} />

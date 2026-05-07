@@ -27,6 +27,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 
+import { router } from "expo-router";
 import { MembershipPlansList } from "../../redux/Unfluke_slices/thunks";
 import {
   postChangePassword,
@@ -101,6 +102,7 @@ const Settings = () => {
   const [email, setEmail] = useState(user.email);
   const [isEmailVerified, setIsEmailVerified] = useState(!!user.emailVerified);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+
 
   // Handle email OTP verification
   const handleVerify = async (otpValue) => {
@@ -242,20 +244,34 @@ const Settings = () => {
   };
 
   const deactivateTelegram = async () => {
-    const res = await postData(`api/alert/deactivateTelegram`, {
-      userId: user._id,
-      username: user.telegramUsername,
-    });
-    if (res.status === 200) {
+    try {
+      const res = await postData(`api/alert/deactivateTelegram`, {
+        userId: user._id,
+        username: user.telegramUsername,
+      });
+      if (res && (res.status === 200 || res.msg)) {
+        const updatedUser = { ...user, telegramUsername: "", telegramChatID: "" };
+        await AsyncStorage.setItem("authUser", JSON.stringify(updatedUser));
+        dispatch(loginSuccess(updatedUser));
+        Toast.show({
+          type: "info",
+          text1: "Telegram service deactivated",
+          position: "top",
+          visibilityTime: 3000,
+          autoHide: true,
+        });
+      }
+    } catch (err) {
       Toast.show({
-        type: "info",
-        text1: "Telegram service deactivated",
+        type: "error",
+        text1: "Failed to deactivate Telegram",
         position: "top",
         visibilityTime: 3000,
         autoHide: true,
       });
     }
   };
+
 
   const handleCopyLink = () => {
     if (user.hisReferral) {
@@ -422,15 +438,17 @@ const Settings = () => {
                         </View>
                       </View>
                     ) : (
-                      <View style={styles.alertInputContainer}>
-                        <TextInput
-                          style={styles.alertInput}
-                          placeholder="Username"
-                        />
-                        <TouchableOpacity style={styles.warningButton}>
+                      <TouchableOpacity
+                        style={styles.alertInputContainer}
+                        onPress={() => router.push("/activate-telegram")}
+                      >
+                        <Text style={[styles.alertInput, { color: "#9ca3af", paddingVertical: 10 }]}>
+                          Not Connected
+                        </Text>
+                        <View style={styles.warningButton}>
                           <Ionicons name="warning" size={14} color="white" />
-                        </TouchableOpacity>
-                      </View>
+                        </View>
+                      </TouchableOpacity>
                     )}
                   </View>
 

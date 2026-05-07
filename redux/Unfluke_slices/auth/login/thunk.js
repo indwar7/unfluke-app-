@@ -67,10 +67,9 @@ export const logoutUser = () => async (dispatch) => {
     await AsyncStorage.removeItem("authUser");
     await AsyncStorage.removeItem("access");
     await AsyncStorage.removeItem("firstLogin");
-
     dispatch(logoutUserSuccess(true));
   } catch (error) {
-    dispatch(apiError(error));
+    dispatch(apiError(error?.message || "Logout failed"));
   }
 };
 

@@ -89,6 +89,7 @@ const AdvancedBacktesterHome = () => {
     newFiles[index].isPrivate = isChecked;
     setSavedStrategies(newFiles);
     setListStrategies(newFiles);
+    if (!newFiles[index].fileName) return;
     try {
       await toggleStrategyVisibility(
         axios,
@@ -105,6 +106,7 @@ const AdvancedBacktesterHome = () => {
     newFiles[index].monetize = isChecked;
     setSavedStrategies(newFiles);
     setListStrategies(newFiles);
+    if (!newFiles[index].fileName) return;
     try {
       await toggleStrategyMonetize(
         axios,
@@ -131,6 +133,7 @@ const AdvancedBacktesterHome = () => {
   };
 
   const navigateToStrategyView = (fileName: string) => {
+    if (!fileName) return;
     router.push({
       pathname: "/basic-backtester-view",
       params: {
@@ -165,10 +168,8 @@ const AdvancedBacktesterHome = () => {
           `${Config.BACKEND_URL}/api/stocks/getSavedStrategies?user=${auth.user._id}`
         )
         .then((res) => {
-          // ✅ Fixed: use res.data, not res
           const data = res.data ?? res;
           const list = Array.isArray(data) ? data : [];
-          if (list.length > 0) console.log("STRATEGY ITEM KEYS:", JSON.stringify(list[0], null, 2));
           setSavedStrategies(list);
           setListStrategies(list);
           setLoading(false);
@@ -177,6 +178,8 @@ const AdvancedBacktesterHome = () => {
           console.error(err);
           setLoading(false);
         });
+    } else {
+      setLoading(false);
     }
   }, [auth]);
 

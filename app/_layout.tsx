@@ -28,6 +28,7 @@ export default function RootLayout() {
             <Stack.Screen name="simulator" />
             <Stack.Screen name="scannermain" />
             <Stack.Screen name="profile" />
+            <Stack.Screen name="activate-telegram" />
             <Stack.Screen name="pricing" />
             <Stack.Screen name="leads" />
             <Stack.Screen name="advanced-backtester-main" />
