@@ -51,24 +51,32 @@ axios.interceptors.response.use(
     
     // Handle HTTP errors
     let message = 'An error occurred';
+    const respData = error.response?.data;
+    const serverMsg =
+      (typeof respData === 'string' ? respData : null) ||
+      respData?.message ||
+      respData?.msg ||
+      respData?.error ||
+      respData?.errors?.[0]?.message ||
+      null;
     if (error.response) {
       switch (error.response.status) {
         case 500:
-          message = 'Internal Server Error';
+          message = serverMsg || 'Internal Server Error';
           break;
         case 401:
-          message = 'Invalid credentials';
+          message = serverMsg || 'Invalid credentials';
           break;
         case 404:
-          message = 'Sorry! the data you are looking for could not be found';
+          message = serverMsg || 'Sorry! the data you are looking for could not be found';
           break;
         default:
-          message = error.response.data?.message || error.message;
+          message = serverMsg || error.message;
       }
     } else {
       message = error.message;
     }
-    
+
     return Promise.reject(message);
   }
 );

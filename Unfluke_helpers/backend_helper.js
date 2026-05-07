@@ -259,27 +259,28 @@ export const postFakeProfile = (data) =>
 // Register Method
 export const postJwtRegister = (url, data) => {
   return api.create(url, data).catch((err) => {
-    if (err.includes("Network Error")) {
-      // window.location.href = "/maintenance"; // React Native crash fix
+    const errStr = typeof err === "string" ? err : err?.message || "";
+    if (errStr.includes("Network Error")) {
       console.log("Network Error - maintenance");
     }
-    var message;
-    if (err.response && err.response.status) {
+    let message;
+    if (err && err.response && err.response.status) {
       switch (err.response.status) {
         case 404:
           message = "Sorry! the page you are looking for could not be found";
           break;
         case 500:
-          message =
-            "Sorry! something went wrong, please contact our support team";
+          message = "Sorry! something went wrong, please contact our support team";
           break;
         case 401:
           message = "Invalid credentials";
           break;
         default:
-          message = err;
+          message = err.response.data?.message || err.response.data?.msg || errStr;
           break;
       }
+    } else {
+      message = errStr || "Registration failed. Please try again.";
     }
     throw message;
   });

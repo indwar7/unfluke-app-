@@ -27,15 +27,12 @@ import {
 
 export const registerUser = (user) => async (dispatch) => {
   try {
-          console.log(Config.BACKEND_URL)
-
     let response;
     if (Config.DEFAULT_AUTH === "firebase") {
       // response = fireBaseBackend.registerUser(user.email, user.password);
       // yield put(registerUserSuccessful(response));
     } else if (Config.DEFAULT_AUTH === "jwt") {
       response = await postJwtRegister('/api/user/register', user);
-      console.log("registerUser response:", response);
 
       const otpData = response?.hash
         ? response

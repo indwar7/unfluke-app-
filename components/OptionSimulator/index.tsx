@@ -67,6 +67,8 @@ const OptionSimulator = () => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [expiriesError, setExpiriesError] = useState(false);
   const tempDateTimeRef = useRef(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const optionChainYRef = useRef(0);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -94,7 +96,7 @@ const OptionSimulator = () => {
         expiry: expiry.to_expiry,
         id: user._id,
       });
-      if (result.length > 0) {
+      if (result?.length > 0) {
         setTableData(result);
         setDisplayName(selectedInstrument.name);
         setDisplayExpiry(expiry.to_expiry);
@@ -169,6 +171,14 @@ const OptionSimulator = () => {
       dispatch(StrategyChartInstruments());
     }
   }, [dispatch]);
+
+  useEffect(() => {
+    if (isTimeChanged && displayName && tableData.length > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: optionChainYRef.current, animated: true });
+      }, 300);
+    }
+  }, [isTimeChanged, displayName, tableData.length]);
 
   useEffect(() => {
     if (instrumentList && instrumentList.length > 0) {
@@ -325,7 +335,7 @@ const OptionSimulator = () => {
         <Text style={styles.headerSub}>Pages · Simulator</Text>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
         <View style={styles.infoCardsContainer}>
           {renderInfoCard('Spot Price', selectedInstrument.spotPrice)}
@@ -449,7 +459,10 @@ const OptionSimulator = () => {
         />
 
         {isTimeChanged && displayExpiry && displayName ? (
-          <View style={styles.optionChainContainer}>
+          <View
+            style={styles.optionChainContainer}
+            onLayout={(e) => { optionChainYRef.current = e.nativeEvent.layout.y; }}
+          >
             <Text style={styles.optionChainTitle}>
               {displayExpiry?.split('-').join('')} — Option Chain — {displayName} Future: {selectedInstrument.futurePrice}
             </Text>

@@ -71,12 +71,10 @@ const UnflukeRegister = () => {
 
   const handleVerify = async (otpValue: string) => {
     try {
-      console.log('Verifying OTP:', otpValue);
       const otpResponseString = await AsyncStorage.getItem('response');
       if (!otpResponseString) throw new Error('could not get OTP');
 
       const otpResponse = JSON.parse(otpResponseString)
-      // Create clean verification data
       const verificationData = {
         phone: otpResponse.phone,
         hash: otpResponse.hash,
@@ -84,18 +82,22 @@ const UnflukeRegister = () => {
         activation_token: otpResponse.activation_token,
       };
 
-      console.log('Sending for verification:', verificationData);
+      const response: any = await postVerifyPhoneOtp(verificationData);
 
-      const response = await postVerifyPhoneOtp(verificationData);
+      const successMsg =
+        response?.msg ||
+        response?.message ||
+        response?.data?.msg ||
+        response?.data?.message;
 
-      if (!response.data?.msg) throw new Error('Invalid OTP');
+      if (!successMsg) throw new Error('Invalid OTP');
 
       await AsyncStorage.removeItem('response');
 
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: response.data.msg,
+        text2: successMsg,
       });
 
       // Navigate to login after successful verification
@@ -154,7 +156,7 @@ const UnflukeRegister = () => {
   const { error, success, mailSent, otpSent, registrationError } = useSelector(registerdatatype);
 
   useEffect(() => {
-    dispatch(apiError(''));
+    dispatch(apiError());
   }, [dispatch]);
 
   useEffect(() => {
@@ -216,8 +218,6 @@ const UnflukeRegister = () => {
     showErrorAlert();
   }, [error, registrationError]);
 
-  console.log("ajsdfkahsdf ", isModalOpen)
-  console.log("fausfdgsdf", otpSent)
 
   return (
     <KeyboardAvoidingView
