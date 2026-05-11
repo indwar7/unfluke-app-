@@ -250,8 +250,8 @@ Unfluke commits to:
 
 ## 13. Governance
 
-- **Data Protection Officer (DPO):** [Name — TO BE FILLED]
-- **Grievance Officer:** [Name — TO BE FILLED]
+- **Data Protection Officer (DPO):** Aseem Singhal
+- **Grievance Officer:** Aseem Singhal
 - **Email:** support@unfluke.in
 - **Address:** A-99, Sector 65, Noida, Uttar Pradesh 201301, India
 

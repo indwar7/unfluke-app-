@@ -221,8 +221,8 @@ You can control cookies via your browser settings.
 
 In accordance with the IT Act 2000, IT Rules 2021, and the DPDP Act 2023, the contact details for grievances are:
 
-**Grievance Officer Name:** [TO BE FILLED]
-**Designation:** Data Protection Officer
+**Grievance Officer Name:** Aseem Singhal
+**Designation:** Data Protection Officer & Grievance Officer
 **Email:** support@unfluke.in
 **Address:** A-99, Sector 65, Noida, Uttar Pradesh 201301, India
 **Response time:** within 15 days of receipt of grievance
