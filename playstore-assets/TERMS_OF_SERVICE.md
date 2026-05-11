@@ -42,7 +42,19 @@ Unfluke is **explicitly NOT**:
 
 **Unfluke does not execute trades, route orders, integrate with brokers, manage your money, or have access to your broker/demat accounts. No live trading occurs on or through the App.**
 
-Because Unfluke does not undertake any regulated activity (advisory, brokerage, research, or portfolio management), **SEBI registration is not applicable** to our Services. Users perform any trading independently through their own broker, outside Unfluke.
+Because Unfluke (as a service) does not undertake any regulated activity (advisory, brokerage, research, or portfolio management), **SEBI registration is not applicable** to the App itself. Users perform any trading independently through their own broker, outside Unfluke.
+
+### 2.3 Founder Credentials (Disclosure)
+
+Unfluke's founder, **Aseem Singhal**, is personally registered with SEBI as a Research Analyst (Registration No: **INH000024976**). This personal registration is disclosed for credibility and transparency only.
+
+The founder's SEBI Research Analyst registration:
+- Applies to him in his personal capacity, **not** to the Unfluke App or its features
+- Does **not** convert the App into a SEBI-regulated research-analyst service
+- Does **not** mean any content within the App constitutes "research analyst" advice under SEBI (Research Analysts) Regulations, 2014
+- Does **not** create a research-analyst client relationship between the user and the founder, Unfluke, or the App
+
+All App content remains educational, analytical, and informational. No content should be interpreted as a recommendation, buy/sell call, or personalised investment advice.
 
 ---
 

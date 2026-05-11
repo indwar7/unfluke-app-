@@ -24,7 +24,9 @@ Unfluke is a trading analysis and education platform that helps users:
 - Access market scanners and technical analysis tools
 - Learn quantitative trading methods
 
-**Important:** Unfluke is **not** a stockbroker, investment advisor, or research analyst. We do **not** execute trades, do **not** integrate with any broker, do **not** route orders, and do **not** provide buy/sell recommendations. The App does **not** facilitate any live trading activity. All content is for educational, analytical, and informational purposes only. Because Unfluke does not undertake any regulated activity (such as advisory, brokerage, or portfolio management), SEBI registration is **not applicable**.
+**Important:** Unfluke (the company and the App) is **not** a stockbroker, investment advisor, or research analyst entity. We do **not** execute trades, do **not** integrate with any broker, do **not** route orders, and do **not** provide buy/sell recommendations. The App does **not** facilitate any live trading activity. All content is for educational, analytical, and informational purposes only. Because Unfluke as a service does not undertake any regulated activity (such as advisory, brokerage, or portfolio management), SEBI registration is **not applicable** to the App itself.
+
+**Founder credentials (for transparency):** Unfluke's founder, **Aseem Singhal**, is personally registered with SEBI as a Research Analyst (Registration No: **INH000024976**). This personal registration is disclosed for credibility and transparency only and does **not** mean the Unfluke App is operating under, or governed by, SEBI's Research Analyst regulations. The App's features (backtesting, simulation, scanners, education) remain outside the scope of regulated research-analyst activity. No content on the App should be construed as research-analyst advice, personalised recommendation, or a recommendation to buy, sell, or hold any security.
 
 ---
 
