@@ -36,7 +36,7 @@ Unfluke is a trading analysis and education platform that helps users:
 - **Profile data:** trading experience level, preferences, referral code
 - **Communications:** messages, feedback, and support queries you send us
 - **User-generated content:** saved strategies, custom scanners, notes
-- **Payment information:** handled by our payment processors (Razorpay/Stripe); we receive only transaction status and metadata — **we do not store your full card number, CVV, or net banking credentials**
+- **Payment information:** handled by our payment processors (CCAvenue/HDFC Payment Gateway); we receive only transaction status and metadata — **we do not store your full card number, CVV, or net banking credentials**
 - **Optional integrations:** Telegram username (if you choose to receive alerts via Telegram)
 
 ### 2.2 Information We Do NOT Collect
@@ -100,7 +100,7 @@ We do **not** sell your personal data to third parties.
 
 We may share your data with:
 
-- **Service providers** (data processors acting on our behalf): cloud hosting (AWS / Google Cloud — India region), analytics (Firebase / Google Analytics), payment processors (Razorpay / Stripe), OTP/SMS providers, email service providers (SendGrid / AWS SES), customer support tools
+- **Service providers** (data processors acting on our behalf): cloud hosting (AWS / Google Cloud — India region), analytics (Firebase / Google Analytics), payment processors (CCAvenue / HDFC Payment Gateway), OTP/SMS providers, email service providers (SendGrid / AWS SES), customer support tools
 - **Legal authorities:** when required by valid legal process, court order, or to protect rights, property, or safety of Unfluke, users, or the public
 - **Business transfers:** in case of merger, acquisition, or sale of assets, we will notify you and ensure the acquiring party honors this Privacy Policy
 - **With your explicit consent:** any other sharing only with your prior consent
@@ -155,7 +155,7 @@ As a Data Principal under the DPDP Act, you have the following rights:
 - **Right to withdraw consent:** withdraw consent for processing at any time (without affecting prior lawful processing)
 - **Right to data portability:** receive your data in a structured, machine-readable format
 
-To exercise any of these rights, email **privacy@unfluke.in** with your request. We will respond within **30 days**.
+To exercise any of these rights, email **support@unfluke.in** with your request. We will respond within **30 days**.
 
 ---
 
@@ -164,7 +164,7 @@ To exercise any of these rights, email **privacy@unfluke.in** with your request.
 You can delete your account in two ways:
 
 1. **In-app:** Go to Profile → Settings → Delete Account
-2. **Email:** Send a request to **privacy@unfluke.in** with subject "Delete my account"
+2. **Email:** Send a request to **support@unfluke.in** with subject "Delete my account"
 
 Upon deletion:
 - Personal data and user-generated content will be deleted within **30 days**
@@ -177,7 +177,7 @@ Upon deletion:
 
 Unfluke is **not intended for users under 18 years of age**. We do not knowingly collect personal data from children. Under the DPDP Act, processing of children's data requires verifiable parental consent, which we do not facilitate.
 
-If you believe a child has provided us their data, please contact **privacy@unfluke.in** immediately for removal.
+If you believe a child has provided us their data, please contact **support@unfluke.in** immediately for removal.
 
 ---
 
@@ -186,7 +186,7 @@ If you believe a child has provided us their data, please contact **privacy@unfl
 The App and Website may contain links to or integrate with third-party services:
 
 - **Firebase / Google services:** authentication, analytics, crash reporting, push notifications
-- **Razorpay / Stripe:** payment processing
+- **CCAvenue / HDFC Payment Gateway:** payment processing
 - **Telegram:** optional alert delivery (you must enable this manually)
 - **YouTube / external websites:** for educational content
 
@@ -223,8 +223,8 @@ In accordance with the IT Act 2000, IT Rules 2021, and the DPDP Act 2023, the co
 
 **Grievance Officer Name:** [TO BE FILLED]
 **Designation:** Data Protection Officer
-**Email:** grievance@unfluke.in
-**Address:** [Company Registered Address — TO BE FILLED]
+**Email:** support@unfluke.in
+**Address:** A-99, Sector 65, Noida, Uttar Pradesh 201301, India
 **Response time:** within 15 days of receipt of grievance
 
 ---
@@ -256,11 +256,11 @@ Your continued use after changes take effect constitutes acceptance of the updat
 
 For questions, requests, or concerns about this policy or your data:
 
-- **Privacy queries:** privacy@unfluke.in
-- **Grievances:** grievance@unfluke.in
+- **Privacy queries:** support@unfluke.in
+- **Grievances:** support@unfluke.in
 - **General support:** support@unfluke.in
 - **Website:** https://www.unfluke.in
-- **Address:** [Company Registered Address — TO BE FILLED]
+- **Address:** A-99, Sector 65, Noida, Uttar Pradesh 201301, India
 
 ---
 

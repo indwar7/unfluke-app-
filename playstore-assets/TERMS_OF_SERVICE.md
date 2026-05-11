@@ -101,11 +101,11 @@ Unfluke offers free features and paid subscription plans. Features available on 
 
 ### 5.2 Payment Processing
 
-Payments are processed by third-party providers (Razorpay, Stripe). By subscribing, you authorize them to charge your chosen payment method.
+Payments are processed by third-party providers (CCAvenue and HDFC Payment Gateway). By making a payment, you authorize them to charge your chosen payment method.
 
-### 5.3 Auto-Renewal
+### 5.3 Subscription Renewal
 
-Subscriptions auto-renew unless cancelled before the renewal date. You can cancel anytime via the App or by emailing **billing@unfluke.in**.
+Subscriptions do **not** auto-renew. You will need to manually renew your subscription at the end of each billing period to continue accessing paid features.
 
 ### 5.4 Refunds
 
@@ -221,11 +221,11 @@ These Terms are governed by the **laws of India**.
 
 ### 12.2 Jurisdiction
 
-Subject to Section 12.3, courts in [City, e.g., Bengaluru/Delhi — TO BE FILLED] shall have exclusive jurisdiction.
+Subject to Section 12.3, courts in **New Delhi** shall have exclusive jurisdiction.
 
 ### 12.3 Arbitration (Optional)
 
-Any dispute arising out of these Terms shall be resolved through arbitration in accordance with the Arbitration and Conciliation Act, 1996. The arbitration shall be conducted in English, seated in [City — TO BE FILLED], by a sole arbitrator appointed mutually.
+Any dispute arising out of these Terms shall be resolved through arbitration in accordance with the Arbitration and Conciliation Act, 1996. The arbitration shall be conducted in English, seated in **New Delhi**, by a sole arbitrator appointed mutually.
 
 ### 12.4 Consumer Disputes
 
@@ -259,10 +259,10 @@ Your continued use after changes take effect constitutes acceptance.
 For questions about these Terms:
 
 - **General:** support@unfluke.in
-- **Billing:** billing@unfluke.in
-- **Legal notices:** legal@unfluke.in
-- **Address:** [Company Registered Address — TO BE FILLED]
-- **Grievance Officer:** grievance@unfluke.in
+- **Billing:** support@unfluke.in
+- **Legal notices:** support@unfluke.in
+- **Grievance Officer:** support@unfluke.in
+- **Address:** A-99, Sector 65, Noida, Uttar Pradesh 201301, India
 
 ---
 

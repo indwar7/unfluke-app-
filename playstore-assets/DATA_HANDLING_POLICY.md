@@ -98,7 +98,7 @@ We do **not** use data for:
 | Processor | Purpose | Data | Location |
 |---|---|---|---|
 | Firebase | Auth, analytics, crash reporting | Auth tokens, usage metrics, crash logs | Google Cloud (multi-region) |
-| Razorpay / Stripe | Payment processing | Payment metadata | PCI-DSS compliant (India / global) |
+| CCAvenue / HDFC Payment Gateway | Payment processing | Payment metadata | PCI-DSS compliant (India / global) |
 | SendGrid / AWS SES | Transactional email | Email address, message content | Global |
 | OTP gateway (e.g., MSG91) | SMS / WhatsApp OTP | Mobile number, OTP code | India |
 
@@ -199,7 +199,7 @@ We do **not sell, rent, or lease personal data** to third parties under any circ
 
 ## 9. User Rights and Controls
 
-Users can exercise the following through the App or by emailing **privacy@unfluke.in**:
+Users can exercise the following through the App or by emailing **support@unfluke.in**:
 
 | Right | How to Exercise | Response Time |
 |---|---|---|
@@ -209,7 +209,7 @@ Users can exercise the following through the App or by emailing **privacy@unfluk
 | Data portability | Email request | Within 30 days |
 | Withdraw consent | In-app toggle or email | Immediate |
 | Object to processing | Email | Within 30 days |
-| Grievance | grievance@unfluke.in | Within 15 days |
+| Grievance | support@unfluke.in | Within 15 days |
 
 ---
 
@@ -218,7 +218,7 @@ Users can exercise the following through the App or by emailing **privacy@unfluk
 - Services are restricted to users **18+ years**
 - We do not knowingly collect children's data
 - If discovered, child accounts are deleted immediately
-- Parents/guardians may contact **privacy@unfluke.in** for removal
+- Parents/guardians may contact **support@unfluke.in** for removal
 
 ---
 
@@ -252,8 +252,8 @@ Unfluke commits to:
 
 - **Data Protection Officer (DPO):** [Name — TO BE FILLED]
 - **Grievance Officer:** [Name — TO BE FILLED]
-- **Email:** grievance@unfluke.in
-- **Address:** [Company Registered Address — TO BE FILLED]
+- **Email:** support@unfluke.in
+- **Address:** A-99, Sector 65, Noida, Uttar Pradesh 201301, India
 
 ---
 
@@ -266,8 +266,8 @@ This Data Handling Policy may be updated. Material changes will be communicated 
 ## 15. Contact
 
 For data-handling questions, audits, or partnership data requests:
-- **Email:** privacy@unfluke.in
-- **DPO:** dpo@unfluke.in
+- **Email:** support@unfluke.in
+- **DPO:** support@unfluke.in
 
 ---
 
