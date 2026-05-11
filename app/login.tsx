@@ -126,10 +126,8 @@ const UnflukeLogin = () => {
   const validation = useFormik({
     enableReinitialize: true,
     initialValues: {
-      // phone: userLogin.phone || '',
-      //     password: userLogin.password || '',
-      phone: "7903518918",
-      password: "11111111",
+      phone: "",
+      password: "",
     },
     validationSchema: Yup.object({
       phone: Yup.string()
@@ -442,6 +440,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
     backgroundColor: "#fff",
+    color: "#212529",
   },
   inputError: {
     borderColor: "#dc3545",
@@ -470,6 +469,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     backgroundColor: "#fff",
     paddingRight: 40,
+    color: "#212529",
   },
   eyeIcon: {
     position: "absolute",

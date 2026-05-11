@@ -7,7 +7,7 @@ import Constants from 'expo-constants';
 const FALLBACK_CONFIG = {
     BACKEND_URL: 'https://api.unfluke.in',
     PUBLIC_URL: 'http://www.unfluke.in',
-    REACT_APP_CHATBOT_URL: 'http://34.124.230.132',
+    REACT_APP_CHATBOT_URL: 'https://edbot.unfluke.in',
     REACT_APP_CHATBOT_TOKEN: 'ELRIKHJDFOIPJGHER9567802B43J9M5703459-BH78JM34589067',
     DEFAULT_AUTH: 'jwt',
     GA_ID: 'G-TXPTX3V04',

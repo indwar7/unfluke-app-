@@ -1,4 +1,4 @@
-package com.vikas_gupta.unflukeapp
+package `in`.unfluke.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

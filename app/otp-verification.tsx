@@ -466,6 +466,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     // textAlign: "center",
     letterSpacing: 2,
+    color: "#212529",
   },
   inputError: {
     borderColor: "#dc3545",

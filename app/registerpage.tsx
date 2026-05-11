@@ -58,6 +58,8 @@ const UnflukeRegister = () => {
   const navigation = useNavigation<any>();
   const dispatch = useDispatch<any>();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [passwordShow, setPasswordShow] = useState(false);
+  const [confirmPasswordShow, setConfirmPasswordShow] = useState(false);
 
   const { width, height } = useWindowDimensions();
 
@@ -310,17 +312,28 @@ const UnflukeRegister = () => {
                 <Text style={styles.label}>
                   Password <Text style={styles.required}>*</Text>
                 </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    validation.touched.password && validation.errors.password && styles.inputError,
-                  ]}
-                  placeholder="Enter Password"
-                  value={validation.values.password}
-                  onChangeText={validation.handleChange('password')}
-                  onBlur={validation.handleBlur('password')}
-                  secureTextEntry
-                />
+                <View style={styles.passwordWrapper}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.passwordInputField,
+                      validation.touched.password && validation.errors.password && styles.inputError,
+                    ]}
+                    placeholder="Enter Password"
+                    value={validation.values.password}
+                    onChangeText={validation.handleChange('password')}
+                    onBlur={validation.handleBlur('password')}
+                    secureTextEntry={!passwordShow}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setPasswordShow(!passwordShow)}
+                    style={styles.eyeIcon}
+                  >
+                    <Text style={styles.eyeText}>
+                      {passwordShow ? '👁️' : '👁️‍🗨️'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 {validation.touched.password && validation.errors.password && (
                   <Text style={styles.errorText}>{validation.errors.password}</Text>
                 )}
@@ -330,19 +343,30 @@ const UnflukeRegister = () => {
                 <Text style={styles.label}>
                   Confirm Password <Text style={styles.required}>*</Text>
                 </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    validation.touched.confirm_password &&
-                    validation.errors.confirm_password &&
-                    styles.inputError,
-                  ]}
-                  placeholder="Confirm Password"
-                  value={validation.values.confirm_password}
-                  onChangeText={validation.handleChange('confirm_password')}
-                  onBlur={validation.handleBlur('confirm_password')}
-                  secureTextEntry
-                />
+                <View style={styles.passwordWrapper}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.passwordInputField,
+                      validation.touched.confirm_password &&
+                      validation.errors.confirm_password &&
+                      styles.inputError,
+                    ]}
+                    placeholder="Confirm Password"
+                    value={validation.values.confirm_password}
+                    onChangeText={validation.handleChange('confirm_password')}
+                    onBlur={validation.handleBlur('confirm_password')}
+                    secureTextEntry={!confirmPasswordShow}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setConfirmPasswordShow(!confirmPasswordShow)}
+                    style={styles.eyeIcon}
+                  >
+                    <Text style={styles.eyeText}>
+                      {confirmPasswordShow ? '👁️' : '👁️‍🗨️'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 {validation.touched.confirm_password && validation.errors.confirm_password && (
                   <Text style={styles.errorText}>{validation.errors.confirm_password}</Text>
                 )}
@@ -529,6 +553,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 13,
     backgroundColor: 'white',
+    color: '#212529',
+  },
+  passwordWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  passwordInputField: {
+    paddingRight: 40,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+  },
+  eyeText: {
+    fontSize: 16,
   },
   inputError: {
     borderColor: '#dc3545',

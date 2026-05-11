@@ -23,3 +23,8 @@ expo-env.d.ts
 # @end expo-cli
 .codegraphy/
 node_modules/
+
+# Android signing keys — NEVER commit
+*.jks
+*.keystore
+!android/app/debug.keystore

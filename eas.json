@@ -1,6 +1,6 @@
 {
   "cli": {
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -20,6 +20,9 @@
     },
     "production": {
       "node": "22.14.0",
+      "env": {
+        "NODE_OPTIONS": "--max-old-space-size=8192"
+      },
       "android": {
         "buildType": "app-bundle"
       },

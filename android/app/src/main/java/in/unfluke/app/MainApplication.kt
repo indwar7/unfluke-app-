@@ -1,4 +1,4 @@
-package com.vikas_gupta.unflukeapp
+package `in`.unfluke.app
 
 import android.app.Application
 import android.content.res.Configuration

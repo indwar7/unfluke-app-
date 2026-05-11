@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { View, Image, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
+import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setUserFromStorage } from '../redux/Unfluke_slices/auth/login/reducer';
 
 const { width, height } = Dimensions.get('window');
 
 export default function IndexScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (isNavigating) return;
@@ -14,18 +17,29 @@ export default function IndexScreen() {
     const checkAndRedirect = async () => {
       try {
         setIsNavigating(true);
-        const hasCompleted = await AsyncStorage.getItem("hasCompletedOnboarding");
+        const accessToken = await AsyncStorage.getItem("access");
+        const authUser = await AsyncStorage.getItem("authUser");
 
         // Show splash for 2 seconds before navigating
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        if (hasCompleted === "true") {
+        if (accessToken && authUser) {
+          try {
+            const parsedUser = JSON.parse(authUser);
+            dispatch(setUserFromStorage(parsedUser));
+          } catch (parseErr) {
+            console.error("Failed to parse stored authUser:", parseErr);
+            await AsyncStorage.removeItem("authUser");
+            await AsyncStorage.removeItem("access");
+            router.replace("/login");
+            return;
+          }
           router.replace("/dashboard");
         } else {
           router.replace("/login");
         }
       } catch (error) {
-        console.error("Error checking onboarding status:", error);
+        console.error("Error checking auth status:", error);
         router.replace("/login");
       }
     };

@@ -931,7 +931,11 @@ const AIChatbot = ({
                 label={bot}
                 value={bot}
                 color={isDarkMode ? "#F9FAFB" : "#111827"}
-                style={{ fontSize: 15 }}
+                style={{
+                  fontSize: 15,
+                  backgroundColor: isDarkMode ? "#374151" : "#FFFFFF",
+                  color: isDarkMode ? "#F9FAFB" : "#111827",
+                }}
               />
             ))}
           </Picker>
@@ -1116,7 +1120,6 @@ const styles = StyleSheet.create({
   dropdown: {
     flex: 1,
     height: 50,
-    paddingVertical: 26,
   },
 
   dropdownLight: {

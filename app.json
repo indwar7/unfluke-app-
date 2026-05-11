@@ -2,9 +2,9 @@
   "expo": {
     "name": "Unfluke",
     "slug": "unfluke",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
-    "icon": "./assets/adaptive-icon.png",
+    "icon": "./assets/icon.png",
     "scheme": "unflukeapp",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vikas-gupta.unflukeapp"
+      "bundleIdentifier": "in.unfluke.app",
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,8 +24,9 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.vikas_gupta.unflukeapp",
-      "softwareKeyboardLayoutMode": "resize"
+      "package": "in.unfluke.app",
+      "softwareKeyboardLayoutMode": "resize",
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +35,15 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
       "expo-web-browser",
       "expo-font",
       [
@@ -61,7 +72,7 @@
       "GENERATE_SOURCE_MAP": false,
       "GA_ID": "G-TXPTX3V04",
       "REACT_APP_CHATBOT_TOKEN": "ELRIKHJDFOIPJGHER9567802B43J9M5703459-BH78JM34589067",
-      "REACT_APP_CHATBOT_URL": "http://34.124.230.132",
+      "REACT_APP_CHATBOT_URL": "https://edbot.unfluke.in",
       "router": {},
       "eas": {
         "projectId": "eb3f2c76-9555-479b-b2f1-65fccc64c2b6"
