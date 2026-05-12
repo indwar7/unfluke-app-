@@ -39,7 +39,31 @@ assets/images/pattern/
 assets/images/galaxy/
 assets/images/nft/
 assets/images/dashboard_img/
+assets/images/STEP1.jpg
+assets/images/STEP2.jpg
+assets/images/STEP3.jpg
+assets/images/g10.png
+assets/images/job-profile2.png
+assets/images/auth-one-bg.jpg
+assets/images/coin.jpg
+
+# Root assets only used by web (large SVG)
+assets/Bitcoin.svg
+assets/Ethereum.svg
+assets/Solana.svg
+assets/onboarding3.svg
 
 # Asset subfolders the original .easignore excluded — not needed at build time on EAS
 assets/scss/
 assets/gifs/
+
+# Web fonts — RN app does not load any font from assets/fonts (no useFonts call)
+assets/fonts/
+
+# Web-only UnflukeMain modules not imported by any expo-router route
+components/UnflukeMain/Features/
+components/UnflukeMain/Parallax/
+components/UnflukeMain/Common/MyCartDropdown.js
+components/UnflukeMain/Common/WebAppsDropdown.js
+components/UnflukeMain/Common/RightSidebar.js
+components/UnflukeMain/Common/ReviewSlider.js
