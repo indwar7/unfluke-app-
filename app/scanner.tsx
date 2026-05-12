@@ -388,7 +388,7 @@ const Scanner = ({ shared }) => {
           }/${date.getFullYear()}`;
         let timeAdded = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 
-        if (route?.params?.state) {
+        if (route?.params?.state && scannerState._id) {
           const scannerId = scannerState._id;
 
           if (auth.user._id !== scannerState.owner) {
@@ -724,6 +724,11 @@ const Scanner = ({ shared }) => {
       const scannerDetails = route.params.state;
       const newState = {};
 
+      const isPublicScanner =
+        auth.user?._id &&
+        scannerDetails.owner &&
+        scannerDetails.owner !== auth.user._id;
+
       for (let prop in scannerDetails) {
         if (scannerState[prop] !== undefined) {
           newState[prop] =
@@ -731,6 +736,14 @@ const Scanner = ({ shared }) => {
               ? parseInt(scannerDetails[prop])
               : scannerDetails[prop];
         }
+      }
+
+      if (isPublicScanner) {
+        // Public/admin scanner opened by a different user — treat as a fresh copy:
+        // strip the source _id so save creates a new document, and reassign
+        // ownership so result emails/alerts go to the current user.
+        newState.owner = auth.user._id;
+        newState._id = undefined;
       }
 
       dispatch(handleSetState(newState));
