@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "in.unfluke.app",
-      "buildNumber": "3"
+      "buildNumber": "4"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +26,7 @@
       "edgeToEdgeEnabled": true,
       "package": "in.unfluke.app",
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "bundler": "metro",
