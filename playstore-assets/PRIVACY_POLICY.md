@@ -163,10 +163,11 @@ To exercise any of these rights, email **support@unfluke.in** with your request.
 
 ## 8. Account and Data Deletion
 
-You can delete your account in two ways:
+You can delete your account in three ways:
 
-1. **In-app:** Go to Profile → Settings → Delete Account
-2. **Email:** Send a request to **support@unfluke.in** with subject "Delete my account"
+1. **Web page (self-serve):** Visit https://www.unfluke.in/delete-account and follow the steps
+2. **In-app:** Go to Profile → Settings → Delete Account
+3. **Email:** Send a request to **support@unfluke.in** with subject "Delete my account"
 
 Upon deletion:
 - Personal data and user-generated content will be deleted within **30 days**

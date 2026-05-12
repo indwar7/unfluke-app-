@@ -150,6 +150,11 @@ All processors are bound by data processing agreements (DPA) requiring DPDP Act 
 
 ### 7.2 Account Deletion
 
+**How to initiate deletion:**
+- Web (self-serve): https://www.unfluke.in/delete-account
+- In-app: Profile → Settings → Delete Account
+- Email: support@unfluke.in (subject: "Delete my account")
+
 Upon user-initiated deletion request:
 1. Account marked for deletion immediately
 2. Login disabled
