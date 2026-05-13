@@ -95,6 +95,8 @@ const OtpVerification = () => {
   } = useSelector(otpVerificationSelector);
 
   useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
     if (success && !isNavigating) {
       setIsNavigating(true);
       Toast.show({
@@ -105,14 +107,16 @@ const OtpVerification = () => {
         visibilityTime: 2000,
       });
 
-      setTimeout(() => {
-        navigation.navigate("reset-password", {
-          phone: phoneNumber,
-          token: validation.values.otp,
-        });
-        dispatch(resetOtpVerificationFlag());
-        setIsNavigating(false);
-      }, 2000);
+      timers.push(
+        setTimeout(() => {
+          navigation.navigate("reset-password", {
+            phone: phoneNumber,
+            token: validation.values.otp,
+          });
+          dispatch(resetOtpVerificationFlag());
+          setIsNavigating(false);
+        }, 2000)
+      );
     }
 
     if (error) {
@@ -123,9 +127,11 @@ const OtpVerification = () => {
         position: "top",
         visibilityTime: 3000,
       });
-      setTimeout(() => {
-        dispatch(resetOtpVerificationFlag());
-      }, 3000);
+      timers.push(
+        setTimeout(() => {
+          dispatch(resetOtpVerificationFlag());
+        }, 3000)
+      );
     }
 
     if (resendSuccess) {
@@ -138,9 +144,11 @@ const OtpVerification = () => {
         position: "top",
         visibilityTime: 3000,
       });
-      setTimeout(() => {
-        dispatch(resetOtpVerificationFlag());
-      }, 3000);
+      timers.push(
+        setTimeout(() => {
+          dispatch(resetOtpVerificationFlag());
+        }, 3000)
+      );
     }
 
     if (resendError) {
@@ -152,6 +160,10 @@ const OtpVerification = () => {
         visibilityTime: 3000,
       });
     }
+
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+    };
   }, [
     success,
     error,
@@ -190,13 +202,43 @@ const OtpVerification = () => {
     onSubmit: async (values) => {
       try {
         const storedData = await AsyncStorage.getItem("forgotPasswordResponse");
-        let res = storedData ? JSON.parse(storedData) : {};
-        res["otp"] = values.otp;
+        if (!storedData) {
+          Toast.show({
+            type: "error",
+            text1: "Session expired",
+            text2: "Please request a new OTP from the forgot password screen",
+            position: "top",
+            visibilityTime: 3000,
+          });
+          return;
+        }
 
-        console.log("otp values", res);
-        dispatch(verifyOtp(res));
+        let parsed;
+        try {
+          parsed = JSON.parse(storedData);
+        } catch (parseErr) {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Stored session is corrupted. Please request a new OTP.",
+            position: "top",
+            visibilityTime: 3000,
+          });
+          await AsyncStorage.removeItem("forgotPasswordResponse");
+          return;
+        }
+
+        parsed["otp"] = values.otp;
+        dispatch(verifyOtp(parsed));
       } catch (error) {
         console.error("Error reading from AsyncStorage", error);
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Could not verify OTP. Please try again.",
+          position: "top",
+          visibilityTime: 3000,
+        });
       }
     },
   });

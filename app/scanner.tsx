@@ -521,19 +521,34 @@ const Scanner = ({ shared }) => {
 
 
   const handleShare = async () => {
-    const res = await axios.post(
-      `${Config.BACKEND_URL}/api/scanner/generateSharingUrl`,
-      { scannerState }
-    );
+    try {
+      const res = await axios.post(
+        `${Config.BACKEND_URL}/api/scanner/generateSharingUrl`,
+        { scannerState }
+      );
 
-    if (res) {
-      const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${res.sharingCode}&alert=false&type=${type}&market=in`;
+      if (res?.sharingCode) {
+        const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${res.sharingCode}&alert=false&type=${type}&market=in`;
 
-      await Clipboard.setStringAsync(link);
+        await Clipboard.setStringAsync(link);
+        Toast.show({
+          type: "success",
+          text1: "Success",
+          text2: "Link copied to clipboard",
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Could not generate share link",
+        });
+      }
+    } catch (err) {
+      console.error("Share error:", err);
       Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: "Link copied to clipboard",
+        type: "error",
+        text1: "Error",
+        text2: "Could not generate share link",
       });
     }
   };

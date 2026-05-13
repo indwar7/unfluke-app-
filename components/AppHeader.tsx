@@ -259,10 +259,14 @@ export const AppHeader = () => {
   // Mark all as read
   const markAllRead = () => {
     if (!user?._id) return;
-    postReadNotifications({ userID: user._id }).then(() => {
-      setBadge(false);
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    });
+    postReadNotifications({ userID: user._id })
+      .then(() => {
+        setBadge(false);
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      })
+      .catch((err: any) => {
+        console.error("markAllRead error:", err);
+      });
   };
 
   // Load more notifications
