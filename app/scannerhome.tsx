@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
   Share,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Ionicons } from "@expo/vector-icons";
@@ -151,24 +151,27 @@ const ScannerHomePage = ({ }) => {
 
   };
 
-  useEffect(() => {
-    if (auth.user._id !== undefined && auth.user._id !== "") {
-      axios
-        .post(`${Config.BACKEND_URL}/api/scanner/getScanners`, {
-          id: auth.user._id,
-          alerts: alerts ? alerts : false,
-        })
-        .then((res) => {
-          setLoading(false);
-          setScanners(res);
-          setFilteredScanners(res);
-        })
-        .catch((err) => {
-          console.log(err);
-          setLoading(false);
-        });
-    }
-  }, [auth, alerts]);
+  useFocusEffect(
+    useCallback(() => {
+      if (auth.user._id !== undefined && auth.user._id !== "") {
+        setLoading(true);
+        axios
+          .post(`${Config.BACKEND_URL}/api/scanner/getScanners`, {
+            id: auth.user._id,
+            alerts: alerts ? alerts : false,
+          })
+          .then((res) => {
+            setLoading(false);
+            setScanners(res);
+            setFilteredScanners(res);
+          })
+          .catch((err) => {
+            console.log(err);
+            setLoading(false);
+          });
+      }
+    }, [auth, alerts])
+  );
 
   useEffect(() => {
     axios
