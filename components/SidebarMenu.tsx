@@ -69,11 +69,7 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
         onClose();
         // Wait for close animation before navigating
         setTimeout(() => {
-            if (route === "/strategy-charts") {
-                router.push("/strategy-charts?strategyId=123" as any);
-            } else {
-                router.push(route as any);
-            }
+            router.push(route as any);
         }, 250);
     };
 
