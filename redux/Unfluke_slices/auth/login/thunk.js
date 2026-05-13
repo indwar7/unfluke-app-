@@ -64,9 +64,13 @@ export const loginUser = (user) => async (dispatch) => {
 
 export const logoutUser = () => async (dispatch) => {
   try {
-    await AsyncStorage.removeItem("authUser");
-    await AsyncStorage.removeItem("access");
-    await AsyncStorage.removeItem("firstLogin");
+    await AsyncStorage.multiRemove([
+      "authUser",
+      "access",
+      "firstLogin",
+      "forgotPasswordResponse",
+      "response",
+    ]);
     dispatch(logoutUserSuccess(true));
   } catch (error) {
     dispatch(apiError(error?.message || "Logout failed"));
@@ -84,8 +88,16 @@ export const socialLogin = (type, router) => async (dispatch) => {
 
     const socialdata = await response;
     if (socialdata) {
-      await AsyncStorage.setItem("authUser", JSON.stringify(response));
-      dispatch(loginSuccess(response));
+      const accessToken =
+        socialdata?.access_token ||
+        socialdata?.accessToken ||
+        socialdata?.stsTokenManager?.accessToken;
+      if (accessToken) {
+        await AsyncStorage.setItem("access", accessToken);
+      }
+      await AsyncStorage.setItem("firstLogin", "true");
+      await AsyncStorage.setItem("authUser", JSON.stringify(socialdata));
+      dispatch(loginSuccess(socialdata));
       router.replace(`dashboard`);
     }
   } catch (error) {
