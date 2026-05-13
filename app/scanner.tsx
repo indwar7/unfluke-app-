@@ -411,6 +411,7 @@ const Scanner = ({ shared }) => {
                       });
 
                       const tmp = deepCopy(scannerState);
+                      delete tmp._id;
                       tmp.owner = auth.user._id;
                       tmp.date = todaysDate;
                       tmp.time = timeAdded;
@@ -693,7 +694,7 @@ const Scanner = ({ shared }) => {
         if (data) {
           const isValidResult = shared
             ? data.windowId == windowId.current
-            : data.userId === auth.user._id &&
+            : data.userId === auth?.user?._id &&
             data.windowId == windowId.current;
 
           if (isValidResult) {

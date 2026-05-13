@@ -153,7 +153,7 @@ const ScannerHomePage = ({ }) => {
 
   useFocusEffect(
     useCallback(() => {
-      if (auth.user._id !== undefined && auth.user._id !== "") {
+      if (auth?.user?._id) {
         setLoading(true);
         axios
           .post(`${Config.BACKEND_URL}/api/scanner/getScanners`, {
@@ -162,8 +162,8 @@ const ScannerHomePage = ({ }) => {
           })
           .then((res) => {
             setLoading(false);
-            setScanners(res);
-            setFilteredScanners(res);
+            setScanners(Array.isArray(res) ? res : []);
+            setFilteredScanners(Array.isArray(res) ? res : []);
           })
           .catch((err) => {
             console.log(err);
@@ -182,7 +182,10 @@ const ScannerHomePage = ({ }) => {
           setLoading(false);
         }
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.log(err);
+        setLoading(false);
+      });
   }, []);
 
   const handleSearch = (text) => {
