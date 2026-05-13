@@ -709,7 +709,7 @@ const Scanner = ({ shared }) => {
         if (data) {
           const isValidResult = shared
             ? data.windowId == windowId.current
-            : data.userId === auth.user._id &&
+            : data.userId === auth?.user?._id &&
             data.windowId == windowId.current;
 
           if (isValidResult) {
