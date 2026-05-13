@@ -439,12 +439,31 @@ export const AppHeader = () => {
 /* ═══════════════════════════════════════════════════
    SCREEN WITH HEADER
 ═══════════════════════════════════════════════════ */
-export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => (
-  <View style={[s.screen, style]}>
-    <AppHeader />
-    <View style={s.screenContent}>{children}</View>
-  </View>
-);
+export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => {
+  // Auth guard: every protected screen wraps with ScreenWithHeader, so
+  // redirect to /login from one place instead of guarding each screen.
+  const user = useSelector((state: any) => state?.Login?.user ?? null);
+  const isUserLogout = useSelector((state: any) => state?.Login?.isUserLogout ?? false);
+
+  useEffect(() => {
+    if (!user?._id && !isUserLogout) {
+      // No user and not a normal logout transition — likely a deep link
+      // or back-stack jump while signed out. Send them to login.
+      try { router.replace("/login"); } catch { }
+    }
+  }, [user, isUserLogout]);
+
+  if (!user?._id) {
+    return <View style={[s.screen, style]} />;
+  }
+
+  return (
+    <View style={[s.screen, style]}>
+      <AppHeader />
+      <View style={s.screenContent}>{children}</View>
+    </View>
+  );
+};
 
 /* ═══════════════════════════════════════════════════
    STYLES
