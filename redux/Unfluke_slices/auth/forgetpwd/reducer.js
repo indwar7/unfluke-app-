@@ -37,6 +37,7 @@ const otpVerificationInitialState = {
   loading: false,
   error: null,
   message: null,
+  token: null,
   success: false,
   resendLoading: false,
   resendSuccess: false,
@@ -54,7 +55,16 @@ const otpVerificationSlice = createSlice({
     verifyOtpSuccess: (state, action) => {
       state.loading = false;
       state.success = true;
-      state.message = action.payload.message;
+      state.message = action.payload?.message;
+      // Capture any verification token the backend issues so the
+      // reset-password screen can authenticate the password change.
+      // Tolerate several common naming conventions.
+      state.token =
+        action.payload?.token ||
+        action.payload?.verificationToken ||
+        action.payload?.resetToken ||
+        action.payload?.activation_token ||
+        null;
     },
     verifyOtpFail: (state, action) => {
       state.loading = false;
@@ -76,6 +86,7 @@ const otpVerificationSlice = createSlice({
       state.error = null;
       state.success = false;
       state.message = null;
+      state.token = null;
       state.resendError = null;
       state.resendSuccess = false;
     },

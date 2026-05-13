@@ -77,6 +77,7 @@ const OtpVerification = () => {
       loading: state.OtpVerification?.loading || false,
       error: state.OtpVerification?.error || null,
       message: state.OtpVerification?.message || null,
+      token: state.OtpVerification?.token || null,
       success: state.OtpVerification?.success || false,
       resendLoading: state.OtpVerification?.resendLoading || false,
       resendSuccess: state.OtpVerification?.resendSuccess || false,
@@ -88,6 +89,7 @@ const OtpVerification = () => {
     loading,
     error,
     message,
+    token: verifiedToken,
     success,
     resendLoading,
     resendSuccess,
@@ -111,7 +113,10 @@ const OtpVerification = () => {
         setTimeout(() => {
           navigation.navigate("reset-password", {
             phone: phoneNumber,
-            token: validation.values.otp,
+            // Prefer the server-issued verification token; fall back to
+            // the user-entered OTP only if the backend does not return one
+            // (older API contract).
+            token: verifiedToken || validation.values.otp,
           });
           dispatch(resetOtpVerificationFlag());
           setIsNavigating(false);
