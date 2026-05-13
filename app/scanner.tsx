@@ -411,6 +411,7 @@ const Scanner = ({ shared }) => {
                       });
 
                       const tmp = deepCopy(scannerState);
+                      delete tmp._id;
                       tmp.owner = auth.user._id;
                       tmp.date = todaysDate;
                       tmp.time = timeAdded;
