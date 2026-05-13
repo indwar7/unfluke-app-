@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { Switch } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { ChevronRight } from "lucide-react-native";
@@ -161,27 +162,32 @@ const AdvancedBacktesterHome = () => {
     }
   };
 
-  useEffect(() => {
-    if (auth?.user?._id) {
-      axios
-        .get(
-          `${Config.BACKEND_URL}/api/stocks/getSavedStrategies?user=${auth.user._id}`
-        )
-        .then((res) => {
-          const data = res.data ?? res;
-          const list = Array.isArray(data) ? data : [];
-          setSavedStrategies(list);
-          setListStrategies(list);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error(err);
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
-  }, [auth]);
+  // Re-fetch saved strategies every time the screen comes into focus so
+  // a new strategy saved in the editor appears in the list on return.
+  useFocusEffect(
+    useCallback(() => {
+      if (auth?.user?._id) {
+        setLoading(true);
+        axios
+          .get(
+            `${Config.BACKEND_URL}/api/stocks/getSavedStrategies?user=${auth.user._id}`
+          )
+          .then((res) => {
+            const data = res.data ?? res;
+            const list = Array.isArray(data) ? data : [];
+            setSavedStrategies(list);
+            setListStrategies(list);
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error(err);
+            setLoading(false);
+          });
+      } else {
+        setLoading(false);
+      }
+    }, [auth])
+  );
 
   const StrategyCard = ({ item, index }: { item: any; index: number }) => {
     const drawdown = item.maxDrawdown ?? item.max_drawdown;
