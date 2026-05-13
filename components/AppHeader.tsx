@@ -216,6 +216,14 @@ export const AppHeader = () => {
   const unread = notifications.filter(n => !n.is_read).length;
 
   const socketRef = useRef<any>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Load notifications from API
   const loadNotifications = (pageNum = 1, isInitial = false) => {
@@ -230,6 +238,7 @@ export const AppHeader = () => {
       limit: 50,
     })
       .then((response: any) => {
+        if (!mountedRef.current) return;
         const data = response?.data ?? response;
         const list = data?.notifications ?? (Array.isArray(data) ? data : []);
         if (list.length > 0) {
@@ -251,6 +260,7 @@ export const AppHeader = () => {
         setLoading(false);
       })
       .catch((err: any) => {
+        if (!mountedRef.current) return;
         console.error("[Notifications] API error:", err?.message || err);
         setLoading(false);
       });
