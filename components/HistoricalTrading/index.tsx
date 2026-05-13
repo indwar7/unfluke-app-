@@ -314,7 +314,7 @@ const authSelector = createSelector(
 const Trading = () => {
   const insets = useSafeAreaInsets();
   // @ts-ignore
-  const selectedStock = useSelector((state) => state.GlobalStock.selectedStock);
+  const selectedStock = useSelector((state) => state?.GlobalStock?.selectedStock);
   const user = useSelector(authSelector);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
