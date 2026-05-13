@@ -17,9 +17,11 @@ const persistConfig = {
   key: "root",
   version: 1,
   storage: AsyncStorage,
-  // Remove whitelist to persist everything
-  // Only use blacklist if you want to exclude specific reducers
-  blacklist: [], // Empty array means persist everything
+  // Persist only Login (auth) and Layout (UI prefs). Other slices —
+  // Wallet, ScannerAlert, StrategyCharts, TestMyStrategy, Historical,
+  // Crypto, etc. — reset on app restart so trading data from a previous
+  // session or a different user on a shared device does not leak.
+  whitelist: ["Login", "Layout"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
