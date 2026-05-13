@@ -563,7 +563,13 @@ const {  height } = useWindowDimensions()
     setLoading(true);
     try {
       const res = await postCheckCoupon({ couponCode });
-      setCoupon(res[0].discount);
+      const discount =
+        Array.isArray(res) && res.length > 0 ? res[0]?.discount : null;
+      if (discount == null) {
+        showToast("Invalid Coupon");
+        return;
+      }
+      setCoupon(discount);
       showToast("Coupon applied successfully!", "success");
     } catch (err) {
       showToast("Invalid Coupon");
