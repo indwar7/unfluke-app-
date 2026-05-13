@@ -88,8 +88,21 @@ export const socialLogin = (type, router) => async (dispatch) => {
 
     const socialdata = await response;
     if (socialdata) {
-      await AsyncStorage.setItem("authUser", JSON.stringify(response));
-      dispatch(loginSuccess(response));
+      // Firebase wraps the token under several possible paths; try the
+      // common ones so app/index.tsx (which requires both access and
+      // authUser to auto-login) does not silently log the user out on
+      // every restart.
+      const accessToken =
+        socialdata?.access_token ||
+        socialdata?.accessToken ||
+        socialdata?.stsTokenManager?.accessToken ||
+        socialdata?.user?.stsTokenManager?.accessToken;
+      if (accessToken) {
+        await AsyncStorage.setItem("access", accessToken);
+      }
+      await AsyncStorage.setItem("firstLogin", "true");
+      await AsyncStorage.setItem("authUser", JSON.stringify(socialdata));
+      dispatch(loginSuccess(socialdata));
       router.replace(`dashboard`);
     }
   } catch (error) {
