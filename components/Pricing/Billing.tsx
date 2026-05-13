@@ -609,7 +609,8 @@ const {  height } = useWindowDimensions()
   }, [tier]);
 
   const createOrder = async () => {
-    
+    if (loading) return; // prevent double-tap duplicate orders
+
     setMessage({ status: 0, message: "" });
     setLoading(true);
 

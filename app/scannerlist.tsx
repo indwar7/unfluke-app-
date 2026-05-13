@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { ChevronRight, Eye, Plus } from "lucide-react-native";
 import axios from "axios";
+import { Config } from "../helpers/config";
 import { ScreenWithHeader } from "../components/AppHeader";
 
 const ScannerList = () => {
@@ -37,7 +38,7 @@ const ScannerList = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "/in/scanner/getAdminScannersByCategory",
+        `${Config.BACKEND_URL}/api/scanner/getAdminScannersByCategory`,
         {
           params: {
             category,
@@ -46,10 +47,13 @@ const ScannerList = () => {
           },
         }
       );
+      // axios interceptor unwraps response.data; tolerate either shape
+      const payload = (response as any)?.data ?? response;
       setScanners(
-        Array.isArray(response.data) ? response.data : fallbackScanners || []
+        Array.isArray(payload) ? payload : fallbackScanners || []
       );
     } catch (error) {
+      console.error("fetchScanners error:", error);
       setScanners(fallbackScanners || []);
     } finally {
       setLoading(false);

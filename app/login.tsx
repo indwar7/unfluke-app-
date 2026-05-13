@@ -76,23 +76,19 @@ const UnflukeLogin = () => {
   const [passwordShow, setPasswordShow] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handle successful login
+  // Handle successful login — wait until user is hydrated in Redux,
+  // then navigate. Avoids the arbitrary 100ms race where router.replace
+  // could fire before Login.user is set on dashboard mount.
   useEffect(() => {
-    if (loginSuccess && !isNavigating) {
+    if (loginSuccess && user?._id && !isNavigating) {
       setIsNavigating(true);
-
-      console.log("Login success detected, navigating to dashboard");
 
       const navigateToDashboard = async () => {
         try {
           await onFinish();
-
           dispatch(resetLoginFlag());
           setIsLoading(false);
-
-          setTimeout(() => {
-            router.replace("/dashboard");
-          }, 100);
+          router.replace("/dashboard");
         } catch (error) {
           console.error("Navigation error:", error);
           setIsNavigating(false);
@@ -101,7 +97,7 @@ const UnflukeLogin = () => {
 
       navigateToDashboard();
     }
-  }, [loginSuccess]);
+  }, [loginSuccess, user?._id]);
 
   // useEffect(() => {
   //   if (user && user) {
