@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Image, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setUserFromStorage } from '../redux/Unfluke_slices/auth/login/reducer';
@@ -12,6 +13,10 @@ export default function IndexScreen() {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (isNavigating) return;
 
     const checkAndRedirect = async () => {
@@ -20,8 +25,7 @@ export default function IndexScreen() {
         const accessToken = await AsyncStorage.getItem("access");
         const authUser = await AsyncStorage.getItem("authUser");
 
-        // Show splash for 2 seconds before navigating
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 2500));
 
         if (accessToken && authUser) {
           try {

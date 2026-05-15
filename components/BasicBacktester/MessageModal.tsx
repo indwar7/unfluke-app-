@@ -8,7 +8,7 @@ import {
   useColorScheme,
   ScrollView,
 } from 'react-native';
-import { WebView } from 'expo-web-view'; // Alternative for HTML rendering
+import { WebView } from 'react-native-webview';
 
 const MessageModal = ({ message, setResultsMessage }) => {
   const colorScheme = useColorScheme();
@@ -49,7 +49,6 @@ const MessageModal = ({ message, setResultsMessage }) => {
               style={styles.scrollView}
             >
               {containsHtml ? (
-                // Option 1: Use WebView for HTML content (requires expo-web-view)
                 <WebView
                   source={{ html: `
                     <html>
