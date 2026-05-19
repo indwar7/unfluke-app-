@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   addSuffixToNumber,
   deepCopy,
@@ -27,7 +28,8 @@ import {
 const IndicatorModal = ({ closeModal, settings, type }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const dynamicStyles = styles(isDark);
+  const insets = useSafeAreaInsets();
+  const dynamicStyles = styles(isDark, insets.bottom);
 
   const [customOffset1s, setCustomOffset1s] = useState([]);
   const [customOffset2s, setCustomOffset2s] = useState([]);
@@ -127,9 +129,10 @@ const IndicatorModal = ({ closeModal, settings, type }) => {
   };
 
   const onPromptSubmit = () => {
-    const customCandle = promptValue;
-    if (!customCandle || isNaN(customCandle)) {
-      Alert.alert("Error", "Please enter a valid number");
+    const raw = (promptValue ?? "").toString().trim();
+    const customCandle = Number(raw);
+    if (!raw || !Number.isFinite(customCandle) || customCandle <= 0) {
+      Alert.alert("Error", "Please enter a valid positive number");
       return;
     }
 
@@ -198,37 +201,50 @@ const IndicatorModal = ({ closeModal, settings, type }) => {
 
   // Initialize custom offsets
   useEffect(() => {
-    if (settings.offset && !searchObjArray(offset1s, settings.offset)) {
-      const tmp = deepCopy(customOffset1s);
-      tmp.push({
-        value: settings.offset,
-        label: settings.offset.split("-")[0] + " candle/s ago",
-      });
-      setCustomOffset1s(tmp);
-    }
-
-    if (settings.offset2) {
-      const tmp = deepCopy(customOffset2s);
-      let label = "";
-      const split = settings.offset2.split("-");
-      const num = addSuffixToNumber(split[0]);
-
-      if (split[1] === "todays") {
-        label = "Todays " + num + " candle";
-        if (searchObjArray(offset2s["todays"], settings.offset2)) return;
-      } else if (split[1] === "yester") {
-        label = "Yesterdays " + num + " candle";
-        if (searchObjArray(offset2s["yesterdays"], settings.offset2)) return;
+    try {
+      if (
+        settings.offset &&
+        typeof settings.offset === "string" &&
+        !searchObjArray(offset1s, settings.offset)
+      ) {
+        const head = settings.offset.split("-")[0];
+        if (head && !isNaN(Number(head))) {
+          const tmp = deepCopy(customOffset1s);
+          tmp.push({
+            value: settings.offset,
+            label: head + " candle/s ago",
+          });
+          setCustomOffset1s(tmp);
+        }
       }
 
-      if (label === "") return;
+      if (settings.offset2 && typeof settings.offset2 === "string") {
+        const split = settings.offset2.split("-");
+        const head = split[0];
+        if (!head || isNaN(Number(head))) return;
 
-      tmp.push({
-        value: settings.offset2,
-        label: label,
-      });
+        const num = addSuffixToNumber(head);
+        let label = "";
 
-      setCustomOffset2s(tmp);
+        if (split[1] === "todays") {
+          label = "Todays " + num + " candle";
+          if (searchObjArray(offset2s["todays"], settings.offset2)) return;
+        } else if (split[1] === "yester") {
+          label = "Yesterdays " + num + " candle";
+          if (searchObjArray(offset2s["yesterdays"], settings.offset2)) return;
+        }
+
+        if (!label) return;
+
+        const tmp = deepCopy(customOffset2s);
+        tmp.push({
+          value: settings.offset2,
+          label: label,
+        });
+        setCustomOffset2s(tmp);
+      }
+    } catch (err) {
+      console.warn("IndicatorModal offset init error:", err);
     }
   }, []);
 
@@ -533,7 +549,7 @@ const IndicatorModal = ({ closeModal, settings, type }) => {
   );
 };
 
-const styles = (isDark) =>
+const styles = (isDark, bottomInset = 0) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
@@ -603,7 +619,9 @@ const styles = (isDark) =>
       flexDirection: "row",
       justifyContent: "flex-end",
       gap: 12,
-      padding: 16,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: Math.max(bottomInset, 16) + (Platform.OS === "android" ? 16 : 0),
       borderTopWidth: 1,
       borderTopColor: isDark ? "#374151" : "#E5E7EB",
     },

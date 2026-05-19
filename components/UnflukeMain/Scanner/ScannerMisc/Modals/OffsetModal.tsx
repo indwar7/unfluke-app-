@@ -12,11 +12,13 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const OffsetModal = ({ settings, closeModal, indicators }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const dynamicStyles = styles(isDark);
+  const insets = useSafeAreaInsets();
+  const dynamicStyles = styles(isDark, insets.bottom);
 
   const dailyCandles = ["Daily", 1, 2, 3, 4, 5, 6, 7, "n days ago"];
   const intradayMinsCandles = [
@@ -38,7 +40,7 @@ const OffsetModal = ({ settings, closeModal, indicators }) => {
   const [currentItem, setCurrentItem] = useState(null);
 
   const handleNPrompt = (val) => {
-    if (val.startsWith("n")) {
+    if (typeof val === "string" && val.startsWith("n")) {
       setCurrentItem(val);
       setPromptValue("");
       setPromptVisible(true);
@@ -49,13 +51,18 @@ const OffsetModal = ({ settings, closeModal, indicators }) => {
   };
 
   const onPromptSubmit = () => {
-    const newN = promptValue;
-    if (!newN || isNaN(newN) || newN.trim() === "") {
-      Alert.alert("Error", "Please enter a valid number");
+    const raw = (promptValue ?? "").toString().trim();
+    const parsed = Number(raw);
+    if (!raw || !Number.isFinite(parsed) || parsed <= 0) {
+      Alert.alert("Error", "Please enter a valid positive number");
+      return;
+    }
+    if (!currentItem || typeof currentItem !== "string") {
+      setPromptVisible(false);
       return;
     }
 
-    const newVal = currentItem.replace(/^n/, newN);
+    const newVal = currentItem.replace(/^n/, raw);
     const tmp = [...customCandles];
     if (!tmp.includes(newVal)) {
       tmp.push(newVal);
@@ -116,16 +123,20 @@ const OffsetModal = ({ settings, closeModal, indicators }) => {
   useEffect(() => {
     if (settings) {
       const value = settings.value;
-      const source = settings.source;
+      const src = settings.source;
 
-      if (value && value.trim() !== "" && !customCandles.includes(value)) {
+      if (
+        typeof value === "string" &&
+        value.trim() !== "" &&
+        !customCandles.includes(value)
+      ) {
         const tmp = [...customCandles];
         tmp.push(value);
         setCustomCandles(tmp);
       }
 
-      setSelected(value);
-      setSource(source);
+      setSelected(value || "1 min");
+      setSource(src || "Close");
     } else {
       setSelected("1 min");
       setSource("Close");
@@ -297,7 +308,7 @@ const OffsetModal = ({ settings, closeModal, indicators }) => {
   );
 };
 
-const styles = (isDark) =>
+const styles = (isDark, bottomInset = 0) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
@@ -432,7 +443,9 @@ const styles = (isDark) =>
       flexDirection: "row",
       justifyContent: "flex-end",
       gap: 12,
-      padding: 16,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: Math.max(bottomInset, 16) + (Platform.OS === "android" ? 16 : 0),
       borderTopWidth: 1,
       borderTopColor: isDark ? "#374151" : "#E5E7EB",
     },

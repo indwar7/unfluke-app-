@@ -56,13 +56,30 @@ const BasicBacktesterMainPage = () => {
     try {
       const res = await fetchBasicStrategyDetails(axios, item.user, item._id);
       const strategyObj = normalizeStrategy(res?.data || res);
-      if (strategyObj) {
-        dispatch(setEditStrategy(strategyObj));
-        router.push({
-          pathname: "/basic-backtester-view",
-          params: { filename: strategyObj.resultFileName.split(".")[0] },
-        });
+      if (!strategyObj) {
+        Alert.alert("Error", "This strategy could not be loaded.");
+        return;
       }
+
+      const rawFileName =
+        strategyObj.resultFileName ||
+        strategyObj.resultFile ||
+        item.resultFileName ||
+        "";
+      if (!rawFileName || typeof rawFileName !== "string") {
+        Alert.alert(
+          "Not available",
+          "This strategy doesn't have a backtest result available to view yet."
+        );
+        return;
+      }
+      const filename = rawFileName.split(".")[0];
+
+      dispatch(setEditStrategy(strategyObj));
+      router.push({
+        pathname: "/basic-backtester-view",
+        params: { filename },
+      });
     } catch (e) {
       Alert.alert("Error", "Failed to load strategy details. Please try again.");
     }
@@ -79,17 +96,6 @@ const BasicBacktesterMainPage = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     })}`;
-  };
-
-  const handleEdit = async (item) => {
-    try {
-      const stratDetails = await fetchBasicStrategyDetails(axios, item.user, item._id);
-      if (stratDetails) {
-        router.push("/basic-backtester");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to edit strategy. Please try again.");
-    }
   };
 
   useEffect(() => {
@@ -144,9 +150,6 @@ const BasicBacktesterMainPage = () => {
             </View>
           </View>
           <View style={styles.actionButtons}>
-            <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionButton}>
-              <Ionicons name="pencil" size={18} color="#6B7280" />
-            </TouchableOpacity>
             <TouchableOpacity onPress={() => handleView(item)} style={styles.actionButton}>
               <Ionicons name="eye" size={18} color="#6B7280" />
             </TouchableOpacity>

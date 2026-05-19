@@ -27,12 +27,14 @@ import { Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import MessageModal from "./MessageModal";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BasicBacktester = () => {
 
   const colorScheme = useColorScheme();
   const isDark = false;
-  const styles = createStyles(isDark);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(isDark, insets.bottom);
   const [subUrl, setSubUrl] = useState("");
   const globalState = useSelector((store: any) => store.Layout);
   const backtester = useSelector((store: any) => store.BasicBacktester);
@@ -260,7 +262,7 @@ const BasicBacktester = () => {
   );
 };
 
-const createStyles = (isDark) =>
+const createStyles = (isDark, bottomInset = 0) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -271,7 +273,7 @@ const createStyles = (isDark) =>
       paddingHorizontal: 12,
     },
     scrollContent: {
-      paddingBottom: 20,
+      paddingBottom: Math.max(bottomInset, 16) + 48,
     },
     headerContainer: {
       paddingBottom: 14,

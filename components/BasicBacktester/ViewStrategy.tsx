@@ -126,19 +126,21 @@ const ViewStrategy = () => {
 
   // Set CSV filenames from route params
   useEffect(() => {
-    setcsvFilename(filename);
-
-    if (filename) {
-      const normalFilename = filename.substring(2);
-      setcsvFilename1("0.5_" + normalFilename);
-      setcsvFilename2("1_" + normalFilename);
+    if (typeof filename !== "string" || filename.length === 0) {
+      setLoading(false);
+      return;
     }
+
+    setcsvFilename(filename);
+    const normalFilename = filename.length > 2 ? filename.substring(2) : filename;
+    setcsvFilename1("0.5_" + normalFilename);
+    setcsvFilename2("1_" + normalFilename);
   }, [filename]);
 
   // Load CSV data and analysis
   useEffect(() => {
     async function csvToJson() {
-      const ID = auth.user._id;
+      const ID = auth?.user?._id;
       try {
         if (ID && csvFilename && csvFilename1 && csvFilename2) {
           const data = await getCsvUrl(axios, {
@@ -149,32 +151,30 @@ const ViewStrategy = () => {
             advancedBacktester: advanced ? true : false,
           });
 
-          // console.log("RECEIVED ANALYSIS FOR THIS STRATEGY", data);
           setLoading(false);
 
-          console.log("setting csv data...");
-          setNewstrategyDataFromCSV(data.csvData);
+          if (!data || typeof data !== "object") {
+            setNewstrategyDataFromCSV([]);
+            return;
+          }
 
-          console.log("setting download URLs...");
-          setdownloadUrl(data.link);
-          setdownloadUrl1(data.link1);
-          setdownloadUrl2(data.link2);
+          setNewstrategyDataFromCSV(Array.isArray(data.csvData) ? data.csvData : []);
+          setdownloadUrl(data.link || "");
+          setdownloadUrl1(data.link1 || "");
+          setdownloadUrl2(data.link2 || "");
 
-          if (data.csvData) {
-            console.log("setting number of trades...");
+          if (Array.isArray(data.csvData)) {
             setnumberOfTrade(data.csvData.length);
+          } else {
+            setnumberOfTrade(0);
           }
 
-          if (data.analysis && data.analysis.analysis) {
-            const analysis = data.analysis.analysis;
-
-            // console.log("setting analysis...", analysis.analysis0);
-            setAnalysis0(analysis.analysis0);
-            setAnalysis1(analysis.analysis1);
-            setAnalysis2(analysis.analysis2);
+          const analysis = data.analysis && data.analysis.analysis;
+          if (analysis) {
+            setAnalysis0(analysis.analysis0 || {});
+            setAnalysis1(analysis.analysis1 || {});
+            setAnalysis2(analysis.analysis2 || {});
           }
-
-          console.log("analysis set...");
         }
       } catch (error) {
         console.error('Error loading CSV data:', error);
@@ -184,7 +184,7 @@ const ViewStrategy = () => {
     }
 
     csvToJson();
-  }, [auth.user._id, csvFilename, csvFilename1, csvFilename2, advanced]);
+  }, [auth?.user?._id, csvFilename, csvFilename1, csvFilename2, advanced]);
 
   // Handle edit navigation
   function handleEdit() {
@@ -317,7 +317,10 @@ const ViewStrategy = () => {
           </View>
 
           {/* Leg Summaries - Only if not Advanced */}
-          {!isAdvanced && legSummaries && Object.keys(legSummaries).length > 0 && (
+          {!isAdvanced &&
+            legSummaries &&
+            typeof legSummaries === "object" &&
+            Object.keys(legSummaries).length > 0 && (
             <View style={styles.legSummariesContainer}>
               <View style={styles.legSummariesHeader}>
                 {renderIcon('activity', 20, isDark ? '#60A5FA' : '#2563EB')}
@@ -330,7 +333,7 @@ const ViewStrategy = () => {
                     <View key={legId} style={styles.legSummaryItem}>
                       <Text style={styles.legNumber}>Leg {idx + 1}</Text>
                       <View style={styles.tagsContainer}>
-                        {(summary || []).map((s, i) => (
+                        {(Array.isArray(summary) ? summary : []).map((s, i) => (
                           <View key={i} style={styles.tag}>
                             <Text style={styles.tagText}>{s}</Text>
                           </View>

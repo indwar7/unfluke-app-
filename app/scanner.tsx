@@ -426,11 +426,12 @@ const Scanner = ({ shared }) => {
 
                       console.log("yha se 1")
 
-                      if (res && res.msg) {
+                      const okMsg = res?.data?.msg || (res && (res as any).msg);
+                      if (res && (res.status === 200 || res.status === 201 || okMsg)) {
                         Toast.show({
                           type: "success",
                           text1: "Success",
-                          text2: res.msg || "Scanner saved",
+                          text2: okMsg || "Scanner saved",
                           position: "top",
                           visibilityTime: 5000,
                         });
@@ -440,6 +441,8 @@ const Scanner = ({ shared }) => {
                           scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
                             navigation.navigate("scannerhome");
                         }, 500);
+                      } else {
+                        Alert.alert("Error", "Could not save scanner. Please try again.");
                       }
 
                     } catch (error) {
@@ -461,11 +464,12 @@ const Scanner = ({ shared }) => {
 
             console.log("yha se 2")
 
-            if (res && res.msg) {
+            const okMsg = res?.data?.msg || (res && (res as any).msg);
+            if (res && (res.status === 200 || res.status === 201 || okMsg)) {
               Toast.show({
                 type: "success",
                 text1: "Success",
-                text2: res.msg || "Scanner updated",
+                text2: okMsg || "Scanner updated",
                 position: "top",
                 visibilityTime: 5000,
               });
@@ -474,6 +478,8 @@ const Scanner = ({ shared }) => {
                 scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
                   navigation.navigate("scannerhome");
               }, 500);
+            } else {
+              Alert.alert("Error", "Could not update scanner. Please try again.");
             }
           }
         } else {
@@ -490,13 +496,14 @@ const Scanner = ({ shared }) => {
 
           setSaving(false);
 
-          console.log("yha se 3", res, res.msg)
+          console.log("yha se 3", res?.status, res?.data)
 
-          if (res && res.msg) {
+          const okMsg = res?.data?.msg || (res && (res as any).msg);
+          if (res && (res.status === 200 || res.status === 201 || okMsg)) {
             Toast.show({
               type: "success",
               text1: "Success",
-              text2: res.msg || "Scanner saved",
+              text2: okMsg || "Scanner saved",
               position: "top",
               visibilityTime: 5000,
             });
@@ -506,6 +513,8 @@ const Scanner = ({ shared }) => {
               scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
                 navigation.navigate("scannerhome");
             }, 500);
+          } else {
+            Alert.alert("Error", "Could not save scanner. Please try again.");
           }
         }
       } catch (error) {
