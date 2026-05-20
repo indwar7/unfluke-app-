@@ -81,8 +81,11 @@ function handleApiResponse(id, responseData, error) {
 }
 
 function reformatDate(dateString) {
+  if (!dateString || typeof dateString !== 'string') return '';
   var parts = dateString.split(', ');
+  if (parts.length < 2) return dateString;
   var datePart = parts[0].split('/');
+  if (datePart.length < 3) return dateString;
   return datePart[2] + '-' + datePart[1] + '-' + datePart[0] + ' ' + parts[1];
 }
 

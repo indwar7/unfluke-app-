@@ -4,7 +4,16 @@ export const addStrategy = async (axios, strategy, navigate, randomSocketID, ID,
     if(isBacktesting) return;
 
     try {
-        const body = { user: ID, randomSocketID: randomSocketID, ...strategy, market: subUrl};
+        // Spread strategy FIRST so any embedded user/userID from a public-strategy fetch
+        // gets overwritten by the current user's ID below — otherwise an edited public
+        // strategy saves under the original author's account.
+        const body = {
+            ...strategy,
+            user: ID,
+            userID: ID,
+            randomSocketID: randomSocketID,
+            market: subUrl,
+        };
 
         const response = await axios.post(`${Config.BACKEND_URL}/api/strategy/basicbacktest`, body);
 

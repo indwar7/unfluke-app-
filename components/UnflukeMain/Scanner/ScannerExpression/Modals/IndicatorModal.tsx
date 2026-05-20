@@ -621,7 +621,13 @@ const styles = (isDark, bottomInset = 0) =>
       gap: 12,
       paddingHorizontal: 16,
       paddingTop: 16,
-      paddingBottom: Math.max(bottomInset, 16) + (Platform.OS === "android" ? 16 : 0),
+      // RN Modal renders outside the SafeAreaProvider tree, so useSafeAreaInsets() often
+      // returns 0 here. Force a reserved gutter on Android (3-button nav ≈ 48dp, gesture
+      // bar ≈ 24dp). Take the max of inset (if available) and a hardcoded floor.
+      paddingBottom:
+        Platform.OS === "android"
+          ? Math.max(bottomInset, 48) + 8
+          : Math.max(bottomInset, 16),
       borderTopWidth: 1,
       borderTopColor: isDark ? "#374151" : "#E5E7EB",
     },

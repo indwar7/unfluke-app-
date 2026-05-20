@@ -445,7 +445,10 @@ const styles = (isDark, bottomInset = 0) =>
       gap: 12,
       paddingHorizontal: 16,
       paddingTop: 16,
-      paddingBottom: Math.max(bottomInset, 16) + (Platform.OS === "android" ? 16 : 0),
+      paddingBottom:
+        Platform.OS === "android"
+          ? Math.max(bottomInset, 48) + 8
+          : Math.max(bottomInset, 16),
       borderTopWidth: 1,
       borderTopColor: isDark ? "#374151" : "#E5E7EB",
     },

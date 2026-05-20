@@ -31,7 +31,6 @@ const MENU_ITEMS = [
     { label: "Strategy Charts", icon: "🎯", route: "/strategy-charts" },
     { label: "Technical Scanner", icon: "🔍", route: "/scannermain" },
     { label: "Fundamental Scanner", icon: "🔬", route: "/scannerfundamental" },
-    { label: "Alerts", icon: "🔔", route: "/scannerhome?alertsSideBar=true" },
     { label: "Simple Backtest", icon: "⏱️", route: "/basic-backtester-main" },
     { label: "Advanced Backtest", icon: "📉", route: "/advanced-backtester-main" },
     { label: "Option Simulator", icon: "⚡", route: "/simulator" },

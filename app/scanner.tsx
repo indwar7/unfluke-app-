@@ -417,70 +417,77 @@ const Scanner = ({ shared }) => {
                       tmp.time = timeAdded;
                       tmp.scannerType = scannerType;
 
-                      const res = await axios.post(
+                      // The axios response interceptor in Unfluke_helpers/api_helper.js
+                      // unwraps `.data` before we see it, so `res` may be the raw payload
+                      // (string/object) or the AxiosResponse depending on what the server
+                      // returned. If the call didn't throw, the server accepted the save.
+                      const res: any = await axios.post(
                         `${Config.BACKEND_URL}/api/scanner/setScanner`,
                         { tmp }
                       );
 
                       setSaving(false);
 
-                      console.log("yha se 1")
+                      const okMsg =
+                        res?.msg ||
+                        res?.data?.msg ||
+                        (typeof res === "string" ? res : null) ||
+                        "Scanner saved";
 
-                      const okMsg = res?.data?.msg || (res && (res as any).msg);
-                      if (res && (res.status === 200 || res.status === 201 || okMsg)) {
-                        Toast.show({
-                          type: "success",
-                          text1: "Success",
-                          text2: okMsg || "Scanner saved",
-                          position: "top",
-                          visibilityTime: 5000,
-                        });
+                      Toast.show({
+                        type: "success",
+                        text1: "Success",
+                        text2: okMsg,
+                        position: "top",
+                        visibilityTime: 4000,
+                      });
 
-                        // Navigate after a short delay to show toast
-                        setTimeout(() => {
-                          scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
-                            navigation.navigate("scannerhome");
-                        }, 500);
-                      } else {
-                        Alert.alert("Error", "Could not save scanner. Please try again.");
-                      }
-
-                    } catch (error) {
+                      setTimeout(() => {
+                        scannerType === "alert"
+                          ? navigation.navigate("scannerhome", { alertsScanner: "true" })
+                          : navigation.navigate("scannerhome");
+                      }, 500);
+                    } catch (error: any) {
                       setSaving(false);
                       console.error("Save error:", error);
-                      Alert.alert("Error", "Failed to save scanner");
+                      Alert.alert(
+                        "Error",
+                        error?.response?.data?.msg ||
+                          error?.message ||
+                          "Failed to save scanner"
+                      );
                     }
                   },
                 },
               ]
             );
           } else {
-            const res = await axios.post(
+            const res: any = await axios.post(
               `${Config.BACKEND_URL}/api/scanner/updateScanner`,
               { scannerId, tmp: scannerState }
             );
 
             setSaving(false);
 
-            console.log("yha se 2")
+            const okMsg =
+              res?.msg ||
+              res?.data?.msg ||
+              (typeof res === "string" ? res : null) ||
+              "Scanner updated";
 
-            const okMsg = res?.data?.msg || (res && (res as any).msg);
-            if (res && (res.status === 200 || res.status === 201 || okMsg)) {
-              Toast.show({
-                type: "success",
-                text1: "Success",
-                text2: okMsg || "Scanner updated",
-                position: "top",
-                visibilityTime: 5000,
-              });
-              // Navigate after a short delay
-              setTimeout(() => {
-                scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
-                  navigation.navigate("scannerhome");
-              }, 500);
-            } else {
-              Alert.alert("Error", "Could not update scanner. Please try again.");
-            }
+            Toast.show({
+              type: "success",
+              text1: "Success",
+              text2: okMsg,
+              position: "top",
+              visibilityTime: 4000,
+            });
+
+            setTimeout(() => {
+              scannerType === "alert"
+                ? navigation.navigate("scannerhome", { alertsScanner: "true" })
+                : navigation.navigate("scannerhome");
+            }, 500);
           }
         } else {
           const tmp = deepCopy(scannerState);
@@ -489,33 +496,32 @@ const Scanner = ({ shared }) => {
           tmp.time = timeAdded;
           tmp.scannerType = scannerType;
 
-          const res = await axios.post(
+          const res: any = await axios.post(
             `${Config.BACKEND_URL}/api/scanner/setScanner`,
             { tmp }
           );
 
           setSaving(false);
 
-          console.log("yha se 3", res?.status, res?.data)
+          const okMsg =
+            res?.msg ||
+            res?.data?.msg ||
+            (typeof res === "string" ? res : null) ||
+            "Scanner saved";
 
-          const okMsg = res?.data?.msg || (res && (res as any).msg);
-          if (res && (res.status === 200 || res.status === 201 || okMsg)) {
-            Toast.show({
-              type: "success",
-              text1: "Success",
-              text2: okMsg || "Scanner saved",
-              position: "top",
-              visibilityTime: 5000,
-            });
+          Toast.show({
+            type: "success",
+            text1: "Success",
+            text2: okMsg,
+            position: "top",
+            visibilityTime: 4000,
+          });
 
-            // Navigate after a short delay
-            setTimeout(() => {
-              scannerType === "alert" ? navigation.navigate("scannerhome", { alertsScanner: "true" }) :
-                navigation.navigate("scannerhome");
-            }, 500);
-          } else {
-            Alert.alert("Error", "Could not save scanner. Please try again.");
-          }
+          setTimeout(() => {
+            scannerType === "alert"
+              ? navigation.navigate("scannerhome", { alertsScanner: "true" })
+              : navigation.navigate("scannerhome");
+          }, 500);
         }
       } catch (error) {
         setSaving(false);
@@ -724,13 +730,13 @@ const Scanner = ({ shared }) => {
           if (isValidResult) {
             setLoading(false);
 
-            if (data.results.length > 0) {
+            if (Array.isArray(data.results) && data.results.length > 0) {
               setLink(data.link);
               setScannerResults(data.results);
               setResultsMessage(data.message);
               if (data.headers) setHeaders(data.headers);
             } else {
-              Alert.alert("Info", data.message);
+              Alert.alert("Info", data.message || "No results");
             }
           }
         }
