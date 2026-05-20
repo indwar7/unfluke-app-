@@ -12,8 +12,6 @@ import {
 } from "react-native";
 import {
   Bell,
-  Moon,
-  Sun,
   User,
 } from "lucide-react-native";
 import { Link, router } from "expo-router";
@@ -59,7 +57,6 @@ export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
 
   const dispatch = useDispatch();
 
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [profilePopupVisible, setProfilePopupVisible] = useState(false);
 
   // Redux selectors - safe access
@@ -109,14 +106,6 @@ export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
 
         {/* Right Icons */}
         <View style={styles.rightIcons}>
-          <TouchableOpacity
-            onPress={() => setIsDarkMode(!isDarkMode)}
-            style={styles.iconBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            {isDarkMode ? <Sun size={20} color="#333" /> : <Moon size={20} color="#333" />}
-          </TouchableOpacity>
-
           <View style={styles.bellContainer}>
             <TouchableOpacity
               style={styles.iconBtn}

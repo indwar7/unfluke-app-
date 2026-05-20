@@ -3,7 +3,7 @@ import {
   View, Text, Image, TouchableOpacity, StyleSheet,
   Pressable, Modal, ScrollView,
 } from "react-native";
-import { Bell, Moon, Sun, User, X } from "lucide-react-native";
+import { Bell, User, X } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../redux/Unfluke_slices/thunks";
@@ -198,7 +198,6 @@ export const AppHeader = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -374,15 +373,6 @@ export const AppHeader = () => {
 
           {/* Right icons */}
           <View style={s.rightIcons}>
-            {/* Dark mode toggle */}
-            <TouchableOpacity
-              onPress={() => setIsDarkMode(v => !v)}
-              style={s.iconBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              {isDarkMode ? <Sun size={20} color="#333" /> : <Moon size={20} color="#333" />}
-            </TouchableOpacity>
-
             {/* Bell */}
             <TouchableOpacity
               style={s.iconBtn}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Modal,
   TouchableWithoutFeedback,
   TextInput,
-  Dimensions,
 } from "react-native";
 import { ChevronDown, ChevronUp } from "lucide-react-native";
 
@@ -66,12 +65,6 @@ const CustomSelect = ({
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const containerRef = useRef(null);
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    const selectedOption = options.find((opt) => opt.value === selected);
-    if (selectedOption) setInputValue(selectedOption.label.toString());
-  }, [selected, options]);
 
   const filteredOptions = disableTyping
     ? options
@@ -85,87 +78,108 @@ const CustomSelect = ({
         return false;
       });
 
-  const handleSelect = (value, label) => {
-    setInputValue(label.toString());
+  const closeDropdown = () => {
+    setOpen(false);
+    setInputValue("");
+  };
+
+  const openDropdown = () => {
+    setInputValue("");
+    setOpen(true);
+  };
+
+  const handleSelect = (value) => {
+    setInputValue("");
     setOpen(false);
     onChange(value);
-    inputRef.current?.blur(); // Remove focus from input
-  };
-
-  const toggleDropdown = () => {
-    setOpen(!open);
-  };
-
-  const handleInputFocus = () => {
-    if (!disableTyping) {
-      setOpen(true);
-    }
   };
 
   const handleInputChange = (text) => {
     if (!disableTyping) {
       setInputValue(text);
-      if (!open) setOpen(true);
     }
   };
 
+  const displayValue =
+    options.find((opt) => opt.value === selected)?.label?.toString() || "";
+
   return (
     <View style={styles.container} ref={containerRef}>
-      <View style={styles.inputContainer}>
-        <TextInput
-          ref={inputRef}
-          style={[styles.input, disableTyping && styles.readOnly]}
-          placeholder={placeholder}
-          value={inputValue}
-          editable={!disableTyping}
-          onFocus={handleInputFocus}
-          onChangeText={handleInputChange}
-        />
-        <TouchableOpacity
-          style={styles.iconContainer}
-          onPress={toggleDropdown}
+      <TouchableOpacity
+        style={styles.button}
+        activeOpacity={0.7}
+        onPress={openDropdown}
+      >
+        <Text
+          style={[styles.buttonText, !displayValue && styles.placeholderText]}
+          numberOfLines={1}
         >
-          {open ? (
-            <ChevronUp size={18} color="#6B7280" />
-          ) : (
-            <ChevronDown size={18} color="#6B7280" />
-          )}
-        </TouchableOpacity>
-      </View>
+          {displayValue || placeholder}
+        </Text>
+        {open ? (
+          <ChevronUp size={18} color="#6B7280" />
+        ) : (
+          <ChevronDown size={18} color="#6B7280" />
+        )}
+      </TouchableOpacity>
 
-      {open && (
-        <View style={styles.inlineDropdown}>
-          <ScrollView 
-            style={styles.scrollView}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
-          >
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.option,
-                    selected === item.value && styles.selectedOption
-                  ]}
-                  onPress={() => handleSelect(item.value, item.label)}
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={closeDropdown}
+      >
+        <TouchableWithoutFeedback onPress={closeDropdown}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalDropdown}>
+                {!disableTyping && (
+                  <TextInput
+                    style={styles.modalSearchInput}
+                    placeholder={placeholder || "Search..."}
+                    placeholderTextColor="#9CA3AF"
+                    value={inputValue}
+                    onChangeText={handleInputChange}
+                    autoFocus
+                  />
+                )}
+                <ScrollView
+                  style={styles.modalScrollView}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled
                 >
-                  <Text style={[
-                    styles.optionText,
-                    selected === item.value && styles.selectedOptionText
-                  ]}>
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View style={styles.option}>
-                <Text style={styles.noMatch}>No matches found.</Text>
+                  {filteredOptions.length > 0 ? (
+                    filteredOptions.map((item, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.option,
+                          selected === item.value && styles.selectedOption,
+                        ]}
+                        onPress={() => handleSelect(item.value)}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            selected === item.value &&
+                              styles.selectedOptionText,
+                          ]}
+                        >
+                          {item.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <View style={styles.option}>
+                      <Text style={styles.noMatch}>No matches found.</Text>
+                    </View>
+                  )}
+                </ScrollView>
               </View>
-            )}
-          </ScrollView>
-        </View>
-      )}
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -194,6 +208,11 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#1f2937",
     fontSize: 16,
+    flex: 1,
+    marginRight: 8,
+  },
+  placeholderText: {
+    color: "#9CA3AF",
   },
   input: {
     width: "100%",
@@ -240,7 +259,34 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalDropdown: {
+    width: "100%",
+    maxWidth: 420,
+    maxHeight: "70%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  modalSearchInput: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#1f2937",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  modalScrollView: {
+    maxHeight: 380,
   },
   dropdown: {
     position: "absolute",
