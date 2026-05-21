@@ -9,6 +9,7 @@ import { WebView } from "react-native-webview";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { useBottomGutter } from "@/utils/bottomGutter";
 
 const WIDTH = Dimensions.get("window").width;
 const BASE = "https://api.unfluke.in";
@@ -394,6 +395,7 @@ if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('READY');
 // Main Screen
 // ============================================================
 export default function StrategyChartsScreen() {
+  const screenBottomGutter = useBottomGutter();
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [mrkt, setMrkt] = useState<string | null>(null);
@@ -690,10 +692,11 @@ export default function StrategyChartsScreen() {
   // ── Picker Modal ───────────────────────────────────────────
   const PickerModal = ({ visible, onClose, data, selected, onSelect, title, searchable = false }: any) => {
     const [search, setSearch] = useState("");
+    const bottomGutter = useBottomGutter();
     const filtered = searchable ? data.filter((i: string) => i.toLowerCase().includes(search.toLowerCase())) : data;
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity style={[styles.modalOverlay, { paddingBottom: bottomGutter }]} activeOpacity={1} onPress={onClose}>
           <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <Text style={styles.modalTitle}>{title}</Text>
@@ -862,7 +865,7 @@ export default function StrategyChartsScreen() {
       {/* Form */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 60 + screenBottomGutter }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.card}>

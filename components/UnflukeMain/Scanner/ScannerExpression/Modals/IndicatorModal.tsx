@@ -11,25 +11,10 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
-  Dimensions,
-  StatusBar,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// Compute Android system nav bar height by subtracting the visible window height
-// from the full screen height. This works even when the Modal renders outside the
-// SafeAreaProvider (where useSafeAreaInsets returns 0). Falls back to 48dp.
-const getAndroidBottomNavHeight = () => {
-  if (Platform.OS !== "android") return 0;
-  const screen = Dimensions.get("screen");
-  const window = Dimensions.get("window");
-  const statusBar = StatusBar.currentHeight || 0;
-  const diff = screen.height - window.height - statusBar;
-  // diff > 0 means there's a real nav bar; otherwise assume gesture bar (~24-48dp)
-  return diff > 0 ? Math.max(diff, 24) : 48;
-};
+import { useBottomGutter } from "../../../../../utils/bottomGutter";
 import {
   addSuffixToNumber,
   deepCopy,
@@ -43,9 +28,7 @@ import {
 const IndicatorModal = ({ closeModal, settings, type }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const insets = useSafeAreaInsets();
-  // Prefer the measured nav bar height (works inside Modal), fall back to insets.
-  const bottomGutter = Math.max(insets.bottom, getAndroidBottomNavHeight());
+  const bottomGutter = useBottomGutter();
   const dynamicStyles = styles(isDark, bottomGutter);
 
   const [customOffset1s, setCustomOffset1s] = useState([]);

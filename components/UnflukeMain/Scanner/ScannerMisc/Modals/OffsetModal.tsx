@@ -11,27 +11,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Dimensions,
-  StatusBar,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// Compute Android nav bar height by subtracting visible window height from full
-// screen height. Reliable even inside RN Modal (where useSafeAreaInsets is 0).
-const getAndroidBottomNavHeight = () => {
-  if (Platform.OS !== "android") return 0;
-  const screen = Dimensions.get("screen");
-  const window = Dimensions.get("window");
-  const statusBar = StatusBar.currentHeight || 0;
-  const diff = screen.height - window.height - statusBar;
-  return diff > 0 ? Math.max(diff, 24) : 48;
-};
+import { useBottomGutter } from "../../../../../utils/bottomGutter";
 
 const OffsetModal = ({ settings, closeModal, indicators }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const insets = useSafeAreaInsets();
-  const bottomGutter = Math.max(insets.bottom, getAndroidBottomNavHeight());
+  const bottomGutter = useBottomGutter();
   const dynamicStyles = styles(isDark, bottomGutter);
 
   const dailyCandles = ["Daily", 1, 2, 3, 4, 5, 6, 7, "n days ago"];

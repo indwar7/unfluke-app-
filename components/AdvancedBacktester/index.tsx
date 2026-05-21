@@ -40,10 +40,12 @@ import {
 
 import { deepCopy } from "../../components/UnflukeMain/BasicBacktester/StrategyLegs/utils";
 import { backendSocket } from "../../socket/socket";
+import { useBottomGutter } from "../../utils/bottomGutter";
 
 const AdvancedBacktester = () => {
   const isDark = false;
-  const dynamicStyles = createStyles(isDark);
+  const bottomGutter = useBottomGutter();
+  const dynamicStyles = createStyles(isDark, bottomGutter);
 
   const advancedState = useSelector((store: any) => store.AdvancedBacktester);
   const auth = useSelector((store: any) => store.Login);
@@ -407,7 +409,7 @@ const AdvancedBacktester = () => {
   );
 };
 
-const createStyles = (isDark: boolean) =>
+const createStyles = (isDark: boolean, bottomGutter = 0) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -444,7 +446,7 @@ const createStyles = (isDark: boolean) =>
     scrollView: { flex: 1 },
     contentContainer: {
       padding: 12,
-      paddingBottom: 40,
+      paddingBottom: 40 + bottomGutter,
       // ✅ NO paddingTop: 85
     },
 
