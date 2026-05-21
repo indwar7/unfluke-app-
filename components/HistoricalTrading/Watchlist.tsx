@@ -119,9 +119,9 @@ const Watchlist = () => {
     setTradeWatch(val);
   }, [watchlist]);
 
-  useEffect(() => {
-    getCurrentFeed();
-  }, [tradeWatch]);
+  // NOTE: getCurrentFeed is also called from the [tradeWatch, currentDateTime]
+  // effect below with a user/loader guard. Calling it here too was firing the
+  // postHistoricalFeed API twice per watchlist change. Keep only one effect.
 
   useEffect(() => {
     selectedSymbol !== "" &&

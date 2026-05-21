@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -285,15 +285,15 @@ function handleMsg(raw) {
         } catch(e) {}
       }
     } else if (msg.type === 'RESET_DATA') {
+      // Invalidate cached datafeed state so the next getBars goes to the API.
       data = false;
       fullName = undefined;
       data2 = undefined;
+      cachedBars = [];
       prevDateTime = '';
-      if (tvWidget && tvWidget._ready) {
-        try {
-          tvWidget.activeChart().resetData();
-          tvWidget.activeChart().resetData();
-        } catch(e) {}
+      // Ask the chart to drop its bars and re-request from the datafeed.
+      if (tvWidget) {
+        try { tvWidget.activeChart && tvWidget.activeChart().resetData(); } catch(e) {}
       }
     }
   } catch(e) {}
@@ -403,7 +403,14 @@ const Trading = () => {
     sendToWebView(webRef, { type: "SET_SYMBOL", symbol: sym });
   }, [selectedStock?.symbol]);
 
-  const chartHTML = buildHistoricalChartHTML();
+  // CRITICAL: must be memoised. If the HTML string identity changes between
+  // renders, WebView remounts → TradingView library reloads → Datafeed state
+  // resets mid-fetch → chart shows "No data" even though the API returned bars.
+  const chartHTML = useMemo(() => buildHistoricalChartHTML(), []);
+  const webViewSource = useMemo(
+    () => ({ html: chartHTML, baseUrl: "https://unfluke.in" }),
+    [chartHTML]
+  );
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -416,9 +423,11 @@ const Trading = () => {
         <View style={{ flexDirection: "row", gap: 8 }}>
           <TouchableOpacity
             onPress={() => {
-              initSentRef.current = false;
-              lastSymbolSentRef.current = "";
-              setChartReady(false);
+              // Soft reset: invalidate Datafeed cache inside the WebView so it
+              // refetches bars on the next render. We avoid webRef.reload()
+              // here because that pulls down the entire TradingView library
+              // from CDN again, which can take 30-60s on slow networks.
+              sendToWebView(webRef, { type: "RESET_DATA" });
             }}
             style={styles.refreshBtn}
           >
@@ -443,7 +452,7 @@ const Trading = () => {
         )}
         <WebView
           ref={webRef}
-          source={{ html: chartHTML, baseUrl: "https://unfluke.in" }}
+          source={webViewSource}
           style={[{ flex: 1 }, !chartReady && { opacity: 0 }]}
           originWhitelist={["*"]}
           javaScriptEnabled
@@ -455,6 +464,7 @@ const Trading = () => {
           scalesPageToFit={false}
           scrollEnabled={false}
           androidLayerType="hardware"
+          cacheEnabled
           onMessage={(e) => {
             try {
               const parsed = JSON.parse(e.nativeEvent.data);
@@ -468,9 +478,10 @@ const Trading = () => {
             } catch {}
           }}
           onLoadEnd={() => {
-            // Fallback if READY message wasn't received
-            setTimeout(() => sendInit(), 3000);
-            setTimeout(() => setChartReady(true), 15000);
+            // Fallback: re-send INIT if READY message didn't arrive.
+            // Do NOT prematurely setChartReady — that hides the loader and
+            // leaves the user staring at an empty chart if data hasn't arrived.
+            setTimeout(() => sendInit(), 2000);
           }}
           onError={() => setChartReady(true)}
         />
