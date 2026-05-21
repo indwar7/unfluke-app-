@@ -11,14 +11,28 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Dimensions,
+  StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// Compute Android nav bar height by subtracting visible window height from full
+// screen height. Reliable even inside RN Modal (where useSafeAreaInsets is 0).
+const getAndroidBottomNavHeight = () => {
+  if (Platform.OS !== "android") return 0;
+  const screen = Dimensions.get("screen");
+  const window = Dimensions.get("window");
+  const statusBar = StatusBar.currentHeight || 0;
+  const diff = screen.height - window.height - statusBar;
+  return diff > 0 ? Math.max(diff, 24) : 48;
+};
 
 const OffsetModal = ({ settings, closeModal, indicators }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const insets = useSafeAreaInsets();
-  const dynamicStyles = styles(isDark, insets.bottom);
+  const bottomGutter = Math.max(insets.bottom, getAndroidBottomNavHeight());
+  const dynamicStyles = styles(isDark, bottomGutter);
 
   const dailyCandles = ["Daily", 1, 2, 3, 4, 5, 6, 7, "n days ago"];
   const intradayMinsCandles = [
@@ -314,6 +328,8 @@ const styles = (isDark, bottomInset = 0) =>
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
       justifyContent: "flex-end",
+      // Push the whole sheet up so bottom buttons clear the Android nav bar.
+      paddingBottom: bottomInset,
     },
     modalContainer: {
       backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
@@ -443,12 +459,7 @@ const styles = (isDark, bottomInset = 0) =>
       flexDirection: "row",
       justifyContent: "flex-end",
       gap: 12,
-      paddingHorizontal: 16,
-      paddingTop: 16,
-      paddingBottom:
-        Platform.OS === "android"
-          ? Math.max(bottomInset, 48) + 8
-          : Math.max(bottomInset, 16),
+      padding: 16,
       borderTopWidth: 1,
       borderTopColor: isDark ? "#374151" : "#E5E7EB",
     },

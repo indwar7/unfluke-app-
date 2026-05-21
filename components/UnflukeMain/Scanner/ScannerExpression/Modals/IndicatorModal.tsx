@@ -11,10 +11,25 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  Dimensions,
+  StatusBar,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// Compute Android system nav bar height by subtracting the visible window height
+// from the full screen height. This works even when the Modal renders outside the
+// SafeAreaProvider (where useSafeAreaInsets returns 0). Falls back to 48dp.
+const getAndroidBottomNavHeight = () => {
+  if (Platform.OS !== "android") return 0;
+  const screen = Dimensions.get("screen");
+  const window = Dimensions.get("window");
+  const statusBar = StatusBar.currentHeight || 0;
+  const diff = screen.height - window.height - statusBar;
+  // diff > 0 means there's a real nav bar; otherwise assume gesture bar (~24-48dp)
+  return diff > 0 ? Math.max(diff, 24) : 48;
+};
 import {
   addSuffixToNumber,
   deepCopy,
@@ -29,7 +44,9 @@ const IndicatorModal = ({ closeModal, settings, type }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const insets = useSafeAreaInsets();
-  const dynamicStyles = styles(isDark, insets.bottom);
+  // Prefer the measured nav bar height (works inside Modal), fall back to insets.
+  const bottomGutter = Math.max(insets.bottom, getAndroidBottomNavHeight());
+  const dynamicStyles = styles(isDark, bottomGutter);
 
   const [customOffset1s, setCustomOffset1s] = useState([]);
   const [customOffset2s, setCustomOffset2s] = useState([]);
@@ -555,6 +572,9 @@ const styles = (isDark, bottomInset = 0) =>
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
       justifyContent: "flex-end", // Bottom sheet style for main modal
+      // Push the whole sheet up by the nav bar height so the bottom buttons are
+      // never drawn under the Android system navigation area.
+      paddingBottom: bottomInset,
     },
     modalContainer: {
       backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
@@ -619,15 +639,7 @@ const styles = (isDark, bottomInset = 0) =>
       flexDirection: "row",
       justifyContent: "flex-end",
       gap: 12,
-      paddingHorizontal: 16,
-      paddingTop: 16,
-      // RN Modal renders outside the SafeAreaProvider tree, so useSafeAreaInsets() often
-      // returns 0 here. Force a reserved gutter on Android (3-button nav ≈ 48dp, gesture
-      // bar ≈ 24dp). Take the max of inset (if available) and a hardcoded floor.
-      paddingBottom:
-        Platform.OS === "android"
-          ? Math.max(bottomInset, 48) + 8
-          : Math.max(bottomInset, 16),
+      padding: 16,
       borderTopWidth: 1,
       borderTopColor: isDark ? "#374151" : "#E5E7EB",
     },
