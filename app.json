@@ -55,7 +55,7 @@
           "ios": {
             "infoPlist": {
               "NSAppTransportSecurity": {
-                "NSAllowsArbitraryLoads": true
+                "NSAllowsArbitraryLoadsInWebContent": true
               }
             }
           }
