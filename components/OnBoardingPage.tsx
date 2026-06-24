@@ -13,6 +13,7 @@ import OnboardingImage2 from "./Images/Onboarding2";
 import OnboardingImage3 from "./Images/Onboarding3";
 import { useNavigation } from "@react-navigation/native";
 import { useWindowDimensions } from "react-native";
+import { logCompleteTutorial } from "../helpers/facebookEvents";
 
 const onboardingData = [
   {
@@ -76,7 +77,10 @@ export const OnBoardingPage = () => {
           style={styles.vectorBackground}
         />
 {currentIndex == 2 ? (
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("registerpage")}>
+        <TouchableOpacity style={styles.button} onPress={() => {
+          logCompleteTutorial(true, "onboarding");
+          navigation.navigate("registerpage" as never);
+        }}>
             <Text style={styles.buttonText}>Next</Text>
         </TouchableOpacity>
            ):( <TouchableOpacity style={styles.button} onPress={handleNext}>

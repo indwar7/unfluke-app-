@@ -60,6 +60,18 @@
             }
           }
         }
+      ],
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "711595485218669",
+          "clientToken": "2246e0fc0be3997acba099e9a7fa7239",
+          "displayName": "Unfluke",
+          "scheme": "fb711595485218669",
+          "advertiserIDCollectionEnabled": true,
+          "autoLogAppEventsEnabled": true,
+          "isAutoInitEnabled": true
+        }
       ]
     ],
     "experiments": {

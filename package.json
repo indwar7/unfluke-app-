@@ -71,6 +71,7 @@
     "react-native-collapsible": "1.6.2",
     "react-native-countup-component": "0.9.0",
     "react-native-datepicker": "1.7.2",
+    "react-native-fbsdk-next": "^13.4.3",
     "react-native-feather": "1.1.2",
     "react-native-gesture-handler": "2.28.0",
     "react-native-keyboard-aware-scroll-view": "0.9.5",
