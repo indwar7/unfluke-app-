@@ -1,4 +1,20 @@
 node_modules/
+
+# Web-only landing/marketing images — not used by the React Native app.
+# Kept on disk but untracked so they don't bloat the EAS build upload (~120MB).
+assets/images/NewLandingImages/
+assets/images/landing/
+assets/images/photos/
+assets/images/nft/
+assets/images/galaxy/
+assets/images/pattern/
+assets/images/dashboard_img/
+assets/images/STEP1.jpg
+assets/images/STEP2.jpg
+assets/images/STEP3.jpg
+assets/images/g10.png
+assets/images/job-profile2.png
+
 # android/ — tracked for EAS bare workflow builds
 android/build/
 android/app/build/
