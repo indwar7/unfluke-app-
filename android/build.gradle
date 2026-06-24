@@ -20,5 +20,11 @@ allprojects {
   }
 }
 
+// Pin Facebook SDK to an exact version so Gradle does not resolve the floating
+// "18.+" range on every build (avoids slow/flaky dependency resolution).
+ext {
+  facebookSdkVersion = "17.0.2"
+}
+
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
