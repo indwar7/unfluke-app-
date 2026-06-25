@@ -22,8 +22,10 @@ allprojects {
 
 // Pin Facebook SDK to an exact version so Gradle does not resolve the floating
 // "18.+" range on every build (avoids slow/flaky dependency resolution).
+// 18.0.3 is the latest stable and what Meta's Events Manager expects (clears
+// the "please upgrade the SDK" warning).
 ext {
-  facebookSdkVersion = "17.0.2"
+  facebookSdkVersion = "18.0.3"
 }
 
 apply plugin: "expo-root-project"
