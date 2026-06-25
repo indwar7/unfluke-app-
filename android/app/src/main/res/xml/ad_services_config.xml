@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android Ad Services (Privacy Sandbox) attribution config required by the
+  Facebook SDK (com.facebook.android:facebook-android-sdk 16+). The SDK's
+  manifest references @xml/ad_services_config; this file must exist in the
+  app or AAPT resource linking fails. allowAllToAccess permits the SDK's
+  attribution registration on devices that support Ad Services.
+-->
+<ad-services-config>
+    <attribution allowAllToAccess="true" />
+</ad-services-config>
