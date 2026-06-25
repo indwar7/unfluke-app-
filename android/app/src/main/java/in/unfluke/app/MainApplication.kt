@@ -3,8 +3,6 @@ package `in`.unfluke.app
 import android.app.Application
 import android.content.res.Configuration
 
-import com.facebook.FacebookSdk
-import com.facebook.appevents.AppEventsLogger
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
@@ -48,9 +46,11 @@ class MainApplication : Application(), ReactApplication {
       ReleaseLevel.STABLE
     }
     loadReactNative(this)
-    // Facebook App Events SDK (App ID / client token configured in strings.xml + AndroidManifest)
-    FacebookSdk.sdkInitialize(applicationContext)
-    AppEventsLogger.activateApp(this)
+    // Facebook App Events SDK auto-initializes from the AndroidManifest meta-data
+    // (ApplicationId, ClientToken, AutoLogAppEventsEnabled, AdvertiserIDCollectionEnabled).
+    // No manual FacebookSdk.sdkInitialize()/activateApp() call is needed here, and the
+    // SDK classes aren't on the :app module classpath (react-native-fbsdk-next exposes
+    // them via `implementation`, not `api`), so referencing them here breaks compilation.
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
 
