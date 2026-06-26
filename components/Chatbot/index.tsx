@@ -41,7 +41,7 @@ import { createSelector } from "reselect";
 import { layoutModeTypes } from "../../components/UnflukeMain/constants/layout";
 import { Config } from "../../helpers/config";
 import { Bot, CircleUserRound } from "lucide-react-native";
-import { Picker } from "@react-native-picker/picker";
+import { ScrollView as HScrollView } from "react-native";
 
 const AIChatbot = ({
   defaultInput,
@@ -731,7 +731,7 @@ const AIChatbot = ({
                   ? styles.userMessage
                   : [
                     styles.botMessage,
-                    { backgroundColor: isDarkMode ? "#343A43" : "#EFF3FF" },
+                    { backgroundColor: isDarkMode ? "#343A43" : "#F5F5F5" },
                   ],
                 msg.sender === "bot-loading" && styles.loadingMessage,
               ]}
@@ -907,54 +907,50 @@ const AIChatbot = ({
 
       {/* Bot Navigation Tabs */}
       <View style={styles.tabContainer}>
-        <View style={styles.dropdownWrapper}>
-          <Picker
-            selectedValue={selectedBot}
-            onValueChange={(bot, index) => {
-              if (loading) return;
-              setSelectedBot(bot);
-              setBotExplanation(aboutBots[index]);
-
-              if (onTabChange) {
-                onTabChange(bot);
-              }
-            }}
-            style={[
-              styles.dropdown,
-              isDarkMode ? styles.dropdownDark : styles.dropdownLight,
-            ]}
-            dropdownIconColor={isDarkMode ? "#F9FAFB" : "#111827"}
-          >
-            {bots.map((bot, i) => (
-              <Picker.Item
+        <HScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabScrollContent}
+        >
+          {bots.map((bot, i) => {
+            const isActive = selectedBot === bot;
+            return (
+              <TouchableOpacity
                 key={i}
-                label={bot}
-                value={bot}
-                color={isDarkMode ? "#F9FAFB" : "#111827"}
-                style={{
-                  fontSize: 15,
-                  backgroundColor: isDarkMode ? "#374151" : "#FFFFFF",
-                  color: isDarkMode ? "#F9FAFB" : "#111827",
+                style={[
+                  styles.pillTab,
+                  isActive
+                    ? styles.pillTabActive
+                    : isDarkMode
+                      ? styles.pillTabInactiveDark
+                      : styles.pillTabInactive,
+                ]}
+                onPress={() => {
+                  if (loading) return;
+                  setSelectedBot(bot);
+                  setBotExplanation(aboutBots[i]);
+                  if (onTabChange) {
+                    onTabChange(bot);
+                  }
                 }}
-              />
-            ))}
-          </Picker>
-
-          {/* Info Icon beside dropdown */}
-          <TouchableOpacity
-            style={styles.infoIcon}
-            onPress={() => {
-              if (loading) return;
-              setChatbotGuideOpen(true);
-            }}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={isDarkMode ? "#F9FAFB" : "#6B7280"}
-            />
-          </TouchableOpacity>
-        </View>
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.pillTabText,
+                    isActive
+                      ? styles.pillTabTextActive
+                      : isDarkMode
+                        ? styles.pillTabTextInactiveDark
+                        : styles.pillTabTextInactive,
+                  ]}
+                >
+                  {bot}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </HScrollView>
       </View>
 
       {/* Chat Messages */}
@@ -1055,7 +1051,7 @@ const AIChatbot = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
   },
   darkContainer: {
     backgroundColor: "#111827",
@@ -1063,73 +1059,43 @@ const styles = StyleSheet.create({
 
   // Tab Navigation
   tabContainer: {
-    paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 4,
   },
-  tabScrollView: {
-    flexGrow: 0,
+  tabScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
   },
-  tabButton: {
+  pillTab: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 8,
-    minWidth: 120,
+    borderRadius: 20,
+    borderWidth: 1,
   },
-  activeTab: {
-    backgroundColor: "#2563EB",
+  pillTabActive: {
+    backgroundColor: "#111827",
+    borderColor: "#111827",
   },
-  inactiveTab: {
-    backgroundColor: "#E5E7EB",
+  pillTabInactive: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
   },
-  activeTabDark: {
-    backgroundColor: "#2563EB",
-  },
-  inactiveTabDark: {
+  pillTabInactiveDark: {
     backgroundColor: "#374151",
+    borderColor: "#4B5563",
   },
-  tabContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabText: {
-    fontSize: 14,
+  pillTabText: {
+    fontSize: 13,
     fontWeight: "500",
   },
-  activeTabText: {
+  pillTabTextActive: {
     color: "#FFFFFF",
   },
-  inactiveTabText: {
-    color: "#374151",
+  pillTabTextInactive: {
+    color: "#6B7280",
   },
-  infoIcon: {
-    marginLeft: 8,
-  },
-  dropdownWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 8,
-  },
-
-  dropdown: {
-    flex: 1,
-    height: 50,
-  },
-
-  dropdownLight: {
-    backgroundColor: "#FFFFFF",
-    color: "#111827",
-  },
-
-  dropdownDark: {
-    backgroundColor: "#374151",
-    color: "#F9FAFB",
+  pillTabTextInactiveDark: {
+    color: "#D1D5DB",
   },
   // Chat Area
   chatArea: {
@@ -1184,11 +1150,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   userMessage: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#111827",
     alignSelf: "flex-end",
   },
   botMessage: {
-    backgroundColor: "#EFF3FF",
+    backgroundColor: "#F5F5F5",
     alignSelf: "flex-start",
   },
   loadingMessage: {
@@ -1241,11 +1207,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   questionChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 50,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
     backgroundColor: "#FFFFFF",
   },
   questionChipDark: {
@@ -1253,7 +1219,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#374151",
   },
   questionChipText: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: "center",
     flexShrink: 1,
   },
@@ -1261,8 +1227,10 @@ const styles = StyleSheet.create({
   // Input Area
   inputContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: 20
+    paddingVertical: 10,
+    paddingBottom: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
   },
   darkInputContainer: {
     backgroundColor: "#1F2937",
@@ -1271,11 +1239,11 @@ const styles = StyleSheet.create({
   inputGroup: {
     flexDirection: "row",
     alignItems: "flex-end",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 24,
     paddingHorizontal: 4,
-    paddingBottom: 7,
-    paddingRight: 8,
+    paddingBottom: 4,
+    paddingRight: 6,
     paddingVertical: 4,
   },
   textInput: {
@@ -1295,9 +1263,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#374151",
   },
   sendButton: {
-    backgroundColor: "#2563EB",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#111827",
+    padding: 10,
+    borderRadius: 20,
     marginLeft: 4,
   },
   disabledButton: {

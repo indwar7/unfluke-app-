@@ -38,6 +38,7 @@ const ChatbotPage = () => {
           typeAndAsk={typeAndAsk}
           activeTab={activeTab}
           onTabChange={handleTabChange}
+          showQuickQuestions={true}
         />
       </ScreenWithHeader>
     </KeyboardAvoidingView>
