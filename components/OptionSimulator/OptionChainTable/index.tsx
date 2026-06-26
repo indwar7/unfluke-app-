@@ -402,32 +402,32 @@ const OptionChainTable = ({
 const styles = StyleSheet.create({
   container: {
     marginTop: 20,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
   cardHeader: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1E222D',
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#D1D4DC',
     marginBottom: 4,
   },
   dateText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#111827',
+    color: '#787B86',
   },
   tableContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131722',
   },
   horizontalScrollContainer: {
     flex: 1,
@@ -439,9 +439,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stickyHeader: {
-    backgroundColor: '#f5f6fa',
-    borderBottomWidth: 2,
-    borderBottomColor: '#e5e7eb',
+    backgroundColor: '#2A2E39',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
     zIndex: 10,
   },
   tableBodyScroll: {
@@ -450,12 +450,12 @@ const styles = StyleSheet.create({
    tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
     minHeight: 50,
     alignItems: 'center',
   },
   striped: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#1A1D2B',
   },
   cell: {
     flex: 1,
@@ -470,14 +470,14 @@ const styles = StyleSheet.create({
     flex: 1.2,
   },
   strikeCell: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#2A2E39',
     minWidth: 90,
     flex: 1.1,
   },
   headerText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#222',
+    color: '#787B86',
     textAlign: 'center',
   },
   strikeHeaderText: {
@@ -486,14 +486,16 @@ const styles = StyleSheet.create({
   cellText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#111827',
+    color: '#D1D4DC',
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
   strikeCellText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#D1D4DC',
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -508,17 +510,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buyButton: {
-    backgroundColor: '#0ab39c',
+    backgroundColor: '#089981',
   },
   sellButton: {
-    backgroundColor: '#f06548',
+    backgroundColor: '#F23645',
   },
   disabledButton: {
-    backgroundColor: '#5fcdbe',
+    backgroundColor: 'rgba(8,153,129,0.3)',
     opacity: 0.6,
   },
   disabledSellButton: {
-    backgroundColor: '#f49a87',
+    backgroundColor: 'rgba(242,54,69,0.3)',
     opacity: 0.6,
   },
   actionButtonText: {
@@ -533,9 +535,9 @@ const styles = StyleSheet.create({
   alignItems: 'center',
   paddingHorizontal: 16,
   paddingVertical: 12,
-  backgroundColor: '#ffffff',
+  backgroundColor: '#1E222D',
   borderTopWidth: 1,
-  borderTopColor: '#e5e7eb',
+  borderTopColor: 'rgba(255,255,255,0.06)',
 },
 legendItem: {
   flexDirection: 'row',
@@ -546,26 +548,26 @@ legendItem: {
 legendColor: {
   width: 12,
   height: 12,
-  backgroundColor: '#fbbf24',
+  backgroundColor: '#F7931A',
   borderRadius: 2,
   borderWidth: 1,
-  borderColor: '#f59e0b',
+  borderColor: '#F7931A',
   flexShrink: 0, // Prevent the color box from shrinking
 },
 legendText: {
   fontSize: 12,
-  color: '#6b7280',
+  color: '#787B86',
   flexShrink: 1, // Allow text to shrink and wrap
 },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E222D',
     borderRadius: 12,
     marginHorizontal: 24,
     maxWidth: 400,
@@ -579,20 +581,20 @@ legendText: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#2A2E39',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#D1D4DC',
   },
   closeButton: {
     padding: 4,
   },
   closeButtonText: {
     fontSize: 24,
-    color: '#6b7280',
+    color: '#787B86',
     fontWeight: 'bold',
   },
   modalBody: {
@@ -601,7 +603,7 @@ legendText: {
   positionSummary: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#111827',
+    color: '#D1D4DC',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -628,7 +630,7 @@ legendText: {
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#2563eb',
+    borderColor: '#2962FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -636,11 +638,11 @@ legendText: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#2563eb',
+    backgroundColor: '#2962FF',
   },
   radioText: {
     fontSize: 16,
-    color: '#111827',
+    color: '#D1D4DC',
     fontWeight: '500',
   },
   quantityContainer: {
@@ -649,39 +651,39 @@ legendText: {
   quantityLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#6b7280',
+    color: '#787B86',
     marginBottom: 8,
   },
   quantitySelector: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 6,
     overflow: 'hidden',
   },
   quantityButton: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#2A2E39',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   quantityButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#374151',
+    color: '#D1D4DC',
   },
   quantityInput: {
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#1E222D',
     minWidth: 60,
     alignItems: 'center',
   },
   quantityInputText: {
     fontSize: 16,
-    color: '#111827',
+    color: '#D1D4DC',
     fontWeight: '500',
   },
   modalFooter: {
@@ -690,17 +692,17 @@ legendText: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#2A2E39',
   },
   addButton: {
     flex: 1,
-    backgroundColor: '#16a34a',
+    backgroundColor: '#089981',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#16a34a',
+    borderColor: '#089981',
   },
   addButtonText: {
     color: '#fff',
@@ -714,10 +716,10 @@ legendText: {
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#dc2626',
+    borderColor: '#F23645',
   },
   closeModalButtonText: {
-    color: '#dc2626',
+    color: '#F23645',
     fontSize: 16,
     fontWeight: '600',
   },

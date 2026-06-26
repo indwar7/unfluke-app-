@@ -403,11 +403,11 @@ const OptionSimulator = () => {
           </View>
         ) : expiriesError ? (
           <View style={styles.loaderBox}>
-            <Text style={[styles.loaderText, { color: '#ef4444' }]}>Failed to load data. Please check your connection and try again.</Text>
+            <Text style={[styles.loaderText, { color: '#F23645' }]}>Failed to load data. Please check your connection and try again.</Text>
           </View>
         ) : (
           <View style={styles.loaderBox}>
-            <ActivityIndicator size="large" color="#2563eb" />
+            <ActivityIndicator size="large" color="#2962FF" />
             <Text style={styles.loaderText}>Loading instruments & expiries...</Text>
           </View>
         )}
@@ -420,7 +420,7 @@ const OptionSimulator = () => {
           />
         ) : (
           <View style={styles.loaderBox}>
-            <ActivityIndicator size="large" color="#2563eb" />
+            <ActivityIndicator size="large" color="#2962FF" />
             <Text style={styles.loaderText}>Loading strategies...</Text>
           </View>
         )}
@@ -473,7 +473,7 @@ const OptionSimulator = () => {
           </View>
         ) : (
           <View style={[styles.loaderBox, { height: 400, marginBottom: 20 }]}>
-            <ActivityIndicator size="large" color="#2563eb" />
+            <ActivityIndicator size="large" color="#2962FF" />
             <Text style={styles.loaderText}>Loading Option Table...</Text>
           </View>
         )}
@@ -513,16 +513,16 @@ const OptionSimulator = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#131722',
   },
 
   /* ── Single header ── */
   header: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1E222D',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -532,11 +532,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#D1D4DC',
   },
   headerSub: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: '#787B86',
     marginTop: 2,
   },
 
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   loaderBox: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1E222D',
     borderRadius: 8,
     marginBottom: 16,
     paddingVertical: 40,
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
   loaderText: {
     marginTop: 10,
     fontSize: 13,
-    color: '#6b7280',
+    color: '#787B86',
   },
   infoCardsContainer: {
     flexDirection: 'row',
@@ -566,36 +566,37 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#1E222D',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
     elevation: 1,
   },
   infoCardLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#6b7280',
+    color: '#787B86',
     marginBottom: 6,
   },
   infoCardValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: '#D1D4DC',
+    fontVariant: ['tabular-nums'],
   },
   selectionContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#D1D4DC',
     marginBottom: 14,
   },
   selectionRow: {
@@ -607,34 +608,34 @@ const styles = StyleSheet.create({
   selectorLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#6b7280',
+    color: '#787B86',
     marginBottom: 6,
   },
   datePickerButton: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#363A45',
   },
-  datePickerText: { fontSize: 15, color: '#111827' },
+  datePickerText: { fontSize: 15, color: '#D1D4DC' },
   actionButton: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#2962FF',
     paddingVertical: 13,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: 4,
   },
-  disabledButton: { backgroundColor: '#9ca3af' },
+  disabledButton: { backgroundColor: '#4C525E' },
   actionButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   loadingRow: { flexDirection: 'row', alignItems: 'center' },
   timeControlsContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
     marginBottom: 16,
   },
   timeControlsRow: {
@@ -651,19 +652,19 @@ const styles = StyleSheet.create({
   timeButtonText: { color: '#fff', fontSize: 11, fontWeight: '600' },
   currentTimeContainer: { alignItems: 'center', marginVertical: 16 },
   currentTimeButton: {
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#2962FF',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
   },
-  currentTimeText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  expiryWarning: { fontSize: 12, color: '#ef4444', marginTop: 8 },
+  currentTimeText: { color: '#D1D4DC', fontSize: 14, fontWeight: '600' },
+  expiryWarning: { fontSize: 12, color: '#F23645', marginTop: 8 },
   optionChainContainer: { marginTop: 16, marginBottom: 20, alignItems: 'center' },
-  optionChainTitle: { fontSize: 13, fontWeight: '600', color: '#6b7280', marginBottom: 12, textAlign: 'center' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContainer: { backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '88%', maxWidth: 400 },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 12, textAlign: 'center' },
-  modalBody: { fontSize: 14, color: '#374151', lineHeight: 22, marginBottom: 20, textAlign: 'center' },
+  optionChainTitle: { fontSize: 13, fontWeight: '600', color: '#787B86', marginBottom: 12, textAlign: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
+  modalContainer: { backgroundColor: '#1E222D', borderRadius: 12, padding: 24, width: '88%', maxWidth: 400 },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: '#D1D4DC', marginBottom: 12, textAlign: 'center' },
+  modalBody: { fontSize: 14, color: '#787B86', lineHeight: 22, marginBottom: 20, textAlign: 'center' },
   modalButtons: { flexDirection: 'row', gap: 12 },
   modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   modalBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },

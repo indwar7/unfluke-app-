@@ -431,13 +431,13 @@ const Trading = () => {
             }}
             style={styles.refreshBtn}
           >
-            <Ionicons name="refresh" size={18} color="#4f46e5" />
+            <Ionicons name="refresh" size={18} color="#2962FF" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setSidebarOpen(true)}
             style={styles.refreshBtn}
           >
-            <Ionicons name="list" size={18} color="#4f46e5" />
+            <Ionicons name="list" size={18} color="#2962FF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -446,7 +446,7 @@ const Trading = () => {
       <View style={styles.chartContainer}>
         {!chartReady && (
           <View style={styles.chartLoader}>
-            <ActivityIndicator color="#4f46e5" size="large" />
+            <ActivityIndicator color="#2962FF" size="large" />
             <Text style={styles.chartLoaderText}>Loading TradingView...</Text>
           </View>
         )}
@@ -506,7 +506,7 @@ const Trading = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#131722",
   },
   headerBar: {
     flexDirection: "row",
@@ -514,38 +514,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  headerSub: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: "#D1D4DC" },
+  headerSub: { fontSize: 12, color: "#787B86", marginTop: 2 },
   refreshBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#eef2ff",
+    backgroundColor: "#2A2E39",
     alignItems: "center",
     justifyContent: "center",
   },
   chartContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#131722",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
     overflow: "hidden",
   },
   chartLoader: {
     ...StyleSheet.absoluteFillObject as any,
-    backgroundColor: "#fff",
+    backgroundColor: "#131722",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
     gap: 8,
   },
-  chartLoaderText: { fontSize: 13, color: "#6b7280", marginTop: 4 },
+  chartLoaderText: { fontSize: 13, color: "#787B86", marginTop: 4 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     borderRadius: 14,
     padding: 16,
     marginBottom: 14,
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 3,
     borderWidth: 1,
-    borderColor: "#f3f4f6",
+    borderColor: "rgba(255,255,255,0.06)",
   },
 });
 

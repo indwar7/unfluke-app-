@@ -313,9 +313,9 @@ const getStyles = (isDark) =>
     strategyPositionsContainer: {
       padding: 16,
       borderWidth: 1,
-      borderRadius: 8,
-      borderColor: isDark ? "#374151" : "#e5e7eb",
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      borderRadius: 12,
+      borderColor: "rgba(255,255,255,0.06)",
+      backgroundColor: "#1E222D",
       marginBottom: 16,
     },
     headerContainer: {
@@ -329,7 +329,7 @@ const getStyles = (isDark) =>
     title: {
       fontSize: 24,
       fontWeight: "bold",
-      color: isDark ? "#ffffff" : "#000000",
+      color: "#D1D4DC",
     },
     buttonGroup: {
       flexDirection: "row",
@@ -339,31 +339,31 @@ const getStyles = (isDark) =>
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderWidth: 1,
-      borderColor: "#f97316",
+      borderColor: "#F23645",
       borderRadius: 8,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: "#1E222D",
     },
     resetButtonText: {
-      color: "#f97316",
+      color: "#F23645",
     },
     selectAllContainer: {
       flexDirection: "row",
       alignItems: "center",
       paddingVertical: 8,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#e5e7eb",
+      borderBottomColor: "rgba(255,255,255,0.06)",
       marginBottom: 8,
     },
     checkbox: {
       marginRight: 8,
     },
     selectAllText: {
-      color: isDark ? "#ffffff" : "#000000",
+      color: "#D1D4DC",
     },
     summaryContainer: {
       paddingTop: 12,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#e5e7eb",
+      borderTopColor: "rgba(255,255,255,0.06)",
       gap: 8,
     },
     summaryRow: {
@@ -372,27 +372,27 @@ const getStyles = (isDark) =>
     },
     summaryLabel: {
       fontSize: 14,
-      color: isDark ? "#9ca3af" : "#6b7280",
+      color: "#787B86",
     },
     summaryValue: {
       fontSize: 14,
-      color: isDark ? "#f3f4f6" : "#1f2937",
+      color: "#D1D4DC",
     },
     profitText: {
-      color: "#059669",
+      color: "#089981",
     },
     lossText: {
-      color: "#dc2626",
+      color: "#F23645",
     },
     totalPnlRow: {
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#e5e7eb",
+      borderTopColor: "rgba(255,255,255,0.06)",
       paddingTop: 8,
     },
     totalPnlLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: isDark ? "#f3f4f6" : "#1f2937",
+      color: "#D1D4DC",
     },
     totalPnlValue: {
       fontSize: 14,
@@ -401,9 +401,9 @@ const getStyles = (isDark) =>
     chartContainer: {
       padding: 16,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#e5e7eb",
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderRadius: 8,
+      borderColor: "rgba(255,255,255,0.06)",
+      backgroundColor: "#1E222D",
+      borderRadius: 12,
     },
     tabButtonsContainer: {
       flexDirection: "row",
@@ -417,10 +417,10 @@ const getStyles = (isDark) =>
       paddingVertical: 8,
     },
     activeTabButton: {
-      backgroundColor: "#14b8a6",
+      backgroundColor: "#2962FF",
     },
     inactiveTabButton: {
-      backgroundColor: isDark ? "#374151" : "#f3f4f6",
+      backgroundColor: "#2A2E39",
     },
     tabButtonText: {
       fontSize: 14,
@@ -428,19 +428,19 @@ const getStyles = (isDark) =>
       textTransform: "capitalize",
     },
     activeTabButtonText: {
-      color: "#ffffff",
+      color: "#FFFFFF",
     },
     inactiveTabButtonText: {
-      color: isDark ? "#ffffff" : "#000000",
+      color: "#787B86",
     },
     tabContent: {
       marginBottom: 8,
     },
     greeksSummaryContainer: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: "#1E222D",
       borderRadius: 8,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? "#374151" : "transparent",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.06)",
       paddingHorizontal: 16,
       paddingTop:16,
       paddingBottom:6
@@ -459,27 +459,27 @@ const getStyles = (isDark) =>
       borderRadius: 8,
     },
     deltaCard: {
-      backgroundColor: isDark ? "#374151" : "#f3f4f6",
+      backgroundColor: "#2A2E39",
     },
     thetaCard: {
-      backgroundColor: isDark ? "rgba(180, 83, 9, 0.3)" : "#fef3c7",
+      backgroundColor: "rgba(242,54,69,0.15)",
     },
     gammaCard: {
-      backgroundColor: isDark ? "rgba(29, 78, 216, 0.3)" : "#dbeafe",
+      backgroundColor: "rgba(41,98,255,0.15)",
     },
     vegaCard: {
-      backgroundColor: isDark ? "rgba(21, 128, 61, 0.3)" : "#dcfce7",
+      backgroundColor: "rgba(8,153,129,0.15)",
     },
     greekLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: isDark ? "#e5e7eb" : "#374151",
+      color: "#787B86",
       // marginBottom: 4,
     },
     greekValue: {
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? "#f3f4f6" : "#1f2937",
+      color: "#D1D4DC",
     },
   });
 

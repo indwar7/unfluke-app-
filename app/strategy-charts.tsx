@@ -701,7 +701,7 @@ export default function StrategyChartsScreen() {
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <Text style={styles.modalTitle}>{title}</Text>
               <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#6b7280" />
+                <Ionicons name="close" size={24} color="#787B86" />
               </TouchableOpacity>
             </View>
             {searchable && (
@@ -710,7 +710,7 @@ export default function StrategyChartsScreen() {
                 placeholder="Search..."
                 value={search}
                 onChangeText={setSearch}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#4C525E"
                 autoFocus
               />
             )}
@@ -723,10 +723,10 @@ export default function StrategyChartsScreen() {
                   onPress={() => { onSelect(item); onClose(); }}
                 >
                   <Text style={[styles.pickerItemText, selected === item && styles.pickerItemTextActive]}>{item}</Text>
-                  {selected === item && <Ionicons name="checkmark" size={18} color="#4f46e5" />}
+                  {selected === item && <Ionicons name="checkmark" size={18} color="#2962FF" />}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={{ textAlign: "center", color: "#9ca3af", padding: 20 }}>No items found</Text>}
+              ListEmptyComponent={<Text style={{ textAlign: "center", color: "#4C525E", padding: 20 }}>No items found</Text>}
             />
           </View>
         </TouchableOpacity>
@@ -744,7 +744,7 @@ export default function StrategyChartsScreen() {
         activeOpacity={0.7}
       >
         <Text style={styles.fieldValue} numberOfLines={1}>{value || "Select..."}</Text>
-        <Ionicons name="chevron-down" size={16} color="#6b7280" />
+        <Ionicons name="chevron-down" size={16} color="#787B86" />
       </TouchableOpacity>
     </View>
   );
@@ -822,7 +822,7 @@ export default function StrategyChartsScreen() {
           <Text style={styles.headerSub}>{selectedInstrument} - {chartType}</Text>
         </View>
         <TouchableOpacity onPress={() => setRefreshKey((k) => k + 1)} style={styles.refreshBtn}>
-          <Ionicons name="refresh" size={18} color="#4f46e5" />
+          <Ionicons name="refresh" size={18} color="#2962FF" />
         </TouchableOpacity>
       </View>
 
@@ -830,7 +830,7 @@ export default function StrategyChartsScreen() {
       <View style={styles.chartContainer}>
         {!chartReady && (
           <View style={styles.chartLoader}>
-            <ActivityIndicator color="#4f46e5" size="large" />
+            <ActivityIndicator color="#2962FF" size="large" />
             <Text style={styles.chartLoaderText}>Loading TradingView...</Text>
           </View>
         )}
@@ -864,7 +864,7 @@ export default function StrategyChartsScreen() {
 
       {/* Form */}
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: "#131722" }}
         contentContainerStyle={{ padding: 16, paddingBottom: 60 + screenBottomGutter }}
         keyboardShouldPersistTaps="handled"
       >
@@ -971,13 +971,13 @@ export default function StrategyChartsScreen() {
 
           {chartType === "Straddle Combo Chart" && (
             <>
-              <Text style={{ fontWeight: "700", marginBottom: 6, color: "#374151", fontSize: 12 }}>Call Strikes</Text>
+              <Text style={{ fontWeight: "700", marginBottom: 6, color: "#D1D4DC", fontSize: 12 }}>Call Strikes</Text>
               <View style={{ flexDirection: "row", gap: 6 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Call 1" value={s1} list={callStrikes} onSet={setS1} /></View>
                 <View style={{ flex: 1 }}><PickStrike label="Call 2" value={s2} list={callStrikes} onSet={setS2} /></View>
                 <View style={{ flex: 1 }}><PickStrike label="Call 3" value={s3} list={callStrikes} onSet={setS3} /></View>
               </View>
-              <Text style={{ fontWeight: "700", marginBottom: 6, marginTop: 4, color: "#374151", fontSize: 12 }}>Put Strikes</Text>
+              <Text style={{ fontWeight: "700", marginBottom: 6, marginTop: 4, color: "#D1D4DC", fontSize: 12 }}>Put Strikes</Text>
               <View style={{ flexDirection: "row", gap: 6 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Put 1" value={s4} list={putStrikes} onSet={setS4} /></View>
                 <View style={{ flex: 1 }}><PickStrike label="Put 2" value={s5} list={putStrikes} onSet={setS5} /></View>
@@ -1004,7 +1004,7 @@ export default function StrategyChartsScreen() {
         {/* Error banner */}
         {!!error && (
           <View style={styles.errorCard}>
-            <Ionicons name="alert-circle-outline" size={18} color="#ef4444" />
+            <Ionicons name="alert-circle-outline" size={18} color="#F23645" />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
@@ -1039,31 +1039,31 @@ const styles = StyleSheet.create({
   headerBar: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
+    backgroundColor: "#1E222D", borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  headerSub: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: "#D1D4DC" },
+  headerSub: { fontSize: 12, color: "#787B86", marginTop: 2 },
   refreshBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: "#eef2ff",
+    width: 36, height: 36, borderRadius: 18, backgroundColor: "#2A2E39",
     alignItems: "center", justifyContent: "center",
   },
 
   chartContainer: {
     height: 420,
-    backgroundColor: "#fff",
+    backgroundColor: "#131722",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
     overflow: "hidden",
   },
   chartLoader: {
     ...StyleSheet.absoluteFillObject as any,
-    backgroundColor: "#fff",
+    backgroundColor: "#131722",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
     gap: 8,
   },
-  chartLoaderText: { fontSize: 13, color: "#6b7280", marginTop: 4 },
+  chartLoaderText: { fontSize: 13, color: "#787B86", marginTop: 4 },
   chartLoadingOverlay: {
     ...StyleSheet.absoluteFillObject as any,
     backgroundColor: "rgba(0,0,0,0.25)",
@@ -1080,67 +1080,67 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     gap: 10,
   },
-  chartLoadingToastText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  chartLoadingToastText: { color: "#D1D4DC", fontSize: 14, fontWeight: "600" },
 
   card: {
-    backgroundColor: "#fff", borderRadius: 14, padding: 16, marginBottom: 14,
+    backgroundColor: "#1E222D", borderRadius: 12, padding: 16, marginBottom: 14,
     elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06, shadowRadius: 3,
-    borderWidth: 1, borderColor: "#f3f4f6",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
   },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 14 },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#D1D4DC", marginBottom: 14 },
 
   fieldGroup: { marginBottom: 12 },
-  fieldLabel: { fontSize: 11, fontWeight: "600", color: "#6b7280", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
+  fieldLabel: { fontSize: 11, fontWeight: "600", color: "#787B86", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
   fieldInput: {
-    backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10,
+    backgroundColor: "#363A45", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 12,
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
   },
   fieldInputText: {
-    backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: "#111827", fontWeight: "600",
+    backgroundColor: "#363A45", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: "#D1D4DC", fontWeight: "600",
   },
-  fieldValue: { fontSize: 14, color: "#111827", fontWeight: "600", flex: 1 },
+  fieldValue: { fontSize: 14, color: "#D1D4DC", fontWeight: "600", flex: 1 },
 
   radioBtn: {
     flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8,
-    borderWidth: 1, borderColor: "#e5e7eb", backgroundColor: "#f9fafb", alignItems: "center",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", backgroundColor: "#363A45", alignItems: "center",
   },
-  radioBtnActive: { backgroundColor: "#eef2ff", borderColor: "#4f46e5" },
-  radioText: { fontSize: 12, color: "#6b7280", fontWeight: "600" },
-  radioTextActive: { color: "#4f46e5", fontWeight: "700" },
+  radioBtnActive: { backgroundColor: "#2A2E39", borderColor: "#2962FF" },
+  radioText: { fontSize: 12, color: "#787B86", fontWeight: "600" },
+  radioTextActive: { color: "#2962FF", fontWeight: "700" },
 
   primaryBtn: {
-    backgroundColor: "#4f46e5", paddingVertical: 14, borderRadius: 10,
+    backgroundColor: "#2962FF", paddingVertical: 14, borderRadius: 10,
     alignItems: "center", marginTop: 12, flexDirection: "row", justifyContent: "center", gap: 8,
   },
   primaryBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
 
   errorCard: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "#fef2f2", borderRadius: 10, padding: 14,
-    borderWidth: 1, borderColor: "#fecaca", marginBottom: 12,
+    backgroundColor: "rgba(242,54,69,0.1)", borderRadius: 10, padding: 14,
+    borderWidth: 1, borderColor: "rgba(242,54,69,0.3)", marginBottom: 12,
   },
-  errorText: { color: "#ef4444", fontWeight: "600", fontSize: 13, flex: 1 },
+  errorText: { color: "#F23645", fontWeight: "600", fontSize: 13, flex: 1 },
 
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
   modalContent: {
-    backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: "#1E222D", borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 20, maxHeight: "75%",
   },
-  modalTitle: { fontSize: 17, fontWeight: "700", color: "#111827" },
+  modalTitle: { fontSize: 17, fontWeight: "700", color: "#D1D4DC" },
   searchInput: {
-    backgroundColor: "#f3f4f6", borderRadius: 10, padding: 12,
-    fontSize: 14, marginBottom: 12, color: "#111827",
-    borderWidth: 1, borderColor: "#e5e7eb",
+    backgroundColor: "#363A45", borderRadius: 10, padding: 12,
+    fontSize: 14, marginBottom: 12, color: "#D1D4DC",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
   },
   pickerItem: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     paddingVertical: 14, paddingHorizontal: 12,
-    borderBottomWidth: 1, borderBottomColor: "#f3f4f6",
+    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
   },
-  pickerItemActive: { backgroundColor: "#eef2ff" },
-  pickerItemText: { fontSize: 14, color: "#374151", fontWeight: "500" },
-  pickerItemTextActive: { color: "#4f46e5", fontWeight: "700" },
+  pickerItemActive: { backgroundColor: "#2A2E39" },
+  pickerItemText: { fontSize: 14, color: "#D1D4DC", fontWeight: "500" },
+  pickerItemTextActive: { color: "#2962FF", fontWeight: "700" },
 });

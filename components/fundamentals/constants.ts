@@ -15,18 +15,18 @@ export const SECTIONS = [
 export type SectionType = typeof SECTIONS[number];
 
 // ─── Color Palette (matching unfluke.in website) ───────
-export const ACCENT = "#6366F1";       // Primary indigo/purple
-export const ACCENT_LIGHT = "#EEF2FF"; // Light indigo bg
-export const BG = "#FAFBFC";           // Page background
+export const ACCENT = "#1A1A2E";       // Primary dark navy
+export const ACCENT_LIGHT = "#F1F5F9"; // Light border bg
+export const BG = "#F7F7F8";           // Page background
 export const CARD_BG = "#FFFFFF";      // Card background
-export const GREEN = "#22C55E";        // Positive values
-export const RED = "#EF4444";          // Negative values
-export const TEXT_PRIMARY = "#1a1a1a";
-export const TEXT_SECONDARY = "#666";
-export const TEXT_MUTED = "#999";
-export const BORDER_COLOR = "#E8E9EB";
-export const ZEBRA_LIGHT = "#FAFBFC";
-export const ZEBRA_DARK = "#F4F5F7";
+export const GREEN = "#059669";        // Positive values
+export const RED = "#DC2626";          // Negative values
+export const TEXT_PRIMARY = "#0F172A";
+export const TEXT_SECONDARY = "#64748B";
+export const TEXT_MUTED = "#94A3B8";
+export const BORDER_COLOR = "#E2E8F0";
+export const ZEBRA_LIGHT = "#F8FAFC";
+export const ZEBRA_DARK = "#F1F5F9";
 
 // Dark theme colors (for tables, matching website)
 export const DARK_BG = "#0B0E1A";
@@ -72,7 +72,7 @@ export const EVENT_BADGE_COLORS: Record<string, { bg: string; text: string }> = 
 
 // Chart colors
 export const CHART_COLORS = {
-    primary: "#6366F1",
+    primary: "#1A1A2E",
     secondary: "#8B5CF6",
     tertiary: "#06B6D4",
     quaternary: "#F59E0B",
@@ -83,7 +83,7 @@ export const CHART_COLORS = {
 
 // Shareholding pie colors
 export const SHAREHOLDING_COLORS = {
-    Promoter: "#6366F1",
+    Promoter: "#1A1A2E",
     FII: "#EF4444",
     DII: "#F59E0B",
     Public: "#22C55E",

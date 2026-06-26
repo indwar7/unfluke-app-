@@ -211,10 +211,10 @@ const BasicBacktesterHomePage = () => {
                     </TouchableOpacity>
                     <View style={styles.stratActions}>
                         <TouchableOpacity style={styles.actionBtn} onPress={() => handleEdit(item)}>
-                            <Ionicons name="pencil" size={15} color="#3b82f6" />
+                            <Ionicons name="pencil" size={15} color="#2962FF" />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.actionBtn} onPress={() => handleView(item)}>
-                            <Ionicons name="eye" size={15} color="#16a34a" />
+                            <Ionicons name="eye" size={15} color="#089981" />
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.actionBtn}
@@ -225,7 +225,7 @@ const BasicBacktesterHomePage = () => {
                                 )
                             }
                         >
-                            <Ionicons name="trash" size={15} color="#dc2626" />
+                            <Ionicons name="trash" size={15} color="#F23645" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -234,13 +234,13 @@ const BasicBacktesterHomePage = () => {
                 <View style={styles.metricsRow}>
                     <View style={styles.metricItem}>
                         <Text style={styles.metricLabel}>Profit</Text>
-                        <Text style={[styles.metricValue, { color: isPositive ? "#16a34a" : "#dc2626" }]}>
+                        <Text style={[styles.metricValue, { color: isPositive ? "#089981" : "#F23645" }]}>
                             {profit != null ? `₹${Number(profit).toFixed(0)}` : "—"}
                         </Text>
                     </View>
                     <View style={styles.metricItem}>
                         <Text style={styles.metricLabel}>Max Drawdown</Text>
-                        <Text style={[styles.metricValue, { color: "#dc2626" }]}>
+                        <Text style={[styles.metricValue, { color: "#F23645" }]}>
                             {drawdown != null ? `₹${Number(drawdown).toFixed(0)}` : "—"}
                         </Text>
                     </View>
@@ -252,7 +252,7 @@ const BasicBacktesterHomePage = () => {
                     </View>
                     <View style={styles.metricItem}>
                         <Text style={styles.metricLabel}>Selling Price</Text>
-                        <Text style={[styles.metricValue, { color: "#6366f1" }]}>
+                        <Text style={[styles.metricValue, { color: "#2962FF" }]}>
                             {sellingPrice != null ? `₹${Number(sellingPrice).toFixed(0)}` : "—"}
                         </Text>
                     </View>
@@ -265,7 +265,7 @@ const BasicBacktesterHomePage = () => {
                         <Switch
                             value={!!item.isPrivate}
                             onValueChange={(val) => handlePrivate(index, val)}
-                            trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                            trackColor={{ false: "#d1d5db", true: "#2962FF" }}
                             thumbColor="#fff"
                         />
                     </View>
@@ -275,7 +275,7 @@ const BasicBacktesterHomePage = () => {
                             value={!!item.monetize}
                             disabled={item.isPrivate}
                             onValueChange={(val) => handleMonetize(index, val)}
-                            trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+                            trackColor={{ false: "#d1d5db", true: "#2962FF" }}
                             thumbColor="#fff"
                         />
                     </View>
@@ -301,7 +301,7 @@ const BasicBacktesterHomePage = () => {
                     onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                 >
-                    <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#d1d5db" : "#374151"} />
+                    <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#4C525E" : "#787B86"} />
                 </TouchableOpacity>
                 {pages.map((p) => (
                     <TouchableOpacity
@@ -319,7 +319,7 @@ const BasicBacktesterHomePage = () => {
                     onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                 >
-                    <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#d1d5db" : "#374151"} />
+                    <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#4C525E" : "#787B86"} />
                 </TouchableOpacity>
             </View>
         );
@@ -349,7 +349,7 @@ const BasicBacktesterHomePage = () => {
                 <Text style={styles.headerTitle}>Backtester Home</Text>
                 <View style={styles.breadcrumb}>
                     <Text style={styles.breadcrumbText}>Pages</Text>
-                    <ChevronRight size={13} color="#9ca3af" />
+                    <ChevronRight size={13} color="#4C525E" />
                     <Text style={styles.breadcrumbText}>Basic Backtester</Text>
                 </View>
             </View>
@@ -377,7 +377,7 @@ const BasicBacktesterHomePage = () => {
 
                     {/* Search Bar */}
                     <View style={styles.searchContainer}>
-                        <Ionicons name="search" size={16} color="#9ca3af" style={{ marginRight: 8 }} />
+                        <Ionicons name="search" size={16} color="#4C525E" style={{ marginRight: 8 }} />
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Search strategies..."
@@ -387,7 +387,7 @@ const BasicBacktesterHomePage = () => {
                         />
                         {searchQuery.length > 0 && (
                             <TouchableOpacity onPress={() => { setSearchQuery(""); setCurrentPage(1); }}>
-                                <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                                <Ionicons name="close-circle" size={18} color="#4C525E" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -419,7 +419,7 @@ const BasicBacktesterHomePage = () => {
                     <View style={styles.content}>
                         {loading ? (
                             <View style={styles.loaderBox}>
-                                <ActivityIndicator size="large" color="#3b82f6" />
+                                <ActivityIndicator size="large" color="#2962FF" />
                                 <Text style={styles.loaderText}>Loading strategies...</Text>
                             </View>
                         ) : (
@@ -435,16 +435,16 @@ const BasicBacktesterHomePage = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f9fafb",
+        backgroundColor: "#131722",
     },
 
     /* ── Header ── */
     header: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "#1E222D",
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#e5e7eb",
+        borderBottomColor: "rgba(255,255,255,0.06)",
         elevation: 3,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#111827",
+        color: "#D1D4DC",
     },
     breadcrumb: {
         flexDirection: "row",
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
         marginTop: 3,
         gap: 4,
     },
-    breadcrumbText: { fontSize: 12, color: "#9ca3af" },
+    breadcrumbText: { fontSize: 12, color: "#4C525E" },
 
     /* ── Scroll ── */
     scrollView: { flex: 1 },
@@ -470,10 +470,10 @@ const styles = StyleSheet.create({
 
     /* ── Card ── */
     card: {
-        backgroundColor: "#fff",
-        borderRadius: 10,
+        backgroundColor: "#1E222D",
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: "rgba(255,255,255,0.06)",
         elevation: 1,
         overflow: "hidden",
     },
@@ -483,14 +483,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: "#e5e7eb",
+        borderBottomColor: "rgba(255,255,255,0.06)",
     },
-    cardTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
+    cardTitle: { fontSize: 15, fontWeight: "600", color: "#D1D4DC" },
     createButton: {
-        backgroundColor: "#3b82f6",
+        backgroundColor: "#2962FF",
         paddingHorizontal: 10,
         paddingVertical: 8,
-        borderRadius: 6,
+        borderRadius: 10,
         flexDirection: "row",
         alignItems: "center",
         gap: 4,
@@ -501,55 +501,55 @@ const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#f3f4f6",
-        borderRadius: 8,
+        backgroundColor: "#363A45",
+        borderRadius: 10,
         marginHorizontal: 16,
         marginTop: 12,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: "rgba(255,255,255,0.06)",
     },
     searchInput: {
         flex: 1,
         fontSize: 13,
-        color: "#111827",
+        color: "#D1D4DC",
         padding: 0,
     },
 
     /* ── Tabs ── */
     tabContainer: {
         flexDirection: "row",
-        backgroundColor: "#f3f4f6",
+        backgroundColor: "#2A2E39",
         margin: 16,
-        borderRadius: 8,
+        borderRadius: 10,
         padding: 4,
     },
     tab: {
         flex: 1,
         paddingVertical: 8,
-        borderRadius: 6,
+        borderRadius: 8,
         alignItems: "center",
     },
     activeTab: {
-        backgroundColor: "#fff",
-        elevation: 2,
+        backgroundColor: "#1E222D",
+        elevation: 0,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
     },
-    tabText: { fontSize: 13, fontWeight: "600", color: "#64748b" },
-    activeTabText: { color: "#111827" },
+    tabText: { fontSize: 13, fontWeight: "600", color: "#4C525E" },
+    activeTabText: { color: "#D1D4DC" },
 
     content: { padding: 16 },
 
     /* ── Strategy Cards ── */
     stratCard: {
-        backgroundColor: "#fff",
-        borderRadius: 10,
+        backgroundColor: "#1E222D",
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: "rgba(255,255,255,0.06)",
         padding: 14,
         marginBottom: 10,
         elevation: 1,
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     stratName: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#3b82f6",
+        color: "#2962FF",
         flex: 1,
         marginRight: 8,
     },
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 6,
-        backgroundColor: "#f3f4f6",
+        backgroundColor: "#2A2E39",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -590,27 +590,28 @@ const styles = StyleSheet.create({
     },
     metricItem: {
         flex: 1,
-        backgroundColor: "#f9fafb",
+        backgroundColor: "#2A2E39",
         borderRadius: 8,
         padding: 10,
     },
     metricLabel: {
         fontSize: 10,
         fontWeight: "600",
-        color: "#6b7280",
+        color: "#4C525E",
         textTransform: "uppercase",
         marginBottom: 4,
     },
     metricValue: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#111827",
+        color: "#D1D4DC",
+        fontVariant: ["tabular-nums"] as any,
     },
     togglesRow: {
         flexDirection: "row",
         gap: 16,
         borderTopWidth: 1,
-        borderTopColor: "#f0f0f0",
+        borderTopColor: "rgba(255,255,255,0.06)",
         paddingTop: 10,
     },
     toggleItem: {
@@ -621,14 +622,14 @@ const styles = StyleSheet.create({
     toggleLabel: {
         fontSize: 12,
         fontWeight: "600",
-        color: "#6b7280",
+        color: "#787B86",
     },
 
     /* ── States ── */
     loaderBox: { paddingVertical: 40, alignItems: "center", gap: 12 },
-    loaderText: { fontSize: 14, color: "#6b7280" },
+    loaderText: { fontSize: 14, color: "#787B86" },
     emptyBox: { paddingVertical: 40, alignItems: "center", gap: 12 },
-    emptyText: { fontSize: 15, color: "#6b7280" },
+    emptyText: { fontSize: 15, color: "#787B86" },
 
     /* ── Pagination ── */
     paginationContainer: {
@@ -642,12 +643,12 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 8,
-        backgroundColor: "#f3f4f6",
+        backgroundColor: "#2A2E39",
         alignItems: "center",
         justifyContent: "center",
     },
     pageBtnActive: {
-        backgroundColor: "#3b82f6",
+        backgroundColor: "#2962FF",
     },
     pageBtnDisabled: {
         opacity: 0.4,
@@ -655,10 +656,10 @@ const styles = StyleSheet.create({
     pageBtnText: {
         fontSize: 13,
         fontWeight: "600",
-        color: "#374151",
+        color: "#787B86",
     },
     pageBtnTextActive: {
-        color: "#ffffff",
+        color: "#FFFFFF",
     },
 });
 

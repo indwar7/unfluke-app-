@@ -763,14 +763,15 @@ const Pricing = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
-    paddingTop: 65,
+    backgroundColor: "#F7F7F8",
+    paddingTop: 0,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   header: {
     alignItems: "center",
@@ -778,14 +779,14 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "600",
+    fontSize: 24,
+    fontWeight: "800",
     marginBottom: 8,
-    color: "#2F3E62",
+    color: "#0F172A",
   },
   subtitle: {
     fontSize: 15,
-    color: "#405189",
+    color: "#64748B",
     textAlign: "center",
   },
   tabContainer: {
@@ -795,24 +796,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   tab: {
-    paddingVertical: 9,
-    paddingHorizontal: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     marginHorizontal: 10,
-    borderRadius: 4,
-    backgroundColor: "#E9ECEF", // inactive bg
+    borderRadius: 20,
+    backgroundColor: "#F1F5F9", // inactive bg
     alignItems: "center",
     position: "relative",
   },
   activeTab: {
-    backgroundColor: "#405189", // active bg
+    backgroundColor: "#1A1A2E", // active bg
   },
   tabText: {
     fontSize: 15,
     fontWeight: "500",
-    color: "#495057", // inactive text
+    color: "#94A3B8", // inactive text
   },
   activeTabText: {
-    color: "#fff", // active text
+    color: "#FFFFFF", // active text
   },
   triangle: {
     position: "absolute",
@@ -826,7 +827,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 10,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#405189", // same as activeTab background
+    borderTopColor: "#1A1A2E", // same as activeTab background
   },
   cardsContainer: {
     flexWrap: "wrap",
@@ -836,24 +837,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     overflow: "hidden",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.04,
     shadowRadius: 4,
   },
   popularCard: {
-    borderColor: "#dc3545",
+    borderColor: "#B8860B",
     borderWidth: 2,
   },
   popularBadge: {
     position: "absolute",
     top: 12,
     right: -30,
-    backgroundColor: "#dc3545",
+    backgroundColor: "#B8860B",
     paddingVertical: 4,
     paddingHorizontal: 40,
     transform: [{ rotate: "45deg" }],
@@ -865,10 +866,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   cardBody: {
-    backgroundColor: "#F1F4F7",
+    backgroundColor: "#F8FAFC",
     margin: 8,
     padding: 16,
-    borderRadius: 6,
+    borderRadius: 12,
   },
   cardHeader: {
     flexDirection: "row",
@@ -878,17 +879,17 @@ const styles = StyleSheet.create({
   },
   planTitle: {
     fontSize: 15,
-    fontWeight: "bold",
-    color: "#49506C",
+    fontWeight: "800",
+    color: "#0F172A",
   },
   planPrice: {
     fontSize: 15,
     fontWeight: "bold",
-    color: "#49506C",
+    color: "#0F172A",
   },
   priceSubtext: {
     fontSize: 14,
-    color: "#6c757d",
+    color: "#64748B",
   },
   period: {
     fontSize: 13,
@@ -923,7 +924,7 @@ const styles = StyleSheet.create({
   },
   featureDetail: {
     fontSize: 12,
-    color: "#e27498",
+    color: "#64748B",
     fontWeight: "500",
     paddingLeft: 24,
     marginTop: 2,
@@ -936,12 +937,12 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   button: {
-    borderRadius: 6,
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: "center",
   },
   buyButton: {
-    backgroundColor: "#405189",
+    backgroundColor: "#1A1A2E",
   },
   buyButtonText: {
     color: "#fff",
@@ -949,7 +950,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   subscribedButton: {
-    backgroundColor: "#198754",
+    backgroundColor: "#059669",
   },
   subscribedButtonText: {
     color: "#fff",

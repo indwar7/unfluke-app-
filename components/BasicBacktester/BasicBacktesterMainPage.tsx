@@ -142,7 +142,7 @@ const BasicBacktesterMainPage = () => {
               <Ionicons
                 name={["stats-chart", "bar-chart", "pie-chart", "trending-up", "cash"][index % 5] as any}
                 size={28}
-                color="#3B82F6"
+                color="#2962FF"
               />
             </View>
             <View style={styles.titleContainer}>
@@ -184,7 +184,7 @@ const BasicBacktesterMainPage = () => {
           <Text style={styles.title}>Backtester Main</Text>
           <View style={styles.breadcrumb}>
             <Text style={styles.breadcrumbText}>Pages</Text>
-            <ChevronRight size={13} color="#9ca3af" />
+            <ChevronRight size={13} color="#4C525E" />
             <Text style={styles.breadcrumbText}>Basic Backtester</Text>
           </View>
         </View>
@@ -203,7 +203,7 @@ const BasicBacktesterMainPage = () => {
       <View style={styles.pageContent}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2563EB" />
+            <ActivityIndicator size="large" color="#2962FF" />
             <Text style={styles.loadingText}>Loading strategies...</Text>
           </View>
         ) : (
@@ -244,16 +244,16 @@ const BasicBacktesterMainPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#131722',
   },
 
   /* ── Single header with title + buttons ── */
   header: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1E222D',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#D1D4DC',
   },
   breadcrumb: {
     flexDirection: 'row',
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   },
   breadcrumbText: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: '#4C525E',
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -289,30 +289,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#9CA3AF',
+    borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: 'white',
+    backgroundColor: '#2A2E39',
     gap: 4,
   },
   viewSavedButtonText: {
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#D1D4DC',
     fontSize: 12,
   },
   createNewButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#2962FF',
     gap: 4,
   },
   createNewButtonText: {
     fontWeight: '600',
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 12,
   },
 
@@ -329,17 +329,17 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     fontSize: 16,
-    color: '#6B7280',
+    color: '#787B86',
   },
   scrollView: { flex: 1 },
   scrollContent: { paddingTop: 12, paddingBottom: 20 },
   cardsContainer: { gap: 12 },
   cardContainer: { width: cardWidth },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.06)',
     elevation: 1,
   },
   cardHeader: {
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#2A2E39',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#111827',
+    color: '#D1D4DC',
     lineHeight: 20,
   },
   actionButtons: { flexDirection: 'row', gap: 8 },
@@ -379,10 +379,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   detailsSection: { gap: 4 },
-  detailsLabel: { fontSize: 12, color: '#6B7280', marginBottom: 2 },
-  detailsText: { fontSize: 14, fontWeight: '500', color: '#111827', lineHeight: 20 },
+  detailsLabel: { fontSize: 12, color: '#4C525E', marginBottom: 2 },
+  detailsText: { fontSize: 14, fontWeight: '500', color: '#D1D4DC', lineHeight: 20, fontVariant: ['tabular-nums'] as any },
   dateSection: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  dateText: { fontSize: 12, color: '#6B7280' },
+  dateText: { fontSize: 12, color: '#4C525E' },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -390,14 +390,14 @@ const styles = StyleSheet.create({
     padding: 40,
     marginTop: 40,
   },
-  emptyText: { fontSize: 18, fontWeight: '600', color: '#374151', marginTop: 16, textAlign: 'center' },
-  emptySubText: { fontSize: 14, color: '#6B7280', marginTop: 8, textAlign: 'center' },
+  emptyText: { fontSize: 18, fontWeight: '600', color: '#787B86', marginTop: 16, textAlign: 'center' },
+  emptySubText: { fontSize: 14, color: '#4C525E', marginTop: 8, textAlign: 'center' },
   loadMoreContainer: { alignItems: 'center', marginTop: 20, marginBottom: 16 },
   loadMoreButton: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: '#2563EB',
-    borderRadius: 8,
+    backgroundColor: '#2962FF',
+    borderRadius: 10,
     elevation: 2,
   },
   loadMoreButtonText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },

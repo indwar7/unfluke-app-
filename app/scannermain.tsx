@@ -151,7 +151,7 @@ const ScannerMain = () => {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#3B82F6" />
+            <ActivityIndicator size="large" color="#1A1A2E" />
             <Text style={styles.loadingText}>Loading scanners...</Text>
           </View>
         ) : (
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     padding: 12,
     paddingTop: 12,
     paddingBottom: 20,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#F7F7F8",
     flexGrow: 1,
   },
   headerContainer: {
@@ -195,9 +195,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#111827",
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#0F172A",
   },
   breadcrumb: {
     flexDirection: "row",
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "#94A3B8",
   },
   buttonGroup: {
     flexDirection: "row",
@@ -217,25 +217,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#9CA3AF",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
+    borderColor: "#E2E8F0",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     backgroundColor: "white",
   },
   viewSavedButtonText: {
     fontWeight: "600",
-    color: "#1F2937",
+    color: "#0F172A",
     marginLeft: 3,
     fontSize: 12,
   },
   createNewButton: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    backgroundColor: "#3B82F6",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#1A1A2E",
   },
   createNewButtonText: {
     fontWeight: "600",
@@ -249,8 +249,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 24,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
+    borderColor: "#E2E8F0",
+    borderRadius: 14,
     backgroundColor: "white",
   },
   loadingText: {
@@ -263,8 +263,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 24,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
+    borderColor: "#E2E8F0",
+    borderRadius: 14,
     backgroundColor: "white",
   },
   emptyStateText: {
@@ -275,17 +275,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 18,
+    gap: 14,
     paddingBottom: 110,
   },
   cardContainer: {
     width: "100%",
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E2E8F0",
     backgroundColor: "white",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   cardHeader: {
     flexDirection: "row",
@@ -294,17 +294,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
     flex: 1,
     marginRight: 8,
   },
   showAllButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#1A1A2E",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 10,
     alignSelf: "flex-end",
   },
   showAllButtonText: {
@@ -319,8 +319,10 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   scannerItem: {
-    backgroundColor: "#F3F4F6",
-    borderRadius: 6,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
     padding: 12,
     marginBottom: 8,
   },
@@ -331,9 +333,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scannerName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "500",
-    color: "#111827",
+    color: "#0F172A",
     flex: 1,
     marginRight: 8,
     // Removed flexWrap as it's not valid for Text components
