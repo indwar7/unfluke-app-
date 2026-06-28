@@ -43,7 +43,7 @@ import { backendSocket } from "../../socket/socket";
 import { useBottomGutter } from "../../utils/bottomGutter";
 
 const AdvancedBacktester = () => {
-  const isDark = false;
+  const isDark = true;
   const bottomGutter = useBottomGutter();
   const dynamicStyles = createStyles(isDark, bottomGutter);
 
@@ -275,7 +275,7 @@ const AdvancedBacktester = () => {
         <Text style={dynamicStyles.headerTitle}>Advanced Backtester</Text>
         <View style={dynamicStyles.breadcrumb}>
           <Text style={dynamicStyles.breadcrumbText}>Pages</Text>
-          <ChevronRight size={13} color="#9ca3af" />
+          <ChevronRight size={13} color="#787B86" />
           <Text style={dynamicStyles.breadcrumbText}>Advanced Backtester</Text>
         </View>
       </View>
@@ -292,7 +292,7 @@ const AdvancedBacktester = () => {
             <TextInput
               style={dynamicStyles.input}
               placeholder="Enter here"
-              placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
+              placeholderTextColor="#787B86"
               value={advancedState.strategyName}
               onChangeText={(text) => dispatchChange("strategyName", text)}
             />
@@ -305,14 +305,14 @@ const AdvancedBacktester = () => {
                 selectedValue={advancedState.entries}
                 onValueChange={(val) => dispatchChange("entries", val)}
                 style={dynamicStyles.picker}
-                dropdownIconColor={isDark ? "#FFFFFF" : "#111827"}
+                dropdownIconColor="#D1D4DC"
               >
                 {reEntriesGlobal.map((i) => (
                   <Picker.Item
                     key={i}
                     label={(i + 1).toString()}
                     value={i + 1}
-                    color={isDark ? "#FFFFFF" : "#111827"}
+                    color="#D1D4DC"
                   />
                 ))}
               </Picker>
@@ -386,7 +386,7 @@ const AdvancedBacktester = () => {
         {/* Alerts */}
         {isBacktesting && (
           <View style={dynamicStyles.alertSuccess}>
-            <ActivityIndicator size="small" color="#10B981" />
+            <ActivityIndicator size="small" color="#089981" />
             <Text style={dynamicStyles.alertSuccessText}>
               Your results will be generated soon. Please wait...
             </Text>
@@ -413,16 +413,16 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: isDark ? "#111827" : "#F9FAFB",
+      backgroundColor: "#131722",
     },
 
     /* ── Header ── */
     header: {
-      backgroundColor: "#ffffff",
+      backgroundColor: "#1E222D",
       paddingHorizontal: 16,
       paddingVertical: 14,
       borderBottomWidth: 1,
-      borderBottomColor: "#e5e7eb",
+      borderBottomColor: "rgba(255,255,255,0.06)",
       elevation: 3,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 1 },
@@ -432,7 +432,7 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
     headerTitle: {
       fontSize: 18,
       fontWeight: "700",
-      color: "#111827",
+      color: "#D1D4DC",
     },
     breadcrumb: {
       flexDirection: "row",
@@ -440,7 +440,7 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
       marginTop: 3,
       gap: 4,
     },
-    breadcrumbText: { fontSize: 12, color: "#9ca3af" },
+    breadcrumbText: { fontSize: 12, color: "#787B86" },
 
     /* ── Scroll ── */
     scrollView: { flex: 1 },
@@ -456,26 +456,26 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
     label: {
       fontSize: 14,
       fontWeight: "500",
-      color: isDark ? "#D1D5DB" : "#374151",
+      color: "#D1D4DC",
       marginBottom: 8,
     },
     input: {
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#E5E7EB",
+      borderColor: "rgba(255,255,255,0.06)",
       borderRadius: 8,
       padding: 12,
       fontSize: 14,
-      color: isDark ? "#FFFFFF" : "#111827",
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      color: "#D1D4DC",
+      backgroundColor: "#363A45",
     },
     pickerContainer: {
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#E5E7EB",
+      borderColor: "rgba(255,255,255,0.06)",
       borderRadius: 8,
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: "#363A45",
       overflow: "hidden",
     },
-    picker: { color: isDark ? "#FFFFFF" : "#111827", height: 50 },
+    picker: { color: "#D1D4DC", height: 50 },
 
     /* ── Sections ── */
     section: { marginBottom: 24 },
@@ -487,7 +487,7 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
     sectionTitle: {
       fontSize: 18,
       fontWeight: "bold",
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: "#D1D4DC",
     },
     buttonGroup: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
     button: {
@@ -498,13 +498,13 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
       borderRadius: 8,
       gap: 8,
     },
-    buttonPrimary: { backgroundColor: "#3B82F6" },
-    buttonDanger: { backgroundColor: "#EF4444" },
+    buttonPrimary: { backgroundColor: "#2962FF" },
+    buttonDanger: { backgroundColor: "#F23645" },
     buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
 
     /* ── Submit ── */
     submitButton: {
-      backgroundColor: "#3B82F6",
+      backgroundColor: "#2962FF",
       paddingVertical: 14,
       paddingHorizontal: 24,
       borderRadius: 8,
@@ -513,7 +513,7 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
       alignSelf: "flex-start",
       minWidth: 160,
     },
-    submitButtonDisabled: { backgroundColor: "#9CA3AF" },
+    submitButtonDisabled: { backgroundColor: "#4C525E" },
     submitButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
     submitRow: { flexDirection: "row", alignItems: "center" },
 
@@ -521,8 +521,10 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
     alertSuccess: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: isDark ? "#064E3B" : "#D1FAE5",
+      backgroundColor: "#1E222D",
       borderRadius: 12,
+      borderWidth: 1,
+      borderColor: "#089981",
       padding: 16,
       gap: 12,
       marginBottom: 16,
@@ -530,17 +532,19 @@ const createStyles = (isDark: boolean, bottomGutter = 0) =>
     alertSuccessText: {
       flex: 1,
       fontSize: 15,
-      color: isDark ? "#FFFFFF" : "#065F46",
+      color: "#089981",
     },
     alertDanger: {
-      backgroundColor: isDark ? "#7F1D1D" : "#FEE2E2",
+      backgroundColor: "#1E222D",
       borderRadius: 12,
+      borderWidth: 1,
+      borderColor: "#F23645",
       padding: 16,
       marginBottom: 16,
     },
     alertDangerText: {
       fontSize: 15,
-      color: isDark ? "#FFFFFF" : "#991B1B",
+      color: "#F23645",
     },
   });
 

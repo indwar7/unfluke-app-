@@ -104,7 +104,7 @@ const ScannerList = () => {
           {item.description || "No description"}
         </Text>
       </View>
-      <ChevronRight size={16} color="#64748B" />
+      <ChevronRight size={16} color="#787B86" />
     </TouchableOpacity>
   );
 
@@ -150,7 +150,7 @@ const ScannerList = () => {
           <Text style={styles.title}>{category || "Scanners"}</Text>
           <View style={styles.breadcrumb}>
             <Text style={styles.breadcrumbText}>Pages</Text>
-            <ChevronRight size={13} color="#6B7280" />
+            <ChevronRight size={13} color="#787B86" />
             <Text style={styles.breadcrumbText}>Scanners</Text>
           </View>
         </View>
@@ -162,7 +162,7 @@ const ScannerList = () => {
               navigation.navigate(alerts ? "alerts" : "scannerhome")
             }
           >
-            <Eye color="#000" size={12} />
+            <Eye color="#D1D4DC" size={12} />
             <Text style={styles.viewSavedButtonText}>View saved</Text>
           </TouchableOpacity>
 
@@ -218,7 +218,7 @@ const ScannerList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#131722",
     padding: 12,
     paddingBottom: 10,
   },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   breadcrumb: {
     flexDirection: "row",
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "#787B86",
   },
   buttonGroup: {
     flexDirection: "row",
@@ -253,15 +253,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#9CA3AF",
+    borderColor: "rgba(255,255,255,0.06)",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: "white",
+    backgroundColor: "#2A2E39",
   },
   viewSavedButtonText: {
     fontWeight: "600",
-    color: "#1F2937",
+    color: "#D1D4DC",
     marginLeft: 3,
     fontSize: 12,
   },
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2962FF",
   },
   createNewButtonText: {
     fontWeight: "600",
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    backgroundColor: "white",
+    backgroundColor: "#1E222D",
     borderRadius: 12,
     marginBottom: 8,
   },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#2A2E39",
   },
   skeletonText: {
     marginLeft: 16,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   },
   skeletonLine: {
     height: 16,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#2A2E39",
     borderRadius: 4,
     marginBottom: 8,
     width: "60%",
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: "white",
+    backgroundColor: "#1E222D",
     borderRadius: 12,
     marginBottom: 10,
     shadowColor: "#000",
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 24,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2962FF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
@@ -342,37 +342,37 @@ const styles = StyleSheet.create({
   scannerName: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#0F172A",
+    color: "#D1D4DC",
     marginBottom: 4,
   },
   scannerDescription: {
     fontSize: 13,
-    color: "#64748B",
+    color: "#787B86",
   },
   pagination: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    backgroundColor: "white",
+    backgroundColor: "#1E222D",
     borderRadius: 8,
     elevation: 1,
   },
   pageButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#2A2E39",
     borderRadius: 8,
   },
   disabledButton: {
     opacity: 0.5,
   },
   pageButtonText: {
-    color: "#0F172A",
+    color: "#D1D4DC",
     fontWeight: "500",
   },
   pageInfo: {
-    color: "#64748B",
+    color: "#787B86",
     fontWeight: "500",
   },
 });

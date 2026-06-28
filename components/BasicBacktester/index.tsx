@@ -198,7 +198,7 @@ const BasicBacktester = () => {
             <Text style={styles.title}>Backtester Main</Text>
             <View style={styles.breadcrumb}>
               <Text style={styles.breadcrumbText}>Pages</Text>
-              <ChevronRight size={13} color="#6B7280" />
+              <ChevronRight size={13} color="#787B86" />
               <Text style={styles.breadcrumbText}>Basic Backtester</Text>
             </View>
           </View>
@@ -266,7 +266,7 @@ const createStyles = (isDark, bottomInset = 0) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#F9FAFB",
+      backgroundColor: "#131722",
     },
     pageContent: {
       flex: 1,
@@ -285,7 +285,7 @@ const createStyles = (isDark, bottomInset = 0) =>
     title: {
       fontSize: 17,
       fontWeight: "bold",
-      color: "#111827",
+      color: "#D1D4DC",
     },
     breadcrumb: {
       flexDirection: "row",
@@ -294,7 +294,7 @@ const createStyles = (isDark, bottomInset = 0) =>
     },
     breadcrumbText: {
       fontSize: 12,
-      color: "#6B7280",
+      color: "#787B86",
     },
     breadcrumbIcon: {
       marginHorizontal: 4,
@@ -303,7 +303,7 @@ const createStyles = (isDark, bottomInset = 0) =>
       flex: 1,
     },
     saveButton: {
-      backgroundColor: "#2563EB", // bg-blue-600
+      backgroundColor: "#2962FF",
       paddingVertical: 12,
       // paddingHorizontal: 16,
       borderRadius: 6,
@@ -320,7 +320,7 @@ const createStyles = (isDark, bottomInset = 0) =>
       shadowRadius: 3.84,
     },
     saveButtonDisabled: {
-      backgroundColor: isDark ? "#374151" : "#6D97F1",
+      backgroundColor: "#2A2E39",
       elevation: 0,
       shadowOpacity: 0,
     },
@@ -331,7 +331,7 @@ const createStyles = (isDark, bottomInset = 0) =>
       textAlign: "center",
     },
     saveButtonTextDisabled: {
-      color: isDark ? "#6B7280" : "#FFFFFF",
+      color: "#4C525E",
     },
   });
 

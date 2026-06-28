@@ -29,7 +29,7 @@ const CustomExpirySelect = ({ options, selected, onChange, placeholder, name }) 
         <Text style={styles.buttonText}>
           {options.find((o) => o.value.to_expiry === selected?.to_expiry)?.label || placeholder}
         </Text>
-        <ChevronDown size={18} color="#6B7280" />
+        <ChevronDown size={18} color="#787B86" />
       </TouchableOpacity>
 
       {/* Dropdown Modal */}
@@ -74,27 +74,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#fff",
-    borderColor: "#d1d5db", // gray-300
+    backgroundColor: "#363A45",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   buttonText: {
-    color: "#1f2937", // gray-800
+    color: "#D1D4DC",
     fontSize: 16,
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
   dropdown: {
     width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    backgroundColor: "#1E222D",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "rgba(255,255,255,0.06)",
     shadowColor: "#000",
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
     elevation: 5,
@@ -102,10 +102,12 @@ const styles = StyleSheet.create({
   option: {
     paddingVertical: 12,
     paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   optionText: {
     fontSize: 16,
-    color: "#374151", // gray-700
+    color: "#D1D4DC",
   },
 });
 

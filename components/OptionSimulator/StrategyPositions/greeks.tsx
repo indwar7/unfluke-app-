@@ -88,7 +88,7 @@ const GreeksTable = ({ positions }) => {
         <Text
           style={[
             styles.noPositionsText,
-            { color: isDark ? "#ffffff" : "#000000" },
+            { color: "#D1D4DC" },
           ]}
         >
           No positions available
@@ -228,27 +228,28 @@ const getStyles = (isDark) =>
     noPositionsText: {
       fontSize: 18,
       fontWeight: "bold",
+      color: "#D1D4DC",
     },
     tableContainer: {
-      minWidth: 800, // Ensure table doesn't get too cramped
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderRadius: 8,
+      minWidth: 800,
+      backgroundColor: "#1E222D",
+      borderRadius: 12,
       overflow: "hidden",
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#e5e7eb",
+      borderColor: "rgba(255,255,255,0.06)",
     },
     tableHeader: {
       flexDirection: "row",
-      backgroundColor: isDark ? "#374151" : "#f8f9fa",
+      backgroundColor: "#2A2E39",
       borderBottomWidth: 2,
-      borderBottomColor: isDark ? "#4b5563" : "#dee2e6",
+      borderBottomColor: "rgba(255,255,255,0.06)",
       paddingVertical: 12,
       paddingHorizontal: 8,
     },
     headerCell: {
       fontSize: 14,
       fontWeight: "600",
-      color: isDark ? "#f3f4f6" : "#495057",
+      color: "#D1D4DC",
       textAlign: "center",
     },
     positionHeader: {
@@ -260,32 +261,33 @@ const getStyles = (isDark) =>
       // flex: 1,
     },
     tableBody: {
-      maxHeight: 400, // Limit height for scrolling
+      maxHeight: 400,
     },
     tableRow: {
       flexDirection: "row",
       paddingVertical: 12,
       paddingHorizontal: 8,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#e5e7eb",
+      borderBottomColor: "rgba(255,255,255,0.06)",
       minHeight: 50,
       alignItems: "center",
     },
     evenRow: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: "#1E222D",
     },
     oddRow: {
-      backgroundColor: isDark ? "#111827" : "#f8f9fa",
+      backgroundColor: "#131722",
     },
     summaryRow: {
-      backgroundColor: isDark ? "#374151" : "#e9ecef",
+      backgroundColor: "#2A2E39",
       borderTopWidth: 2,
-      borderTopColor: isDark ? "#4b5563" : "#dee2e6",
+      borderTopColor: "rgba(255,255,255,0.06)",
     },
     tableCell: {
       fontSize: 13,
-      color: isDark ? "#e5e7eb" : "#495057",
+      color: "#D1D4DC",
       textAlign: "center",
+      fontVariant: ['tabular-nums'],
     },
     positionCell: {
       flex: 0.75,
@@ -301,7 +303,7 @@ const getStyles = (isDark) =>
     },
     numberCell: {
       // flex: 1,
-      fontFamily: "monospace", // For better number alignment
+      fontFamily: "monospace",
     },
     greeksCont: {
       flex: 1,
@@ -311,15 +313,15 @@ const getStyles = (isDark) =>
     },
     numberCell2: {
       // flex: 1,
-      fontFamily: "monospace", // For better number alignment
+      fontFamily: "monospace",
     },
     summaryLabel: {
       fontWeight: "600",
-      color: isDark ? "#f3f4f6" : "#343a40",
+      color: "#D1D4DC",
     },
     summaryValue: {
       fontWeight: "600",
-      color: isDark ? "#60a5fa" : "#0056b3",
+      color: "#2962FF",
     },
   });
 

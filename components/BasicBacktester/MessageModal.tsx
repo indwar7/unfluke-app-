@@ -5,14 +5,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  useColorScheme,
   ScrollView,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 const MessageModal = ({ message, setResultsMessage }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
   // Function to strip HTML tags for basic text display
   const stripHtml = (html) => {
@@ -34,17 +31,17 @@ const MessageModal = ({ message, setResultsMessage }) => {
       onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modalContainer, isDark && styles.modalContainerDark]}>
+        <View style={styles.modalContainer}>
           {/* Modal Header */}
-          <View style={[styles.header, isDark && styles.headerDark]}>
-            <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>
               Message
             </Text>
           </View>
 
           {/* Modal Body */}
           <View style={styles.body}>
-            <ScrollView 
+            <ScrollView
               showsVerticalScrollIndicator={false}
               style={styles.scrollView}
             >
@@ -59,8 +56,8 @@ const MessageModal = ({ message, setResultsMessage }) => {
                             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                             font-size: 16px;
                             line-height: 1.5;
-                            color: ${isDark ? '#FFFFFF' : '#000000'};
-                            background-color: ${isDark ? '#374151' : '#FFFFFF'};
+                            color: #D1D4DC;
+                            background-color: #1E222D;
                             margin: 0;
                             padding: 16px;
                           }
@@ -74,7 +71,7 @@ const MessageModal = ({ message, setResultsMessage }) => {
                 />
               ) : (
                 // Option 2: Display as plain text if no HTML
-                <Text style={[styles.messageText, isDark && styles.messageTextDark]}>
+                <Text style={styles.messageText}>
                   {stripHtml(message)}
                 </Text>
               )}
@@ -82,7 +79,7 @@ const MessageModal = ({ message, setResultsMessage }) => {
           </View>
 
           {/* Modal Footer */}
-          <View style={[styles.footer, isDark && styles.footerDark]}>
+          <View style={styles.footer}>
             <TouchableOpacity
               style={[styles.button, styles.skipButton]}
               onPress={handleClose}
@@ -100,19 +97,19 @@ const MessageModal = ({ message, setResultsMessage }) => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     width: '90%',
     maxWidth: 500,
     maxHeight: '80%',
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
+    elevation: 10,
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 5,
@@ -120,28 +117,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 10,
   },
-  modalContainerDark: {
-    backgroundColor: '#374151',
-  },
   header: {
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-  },
-  headerDark: {
-    borderBottomColor: '#4B5563',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: '#D1D4DC',
     textAlign: 'center',
-  },
-  headerTitleDark: {
-    color: '#FFFFFF',
   },
   body: {
     flex: 1,
@@ -155,10 +143,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#374151',
-  },
-  messageTextDark: {
-    color: '#D1D5DB',
+    color: '#787B86',
   },
   webView: {
     flex: 1,
@@ -168,14 +153,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
     flexDirection: 'row',
     justifyContent: 'flex-end',
-  },
-  footerDark: {
-    borderTopColor: '#4B5563',
   },
   button: {
     paddingVertical: 10,
@@ -185,10 +167,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipButton: {
-    backgroundColor: '#6B7280',
+    backgroundColor: '#363A45',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#D1D4DC',
     fontSize: 16,
     fontWeight: '500',
   },

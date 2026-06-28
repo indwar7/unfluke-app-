@@ -80,8 +80,7 @@ const ViewStrategy = () => {
   }
 
   // Theme
-  const isDark = false;
-  const styles = createStyles(isDark);
+  const styles = createStyles();
 
   // Save strategy to AsyncStorage (localStorage equivalent)
   useEffect(() => {
@@ -228,7 +227,7 @@ const ViewStrategy = () => {
       <Ionicons
         name={iconMap[name] || name}
         size={size}
-        color={color || (isDark ? '#9CA3AF' : '#6B7280')}
+        color={color || '#787B86'}
       />
     );
   };
@@ -248,7 +247,7 @@ const ViewStrategy = () => {
             <Text style={styles.title}>Strategy</Text>
             <View style={styles.breadcrumb}>
               <Text style={styles.breadcrumbText}>Strategy</Text>
-              <ChevronRight size={13} color="#6B7280" />
+              <ChevronRight size={13} color="#787B86" />
               <Text style={styles.breadcrumbText}>view Strategy</Text>
             </View>
           </View>
@@ -323,7 +322,7 @@ const ViewStrategy = () => {
             Object.keys(legSummaries).length > 0 && (
             <View style={styles.legSummariesContainer}>
               <View style={styles.legSummariesHeader}>
-                {renderIcon('activity', 20, isDark ? '#60A5FA' : '#2563EB')}
+                {renderIcon('activity', 20, '#2962FF')}
                 <Text style={styles.legSummariesTitle}>Leg Summaries</Text>
               </View>
 
@@ -363,7 +362,7 @@ const ViewStrategy = () => {
             />
           ) : (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#2563EB" />
+              <ActivityIndicator size="large" color="#2962FF" />
               <Text style={styles.loadingText}>Loading the strategy...</Text>
             </View>
           )}
@@ -373,10 +372,10 @@ const ViewStrategy = () => {
   );
 };
 
-const createStyles = (isDark) => StyleSheet.create({
+const createStyles = () => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDark ? '#111827' : '#F9FAFB',
+    backgroundColor: '#131722',
   },
   pageContent: {
     paddingTop: 0,
@@ -396,7 +395,7 @@ const createStyles = (isDark) => StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   breadcrumb: {
     flexDirection: "row",
@@ -405,12 +404,12 @@ const createStyles = (isDark) => StyleSheet.create({
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "#787B86",
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2563EB',
+    backgroundColor: '#2962FF',
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 6,
@@ -423,10 +422,10 @@ const createStyles = (isDark) => StyleSheet.create({
     marginLeft: 4,
   },
   mainCard: {
-    backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-    borderRadius: 8,
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: isDark ? '#374151' : '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.06)',
     padding: 16,
     marginBottom: 15,
   },
@@ -439,7 +438,7 @@ const createStyles = (isDark) => StyleSheet.create({
   strategyName: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: isDark ? '#F1F5F9' : '#0F172A',
+    color: '#D1D4DC',
     marginBottom: 8,
   },
   summaryContainer: {
@@ -455,7 +454,7 @@ const createStyles = (isDark) => StyleSheet.create({
   summaryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: isDark ? '#111827' : '#DBEAFE',
+    backgroundColor: '#2A2E39',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
@@ -464,15 +463,16 @@ const createStyles = (isDark) => StyleSheet.create({
   },
   summaryText: {
     fontSize: 12,
-    color: isDark ? '#9CA3AF' : '#475569',
+    color: '#787B86',
     marginLeft: 8,
     flex: 1,
+    fontVariant: ['tabular-nums'],
   },
   legSummariesContainer: {
-    backgroundColor: isDark ? '#111827' : '#FFFFFF',
+    backgroundColor: '#1E222D',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: isDark ? '#374151' : '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.06)',
     padding: 16,
   },
   legSummariesHeader: {
@@ -483,23 +483,23 @@ const createStyles = (isDark) => StyleSheet.create({
   legSummariesTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: isDark ? '#F1F5F9' : '#0F172A',
+    color: '#D1D4DC',
     marginLeft: 8,
   },
   legSummariesList: {
     gap: 12,
   },
   legSummaryItem: {
-    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: '#2A2E39',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.4)',
+    borderColor: 'rgba(255,255,255,0.06)',
     padding: 12,
   },
   legNumber: {
     fontSize: 13,
     fontWeight: '600',
-    color: isDark ? '#CBD5E1' : '#334155',
+    color: '#D1D4DC',
     marginBottom: 6,
   },
   tagsContainer: {
@@ -508,9 +508,9 @@ const createStyles = (isDark) => StyleSheet.create({
     gap: 8,
   },
   tag: {
-    backgroundColor: isDark ? 'rgba(29, 78, 216, 0.4)' : '#DBEAFE',
+    backgroundColor: 'rgba(41,98,255,0.2)',
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(30, 64, 175, 0.5)' : 'rgba(191, 219, 254, 0.5)',
+    borderColor: 'rgba(41,98,255,0.3)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
@@ -518,7 +518,7 @@ const createStyles = (isDark) => StyleSheet.create({
   tagText: {
     fontSize: 12,
     fontWeight: '600',
-    color: isDark ? '#BFDBFE' : '#000000',
+    color: '#2962FF',
   },
   contentSection: {
     marginTop: 0,
@@ -533,7 +533,7 @@ const createStyles = (isDark) => StyleSheet.create({
     marginTop: 12,
     fontSize: 15,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#111827',
+    color: '#D1D4DC',
   },
 });
 

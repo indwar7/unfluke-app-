@@ -219,16 +219,16 @@ const AdvancedBacktesterHome = () => {
           </TouchableOpacity>
           <View style={styles.stratActions}>
             <TouchableOpacity style={styles.actionBtn} onPress={() => navigateToStrategyPage(item.user, item._id)}>
-              <Ionicons name="pencil" size={15} color="#3b82f6" />
+              <Ionicons name="pencil" size={15} color="#2962FF" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn} onPress={() => shareBacktester(item.fileName)}>
-              <Ionicons name="share-outline" size={15} color="#6366f1" />
+              <Ionicons name="share-outline" size={15} color="#2962FF" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn} onPress={() => navigateToStrategyView(item.fileName)}>
-              <Ionicons name="eye" size={15} color="#16a34a" />
+              <Ionicons name="eye" size={15} color="#089981" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn} onPress={() => handleDeleteStrategy(item._id)}>
-              <Ionicons name="trash" size={15} color="#dc2626" />
+              <Ionicons name="trash" size={15} color="#F23645" />
             </TouchableOpacity>
           </View>
         </View>
@@ -237,7 +237,7 @@ const AdvancedBacktesterHome = () => {
         <View style={styles.metricsRow}>
           <View style={styles.metricItem}>
             <Text style={styles.metricLabel}>Max Drawdown</Text>
-            <Text style={[styles.metricValue, { color: "#dc2626" }]}>
+            <Text style={[styles.metricValue, { color: "#F23645" }]}>
               {drawdown != null ? `₹${Number(drawdown).toFixed(0)}` : "—"}
             </Text>
           </View>
@@ -254,7 +254,7 @@ const AdvancedBacktesterHome = () => {
             <Switch
               value={!!item.isPrivate}
               onValueChange={(val) => handlePrivate(index, val)}
-              trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+              trackColor={{ false: "#363A45", true: "#2962FF" }}
               thumbColor="#fff"
             />
           </View>
@@ -264,7 +264,7 @@ const AdvancedBacktesterHome = () => {
               value={!!item.monetize}
               disabled={item.isPrivate}
               onValueChange={(val) => handleMonetize(index, val)}
-              trackColor={{ false: "#d1d5db", true: "#3b82f6" }}
+              trackColor={{ false: "#363A45", true: "#2962FF" }}
               thumbColor="#fff"
             />
           </View>
@@ -290,7 +290,7 @@ const AdvancedBacktesterHome = () => {
           onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
         >
-          <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#d1d5db" : "#374151"} />
+          <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#4C525E" : "#D1D4DC"} />
         </TouchableOpacity>
         {pages.map((p) => (
           <TouchableOpacity
@@ -308,7 +308,7 @@ const AdvancedBacktesterHome = () => {
           onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages}
         >
-          <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#d1d5db" : "#374151"} />
+          <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#4C525E" : "#D1D4DC"} />
         </TouchableOpacity>
       </View>
     );
@@ -317,7 +317,7 @@ const AdvancedBacktesterHome = () => {
   const StrategyList = ({ strategies }: { strategies: any[] }) => (
     strategies.length === 0 ? (
       <View style={styles.emptyBox}>
-        <Ionicons name="document-outline" size={36} color="#9CA3AF" />
+        <Ionicons name="document-outline" size={36} color="#787B86" />
         <Text style={styles.emptyText}>No strategies found.</Text>
       </View>
     ) : (
@@ -338,7 +338,7 @@ const AdvancedBacktesterHome = () => {
         <Text style={styles.headerTitle}>Backtester Home</Text>
         <View style={styles.breadcrumb}>
           <Text style={styles.breadcrumbText}>Pages</Text>
-          <ChevronRight size={13} color="#9ca3af" />
+          <ChevronRight size={13} color="#787B86" />
           <Text style={styles.breadcrumbText}>Advanced Backtester</Text>
         </View>
       </View>
@@ -388,7 +388,7 @@ const AdvancedBacktesterHome = () => {
           <View style={styles.content}>
             {loading ? (
               <View style={styles.loaderBox}>
-                <ActivityIndicator size="large" color="#3b82f6" />
+                <ActivityIndicator size="large" color="#2962FF" />
                 <Text style={styles.loaderText}>Loading strategies...</Text>
               </View>
             ) : (
@@ -404,17 +404,17 @@ const AdvancedBacktesterHome = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#131722",
     // ✅ NO paddingTop: 85 — header handles spacing
   },
 
   /* ── Header ── */
   header: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#1E222D",
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   breadcrumb: {
     flexDirection: "row",
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#9ca3af",
+    color: "#787B86",
   },
 
   /* ── Scroll ── */
@@ -443,10 +443,10 @@ const styles = StyleSheet.create({
 
   /* ── Card ── */
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "rgba(255,255,255,0.06)",
     elevation: 1,
     overflow: "hidden",
   },
@@ -456,15 +456,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   cardTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   createButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#2962FF",
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 6,
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
   /* ── Tabs ── */
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#2A2E39",
     margin: 16,
     borderRadius: 8,
     padding: 4,
@@ -493,24 +493,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   activeTab: {
-    backgroundColor: "#fff",
+    backgroundColor: "#363A45",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  tabText: { fontSize: 13, fontWeight: "600", color: "#64748b" },
-  activeTabText: { color: "#111827" },
+  tabText: { fontSize: 13, fontWeight: "600", color: "#787B86" },
+  activeTabText: { color: "#D1D4DC" },
 
   content: { padding: 16 },
 
   /* ── Strategy Cards ── */
   stratCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#2A2E39",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "rgba(255,255,255,0.06)",
     padding: 14,
     marginBottom: 10,
     elevation: 1,
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   stratName: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#3b82f6",
+    color: "#2962FF",
     flex: 1,
     marginRight: 8,
   },
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 6,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#363A45",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -551,27 +551,28 @@ const styles = StyleSheet.create({
   },
   metricItem: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#1E222D",
     borderRadius: 8,
     padding: 10,
   },
   metricLabel: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#6b7280",
+    color: "#787B86",
     textTransform: "uppercase",
     marginBottom: 4,
   },
   metricValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#111827",
+    color: "#D1D4DC",
+    fontVariant: ["tabular-nums"],
   },
   togglesRow: {
     flexDirection: "row",
     gap: 16,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: "rgba(255,255,255,0.06)",
     paddingTop: 10,
   },
   toggleItem: {
@@ -582,7 +583,7 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6b7280",
+    color: "#787B86",
   },
 
   /* ── States ── */
@@ -591,13 +592,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  loaderText: { fontSize: 14, color: "#6b7280" },
+  loaderText: { fontSize: 14, color: "#787B86" },
   emptyBox: {
     paddingVertical: 40,
     alignItems: "center",
     gap: 12,
   },
-  emptyText: { fontSize: 15, color: "#6b7280" },
+  emptyText: { fontSize: 15, color: "#787B86" },
 
   /* ── Pagination ── */
   paginationContainer: {
@@ -611,12 +612,12 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 8,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#2A2E39",
     alignItems: "center",
     justifyContent: "center",
   },
   pageBtnActive: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#2962FF",
   },
   pageBtnDisabled: {
     opacity: 0.4,
@@ -624,7 +625,7 @@ const styles = StyleSheet.create({
   pageBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#374151",
+    color: "#D1D4DC",
   },
   pageBtnTextActive: {
     color: "#ffffff",

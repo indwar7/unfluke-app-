@@ -131,7 +131,7 @@ export const SkeletonLoader = ({ rows = 5 }: { rows?: number }) => (
 export const TableSkeleton = ({ rows = 6, cols = 4 }: { rows?: number; cols?: number }) => (
     <View style={styles.skeletonCard}>
         {/* Header skeleton */}
-        <View style={[styles.skeletonRow, { backgroundColor: "#E8E9EB" }]}>
+        <View style={[styles.skeletonRow, { backgroundColor: "#E2E8F0" }]}>
             {Array.from({ length: cols }).map((_, j) => (
                 <View key={j} style={[styles.skeletonBlock, { width: `${80 / cols}%`, height: 12 }]} />
             ))}

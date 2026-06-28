@@ -55,20 +55,18 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     borderWidth: 1,
-    borderColor: '#D1D5DB', // border-gray-300, dark mode will be handled separately
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     marginHorizontal: 'auto',
-    // Note: Dark mode styles would need to be handled with a theme context or state
   },
   contentWrapper: {
-    paddingHorizontal: 16, // px-4 (4 * 4 = 16)
-    paddingVertical: 16,   // py-4 (4 * 4 = 16)
-    borderRadius: 8,
-    // For md screens and up, paddingHorizontal would be 24 (px-6)
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
   },
   contentContainer: {
-    gap: 16, // space-y-4 equivalent
+    gap: 16,
   },
   headerRow: {
     flexDirection: 'row',
@@ -76,16 +74,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   title: {
-    fontSize: 16,        // text-xl
-    fontWeight: 'bold',  // font-bold
-    color: '#1F2937',    // text-gray-800
-    // Dark mode: color: '#E5E7EB' (text-gray-200)
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#D1D4DC',
   },
   currentTime: {
-    fontSize: 20,        // text-xl
-    color: '#000000',    // text-black
-    fontWeight: '600',   // font-semibold
-    // Dark mode: color: '#9CA3AF' (text-gray-400)
+    fontSize: 20,
+    color: '#D1D4DC',
+    fontWeight: '600',
   },
 });
 

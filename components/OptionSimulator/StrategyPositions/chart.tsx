@@ -31,37 +31,17 @@ const PayoffChart = ({
   const [plData, setPlData] = useState([]);
   const [xDomain, setXDomain] = useState([null, null]);
   const [initialDomain, setInitialDomain] = useState([null, null]);
-  const [isDark, setIsDark] = useState(false);
-
   const chartRef = useRef(null);
   const panState = useRef({ dragging: false, startX: null, startDomain: null });
 
-  // Dark/light theme listener
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    setIsDark(mq.matches);
-    const listener = (e) => setIsDark(e.matches);
-    mq.addEventListener("change", listener);
-    return () => mq.removeEventListener("change", listener);
-  }, []);
-
-  const colors = isDark
-    ? {
-        grid: "red", // gray-700
-        axis: "#9CA3AF", // gray-400
-        label: "#F3F4F6", // gray-100
-        tooltipBg: "#1F2937", // gray-800
-        tooltipText: "#F9FAFB", // gray-50
-        background: "#111827", // gray-900
-      }
-    : {
-        grid: "#D1D5DB", // gray-300
-        axis: "#6B7280", // gray-500
-        label: "#111827", // gray-900
-        tooltipBg: "#FFFFFF",
-        tooltipText: "#111827",
-        background: "#FFFFFF",
-      };
+  const colors = {
+    grid: "rgba(255,255,255,0.06)",
+    axis: "#787B86",
+    label: "#D1D4DC",
+    tooltipBg: "#2A2E39",
+    tooltipText: "#D1D4DC",
+    background: "#1E222D",
+  };
 
   const selectDashboardData = createSelector(
     (state) => state.Layout,
@@ -187,9 +167,10 @@ const PayoffChart = ({
   const processedData = splitPositiveNegative(plData);
 
   return (
-    <div className="p-6 sm:p-8 border rounded-lg bg-white dark:bg-gray-900 text-black dark:text-white">
+    <div className="p-6 sm:p-8 border rounded-lg" style={{ backgroundColor: '#1E222D', borderColor: 'rgba(255,255,255,0.06)', color: '#D1D4DC' }}>
       <button
-        className="mb-3 px-4 py-1.5 text-sm font-semibold border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white float-right hover:bg-gray-100 dark:hover:bg-gray-700"
+        className="mb-3 px-4 py-1.5 text-sm font-semibold rounded-md float-right"
+        style={{ backgroundColor: '#2962FF', color: '#FFFFFF', border: 'none' }}
         onClick={handleResetZoom}
       >
         Reset Zoom
@@ -256,7 +237,7 @@ const PayoffChart = ({
             <Area
               type="monotone"
               dataKey="posPnl"
-              stroke="#059669"
+              stroke="#089981"
               fill="url(#gradientGreen)"
               strokeWidth={2}
               connectNulls
@@ -265,7 +246,7 @@ const PayoffChart = ({
             <Area
               type="monotone"
               dataKey="negPnl"
-              stroke="#DC2626"
+              stroke="#F23645"
               fill="url(#gradientRed)"
               strokeWidth={2}
               connectNulls
@@ -273,12 +254,12 @@ const PayoffChart = ({
             />
             <defs>
               <linearGradient id="gradientGreen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                <stop offset="0%" stopColor="#089981" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#089981" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradientRed" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#DC2626" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#DC2626" stopOpacity={0} />
+                <stop offset="0%" stopColor="#F23645" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#F23645" stopOpacity={0} />
               </linearGradient>
             </defs>
           </AreaChart>

@@ -101,7 +101,7 @@ const ScannerFundamental = () => {
                 >
                   {item.name}
                 </Text>
-                <ChevronRight size={16} color="#9CA3AF" />
+                <ChevronRight size={16} color="#4C525E" />
               </View>
             </TouchableOpacity>
           ))}
@@ -119,7 +119,7 @@ const ScannerFundamental = () => {
             <Text style={styles.title}>Scanner Home</Text>
             <View style={styles.breadcrumb}>
               <Text style={styles.breadcrumbText}>Pages</Text>
-              <ChevronRight size={13} color="#6B7280" />
+              <ChevronRight size={13} color="#787B86" />
               <Text style={styles.breadcrumbText}>Fundamental Scanner</Text>
             </View>
           </View>
@@ -130,7 +130,7 @@ const ScannerFundamental = () => {
               style={styles.viewSavedButton}
               onPress={() => navigation.navigate("scannerhome")}
             >
-              <Eye color="#000" size={12} />
+              <Eye color="#D1D4DC" size={12} />
               <Text style={styles.viewSavedButtonText}>View saved</Text>
             </TouchableOpacity>
 
@@ -151,7 +151,7 @@ const ScannerFundamental = () => {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#3B82F6" />
+            <ActivityIndicator size="large" color="#2962FF" />
             <Text style={styles.loadingText}>Loading scanners...</Text>
           </View>
         ) : (
@@ -176,7 +176,7 @@ const ScannerFundamental = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#131722",
     padding: 12,
     paddingBottom: 20,
   },
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   breadcrumb: {
     flexDirection: "row",
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "#787B86",
   },
   buttonGroup: {
     flexDirection: "row",
@@ -210,15 +210,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#9CA3AF",
+    borderColor: "rgba(255,255,255,0.06)",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: "white",
+    backgroundColor: "#2A2E39",
   },
   viewSavedButtonText: {
     fontWeight: "600",
-    color: "#1F2937",
+    color: "#D1D4DC",
     marginLeft: 3,
     fontSize: 12,
   },
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2962FF",
   },
   createNewButtonText: {
     fontWeight: "600",
@@ -242,13 +242,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 24,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255,255,255,0.06)",
     borderRadius: 8,
-    backgroundColor: "white",
+    backgroundColor: "#1E222D",
   },
   loadingText: {
     marginTop: 8,
-    color: "#374151",
+    color: "#787B86",
   },
   scannerGrid: {
     flexDirection: "row",
@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "white",
+    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "#1E222D",
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
@@ -275,13 +275,13 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
+    color: "#D1D4DC",
     flex: 1, // Added to allow text to take available space
     marginRight: 8, // Added to create space between title and button
     flexWrap: "wrap", // Allow text to wrap
   },
   showAllButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2962FF",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   scannerItem: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#2A2E39",
     borderRadius: 6,
     padding: 12,
     marginBottom: 8,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   scannerName: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#111827",
+    color: "#D1D4DC",
     flex: 1, // Add this to allow text to take available space
     marginRight: 8, // Add space between text and icon
     flexWrap: "wrap", // Allow text wrapping

@@ -362,14 +362,14 @@ const { width: screenWidth } = useWindowDimensions();
 
   // Theme colors
   const colors = {
-    background: isDarkMode ? "#1F2937" : "#FFFFFF",
-    border: isDarkMode ? "#374151" : "#E5E7EB",
-    text: isDarkMode ? "#FFFFFF" : "#333333",
-    grid: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
-    positive: "#4CAF50",
-    negative: "#F44336",
-    total: "#2196F3",
-    buttonBg: isDarkMode ? "#4B5563" : "#3B82F6",
+    background: "#1E222D",
+    border: "rgba(255,255,255,0.06)",
+    text: "#D1D4DC",
+    grid: "rgba(255,255,255,0.06)",
+    positive: "#089981",
+    negative: "#F23645",
+    total: "#2962FF",
+    buttonBg: "#2962FF",
     buttonText: "#FFFFFF",
   };
 
@@ -690,7 +690,7 @@ const { width: screenWidth } = useWindowDimensions();
               <VictoryTooltip
                 renderInPortal={false}
                 flyoutStyle={{
-                  fill: isDarkMode ? "#374151" : "#FFFFFF",
+                  fill: "#2A2E39",
                   stroke: colors.border,
                 }}
                 style={{
@@ -733,7 +733,7 @@ const styles = StyleSheet.create({
     width: "100%",
     minHeight: 500,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
   },
   resetButton: {
@@ -784,10 +784,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     opacity: 0.7,
     fontStyle: "italic",
+    color: "#787B86",
   },
   errorText: {
     textAlign: "center",
     fontSize: 16,
+    color: "#D1D4DC",
   },
 });
 

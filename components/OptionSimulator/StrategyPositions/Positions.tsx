@@ -23,7 +23,7 @@ const PositionItem = ({ position, onToggle, onDelete, onEdit }) => {
           value={position.isActive}
           onValueChange={() => onToggle(position.id)}
           style={styles.checkbox}
-          color={position.isActive ? '#2563eb' : undefined}
+          color={position.isActive ? '#2962FF' : undefined}
         />
       </View>
 
@@ -61,7 +61,7 @@ const PositionItem = ({ position, onToggle, onDelete, onEdit }) => {
           <Ionicons 
             name="trash" 
             size={16} 
-            color={isDark ? '#9ca3af' : '#6b7280'} 
+            color={'#787B86'}
           />
         </TouchableOpacity>
       </View>
@@ -77,8 +77,8 @@ const getStyles = (isDark) => StyleSheet.create({
     paddingVertical: 12,
     marginHorizontal: 4,
     marginBottom: 8,
-    backgroundColor: isDark ? '#111827' : '#eff6ff',
-    borderRadius: 8,
+    backgroundColor: '#2A2E39',
+    borderRadius: 12,
     minHeight: 60,
   },
   checkboxContainer: {
@@ -101,10 +101,10 @@ const getStyles = (isDark) => StyleSheet.create({
     justifyContent: 'center',
   },
   buyIndicator: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#089981',
   },
   sellIndicator: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#F23645',
   },
   indicatorText: {
     color: '#ffffff',
@@ -118,8 +118,9 @@ const getStyles = (isDark) => StyleSheet.create({
   positionText: {
     fontSize: 14,
     fontWeight: '500',
-    color: isDark ? '#f3f4f6' : '#1f2937',
+    color: '#D1D4DC',
     lineHeight: 18,
+    fontVariant: ['tabular-nums'],
   },
   deleteContainer: {
     alignItems: 'center',

@@ -76,16 +76,16 @@ export const CHART_COLORS = {
     secondary: "#8B5CF6",
     tertiary: "#06B6D4",
     quaternary: "#F59E0B",
-    line: "#6366F1",
+    line: "#1A1A2E",
     bar: "#8B5CF6",
-    area: "rgba(99, 102, 241, 0.15)",
+    area: "rgba(26, 26, 46, 0.15)",
 };
 
 // Shareholding pie colors
 export const SHAREHOLDING_COLORS = {
     Promoter: "#1A1A2E",
-    FII: "#EF4444",
+    FII: "#DC2626",
     DII: "#F59E0B",
-    Public: "#22C55E",
+    Public: "#059669",
     Others: "#94A3B8",
 };

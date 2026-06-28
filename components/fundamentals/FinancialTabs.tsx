@@ -218,19 +218,19 @@ const RATIO_CHART_CONFIGS = [
         label: "ROCE (%)",
         // Matches: "ROCE (%)", "ROCE", "Return on Capital Employed", etc.
         matchKeywords: ["roce"],
-        color: "#6366F1",
+        color: "#1A1A2E",
     },
     {
         label: "ROE (%)",
         // Matches: "ROE(%)", "ROE", "Return on Equity", "Return on Equity / Networth", etc.
         matchKeywords: ["roe", "return on equity", "return on networth"],
-        color: "#6366F1",
+        color: "#1A1A2E",
     },
     {
         label: "PBIDT/Sales (%)",
         // Matches: "PBIDTM (%)", "PBIDT/Sales(%)", "PBIDT", etc.
         matchKeywords: ["pbidt", "pbidtm"],
-        color: "#6366F1",
+        color: "#1A1A2E",
     },
 ] as const;
 
@@ -522,13 +522,13 @@ const tbl = StyleSheet.create({
     tableWrap: { flexDirection: "row" },
     stickyCol: { width: LABEL_W, borderRightWidth: 1, borderRightColor: BORDER_COLOR, zIndex: 10, backgroundColor: CARD_BG },
     stickyHeader: { width: LABEL_W, height: ROW_H, justifyContent: "center", paddingHorizontal: 10, backgroundColor: ACCENT },
-    stickyCell: { width: LABEL_W, height: ROW_H, justifyContent: "center", paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E8E9EB" },
+    stickyCell: { width: LABEL_W, height: ROW_H, justifyContent: "center", paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E2E8F0" },
     stickyTxt: { fontSize: 11, color: TEXT_SECONDARY, lineHeight: 15 },
     dataHeaderRow: { flexDirection: "row" },
     dataHeaderCell: { width: DATA_COL_W, height: ROW_H, justifyContent: "center", alignItems: "center", backgroundColor: ACCENT },
     headerTxt: { fontSize: 11, fontWeight: "700", color: "#fff", textAlign: "center" },
     dataRow: { flexDirection: "row" },
-    dataCell: { width: DATA_COL_W, height: ROW_H, justifyContent: "center", alignItems: "flex-end", paddingHorizontal: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E8E9EB" },
+    dataCell: { width: DATA_COL_W, height: ROW_H, justifyContent: "center", alignItems: "flex-end", paddingHorizontal: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E2E8F0" },
     dataTxt: { fontSize: 11, fontWeight: "500", textAlign: "right" },
     zebraOdd: { backgroundColor: ZEBRA_LIGHT },
     boldRow: { backgroundColor: ACCENT_LIGHT },
@@ -551,7 +551,7 @@ const el = StyleSheet.create({
     chevron: { fontSize: 18, color: TEXT_MUTED, transform: [{ rotate: "90deg" }], marginLeft: 8 },
     chevronOpen: { transform: [{ rotate: "-90deg" }] },
     childrenWrap: {
-        backgroundColor: "#FAFAFA", borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
+        backgroundColor: "#F8FAFC", borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
         borderWidth: 1, borderColor: BORDER_COLOR, borderTopWidth: 0, marginTop: -4, paddingTop: 8, paddingBottom: 8,
     },
     childRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, paddingHorizontal: 16, paddingLeft: 36 },
@@ -610,7 +610,7 @@ const kr = StyleSheet.create({
         flexDirection: "row", alignItems: "center", flex: 1,
     },
     collapseGroupTitle: {
-        fontSize: 15, fontWeight: "700", color: "#1E293B",
+        fontSize: 15, fontWeight: "700", color: "#0F172A",
     },
     collapseChevron: {
         fontSize: 22, color: TEXT_MUTED, fontWeight: "600",
@@ -627,7 +627,7 @@ const kr = StyleSheet.create({
         paddingVertical: 11, paddingHorizontal: 16,
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#F1F5F9",
     },
-    ratioRowAlt: { backgroundColor: "#FAFBFC" },
-    ratioLabel: { flex: 1, fontSize: 13, color: "#334155", fontWeight: "500", paddingRight: 8 },
+    ratioRowAlt: { backgroundColor: "#F8FAFC" },
+    ratioLabel: { flex: 1, fontSize: 13, color: TEXT_SECONDARY, fontWeight: "500", paddingRight: 8 },
     ratioValue: { fontSize: 13, fontWeight: "700", textAlign: "right" },
 });

@@ -478,13 +478,13 @@ const Watchlist = () => {
       {selectMarket !== "Option" && (
         <View style={styles.searchContainer}>
           <View style={styles.searchBarWrapper}>
-            <Search size={16} color="#9CA3AF" style={{ marginLeft: 12 }} />
+            <Search size={16} color="#787B86" style={{ marginLeft: 12 }} />
             <TextInput
               style={styles.searchInput}
               value={search}
               placeholder="Search e.g. Nifty, Reliance, TCS"
               onChangeText={getSearchResults}
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#4C525E"
               autoCorrect={false}
               autoCapitalize="none"
             />
@@ -497,7 +497,7 @@ const Watchlist = () => {
                 }}
                 style={styles.clearBtn}
               >
-                <X size={16} color="#6B7280" />
+                <X size={16} color="#787B86" />
               </TouchableOpacity>
             )}
           </View>
@@ -507,7 +507,7 @@ const Watchlist = () => {
             <View style={styles.searchDropdown}>
               {searchLoading ? (
                 <View style={styles.searchLoading}>
-                  <ActivityIndicator size="small" color="#4f46e5" />
+                  <ActivityIndicator size="small" color="#2962FF" />
                   <Text style={styles.searchLoadingText}>Searching...</Text>
                 </View>
               ) : marketList.length === 0 ? (
@@ -567,7 +567,7 @@ const Watchlist = () => {
 
       {loader && (
         <View style={styles.loaderRow}>
-          <ActivityIndicator size="small" color="#4f46e5" />
+          <ActivityIndicator size="small" color="#2962FF" />
         </View>
       )}
 
@@ -603,7 +603,7 @@ const Watchlist = () => {
                     disabled={isDisabled}
                     onPress={() => handleChartPress(tradeWatchItem)}
                   >
-                    <TrendingUp size={14} color="#4f46e5" />
+                    <TrendingUp size={14} color="#2962FF" />
                     <Text style={styles.actionBtnText}>Chart</Text>
                   </TouchableOpacity>
 
@@ -612,7 +612,7 @@ const Watchlist = () => {
                     disabled={loader}
                     onPress={() => handleDeletePress(tradeWatchItem.instrument_token)}
                   >
-                    <Trash2 size={14} color="#EF4444" />
+                    <Trash2 size={14} color="#F23645" />
                     <Text style={styles.actionBtnDeleteText}>Remove</Text>
                   </TouchableOpacity>
                 </View>
@@ -628,7 +628,7 @@ const Watchlist = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E222D',
   },
   topSection: {
     padding: 12,
@@ -642,9 +642,9 @@ const styles = StyleSheet.create({
   searchBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#363A45',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 8,
     height: 42,
   },
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 0,
     fontSize: 14,
-    color: '#111827',
+    color: '#D1D4DC',
     height: 42,
   },
   clearBtn: {
@@ -661,13 +661,13 @@ const styles = StyleSheet.create({
   },
   searchDropdown: {
     marginTop: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E222D',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
     maxHeight: 200,
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
   },
   searchLoadingText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: '#787B86',
   },
   searchResultsList: {
     maxHeight: 200,
@@ -693,23 +693,23 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   searchResultDisabled: {
     opacity: 0.5,
   },
   searchResultText: {
     fontSize: 14,
-    color: '#111827',
+    color: '#D1D4DC',
     fontWeight: '500',
     flex: 1,
   },
   searchResultTextDisabled: {
-    color: '#9CA3AF',
+    color: '#4C525E',
   },
   searchResultAdd: {
     fontSize: 13,
-    color: '#4f46e5',
+    color: '#2962FF',
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   selectLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#787B86',
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -740,17 +740,17 @@ const styles = StyleSheet.create({
   watchlistContainer: {
     flex: 1,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: '#D1D4DC',
     marginBottom: 14,
   },
   emptyText: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: '#4C525E',
     textAlign: 'center',
     paddingVertical: 20,
     paddingHorizontal: 16,
@@ -759,10 +759,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   watchItemActive: {
-    backgroundColor: '#F0F4FF',
+    backgroundColor: '#2A2E39',
   },
   watchItemRow: {
     flexDirection: 'row',
@@ -772,13 +772,13 @@ const styles = StyleSheet.create({
   watchItemName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: '#D1D4DC',
     flex: 1,
   },
   watchItemPrice: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#111827',
+    color: '#D1D4DC',
     marginLeft: 8,
   },
   watchItemActions: {
@@ -787,7 +787,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   actionBtnChart: {
     flexDirection: 'row',
@@ -796,13 +796,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'rgba(41,98,255,0.15)',
     borderWidth: 1,
-    borderColor: '#C7D2FE',
+    borderColor: 'rgba(41,98,255,0.3)',
   },
   actionBtnText: {
     fontSize: 12,
-    color: '#4f46e5',
+    color: '#2962FF',
     fontWeight: '600',
   },
   actionBtnDelete: {
@@ -812,13 +812,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: 'rgba(242,54,69,0.15)',
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: 'rgba(242,54,69,0.3)',
   },
   actionBtnDeleteText: {
     fontSize: 12,
-    color: '#EF4444',
+    color: '#F23645',
     fontWeight: '600',
   },
 });

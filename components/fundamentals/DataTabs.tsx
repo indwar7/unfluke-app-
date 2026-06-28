@@ -574,7 +574,7 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
     useEffect(() => { load(dtype, page); return () => abortRef.current?.abort(); }, [dtype, page, load]);
 
     const badge = dtype === "Bulk"
-        ? { bg: "#EEF2FF", text: "#4338CA" }
+        ? { bg: "#F1F5F9", text: "#1A1A2E" }
         : { bg: "#FEF3C7", text: "#92400E" };
 
     const HIDDEN_HEADERS = ["Company Name", "Capitaline Code", "_id", "Serial No", "__v"];
@@ -702,7 +702,7 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
 
     useEffect(() => { load(evType, page); return () => abortRef.current?.abort(); }, [evType, page, load]);
 
-    const badge = (EVENT_BADGE_COLORS as any)?.[evType] || { bg: "#EEF2FF", text: "#4338CA" };
+    const badge = (EVENT_BADGE_COLORS as any)?.[evType] || { bg: "#F1F5F9", text: "#1A1A2E" };
 
     const renderKV = (label: string, value: any, opts?: { isDate?: boolean; isPrice?: boolean }) => (
         <View key={label} style={s.kvRow}>
@@ -859,8 +859,8 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
    SHAREHOLDING PATTERNS TAB
 ═══════════════════════════════════════════════════════════ */
 const SH_COLORS: Record<string, string> = {
-    "Promoters": "#6366F1", "FII": "#F59E0B",
-    "DII": "#10B981", "Public & Others": "#EF4444", "Others": "#94A3B8",
+    "Promoters": "#1A1A2E", "FII": "#F59E0B",
+    "DII": "#10B981", "Public & Others": "#DC2626", "Others": "#94A3B8",
 };
 
 export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
@@ -957,7 +957,7 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
    ✅ AbortController for cleanup
 ═══════════════════════════════════════════════════════════ */
 const DOC_CLR: Record<string, { bg: string; text: string }> = {
-    "Annual Reports": { bg: "#EEF2FF", text: "#4338CA" },
+    "Annual Reports": { bg: "#F1F5F9", text: "#1A1A2E" },
     "Credit Rating": { bg: "#FEF3C7", text: "#92400E" },
     "Compliance Report": { bg: "#DCFCE7", text: "#166534" },
     "Concall Transcripts": { bg: "#E0F2FE", text: "#075985" },
@@ -975,7 +975,7 @@ const DOC_CATEGORY_CONFIG: Record<string, {
 }> = {
     AnnualReport: {
         label: "Annual Reports",
-        color: { bg: "#EEF2FF", text: "#4338CA" },
+        color: { bg: "#F1F5F9", text: "#1A1A2E" },
         getItems: (arr: any[]) => {
             const seen = new Set<string>();
             return arr

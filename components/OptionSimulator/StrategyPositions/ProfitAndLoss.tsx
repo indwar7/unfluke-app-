@@ -238,7 +238,7 @@ const ProfitAndLoss = ({ instrument, positions, minute, updateTotalPnlData }) =>
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={isDark ? '#60a5fa' : '#3b82f6'} />
+        <ActivityIndicator size="large" color={'#2962FF'} />
         <Text style={styles.loadingText}>Calculating P&L...</Text>
       </View>
     );
@@ -276,28 +276,28 @@ const getStyles = (isDark) => StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: isDark ? '#e5e7eb' : '#6b7280',
+    color: '#787B86',
   },
   tableContainer: {
     minWidth: 800,
-    backgroundColor: isDark ? '#1f2937' : '#ffffff',
-    borderRadius: 8,
+    backgroundColor: '#1E222D',
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: isDark ? '#374151' : '#e5e7eb',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: isDark ? '#374151' : '#f8f9fa',
+    backgroundColor: '#2A2E39',
     borderBottomWidth: 2,
-    borderBottomColor: isDark ? '#4b5563' : '#dee2e6',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
     paddingVertical: 14,
     paddingHorizontal: 12,
   },
   headerCell: {
     fontSize: 14,
     fontWeight: '600',
-    color: isDark ? '#f3f4f6' : '#495057',
+    color: '#D1D4DC',
     textAlign: 'center',
   },
   positionHeader: {
@@ -318,25 +318,26 @@ const getStyles = (isDark) => StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? '#374151' : '#e5e7eb',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
     minHeight: 52,
     alignItems: 'center',
   },
   evenRow: {
-    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+    backgroundColor: '#1E222D',
   },
   oddRow: {
-    backgroundColor: isDark ? '#111827' : '#f8f9fa',
+    backgroundColor: '#131722',
   },
   totalRow: {
-    backgroundColor: isDark ? '#374151' : '#e9ecef',
+    backgroundColor: '#2A2E39',
     borderTopWidth: 2,
-    borderTopColor: isDark ? '#4b5563' : '#dee2e6',
+    borderTopColor: 'rgba(255,255,255,0.06)',
   },
   tableCell: {
     fontSize: 13,
-    color: isDark ? '#e5e7eb' : '#495057',
+    color: '#D1D4DC',
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
   positionCell: {
     flex: 3,
@@ -346,26 +347,28 @@ const getStyles = (isDark) => StyleSheet.create({
   priceCell: {
     flex: 1.2,
     fontFamily: 'monospace',
+    fontVariant: ['tabular-nums'],
   },
   pnlCell: {
     flex: 1.2,
     fontFamily: 'monospace',
     fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   totalLabel: {
     fontWeight: '700',
     fontSize: 14,
-    color: isDark ? '#f3f4f6' : '#343a40',
+    color: '#D1D4DC',
   },
   totalValue: {
     fontWeight: '700',
     fontSize: 14,
   },
   profitText: {
-    color: '#10b981',
+    color: '#089981',
   },
   lossText: {
-    color: '#ef4444',
+    color: '#F23645',
   },
 });
 

@@ -838,7 +838,7 @@ const Scanner = ({ shared }) => {
                 <TextInput
                   style={dynamicStyles.input}
                   placeholder="Enter scanner name"
-                  placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
+                  placeholderTextColor="#4C525E"
                   value={scannerState.name}
                   onChangeText={(text) =>
                     handleAllChanges({ target: { name: "name", value: text } })
@@ -856,7 +856,7 @@ const Scanner = ({ shared }) => {
                 <TextInput
                   style={[dynamicStyles.input, dynamicStyles.textArea]}
                   placeholder="Enter scanner description"
-                  placeholderTextColor={isDark ? "#9CA3AF" : "#6B7280"}
+                  placeholderTextColor="#4C525E"
                   value={scannerState.description}
                   onChangeText={(text) =>
                     handleAllChanges({
@@ -1040,7 +1040,7 @@ const styles = (isDark) =>
     },
     container: {
       flex: 1,
-      backgroundColor: isDark ? "#111827" : "#F9FAFB",
+      backgroundColor: '#131722',
     },
     contentContainer: {
       padding: 12,
@@ -1054,7 +1054,7 @@ const styles = (isDark) =>
     headerTitle: {
       fontSize: 18,
       fontWeight: "bold",
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: '#D1D4DC',
     },
     inputContainer: {
       marginBottom: 16,
@@ -1062,17 +1062,17 @@ const styles = (isDark) =>
     label: {
       fontSize: 14,
       fontWeight: "500",
-      color: isDark ? "#D1D5DB" : "#374151",
+      color: '#787B86',
       marginBottom: 8,
     },
     input: {
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#E5E7EB",
+      borderColor: 'rgba(255,255,255,0.06)',
       borderRadius: 8,
       padding: 12,
       fontSize: 14,
-      color: isDark ? "#FFFFFF" : "#111827",
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      color: '#D1D4DC',
+      backgroundColor: '#363A45',
     },
     textArea: {
       textAlignVertical: "top",
@@ -1098,7 +1098,6 @@ const styles = (isDark) =>
     },
     button: {
       paddingVertical: 12,
-      // paddingHorizontal: 20,
       borderRadius: 8,
       alignItems: "center",
       justifyContent: "center",
@@ -1106,12 +1105,12 @@ const styles = (isDark) =>
       flex: 1,
     },
     buttonPrimary: {
-      backgroundColor: "#3B82F6",
+      backgroundColor: "#2962FF",
     },
     buttonSecondary: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: '#2A2E39',
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
+      borderColor: 'rgba(255,255,255,0.06)',
     },
     buttonTextPrimary: {
       color: "#FFFFFF",
@@ -1119,23 +1118,25 @@ const styles = (isDark) =>
       fontSize: 13,
     },
     buttonTextSecondary: {
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: '#D1D4DC',
       fontWeight: "600",
       fontSize: 13,
     },
     loadingCard: {
-      backgroundColor: isDark ? "#1F2937" : "#0AB39C",
+      backgroundColor: '#1E222D',
       borderRadius: 12,
       padding: 20,
       flexDirection: "row",
       alignItems: "center",
       gap: 16,
       marginBottom: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.06)',
       ...Platform.select({
         ios: {
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
+          shadowOpacity: 0.3,
           shadowRadius: 4,
         },
         android: {
@@ -1145,22 +1146,24 @@ const styles = (isDark) =>
     },
     loadingText: {
       fontSize: 15,
-      color: isDark ? "#FFFFFF" : "#FFFFFF",
+      color: '#D1D4DC',
       flex: 1,
     },
     warningCard: {
-      backgroundColor: isDark ? "#991B1B" : "#FEE2E2",
+      backgroundColor: 'rgba(242,54,69,0.15)',
       borderRadius: 12,
       padding: 16,
       marginBottom: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(242,54,69,0.3)',
     },
     warningText: {
       fontSize: 15,
-      color: isDark ? "#FFFFFF" : "#991B1B",
+      color: '#F23645',
     },
     resultsInfo: {
       fontSize: 14,
-      color: isDark ? "#D1D5DB" : "#6B7280",
+      color: '#787B86',
       marginBottom: 12,
     },
   });

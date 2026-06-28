@@ -612,7 +612,7 @@
 //                                   key={strike}
 //                                   label={strike.toString()}
 //                                   value={strike}
-//                                   color={isDarkMode ? "#FFFFFF" : "#000000"}
+//                                   color={"#D1D4DC"}
 //                                 />
 //                               ))}
 //                             </Picker>
@@ -1533,7 +1533,7 @@ const { width } = useWindowDimensions();
                                   key={strike}
                                   label={strike.toString()}
                                   value={strike}
-                                  color={isDarkMode ? "#FFFFFF" : "#000000"}
+                                  color={"#D1D4DC"}
                                   style={{fontSize:14}}
                                 />
                               ))}
@@ -1573,17 +1573,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 20,
   },
   containerLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: "#1E222D",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   containerDark: {
-    backgroundColor: "#1F2937",
-    borderColor: "#374151",
+    backgroundColor: "#1E222D",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   gridContainer: {
     paddingVertical: 10,
@@ -1601,19 +1601,19 @@ const styles = StyleSheet.create({
   strategyCard: {
     width: 130,
     height: 110,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     padding: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   strategyCardLight: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: "#2A2E39",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   strategyCardDark: {
-    backgroundColor: "#374151",
-    borderColor: "#4B5563",
+    backgroundColor: "#2A2E39",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   strategyImage: {
     width: 70,
@@ -1628,10 +1628,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   strategyNameLight: {
-    color: "#111827",
+    color: "#D1D4DC",
   },
   strategyNameDark: {
-    color: "#FFFFFF",
+    color: "#D1D4DC",
   },
   tabContainer: {
     marginBottom: 20,
@@ -1642,10 +1642,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabelLight: {
-    color: "#374151",
+    color: "#D1D4DC",
   },
   sectionLabelDark: {
-    color: "#E5E7EB",
+    color: "#D1D4DC",
   },
   tabBar: {
     flexDirection: "row",
@@ -1653,10 +1653,10 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   tabBarLight: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#2A2E39",
   },
   tabBarDark: {
-    backgroundColor: "#374151",
+    backgroundColor: "#2A2E39",
   },
   tab: {
     flex: 1,
@@ -1667,30 +1667,30 @@ const styles = StyleSheet.create({
     justifyContent:"center"
   },
   activeTabLight: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#1E222D",
   },
   activeTabDark: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#1E222D",
   },
   tabText: {
     fontSize: 12,
     fontWeight: "600",
   },
   activeTabTextLight: {
-    color: "#000000",
+    color: "#D1D4DC",
   },
   activeTabTextDark: {
-    color: "#FFFFFF",
+    color: "#D1D4DC",
   },
   inactiveTabTextLight: {
-    color: "#6B7280",
+    color: "#787B86",
   },
   inactiveTabTextDark: {
-    color: "#9CA3AF",
+    color: "#787B86",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1701,10 +1701,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   modalContainerLight: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#1E222D",
   },
   modalContainerDark: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#1E222D",
   },
   modalHeader: {
     flexDirection: "row",
@@ -1713,29 +1713,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:13,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: "bold",
   },
   modalTitleLight: {
-    color: "#111827",
+    color: "#D1D4DC",
   },
   modalTitleDark: {
-    color: "#FFFFFF",
+    color: "#D1D4DC",
   },
   closeButton: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#2A2E39",
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonText: {
     fontSize: 20,
-    color: "#6B7280",
+    color: "#787B86",
     fontWeight: "bold",
   },
   modalBody: {
@@ -1748,17 +1748,17 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   noPositionsTextLight: {
-    color: "#6B7280",
+    color: "#787B86",
   },
   noPositionsTextDark: {
-    color: "#9CA3AF",
+    color: "#787B86",
   },
   positionContainer: {
     marginBottom: 20,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   positionHeader: {
     flexDirection: "row",
@@ -1769,22 +1769,23 @@ const styles = StyleSheet.create({
   positionQuantity: {
     fontSize: 16,
     fontWeight: "bold",
+    fontVariant: ['tabular-nums'],
   },
   positionQuantityLight: {
-    color: "#111827",
+    color: "#D1D4DC",
   },
   positionQuantityDark: {
-    color: "#FFFFFF",
+    color: "#D1D4DC",
   },
   positionType: {
     fontSize: 15,
     fontWeight: "600",
   },
   positionTypeLight: {
-    color: "#6B7280",
+    color: "#787B86",
   },
   positionTypeDark: {
-    color: "#9CA3AF",
+    color: "#787B86",
   },
   strikePickerContainer: {
     marginTop: 8,
@@ -1795,45 +1796,45 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   strikeLabelLight: {
-    color: "#6B7280",
+    color: "#787B86",
   },
   strikeLabelDark: {
-    color: "#9CA3AF",
+    color: "#787B86",
   },
   pickerWrapper: {
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   pickerWrapperLight: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#363A45",
   },
   pickerWrapperDark: {
-    backgroundColor: "#374151",
+    backgroundColor: "#363A45",
   },
   picker: {
     height: 50,
   },
   pickerLight: {
-    color: "#111827",
+    color: "#D1D4DC",
   },
   pickerDark: {
-    color: "#FFFFFF",
+    color: "#D1D4DC",
   },
   modalFooter: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "rgba(255,255,255,0.06)",
   },
   addButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2962FF",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 6,
     alignItems: "center",
   },
   addButtonDisabled: {
-    backgroundColor: "#9CA3AF",
+    backgroundColor: "#4C525E",
   },
   addButtonText: {
     color: "#FFFFFF",

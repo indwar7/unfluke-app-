@@ -48,7 +48,7 @@ const SidebarModal = ({ sidebarOpen, setSidebarOpen }) => {
               onPress={() => setSidebarOpen(false)}
               style={styles.closeButton}
             >
-              <X size={24} color="#6b7280" />
+              <X size={24} color="#787B86" />
             </TouchableOpacity>
           </View>
           <View style={[styles.mobileSidebarContent,{    maxHeight: height * 0.8,
@@ -80,13 +80,13 @@ const styles = StyleSheet.create({
   },
 
   mobileSidebar: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#1E222D',
     shadowColor: '#000',
     shadowOffset: {
       width: 2,
       height: 0,
     },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 10,
   },
@@ -96,13 +96,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#2A2E39',
   },
   sidebarTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: '#D1D4DC',
   },
   closeButton: {
     padding: 4,

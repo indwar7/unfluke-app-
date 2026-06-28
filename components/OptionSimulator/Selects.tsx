@@ -25,7 +25,7 @@ const CustomExpirySelect = ({ options, selected, onChange, placeholder, name }) 
         <Text style={styles.buttonText}>
           {options.find((o) => o.value.to_expiry === selected?.to_expiry)?.label || placeholder}
         </Text>
-        <ChevronDown size={18} color="#6B7280" />
+        <ChevronDown size={18} color="#787B86" />
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="fade">
@@ -117,9 +117,9 @@ const CustomSelect = ({
           {displayValue || placeholder}
         </Text>
         {open ? (
-          <ChevronUp size={18} color="#6B7280" />
+          <ChevronUp size={18} color="#787B86" />
         ) : (
-          <ChevronDown size={18} color="#6B7280" />
+          <ChevronDown size={18} color="#787B86" />
         )}
       </TouchableOpacity>
 
@@ -137,7 +137,7 @@ const CustomSelect = ({
                   <TextInput
                     style={styles.modalSearchInput}
                     placeholder={placeholder || "Search..."}
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#4C525E"
                     value={inputValue}
                     onChangeText={handleInputChange}
                     autoFocus
@@ -202,17 +202,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#fff",
-    borderColor: "#d1d5db",
+    backgroundColor: "#363A45",
+    borderColor: "rgba(255,255,255,0.06)",
   },
   buttonText: {
-    color: "#1f2937",
+    color: "#D1D4DC",
     fontSize: 16,
     flex: 1,
     marginRight: 8,
   },
   placeholderText: {
-    color: "#9CA3AF",
+    color: "#4C525E",
   },
   input: {
     width: "100%",
@@ -221,13 +221,13 @@ const styles = StyleSheet.create({
     paddingRight: 36,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#fff",
-    borderColor: "#d1d5db",
-    color: "#1f2937",
+    backgroundColor: "#363A45",
+    borderColor: "rgba(255,255,255,0.06)",
+    color: "#D1D4DC",
     fontSize: 16,
   },
   readOnly: {
-    color: "#1f2937",
+    color: "#D1D4DC",
   },
   iconContainer: {
     position: "absolute",
@@ -241,9 +241,9 @@ const styles = StyleSheet.create({
     top: "100%",
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
+    backgroundColor: "#2A2E39",
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "rgba(255,255,255,0.06)",
     borderTopWidth: 0,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.7)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
@@ -268,8 +268,8 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 420,
     maxHeight: "70%",
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: "#1E222D",
+    borderRadius: 12,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.2,
@@ -281,18 +281,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "#1f2937",
+    color: "#D1D4DC",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   modalScrollView: {
     maxHeight: 380,
   },
   dropdown: {
     position: "absolute",
-    backgroundColor: "#fff",
+    backgroundColor: "#2A2E39",
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "rgba(255,255,255,0.06)",
     borderTopWidth: 0,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
@@ -307,27 +307,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   selectedOption: {
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#2A2E39",
   },
   optionText: {
     fontSize: 16,
-    color: "#374151",
+    color: "#D1D4DC",
   },
   selectedOptionText: {
-    color: "#1f2937",
+    color: "#D1D4DC",
     fontWeight: "500",
   },
   noMatch: {
     fontSize: 14,
-    color: "#9CA3AF",
+    color: "#4C525E",
     fontStyle: "italic",
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.7)",
     justifyContent: "center",
     alignItems: "center",
   },

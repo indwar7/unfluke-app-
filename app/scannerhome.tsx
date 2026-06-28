@@ -321,7 +321,7 @@ const ScannerHomePage = ({ }) => {
           {/* Tab - Single Tab */}
           <View style={styles.tabContainer}>
             <View style={[styles.tab, styles.activeTab]}>
-              <Ionicons name="storefront" size={14} color="#2563EB" />
+              <Ionicons name="storefront" size={14} color="#2962FF" />
               <Text style={[styles.tabText, styles.activeTabText]}>
                 {!alerts ? "Your scanners" : "Your alerts"}
               </Text>
@@ -334,7 +334,7 @@ const ScannerHomePage = ({ }) => {
               <Icon
                 name="search"
                 size={20}
-                color="#6b7280"
+                color="#787B86"
                 style={styles.searchIcon}
               />
               <TextInput
@@ -342,7 +342,7 @@ const ScannerHomePage = ({ }) => {
                 placeholder="Search..."
                 value={searchQuery}
                 onChangeText={handleSearch}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#4C525E"
               />
             </View>
           )}
@@ -350,7 +350,7 @@ const ScannerHomePage = ({ }) => {
           {/* Content */}
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#3b82f6" />
+              <ActivityIndicator size="large" color="#2962FF" />
               <Text style={styles.loadingText}>
                 Loading {!alerts ? "scanners" : "alerts"}...
               </Text>
@@ -393,16 +393,16 @@ const ScannerHomePage = ({ }) => {
                       style={styles.actionButton}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Ionicons name="share-outline" size={18} color="#3b82f6" />
+                      <Ionicons name="share-outline" size={18} color="#2962FF" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleDelete(item._id, item.owner)}
                       style={styles.actionButton}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                      <Ionicons name="trash-outline" size={18} color="#F23645" />
                     </TouchableOpacity>
-                    <ChevronRight size={16} color="#9ca3af" />
+                    <ChevronRight size={16} color="#4C525E" />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -420,7 +420,7 @@ const ScannerHomePage = ({ }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#131722",
   },
   scrollView: {
     flex: 1,
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   breadcrumb: {
     flexDirection: "row",
@@ -442,10 +442,10 @@ const styles = StyleSheet.create({
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "#787B86",
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",
@@ -464,10 +464,10 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   createButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#2962FF",
     paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: 6,
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   tabContainer: {
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#2A2E39",
     borderRadius: 8,
     padding: 4,
     marginBottom: 16,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activeTab: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -506,18 +506,18 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748b",
+    color: "#787B86",
   },
   activeTabText: {
-    color: "#2563EB",
+    color: "#2962FF",
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#363A45",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "rgba(255,255,255,0.06)",
     paddingHorizontal: 12,
     marginBottom: 16,
   },
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     fontSize: 14,
-    color: "#111827",
+    color: "#D1D4DC",
   },
   loadingContainer: {
     paddingVertical: 40,
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: "#6b7280",
+    color: "#787B86",
   },
   emptyContainer: {
     paddingVertical: 40,
@@ -545,26 +545,26 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: "#6b7280",
+    color: "#787B86",
   },
   tableContainer: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "rgba(255,255,255,0.06)",
     borderRadius: 8,
     overflow: "hidden",
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#f5f7fa",
+    backgroundColor: "#2A2E39",
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
   headerCell: {
     fontSize: 11,
     fontWeight: "bold",
-    color: "#6b7280",
+    color: "#787B86",
     textTransform: "uppercase",
     textAlign: "center",
   },
@@ -573,24 +573,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
     alignItems: "center",
   },
   evenRow: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
   },
   oddRow: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#1E222D",
   },
   cellText: {
     fontSize: 13,
-    color: "#374151",
+    color: "#787B86",
     textAlign: "center",
   },
   linkText: {
     textAlign: "center",
     fontSize: 13,
-    color: "#3b82f6",
+    color: "#2962FF",
     fontWeight: "600",
     paddingHorizontal: 8,
   },
@@ -598,12 +598,12 @@ const styles = StyleSheet.create({
   listCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "rgba(255,255,255,0.06)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#2962FF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -630,12 +630,12 @@ const styles = StyleSheet.create({
   listName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
+    color: "#D1D4DC",
     marginBottom: 3,
   },
   listMeta: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#787B86",
   },
   listActions: {
     flexDirection: "row",
@@ -655,13 +655,13 @@ const styles = StyleSheet.create({
   paginationButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: "#3b82f6",
+    backgroundColor: "#2962FF",
     borderRadius: 6,
     minWidth: 80,
     alignItems: "center",
   },
   disabledButton: {
-    backgroundColor: "#d1d5db",
+    backgroundColor: "#363A45",
   },
   paginationButtonText: {
     color: "#fff",
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
   },
   paginationText: {
     fontSize: 14,
-    color: "#374151",
+    color: "#787B86",
     fontWeight: "500",
   },
   modalOverlay: {
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     borderRadius: 12,
     padding: 24,
     minWidth: 300,
@@ -689,12 +689,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#111827",
+    color: "#D1D4DC",
     marginBottom: 12,
   },
   modalMessage: {
     fontSize: 14,
-    color: "#6b7280",
+    color: "#787B86",
     marginBottom: 20,
   },
   modalActions: {
@@ -710,15 +710,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "#2A2E39",
   },
   cancelButtonText: {
-    color: "#374151",
+    color: "#D1D4DC",
     fontSize: 14,
     fontWeight: "600",
   },
   deleteButton: {
-    backgroundColor: "#dc2626",
+    backgroundColor: "#F23645",
   },
   deleteButtonText: {
     color: "#fff",

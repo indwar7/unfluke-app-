@@ -121,7 +121,7 @@ const AdvancedBacktestMainPage = () => {
           onPress={() => handleView(item)}
           style={styles.actionButton}
         >
-          <Ionicons name="eye" size={18} color="#6B7280" />
+          <Ionicons name="eye" size={18} color="#787B86" />
         </TouchableOpacity>
       </View>
 
@@ -137,7 +137,7 @@ const AdvancedBacktestMainPage = () => {
           </Text>
         </View>
         <View style={styles.dateSection}>
-          <Ionicons name="calendar" size={12} color="#9CA3AF" />
+          <Ionicons name="calendar" size={12} color="#4C525E" />
           <Text style={styles.dateText}>{item.createdAt ?? item.createdOn ?? "—"}</Text>
         </View>
       </View>
@@ -152,13 +152,13 @@ const AdvancedBacktestMainPage = () => {
           <Text style={styles.headerTitle}>Advanced Backtester</Text>
           <View style={styles.breadcrumb}>
             <Text style={styles.breadcrumbText}>Pages</Text>
-            <ChevronRight size={13} color="#9ca3af" />
+            <ChevronRight size={13} color="#787B86" />
             <Text style={styles.breadcrumbText}>Advanced Backtester</Text>
           </View>
         </View>
         <View style={styles.buttonGroup}>
           <TouchableOpacity style={styles.viewSavedButton} onPress={navigateToSaved}>
-            <Eye color="#000" size={12} />
+            <Eye color="#D1D4DC" size={12} />
             <Text style={styles.viewSavedButtonText}>View saved</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.createNewButton} onPress={navigateToCreate}>
@@ -171,7 +171,7 @@ const AdvancedBacktestMainPage = () => {
       <View style={styles.pageContent}>
         {loading ? (
           <View style={styles.loaderBox}>
-            <ActivityIndicator size="large" color="#2563EB" />
+            <ActivityIndicator size="large" color="#2962FF" />
             <Text style={styles.loaderText}>Loading strategies...</Text>
           </View>
         ) : (
@@ -194,7 +194,7 @@ const AdvancedBacktestMainPage = () => {
               </>
             ) : (
               <View style={styles.emptyContainer}>
-                <Ionicons name="document-outline" size={48} color="#9CA3AF" />
+                <Ionicons name="document-outline" size={48} color="#4C525E" />
                 <Text style={styles.emptyText}>No strategies found.</Text>
                 <Text style={styles.emptySubText}>
                   Create your first strategy to get started.
@@ -211,17 +211,17 @@ const AdvancedBacktestMainPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#131722",
     // ✅ NO paddingTop: 85
   },
 
   /* ── Header ── */
   header: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#1E222D",
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255,255,255,0.06)",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#D1D4DC",
   },
   breadcrumb: {
     flexDirection: "row",
@@ -244,30 +244,30 @@ const styles = StyleSheet.create({
     marginTop: 3,
     gap: 4,
   },
-  breadcrumbText: { fontSize: 12, color: "#9ca3af" },
+  breadcrumbText: { fontSize: 12, color: "#787B86" },
   buttonGroup: { flexDirection: "row", alignItems: "center", gap: 9 },
   viewSavedButton: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#9CA3AF",
+    borderColor: "rgba(255,255,255,0.06)",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: "white",
+    backgroundColor: "#2A2E39",
     gap: 4,
   },
-  viewSavedButtonText: { fontWeight: "600", color: "#1F2937", fontSize: 12 },
+  viewSavedButtonText: { fontWeight: "600", color: "#D1D4DC", fontSize: 12 },
   createNewButton: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#2962FF",
     gap: 4,
   },
-  createNewButtonText: { fontWeight: "600", color: "white", fontSize: 12 },
+  createNewButtonText: { fontWeight: "600", color: "#FFFFFF", fontSize: 12 },
 
   /* ── Content ── */
   pageContent: { flex: 1, paddingHorizontal: 12 },
@@ -278,16 +278,16 @@ const styles = StyleSheet.create({
     marginTop: 80,
     gap: 12,
   },
-  loaderText: { fontSize: 16, color: "#6B7280" },
+  loaderText: { fontSize: 16, color: "#787B86" },
   scrollContent: { paddingTop: 12, paddingBottom: 20 },
   cardsContainer: { gap: 12 },
 
   /* ── Card ── */
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#1E222D",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255,255,255,0.06)",
     elevation: 1,
   },
   cardHeader: {
@@ -308,17 +308,17 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 8,
     overflow: "hidden",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#2A2E39",
   },
   cardImage: { width: "100%", height: "100%" },
   titleContainer: { flex: 1 },
   cardTitle: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#111827",
+    color: "#D1D4DC",
     lineHeight: 20,
   },
-  cardSubtitle: { fontSize: 12, color: "#6B7280", marginTop: 2 },
+  cardSubtitle: { fontSize: 12, color: "#787B86", marginTop: 2 },
   actionButton: {
     width: 32,
     height: 32,
@@ -332,33 +332,33 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   detailsSection: { gap: 4 },
-  detailsLabel: { fontSize: 12, color: "#6B7280" },
-  detailsText: { fontSize: 14, fontWeight: "500", color: "#111827" },
+  detailsLabel: { fontSize: 12, color: "#787B86" },
+  detailsText: { fontSize: 14, fontWeight: "500", color: "#D1D4DC", fontVariant: ["tabular-nums"] },
   dateSection: { flexDirection: "row", alignItems: "center", gap: 4 },
-  dateText: { fontSize: 12, color: "#6B7280" },
+  dateText: { fontSize: 12, color: "#787B86" },
 
   /* ── Empty / Load More ── */
   emptyContainer: {
     alignItems: "center",
     padding: 40,
     marginTop: 40,
-    backgroundColor: "#fff",
+    backgroundColor: "#1E222D",
     borderRadius: 8,
     elevation: 1,
   },
   emptyText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#374151",
+    color: "#787B86",
     marginTop: 16,
     textAlign: "center",
   },
-  emptySubText: { fontSize: 14, color: "#6B7280", marginTop: 8, textAlign: "center" },
+  emptySubText: { fontSize: 14, color: "#4C525E", marginTop: 8, textAlign: "center" },
   loadMoreButton: {
     alignSelf: "center",
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#2962FF",
     borderRadius: 8,
     marginTop: 20,
     elevation: 2,
