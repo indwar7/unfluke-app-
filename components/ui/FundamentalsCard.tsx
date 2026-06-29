@@ -52,15 +52,16 @@ const FundamentalsCard: React.FC = () => {
   const companyName =
     company?.results?.[0]?.["Company Name"] || stock.name || stock.symbol;
 
-  // Pull a few headline ratios from the live financials.
+  // Pull a few headline ratios from the live financials, with YoY change.
   const snapshot = useMemo(() => {
     try {
       const kf = financials?.ratios?.KeyFinancial;
       const val1 = financials?.ratios?.Valuation1;
       const pick = (res: any, key: string) => {
-        if (!res) return null;
+        if (!res) return { value: null as number | null, yoy: undefined as number | undefined };
         const periods = getPeriodKeys(res);
         const latest = periods[0];
+        const prevP = periods[1];
         const rows = res?.results?.[latest] || res?.results || [];
         if (Array.isArray(rows)) {
           const row = rows.find((r: any) =>
@@ -68,18 +69,21 @@ const FundamentalsCard: React.FC = () => {
           );
           if (row) {
             const v = row[latest] ?? row.value;
-            if (v != null && !isNaN(Number(v))) return Number(v);
+            const pv = prevP != null ? row[prevP] : undefined;
+            let yoy: number | undefined;
+            if (v != null && pv != null && Number(pv) !== 0)
+              yoy = ((Number(v) - Number(pv)) / Math.abs(Number(pv))) * 100;
+            if (v != null && !isNaN(Number(v))) return { value: Number(v), yoy };
           }
         }
-        return null;
+        return { value: null, yoy: undefined };
       };
-      const items = [
-        { label: "P/E", value: pick(val1, "P/E") ?? pick(val1, "Price/Earnings") },
-        { label: "ROE %", value: pick(kf, "ROE") },
-        { label: "EPS", value: pick(kf, "EPS") },
-        { label: "Debt/Eq", value: pick(kf, "Debt-Equity") ?? pick(kf, "Debt/Equity") },
+      return [
+        { label: "P/E", ...(pick(val1, "P/E").value != null ? pick(val1, "P/E") : pick(val1, "Price/Earnings")) },
+        { label: "ROE %", ...pick(kf, "ROE") },
+        { label: "EPS", ...pick(kf, "EPS") },
+        { label: "Debt/Eq", ...(pick(kf, "Debt-Equity").value != null ? pick(kf, "Debt-Equity") : pick(kf, "Debt/Equity")) },
       ];
-      return items;
     } catch {
       return [];
     }
@@ -136,9 +140,17 @@ const FundamentalsCard: React.FC = () => {
     <View style={s.card}>
       {/* Header */}
       <View style={s.header}>
-        <View>
-          <Text style={s.label}>FUNDAMENTALS</Text>
+        <View style={{ flex: 1 }}>
+          <View style={s.labelRow}>
+            <View style={s.labelDot} />
+            <Text style={s.label}>FUNDAMENTALS</Text>
+          </View>
           <Text style={s.company} numberOfLines={1}>{companyName}</Text>
+          {!!stock.symbol && (
+            <View style={s.symbolTag}>
+              <Text style={s.symbolTagText}>NSE · {stock.symbol}</Text>
+            </View>
+          )}
         </View>
         <TouchableOpacity onPress={openFull} style={s.fullBtn} activeOpacity={0.85}>
           <Text style={s.fullBtnText}>Full analysis</Text>
@@ -190,12 +202,17 @@ const FundamentalsCard: React.FC = () => {
         <ActivityIndicator color={c.gold} style={{ marginVertical: 22 }} />
       ) : (
         <View style={s.statsRow}>
-          {snapshot.map((st, i) => (
+          {snapshot.map((st: any, i: number) => (
             <View key={st.label} style={[s.stat, i < snapshot.length - 1 && s.statDivider]}>
               <Text style={s.statValue}>
                 {st.value != null ? Number(st.value).toFixed(st.label === "EPS" || st.label === "P/E" ? 1 : 2) : "—"}
               </Text>
               <Text style={s.statLabel}>{st.label}</Text>
+              {st.yoy != null && (
+                <Text style={[s.statYoy, { color: st.yoy >= 0 ? c.profit : c.loss }]}>
+                  {st.yoy >= 0 ? "▲" : "▼"} {Math.abs(st.yoy).toFixed(1)}%
+                </Text>
+              )}
             </View>
           ))}
         </View>
@@ -224,8 +241,12 @@ const makeStyles = (c: AppColors) =>
       marginBottom: 16,
     },
     header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
+    labelRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+    labelDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: c.gold },
     label: { fontSize: 10.5, fontWeight: "800", letterSpacing: 1.4, color: c.textMuted },
-    company: { fontSize: 16, fontWeight: "800", color: c.text, letterSpacing: -0.3, marginTop: 3, maxWidth: 200 },
+    company: { fontSize: 17, fontWeight: "800", color: c.text, letterSpacing: -0.4, marginTop: 4, maxWidth: 200 },
+    symbolTag: { alignSelf: "flex-start", backgroundColor: c.inputBg, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, marginTop: 5 },
+    symbolTagText: { fontSize: 10, fontWeight: "700", color: c.textSecondary, letterSpacing: 0.4 },
     fullBtn: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: c.goldLight, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6 },
     fullBtnText: { fontSize: 11.5, fontWeight: "800", color: c.gold },
 
@@ -243,6 +264,7 @@ const makeStyles = (c: AppColors) =>
     statDivider: { borderRightWidth: 1, borderRightColor: c.borderLight },
     statValue: { fontSize: 18, fontWeight: "800", color: c.text, fontVariant: ["tabular-nums"] },
     statLabel: { fontSize: 10, fontWeight: "700", color: c.textMuted, letterSpacing: 0.8, marginTop: 4 },
+    statYoy: { fontSize: 9.5, fontWeight: "700", marginTop: 3, fontVariant: ["tabular-nums"] },
 
     linksRow: { flexDirection: "row", gap: 8, marginTop: 16 },
     linkChip: { flex: 1, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 10, alignItems: "center" },

@@ -70,6 +70,10 @@ const UnDashboard = () => {
   const plan = planName(user?.tier);
   const isPaid = Number(user?.tier) > 0;
 
+  const today = new Date().toLocaleDateString("en-IN", {
+    weekday: "short", day: "numeric", month: "short",
+  });
+
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const handleNavigation = (nav: string) => {
@@ -145,8 +149,8 @@ const UnDashboard = () => {
             <Text style={s.avatarText}>{initials(user?.name)}</Text>
           </View>
           <View style={{ flex: 1 }}>
+            <Text style={s.greetDate}>{today.toUpperCase()}</Text>
             <Text style={s.greetHi}>Hello {firstName}</Text>
-            <Text style={s.greetSub}>What would you like to explore?</Text>
           </View>
           <View style={[s.planPill, isPaid ? s.planPillGold : s.planPillMuted]}>
             {isPaid ? <Crown size={11} color={c.onGold} /> : <Sparkles size={11} color={c.textSecondary} />}
@@ -176,7 +180,10 @@ const UnDashboard = () => {
 
       {/* Features — vertical cards with images, wipe-up on scroll */}
       <Reveal index={isPaid ? 2 : 3}>
-        <Text style={s.sectionTitle}>Explore Tools</Text>
+        <View style={s.sectionHeader}>
+          <View style={s.sectionAccent} />
+          <Text style={s.sectionTitle}>Explore Tools</Text>
+        </View>
       </Reveal>
       <View>
         {FEATURES.map((f, i) => renderFeature(f, i))}
@@ -194,8 +201,8 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
     greetRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 },
     avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.gold, alignItems: "center", justifyContent: "center" },
     avatarText: { color: c.onGold, fontSize: 16, fontWeight: "800" },
-    greetHi: { fontSize: 21, fontWeight: "800", color: c.text, letterSpacing: -0.4 },
-    greetSub: { fontSize: 12.5, color: c.textSecondary, marginTop: 2 },
+    greetDate: { fontSize: 10.5, fontWeight: "800", color: c.gold, letterSpacing: 1.2 },
+    greetHi: { fontSize: 22, fontWeight: "800", color: c.text, letterSpacing: -0.5, marginTop: 2 },
     planPill: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 },
     planPillGold: { backgroundColor: c.gold },
     planPillMuted: { backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border },
@@ -208,7 +215,9 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
     upgradeBtn: { backgroundColor: c.gold, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
     upgradeBtnText: { fontSize: 12.5, fontWeight: "800", color: c.onGold },
 
-    sectionTitle: { fontSize: 17, fontWeight: "800", color: c.text, letterSpacing: -0.3, marginBottom: 14 },
+    sectionHeader: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 14 },
+    sectionAccent: { width: 4, height: 18, borderRadius: 2, backgroundColor: c.gold },
+    sectionTitle: { fontSize: 17, fontWeight: "800", color: c.text, letterSpacing: -0.3 },
 
     // Feature card (vertical, image)
     featureCard: {
@@ -222,11 +231,15 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       padding: 12,
       height: CARD_HEIGHT,
       marginBottom: CARD_GAP,
+      ...(isDark
+        ? { shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 4 }
+        : { shadowColor: "#0B0D12", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }),
     },
     featureImgWrap: {
       width: 92, height: 92, borderRadius: 14,
       backgroundColor: isDark ? c.surfaceElevated : c.background,
       alignItems: "center", justifyContent: "center", overflow: "hidden",
+      borderWidth: 1, borderColor: c.gold + (isDark ? "33" : "22"),
     },
     featureImg: { width: "100%", height: "100%" },
     featureTitle: { fontSize: 16, fontWeight: "800", color: c.text, letterSpacing: -0.3 },
