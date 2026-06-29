@@ -61,11 +61,17 @@ const AdvancedBacktestMainPage = () => {
       const data = res?.data ?? res;
 
       if (data) {
+        const fileBase =
+          typeof item?.fileName === "string" ? item.fileName.split(".")[0] : "";
+        if (!fileBase) {
+          Alert.alert("Not available", "No backtest result for this strategy yet.");
+          return;
+        }
         dispatch(setEditStrategy(data));
         router.push({
           pathname: "/basic-backtester-view",
           params: {
-            filename: item.fileName.split(".")[0],
+            filename: fileBase,
             advanced: "yes",
             strategyName: data.name ?? data.strategyName ?? "",
             reEntry: JSON.stringify(data.entries ?? ""),
@@ -83,19 +89,19 @@ const AdvancedBacktestMainPage = () => {
       const ID = auth.user?._id;
       if (!ID) return;
       try {
-        const defaultStrats = await fetchAdvancedDefaultStrategies(axios);
-        if (defaultStrats) {
-          const normalized = defaultStrats.map((obj: any) => {
-            const copy = deepCopy(obj);
-            const raw = copy.name ?? copy.strategyName ?? "";
-            const name = raw.replace("_Save", "").replace("_save", "");
-            if (copy.name) copy.name = name;
-            else copy.strategyName = name;
-            return copy;
-          });
-          if (normalized.length > 0) console.log("ADV STRATEGY KEYS:", Object.keys(normalized[0]));
-          setDefaultStrategies(normalized);
-        }
+        const resp = await fetchAdvancedDefaultStrategies(axios);
+        // Normalize: API may return a raw AxiosResponse or the array.
+        const raw0 = resp?.data ?? resp;
+        const arr = Array.isArray(raw0) ? raw0 : [];
+        const normalized = arr.map((obj: any) => {
+          const copy = deepCopy(obj);
+          const raw = copy.name ?? copy.strategyName ?? "";
+          const name = raw.replace("_Save", "").replace("_save", "");
+          if (copy.name) copy.name = name;
+          else copy.strategyName = name;
+          return copy;
+        });
+        setDefaultStrategies(normalized);
       } catch (error) {
         console.error("Error fetching strategies:", error);
         Alert.alert("Error", "Failed to load strategies. Please try again.");

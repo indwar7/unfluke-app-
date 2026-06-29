@@ -19,3 +19,10 @@ const socketOpts = {
 export const backendSocket = io(Config.BACKEND_URL, socketOpts);
 
 export const chatbotSocket = io(Config.REACT_APP_CHATBOT_URL, socketOpts);
+
+// Connection diagnostics — surfaces chatbot reachability in logs so a down
+// origin (e.g. edbot HTTPS) is obvious instead of a silent stuck spinner.
+chatbotSocket.on("connect", () => console.log("[chatbotSocket] connected"));
+chatbotSocket.on("connect_error", (e) =>
+  console.log("[chatbotSocket] connect_error:", e?.message || e));
+chatbotSocket.on("disconnect", (r) => console.log("[chatbotSocket] disconnect:", r));

@@ -145,33 +145,36 @@ const ProfitAndLoss = ({ instrument, positions, minute, updateTotalPnlData }) =>
           });
 
           if (data) {
-            x["currentPrice"] = data.close;
-
-            // Calculate individual position PnL
+            // Build a NEW object — never mutate the parent's position state.
+            const currentPrice = data.close;
             let positionPnl = 0;
 
             if (x.cepe == "CE" && x.type == "Buy") {
-              positionPnl = (x.currentPrice - x.ltp) * x.lotQuantity;
+              positionPnl = (currentPrice - x.ltp) * x.lotQuantity;
             } else if (x.cepe == "PE" && x.type == "Sell") {
-              positionPnl = (x.ltp - x.currentPrice) * x.lotQuantity;
+              positionPnl = (x.ltp - currentPrice) * x.lotQuantity;
             } else if (x.cepe == "PE" && x.type == "Buy") {
-              positionPnl = (x.currentPrice - x.ltp) * x.lotQuantity;
+              positionPnl = (currentPrice - x.ltp) * x.lotQuantity;
             } else if (x.cepe == "CE" && x.type == "Sell") {
-              positionPnl = (x.ltp - x.currentPrice) * x.lotQuantity;
+              positionPnl = (x.ltp - currentPrice) * x.lotQuantity;
             }
 
             // Add to total PnL
             totalPnl += positionPnl;
 
-            // Store individual position profit (convert to actual currency amount)
-            x["profit"] = parseFloat(positionPnl * x.lotSize).toFixed(2);
+            return {
+              ...x,
+              currentPrice,
+              profit: parseFloat(positionPnl * x.lotSize).toFixed(2),
+            };
           }
           return x;
         })
       );
 
       // Update total PnL (convert to actual currency amount)
-      const finalTotalPnl = (totalPnl * positions[0].lotSize).toFixed(2);
+      const lotSize = list[0]?.lotSize ?? positions[0]?.lotSize ?? 1;
+      const finalTotalPnl = (totalPnl * lotSize).toFixed(2);
       setTotalPnl(finalTotalPnl);
       updateTotalPnlData(finalTotalPnl);
       setPositionList(updatedList);

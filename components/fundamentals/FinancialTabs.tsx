@@ -26,15 +26,15 @@ const ROW_H = 42;
    HORIZONTAL SCROLLABLE TABLE
 ═══════════════════════════════════════════════════════════ */
 function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessage?: string }) {
-    if (!response?.results) return <EmptyState message={emptyMessage || "No data available."} />;
-
-    const periodKeys = useMemo(() => getPeriodKeys(response), [response]);
+    const periodKeys = useMemo(() => response?.results ? getPeriodKeys(response) : [], [response]);
     const headings = useMemo(() => {
+        if (!response?.results) return [];
         try { return getHeadings(response) || []; } catch { return []; }
     }, [response]);
 
     const rows = useMemo(() => {
         const result: { label: string; isBold: boolean; isChild: boolean }[] = [];
+        if (!response?.results) return result;
         try {
             if (Array.isArray(headings) && headings.length > 0) {
                 for (const heading of headings) {
@@ -62,6 +62,7 @@ function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessa
 
     const allData = useMemo(() => {
         const map: Record<string, Record<string, any>> = {};
+        if (!response?.results) return map;
         try {
             for (const pk of periodKeys) {
                 map[pk] = getSectionDataForPeriod(response, pk) || {};
@@ -70,7 +71,7 @@ function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessa
         return map;
     }, [periodKeys, response]);
 
-    if (periodKeys.length === 0 || rows.length === 0)
+    if (!response?.results || periodKeys.length === 0 || rows.length === 0)
         return <EmptyState message={emptyMessage || "No data available."} />;
 
     return (
@@ -129,10 +130,9 @@ function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessa
 function ExpandableList({ response, period, emptyMessage }: {
     response: any; period: string; emptyMessage?: string;
 }) {
-    if (!response?.results) return <EmptyState message={emptyMessage || "No data available."} />;
-
-    const periodKeys = useMemo(() => getPeriodKeys(response), [response]);
+    const periodKeys = useMemo(() => response?.results ? getPeriodKeys(response) : [], [response]);
     const headings = useMemo(() => {
+        if (!response?.results) return [];
         try { return getHeadings(response) || []; } catch { return []; }
     }, [response]);
 
@@ -144,6 +144,7 @@ function ExpandableList({ response, period, emptyMessage }: {
 
     const allData = useMemo(() => {
         const map: Record<string, Record<string, any>> = {};
+        if (!response?.results) return map;
         try {
             for (const pk of periodKeys) map[pk] = getSectionDataForPeriod(response, pk) || {};
         } catch { }
@@ -155,7 +156,7 @@ function ExpandableList({ response, period, emptyMessage }: {
         return val !== undefined && val !== null ? fmt(val) : "-";
     };
 
-    if (periodKeys.length === 0 || headings.length === 0)
+    if (!response?.results || periodKeys.length === 0 || headings.length === 0)
         return <EmptyState message={emptyMessage || "No data available."} />;
 
     return (
@@ -249,10 +250,9 @@ function findRatioKey(dataKeys: string[], matchKeywords: readonly string[]): str
 
 export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<string, any> | undefined; period: string; banking?: any }) {
     const allPeriods = useMemo(() => {
+        if (!ratios) return [];
         try { return getRatioPeriodKeys(ratios) || []; } catch { return []; }
     }, [ratios]);
-
-    if (!ratios || allPeriods.length === 0) return <EmptyState message="No ratio data available." />;
 
     const activePeriod = (period && allPeriods.includes(period)) ? period : (allPeriods[0] || "");
 
@@ -413,6 +413,9 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
         const val = data?.[label] ?? bankingData?.[label];
         return val !== undefined && val !== null ? fmt(val) : "—";
     };
+
+    if (!ratios || allPeriods.length === 0)
+        return <EmptyState message="No ratio data available." />;
 
     if (ratioGroups.length === 0)
         return <EmptyState message="No ratio data for this period." />;

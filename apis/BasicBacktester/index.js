@@ -40,8 +40,10 @@ export const getCsvUrl = async (axios, {fileName, fileName1, fileName2, ID, adva
         };
 
         const response = await axios.post(`${Config.BACKEND_URL}/api/strategy/getUrl`, body);
-        
-        const csvlink = response
+
+        // axios may or may not be interceptor-unwrapped; normalize to the data
+        // payload so callers always read the real object, never the AxiosResponse.
+        const csvlink = response?.data ?? response;
         return csvlink;
     } catch(error) {
         console.log(error)

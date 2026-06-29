@@ -143,13 +143,8 @@ const ScannerHomePage = ({ }) => {
   }
 
   const handleEdit = (scanner) => {
-    const routeName =
-      scanner.scannerType === "technical"
-        ? "scanner"
-        : scanner.scannerType === "fundamental"
-          ? "scanner"
-          : "alerts";
-    console.log()
+    // Alerts have no dedicated route; scanner.tsx fully handles type==='alerts'.
+    const routeName = "scanner";
     navigation.navigate(routeName, {
       state: scanner,
       type:
@@ -337,7 +332,7 @@ const ScannerHomePage = ({ }) => {
                 navigation.navigate(
                   "scanner",
                   {
-                    type: alerts === "true" ? "alerts" : "scanner",
+                    type: alerts ? "alerts" : "scanner",
                   }
                 )
               }

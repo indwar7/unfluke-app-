@@ -46,7 +46,8 @@ const BasicBacktester = () => {
   const params = useLocalSearchParams<{ state?: string }>();
   const [isBacktesting, setIsBacktesting] = useState(false);
   const auth = useSelector((store: any) => store.Login);
-  const [stratId, setStratId] = useState(new Date().getMilliseconds());
+  // Unique enough to avoid socket-event collisions (getMilliseconds() was 0-999).
+  const [stratId, setStratId] = useState(() => `${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   const [csvFilename, setCsvFilename] = useState("");
 
   const [resultsMessage, setResultsMessage] = useState("");
@@ -78,7 +79,7 @@ const BasicBacktester = () => {
     dispatch(onChange({ name, value }));
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const legs = backtester.positions.legs;
 
     if (isBacktesting) return;
@@ -133,7 +134,7 @@ const BasicBacktester = () => {
     if (isEditing) {
       newState._id = editStrategyId;
     }
-    const res = addStrategy(
+    const res = await addStrategy(
       axios,
       newState,
       router,
@@ -142,10 +143,11 @@ const BasicBacktester = () => {
       isBacktesting,
       subUrl,
     );
-    console.log("result aaya hai", res)
 
     if (res) {
       setIsBacktesting(true);
+    } else {
+      Alert.alert("Error", "Failed to start backtest. Please try again.");
     }
   }
 

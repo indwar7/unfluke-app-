@@ -1079,6 +1079,7 @@ const { width } = useWindowDimensions();
 
     const buildLeg = ({ type = "Buy", cepe = "CE", strikeOffset = 0, lotQuantity = 1 }) => {
       const row = optionChain.find((x) => x.strike == pickStrike(strikeOffset));
+      if (!row) return null;
       const ltp = cepe == "CE" ? row.callPrice : row.putPrice;
       const iv = cepe == "CE" ? row.callIV : row.putIV;
       const gamma = cepe == "CE" ? row.callGamma : row.putGamma;
@@ -1317,11 +1318,15 @@ const { width } = useWindowDimensions();
   };
 
   const handleStrategyClick = (strategy) => {
-    const defaultPositions = generatePositionsForStrategy(
+    const defaultPositions = (generatePositionsForStrategy(
       strategy.name,
       selectedExpiry,
       selectedInstrument,
-    );
+    ) || []).filter(Boolean);
+    if (defaultPositions.length === 0) {
+      Alert.alert("Not ready", "Option chain isn't loaded yet. Please wait a moment and try again.");
+      return;
+    }
     setDraftPositions(defaultPositions);
     setModalTitle(strategy.name);
     setShowModal(true);

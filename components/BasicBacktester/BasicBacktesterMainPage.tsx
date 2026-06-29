@@ -119,23 +119,24 @@ const BasicBacktesterMainPage = () => {
   useEffect(() => {
     const fetchAllStrategy = async () => {
       try {
-        const ID = auth.user._id;
+        const ID = auth?.user?._id;
         if (ID) {
-          const defaultStrats = await fetchDefaultStrategies(axios);
-          if (defaultStrats) {
-            for (let index in defaultStrats) {
-              const obj = deepCopy(defaultStrats[index]);
-              obj.name = obj.name.replace("_Save", "").replace("_save", "");
-              obj.maxDrawdown =
-                obj.analysis0?.maxDDDays ??
-                obj.analysis0?.maxDrawdown ??
-                obj.analysis?.analysis?.analysis0?.maxDDDays ??
-                obj.analysis?.analysis?.analysis0?.maxDrawdown ??
-                null;
-              defaultStrats[index] = obj;
-            }
-            setDefaultStrategies(defaultStrats);
-          }
+          const resp = await fetchDefaultStrategies(axios);
+          // Normalize: the API may return a raw AxiosResponse or the array.
+          const raw = resp?.data ?? resp;
+          const list = Array.isArray(raw) ? raw : [];
+          const normalized = list.map((item: any) => {
+            const obj = deepCopy(item);
+            obj.name = (obj?.name || "").replace("_Save", "").replace("_save", "");
+            obj.maxDrawdown =
+              obj.analysis0?.maxDDDays ??
+              obj.analysis0?.maxDrawdown ??
+              obj.analysis?.analysis?.analysis0?.maxDDDays ??
+              obj.analysis?.analysis?.analysis0?.maxDrawdown ??
+              null;
+            return obj;
+          });
+          setDefaultStrategies(normalized);
         }
       } catch (error) {
         Alert.alert("Error", "Failed to load strategies. Please try again.");

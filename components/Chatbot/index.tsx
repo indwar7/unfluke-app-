@@ -136,6 +136,29 @@ const AIChatbot = ({
   const [selectedBot, setSelectedBot] = useState("Company Fundamentals");
   const [botExplanation, setBotExplanation] = useState("");
   const [streamingMessage, setStreamingMessage] = useState("");
+
+  // Watchdog: if a response never arrives (socket down / backend silent), don't
+  // leave the "Thinking…" spinner stuck forever — clear it and show an error.
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => {
+      setLoading(false);
+      setStreamingMessage("");
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && last.sender === "bot-stream" && !last.text) {
+          next[next.length - 1] = {
+            sender: "bot",
+            text: "Sorry, I couldn't get a response right now. Please try again.",
+            mode: selectedBot,
+          };
+        }
+        return next;
+      });
+    }, 45000);
+    return () => clearTimeout(t);
+  }, [loading, selectedBot]);
   const [chatHistory, addChatHistory] = useState([]);
   const [scannerForm, setScannerForm] = useState(baseScanForm);
   const [basicBacktestForm, setBasicBacktestForm] = useState(baseBacktestForm);
@@ -304,6 +327,11 @@ const AIChatbot = ({
   // Memoize all the chat handlers
   const handleScannerChat = useCallback(async () => {
     if (!loading && input.trim()) {
+      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
+      if (!chatbotSocket?.connected) {
+        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
+        return;
+      }
       try {
         addChatHistory((prevHistory) => [
           ...prevHistory,
@@ -317,7 +345,7 @@ const AIChatbot = ({
         setLoading(true);
         setInput("");
         chatbotSocket.emit("alerts_chat", {
-          userid: auth.user._id,
+          userid: auth?.user?._id,
           uniquetoken: uniqueUserIdRef.current,
           message: input,
           api_key: Config.REACT_APP_CHATBOT_TOKEN,
@@ -329,10 +357,15 @@ const AIChatbot = ({
         console.error(e);
       }
     }
-  }, [loading, input, selectedBot, auth.user._id, chatHistory, scannerForm]);
+  }, [loading, input, selectedBot, auth?.user?._id, chatHistory, scannerForm]);
 
   const handleScreenerChat = useCallback(async () => {
     if (!loading && input.trim()) {
+      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
+      if (!chatbotSocket?.connected) {
+        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
+        return;
+      }
       try {
         addChatHistory((prevHistory) => [
           ...prevHistory,
@@ -346,7 +379,7 @@ const AIChatbot = ({
         setLoading(true);
         setInput("");
         chatbotSocket.emit("alerts_chat", {
-          userid: auth.user._id,
+          userid: auth?.user?._id,
           uniquetoken: uniqueUserIdRef.current,
           message: input,
           api_key: Config.REACT_APP_CHATBOT_TOKEN,
@@ -358,10 +391,15 @@ const AIChatbot = ({
         console.error(e);
       }
     }
-  }, [loading, input, selectedBot, auth.user._id, chatHistory, scannerForm]);
+  }, [loading, input, selectedBot, auth?.user?._id, chatHistory, scannerForm]);
 
   const handleEdBotChat = useCallback(async () => {
     if (!loading && input.trim()) {
+      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
+      if (!chatbotSocket?.connected) {
+        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
+        return;
+      }
       try {
         addChatHistory((prevHistory) => [
           ...prevHistory,
@@ -375,7 +413,7 @@ const AIChatbot = ({
         setLoading(true);
         setInput("");
         chatbotSocket.emit("chat", {
-          userid: auth.user._id,
+          userid: auth?.user?._id,
           uniquetoken: uniqueUserIdRef.current,
           message: input,
           api_key: Config.REACT_APP_CHATBOT_TOKEN,
@@ -385,10 +423,15 @@ const AIChatbot = ({
         console.error(e);
       }
     }
-  }, [loading, input, selectedBot, auth.user._id, chatHistory]);
+  }, [loading, input, selectedBot, auth?.user?._id, chatHistory]);
 
   const handleBacktestScansChat = useCallback(async () => {
     if (!loading && input.trim()) {
+      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
+      if (!chatbotSocket?.connected) {
+        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
+        return;
+      }
       try {
         addChatHistory((prevHistory) => [
           ...prevHistory,
@@ -402,7 +445,7 @@ const AIChatbot = ({
         setLoading(true);
         setInput("");
         chatbotSocket.emit("backtest_chat", {
-          userid: auth.user._id,
+          userid: auth?.user?._id,
           uniquetoken: uniqueUserIdRef.current,
           message: input,
           api_key: Config.REACT_APP_CHATBOT_TOKEN,
@@ -418,7 +461,7 @@ const AIChatbot = ({
     loading,
     input,
     selectedBot,
-    auth.user._id,
+    auth?.user?._id,
     chatHistory,
     basicBacktestForm,
   ]);
@@ -523,7 +566,7 @@ const AIChatbot = ({
         basicBacktestForm,
         // navigation, // Pass navigation instead of navigate
         stratId,
-        auth.user._id,
+        auth?.user?._id,
         isProgressing,
         "in"
       );
@@ -613,7 +656,7 @@ const AIChatbot = ({
       const handleScannerResults = (data) => {
         if (
           data &&
-          data["userId"] == auth.user._id &&
+          data["userId"] == auth?.user?._id &&
           data["windowId"] == uniqueUserIdRef.current
         ) {
           setMessages((prevMessages) => [
@@ -638,7 +681,7 @@ const AIChatbot = ({
 
       const handleBacktestResults = (data) => {
         if (data) {
-          if (data.user == auth.user._id && data.stratid == stratId) {
+          if (data.user == auth?.user?._id && data.stratid == stratId) {
             const link = `${Config.PUBLIC_URL
               }/${"in"}/basic-backtester-view?filename=${data.filename.replace(
                 ".csv",
@@ -686,7 +729,7 @@ const AIChatbot = ({
       const handleChatResponse = (data) => {
         if (
           data &&
-          data["user_id"] == auth.user._id &&
+          data["user_id"] == auth?.user?._id &&
           data["unique_token"] == uniqueUserIdRef.current
         ) {
           const newContent = data.message;
@@ -705,7 +748,7 @@ const AIChatbot = ({
       const handleStreamEnded = (data) => {
         if (
           data &&
-          data["user_id"] == auth.user._id &&
+          data["user_id"] == auth?.user?._id &&
           data["unique_token"] == uniqueUserIdRef.current
         ) {
           const docs = data.docs;

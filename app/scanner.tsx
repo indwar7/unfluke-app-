@@ -395,7 +395,7 @@ const Scanner = ({ shared }) => {
         if (route?.params?.state && scannerState._id) {
           const scannerId = scannerState._id;
 
-          if (auth.user._id !== scannerState.owner) {
+          if (auth?.user?._id !== scannerState.owner) {
             setSaving(false);
             Alert.alert(
               "Confirmation",
@@ -652,7 +652,7 @@ const Scanner = ({ shared }) => {
       } else {
         Alert.alert("Login Required", "Please login to edit/create a scanner", [
           { text: "Cancel", style: "cancel" },
-          { text: "Login", onPress: () => navigation.navigate("Login") },
+          { text: "Login", onPress: () => navigation.navigate("login") },
         ]);
       }
     }
@@ -963,7 +963,7 @@ const Scanner = ({ shared }) => {
               {(type === "scanner" || type === "alerts") &&
                 auth &&
                 scannerState &&
-                auth.user._id !== scannerState.owner &&
+                auth?.user?._id !== scannerState.owner &&
                 !shared && (
                   <TouchableOpacity
                     style={[dynamicStyles.button, dynamicStyles.buttonSecondary]}

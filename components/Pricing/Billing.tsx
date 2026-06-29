@@ -518,10 +518,8 @@ import {
 import { Config } from "../../helpers/config";
 
 function Billing({ tier, email, name, user, isOpenModal, toggleModal }) {
-
-  if (!tier || Object.keys(tier).length === 0) {
-    return null;
-  }
+  // All hooks must run unconditionally (Rules of Hooks) — the early bail-out
+  // for missing tier/user happens AFTER every hook below.
   const [message, setMessage] = useState({ status: 0, message: "" });
   const [values, setValues] = useState({
     amount: 0,
@@ -534,8 +532,8 @@ function Billing({ tier, email, name, user, isOpenModal, toggleModal }) {
 
 const {  height } = useWindowDimensions()
 
-  const tierCost = parseInt(tier.cost) || 0;
-  const [totalPoints, setTotalPoints] = useState(parseInt(user.points) || 0);
+  const tierCost = parseInt(tier?.cost) || 0;
+  const [totalPoints, setTotalPoints] = useState(parseInt(user?.points) || 0);
   const [usePoints, setUsePoints] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [amountToBePaid, setAmountToBePaid] = useState(tierCost);
@@ -624,7 +622,7 @@ const {  height } = useWindowDimensions()
           body: JSON.stringify({
             amount: amountToBePaid,
             currency: "INR",
-            customerId: user._id,
+            customerId: user?._id,
             returnUrl: `${Config.BACKEND_URL}/api/hdfc-payment/callback`,
           }),
         }
@@ -657,6 +655,11 @@ const {  height } = useWindowDimensions()
     setCouponCode("");
     showToast("Coupon removed", "success");
   };
+
+  // Safe to bail out here — every hook above has already run unconditionally.
+  if (!tier || Object.keys(tier).length === 0 || !user) {
+    return null;
+  }
 
   return (
     <Modal
