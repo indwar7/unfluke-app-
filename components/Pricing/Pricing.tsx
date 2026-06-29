@@ -492,10 +492,16 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { createSelector } from "reselect";
 import { MembershipPlansList } from "../../redux/Unfluke_slices/thunks";
-import Icon from "react-native-vector-icons/Ionicons"; // or FontAwesome
+import { LinearGradient } from "expo-linear-gradient";
+import { Check, CheckCircle2, Crown, Sparkles } from "lucide-react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 import Billing from "./Billing";
 
 const Pricing = ({ navigation }) => {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
+
   const { width } = useWindowDimensions();
 
   const [isTablet, setIsTablet] = useState(width >= 768);
@@ -520,10 +526,10 @@ const Pricing = ({ navigation }) => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [planTitles] = useState(["FREE", "BASIC", "ADVANCED", "PRO"]);
 
-  const name = user.name;
-  const email = user.email;
-  const tier = user.tier;
-  const tierExpiry = user.tierEnded?.split(" ");
+  const name = user?.name;
+  const email = user?.email;
+  const tier = user?.tier;
+  const tierExpiry = user?.tierEnded?.split(" ");
 
   // Image mappings (you'll need to import these from your assets)
   const planImages = {
@@ -551,111 +557,147 @@ const Pricing = ({ navigation }) => {
       <View
         key={tierIndex}
         style={[
-          styles.cardWrapper,
+          s.cardWrapper,
           { width: isTablet ? (width - 64) / 2 : "100%" },
         ]}
       >
-        <View style={[styles.card, isPopular && styles.popularCard]}>
+        <View style={[s.card, isPopular && s.popularCard]}>
           {isPopular && (
-            <View style={styles.popularBadge}>
-              <Text style={styles.popularText}>Popular</Text>
-            </View>
+            <LinearGradient
+              colors={[c.goldBright, c.gold, c.goldDeep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.popularBadge}
+            >
+              <Crown size={11} color={c.onGold} strokeWidth={2.5} />
+              <Text style={s.popularText}>POPULAR</Text>
+            </LinearGradient>
           )}
 
-          <View style={styles.cardBody}>
+          <View style={[s.cardBody, isPopular && s.cardBodyPopular]}>
             {/* Header */}
-            <View style={styles.cardHeader}>
-              <Text style={styles.planTitle}>{planTitles[tierIndex]}</Text>
-              <Text style={styles.planPrice}>
-                ₹{tierInfo.cost} <Text style={styles.priceSubtext}>/Month</Text>
-              </Text>
+            <View style={s.cardHeader}>
+              <View style={s.planTitleRow}>
+                {isPopular && (
+                  <Sparkles size={15} color={c.gold} strokeWidth={2.5} />
+                )}
+                <Text style={[s.planTitle, isPopular && s.planTitlePopular]}>
+                  {planTitles[tierIndex]}
+                </Text>
+              </View>
+              <View style={s.priceRow}>
+                <Text style={[s.planPrice, isPopular && s.planPricePopular]}>
+                  ₹{tierInfo.cost}
+                </Text>
+                <Text style={s.priceSubtext}> /mo</Text>
+              </View>
             </View>
 
             {/* Image */}
-            <View style={styles.imageContainer}>
+            <View style={s.imageContainer}>
               <Image
                 source={planImages[tierInfo.tier]}
-                style={styles.planImage}
+                style={s.planImage}
                 resizeMode="contain"
               />
             </View>
 
             {/* Features List */}
-            <View style={styles.featuresList}>
+            <View style={s.featuresList}>
               {/* Historical Scans */}
-              <View style={styles.featureItem}>
-                <View style={styles.featureHeader}>
-                  <View style={{ marginTop: 2, marginRight: 6 }}>
-                    <Icon name="checkmark-circle" size={17} color="#0AB39C" />
+              <View style={s.featureItem}>
+                <View style={s.featureHeader}>
+                  <View style={[s.checkBadge, isPopular && s.checkBadgePopular]}>
+                    <Check
+                      size={12}
+                      color={isPopular ? c.onGold : c.profit}
+                      strokeWidth={3}
+                    />
                   </View>
-                  <Text style={styles.featureTitle}>Historical Scans</Text>
+                  <Text style={s.featureTitle}>Historical Scans</Text>
                 </View>
-                <Text style={styles.featureDetail}>
-                  - Results from{" "}
-                  <Text style={styles.bold}>{tierInfo.scans_start_year}</Text>
+                <Text style={s.featureDetail}>
+                  Results from{" "}
+                  <Text style={s.bold}>{tierInfo.scans_start_year}</Text>
                 </Text>
-                <Text style={styles.featureDetail}>
-                  - Max{" "}
-                  <Text style={styles.bold}>{tierInfo.scans_max_results}</Text>{" "}
+                <Text style={s.featureDetail}>
+                  Max{" "}
+                  <Text style={s.bold}>{tierInfo.scans_max_results}</Text>{" "}
                   results
                 </Text>
-                <Text style={styles.featureDetail}>
-                  - Unlimited number of scans
+                <Text style={s.featureDetail}>
+                  Unlimited number of scans
                 </Text>
               </View>
 
               {/* Alerts */}
-              <View style={styles.featureItem}>
-                <View style={styles.featureHeader}>
-                  <View style={{ marginTop: 2, marginRight: 6 }}>
-                    <Icon name="checkmark-circle" size={17} color="#0AB39C" />
+              <View style={s.featureItem}>
+                <View style={s.featureHeader}>
+                  <View style={[s.checkBadge, isPopular && s.checkBadgePopular]}>
+                    <Check
+                      size={12}
+                      color={isPopular ? c.onGold : c.profit}
+                      strokeWidth={3}
+                    />
                   </View>
-                  <Text style={styles.featureTitle}>No of Alerts</Text>
+                  <Text style={s.featureTitle}>No of Alerts</Text>
                 </View>
-                <Text style={styles.featureDetail}>
-                  - {tierInfo.live_scanner_telegrams}
+                <Text style={s.featureDetail}>
+                  {tierInfo.live_scanner_telegrams}
                 </Text>
               </View>
 
               {/* AI Bot */}
-              <View style={styles.featureItem}>
-                <View style={styles.featureHeader}>
-                  <View style={{ marginTop: 2, marginRight: 6 }}>
-                    <Icon name="checkmark-circle" size={17} color="#0AB39C" />
+              <View style={s.featureItem}>
+                <View style={s.featureHeader}>
+                  <View style={[s.checkBadge, isPopular && s.checkBadgePopular]}>
+                    <Check
+                      size={12}
+                      color={isPopular ? c.onGold : c.profit}
+                      strokeWidth={3}
+                    />
                   </View>
-                  <Text style={styles.featureTitle}>AI Bot</Text>
+                  <Text style={s.featureTitle}>AI Bot</Text>
                 </View>
-                <Text style={styles.featureDetail}>
-                  - {tierInfo.ai_bot_limit} msg/day
+                <Text style={s.featureDetail}>
+                  {tierInfo.ai_bot_limit} msg/day
                 </Text>
               </View>
 
               {/* Historical Charts */}
-              <View style={styles.featureItem}>
-                <View style={styles.featureHeader}>
-                  <View style={{ marginTop: 2, marginRight: 6 }}>
-                    <Icon name="checkmark-circle" size={17} color="#0AB39C" />
+              <View style={s.featureItem}>
+                <View style={s.featureHeader}>
+                  <View style={[s.checkBadge, isPopular && s.checkBadgePopular]}>
+                    <Check
+                      size={12}
+                      color={isPopular ? c.onGold : c.profit}
+                      strokeWidth={3}
+                    />
                   </View>
-                  <Text style={styles.featureTitle}>Historical Charts</Text>
+                  <Text style={s.featureTitle}>Historical Charts</Text>
                 </View>
-                <Text style={styles.featureDetail}>
-                  - {tierInfo.charts_fno}-Onwards
+                <Text style={s.featureDetail}>
+                  {tierInfo.charts_fno}-Onwards
                 </Text>
               </View>
 
               {/* Backtests */}
-              <View style={styles.featureItem}>
-                <View style={styles.featureHeader}>
-                  <View style={{ marginTop: 2, marginRight: 6 }}>
-                    <Icon name="checkmark-circle" size={17} color="#0AB39C" />
+              <View style={s.featureItem}>
+                <View style={s.featureHeader}>
+                  <View style={[s.checkBadge, isPopular && s.checkBadgePopular]}>
+                    <Check
+                      size={12}
+                      color={isPopular ? c.onGold : c.profit}
+                      strokeWidth={3}
+                    />
                   </View>
-                  <Text style={styles.featureTitle}>Backtests</Text>
+                  <Text style={s.featureTitle}>Backtests</Text>
                 </View>
-                <Text style={styles.featureDetail}>
-                  - Unlimited basic backtests
+                <Text style={s.featureDetail}>
+                  Unlimited basic backtests
                 </Text>
-                <Text style={styles.featureDetail}>
-                  - <Text style={styles.bold}>{tierInfo.backtests}</Text>{" "}
+                <Text style={s.featureDetail}>
+                  <Text style={s.bold}>{tierInfo.backtests}</Text>{" "}
                   advanced backtests
                 </Text>
               </View>
@@ -663,23 +705,43 @@ const Pricing = ({ navigation }) => {
 
             {/* Action Button */}
             {tierIndex > 0 && (
-              <View style={styles.buttonContainer}>
+              <View style={s.buttonContainer}>
                 {isSubscribed ? (
-                  <View style={[styles.button, styles.subscribedButton]}>
-                    <Text style={styles.subscribedButtonText}>
-                      Already Subscribed - Expires on {tierExpiry[1]}/
-                      {tierExpiry[2]}/{tierExpiry[3]}
+                  <View style={[s.button, s.subscribedButton]}>
+                    <CheckCircle2 size={16} color={c.success} strokeWidth={2.5} />
+                    <Text style={s.subscribedButtonText}>
+                      Already Subscribed
+                      {tierExpiry
+                        ? ` - Expires on ${tierExpiry[1]}/${tierExpiry[2]}/${tierExpiry[3]}`
+                        : ""}
                     </Text>
                   </View>
-                ) : (
+                ) : isPopular ? (
                   <TouchableOpacity
-                    style={[styles.button, styles.buyButton]}
+                    activeOpacity={0.85}
                     onPress={() => {
                       setBuyingTier(tierInfo);
                       toggleModal();
                     }}
                   >
-                    <Text style={styles.buyButtonText}>Buy Now</Text>
+                    <LinearGradient
+                      colors={[c.goldBright, c.gold, c.goldDeep]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[s.button, s.buyButtonGold]}
+                    >
+                      <Text style={s.buyButtonGoldText}>Buy Now</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[s.button, s.buyButton]}
+                    onPress={() => {
+                      setBuyingTier(tierInfo);
+                      toggleModal();
+                    }}
+                  >
+                    <Text style={s.buyButtonText}>Buy Now</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -691,55 +753,58 @@ const Pricing = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={s.container}>
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={s.scrollView}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Plans & Pricing</Text>
-          <Text style={styles.subtitle}>
+        <View style={s.header}>
+          <View style={s.eyebrowPill}>
+            <Sparkles size={12} color={c.gold} strokeWidth={2.5} />
+            <Text style={s.eyebrowText}>MEMBERSHIP</Text>
+          </View>
+          <Text style={s.title}>Plans & Pricing</Text>
+          <Text style={s.subtitle}>
             Simple pricing. No hidden fees. Advanced features for your business.
           </Text>
 
           {/* Tab Navigation */}
-          <View style={styles.tabContainer}>
+          <View style={s.tabContainer}>
             <TouchableOpacity
-              style={[styles.tab, activeTab === "1" && styles.activeTab]}
+              style={[s.tab, activeTab === "1" && s.activeTab]}
               onPress={() => setActiveTab("1")}
             >
               <Text
                 style={[
-                  styles.tabText,
-                  activeTab === "1" && styles.activeTabText,
+                  s.tabText,
+                  activeTab === "1" && s.activeTabText,
                 ]}
               >
                 Monthly
               </Text>
-              {activeTab === "1" && <View style={styles.triangle} />}
             </TouchableOpacity>
 
             {/* <TouchableOpacity
-        style={[styles.tab, activeTab === "2" && styles.activeTab]}
+        style={[s.tab, activeTab === "2" && s.activeTab]}
               onPress={() => setActiveTab("1")}
       >
         <Text
           style={[
-            styles.tabText,
-            activeTab === "2" && styles.activeTabText,
+            s.tabText,
+            activeTab === "2" && s.activeTabText,
           ]}
         >
           Annually
         </Text>
-        {activeTab === "2" && <View style={styles.triangle} />}
+        {activeTab === "2" && <View style={s.triangle} />}
       </TouchableOpacity> */}
           </View>
         </View>
 
         {/* Pricing Cards */}
-        <View style={[styles.cardsContainer,{    flexDirection: isTablet ? "row" : "column",
-}]}>
+        <View style={[s.cardsContainer, { flexDirection: isTablet ? "row" : "column" }]}>
           {(tiers || []).map((tierInfo, tierIndex) =>
             renderPricingCard(tierInfo, tierIndex)
           )}
@@ -760,240 +825,339 @@ const Pricing = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F7F7F8",
-    paddingTop: 0,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 24,
-    paddingTop: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    marginBottom: 8,
-    color: "#0F172A",
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#64748B",
-    textAlign: "center",
-  },
-  tabContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  tab: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginHorizontal: 10,
-    borderRadius: 20,
-    backgroundColor: "#F1F5F9", // inactive bg
-    alignItems: "center",
-    position: "relative",
-  },
-  activeTab: {
-    backgroundColor: "#1A1A2E", // active bg
-  },
-  tabText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#94A3B8", // inactive text
-  },
-  activeTabText: {
-    color: "#FFFFFF", // active text
-  },
-  triangle: {
-    position: "absolute",
-    bottom: -7, // pushes below tab
-    // left: "50%",
-    // marginLeft: 50,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 9,
-    borderRightWidth: 9,
-    borderTopWidth: 10,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: "#1A1A2E", // same as activeTab background
-  },
-  cardsContainer: {
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  cardWrapper: {
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-  },
-  popularCard: {
-    borderColor: "#B8860B",
-    borderWidth: 2,
-  },
-  popularBadge: {
-    position: "absolute",
-    top: 12,
-    right: -30,
-    backgroundColor: "#B8860B",
-    paddingVertical: 4,
-    paddingHorizontal: 40,
-    transform: [{ rotate: "45deg" }],
-    zIndex: 10,
-  },
-  popularText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  cardBody: {
-    backgroundColor: "#F8FAFC",
-    margin: 8,
-    padding: 16,
-    borderRadius: 12,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  planTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  planPrice: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#0F172A",
-  },
-  priceSubtext: {
-    fontSize: 14,
-    color: "#64748B",
-  },
-  period: {
-    fontSize: 13,
-    color: "#6c757d",
-    marginTop: 8,
-    marginLeft: 2,
-  },
-  imageContainer: {
-    alignItems: "center",
-    marginBottom: 24,
-    height: 80,
-  },
-  planImage: {
-    width: 120,
-    height: 120,
-    resizeMode: "contain",
-  },
-  featuresList: {
-    marginTop: 35,
-    gap: 8,
-  },
-  featureItem: {
-    marginBottom: 8,
-  },
-  featureHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  featureTitle: {
-    fontSize: 15,
-    color: "#000",
-  },
-  featureDetail: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "500",
-    paddingLeft: 24,
-    marginTop: 2,
-  },
-  bold: {
-    fontWeight: "700",
-  },
-  buttonContainer: {
-    marginTop: 1,
-    paddingTop: 16,
-  },
-  button: {
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buyButton: {
-    backgroundColor: "#1A1A2E",
-  },
-  buyButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  subscribedButton: {
-    backgroundColor: "#059669",
-  },
-  subscribedButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 24,
-    width: "85%",
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: "#333",
-  },
-  closeButton: {
-    backgroundColor: "#0d6efd",
-    borderRadius: 6,
-    paddingVertical: 12,
-    marginTop: 16,
-  },
-  closeButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+      paddingTop: 0,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 40,
+    },
+    header: {
+      alignItems: "center",
+      marginBottom: 24,
+      paddingTop: 16,
+    },
+    eyebrowPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      borderRadius: 9999,
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: isDark ? c.goldMuted : c.gold,
+      marginBottom: 12,
+    },
+    eyebrowText: {
+      fontSize: 11,
+      fontWeight: "800",
+      letterSpacing: 1.4,
+      textTransform: "uppercase",
+      color: c.gold,
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: "800",
+      marginBottom: 8,
+      color: c.text,
+      letterSpacing: -0.4,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: c.textSecondary,
+      textAlign: "center",
+      lineHeight: 20,
+      paddingHorizontal: 12,
+    },
+    tabContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      marginTop: 18,
+      marginBottom: 12,
+      backgroundColor: c.surfaceElevated,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 9999,
+      padding: 4,
+    },
+    tab: {
+      paddingVertical: 9,
+      paddingHorizontal: 26,
+      borderRadius: 9999,
+      alignItems: "center",
+      position: "relative",
+    },
+    activeTab: {
+      backgroundColor: c.gold,
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.textMuted,
+    },
+    activeTabText: {
+      color: c.onGold,
+    },
+    triangle: {
+      position: "absolute",
+      bottom: -7,
+      width: 0,
+      height: 0,
+      borderLeftWidth: 9,
+      borderRightWidth: 9,
+      borderTopWidth: 10,
+      borderLeftColor: "transparent",
+      borderRightColor: "transparent",
+      borderTopColor: c.gold,
+    },
+    cardsContainer: {
+      flexWrap: "wrap",
+      gap: 16,
+    },
+    cardWrapper: {
+      marginBottom: 16,
+    },
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 22,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: c.border,
+      elevation: 2,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: isDark ? 0.3 : 0.06,
+      shadowRadius: 16,
+    },
+    popularCard: {
+      borderColor: c.gold,
+      borderWidth: 1.5,
+      shadowColor: c.gold,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: isDark ? 0.35 : 0.22,
+      shadowRadius: 20,
+      elevation: 6,
+    },
+    popularBadge: {
+      position: "absolute",
+      top: 18,
+      right: -34,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingVertical: 5,
+      paddingHorizontal: 40,
+      transform: [{ rotate: "45deg" }],
+      zIndex: 10,
+    },
+    popularText: {
+      color: c.onGold,
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 1,
+    },
+    cardBody: {
+      backgroundColor: c.card,
+      padding: 20,
+      borderRadius: 22,
+    },
+    cardBodyPopular: {
+      backgroundColor: c.goldLight,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    planTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    planTitle: {
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1.4,
+      textTransform: "uppercase",
+      color: c.textSecondary,
+    },
+    planTitlePopular: {
+      color: c.gold,
+    },
+    priceRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+    },
+    planPrice: {
+      fontSize: 26,
+      fontWeight: "800",
+      color: c.text,
+      fontVariant: ["tabular-nums"],
+      letterSpacing: -0.5,
+    },
+    planPricePopular: {
+      color: c.gold,
+    },
+    priceSubtext: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: c.textMuted,
+    },
+    period: {
+      fontSize: 13,
+      color: c.textMuted,
+      marginTop: 8,
+      marginLeft: 2,
+    },
+    imageContainer: {
+      alignItems: "center",
+      marginTop: 8,
+      marginBottom: 16,
+      height: 110,
+    },
+    planImage: {
+      width: 120,
+      height: 120,
+      resizeMode: "contain",
+    },
+    featuresList: {
+      marginTop: 8,
+      gap: 14,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: c.borderLight,
+    },
+    featureItem: {
+      marginBottom: 2,
+    },
+    featureHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    checkBadge: {
+      width: 20,
+      height: 20,
+      borderRadius: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.profitBg,
+    },
+    checkBadgePopular: {
+      backgroundColor: c.gold,
+    },
+    featureTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.text,
+    },
+    featureDetail: {
+      fontSize: 12.5,
+      color: c.textSecondary,
+      fontWeight: "500",
+      paddingLeft: 28,
+      marginTop: 4,
+      lineHeight: 17,
+    },
+    bold: {
+      fontWeight: "800",
+      color: c.text,
+    },
+    buttonContainer: {
+      marginTop: 4,
+      paddingTop: 20,
+    },
+    button: {
+      borderRadius: 14,
+      paddingVertical: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    buyButton: {
+      backgroundColor: c.surface,
+      borderWidth: 1.5,
+      borderColor: c.border,
+    },
+    buyButtonText: {
+      color: c.text,
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    buyButtonGold: {
+      shadowColor: c.gold,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    buyButtonGoldText: {
+      color: c.onGold,
+      fontSize: 15,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+    },
+    subscribedButton: {
+      backgroundColor: c.profitBg,
+      borderWidth: 1,
+      borderColor: c.success,
+    },
+    subscribedButtonText: {
+      color: c.success,
+      fontSize: 13,
+      fontWeight: "700",
+      textAlign: "center",
+      flexShrink: 1,
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: c.overlay,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: {
+      backgroundColor: c.card,
+      borderRadius: 20,
+      padding: 24,
+      width: "85%",
+      maxWidth: 400,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      marginBottom: 16,
+      textAlign: "center",
+      color: c.text,
+    },
+    modalText: {
+      fontSize: 16,
+      marginBottom: 8,
+      color: c.textSecondary,
+    },
+    closeButton: {
+      backgroundColor: c.gold,
+      borderRadius: 12,
+      paddingVertical: 12,
+      marginTop: 16,
+    },
+    closeButtonText: {
+      color: c.onGold,
+      fontSize: 16,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+  });
 
 export default Pricing;

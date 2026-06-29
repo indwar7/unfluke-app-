@@ -12,12 +12,25 @@ import {
     Share,
     TextInput,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import axios from "axios";
-import { ChevronRight } from "lucide-react-native";
+import {
+    ChevronRight,
+    ChevronLeft,
+    Plus,
+    Search,
+    X,
+    Pencil,
+    Eye,
+    Trash2,
+    FileText,
+    TrendingUp,
+    TrendingDown,
+    CalendarDays,
+    Tag,
+} from "lucide-react-native";
 import {
     fetchStrategies,
     fetchBasicStrategyDetails,
@@ -28,10 +41,14 @@ import {
 import { setEditStrategy, clearValues } from "../../redux/slices/basicBacktester/reducer";
 import { deepCopy } from "../UnflukeMain/Utils/common_vars";
 import { Config } from "../../helpers/config";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const BasicBacktesterHomePage = () => {
     const router = useRouter();
     const dispatch = useDispatch();
+    const { colors: c, isDark } = useTheme();
+    const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
 
     const [savedStrategies, setSavedStrategies] = useState<any[]>([]);
     const [listStrategies, setListStrategies] = useState<any[]>([]);
@@ -198,26 +215,26 @@ const BasicBacktesterHomePage = () => {
         const createdOn = item.createdOn ?? "—";
 
         return (
-            <View style={styles.stratCard}>
+            <View style={s.stratCard}>
                 {/* Card Header — Name + Actions */}
-                <View style={styles.stratCardHeader}>
+                <View style={s.stratCardHeader}>
                     <TouchableOpacity
                         style={{ flex: 1 }}
                         onPress={() => handleView(item)}
                     >
-                        <Text style={styles.stratName} numberOfLines={2}>
+                        <Text style={s.stratName} numberOfLines={2}>
                             {item.name ?? item.strategyName ?? "—"}
                         </Text>
                     </TouchableOpacity>
-                    <View style={styles.stratActions}>
-                        <TouchableOpacity style={styles.actionBtn} onPress={() => handleEdit(item)}>
-                            <Ionicons name="pencil" size={15} color="#2962FF" />
+                    <View style={s.stratActions}>
+                        <TouchableOpacity style={s.actionBtn} onPress={() => handleEdit(item)}>
+                            <Pencil size={15} color={c.gold} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionBtn} onPress={() => handleView(item)}>
-                            <Ionicons name="eye" size={15} color="#089981" />
+                        <TouchableOpacity style={s.actionBtn} onPress={() => handleView(item)}>
+                            <Eye size={15} color={c.profit} />
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.actionBtn}
+                            style={[s.actionBtn, s.actionBtnDanger]}
                             onPress={() =>
                                 handleDeleteStrategy(
                                     item._id,
@@ -225,58 +242,76 @@ const BasicBacktesterHomePage = () => {
                                 )
                             }
                         >
-                            <Ionicons name="trash" size={15} color="#F23645" />
+                            <Trash2 size={15} color={c.loss} />
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* Metrics Row */}
-                <View style={styles.metricsRow}>
-                    <View style={styles.metricItem}>
-                        <Text style={styles.metricLabel}>Profit</Text>
-                        <Text style={[styles.metricValue, { color: isPositive ? "#089981" : "#F23645" }]}>
+                <View style={s.metricsRow}>
+                    <View style={s.metricItem}>
+                        <View style={s.metricLabelRow}>
+                            {isPositive ? (
+                                <TrendingUp size={12} color={c.profit} />
+                            ) : (
+                                <TrendingDown size={12} color={c.loss} />
+                            )}
+                            <Text style={s.metricLabel}>Profit</Text>
+                        </View>
+                        <Text style={[s.metricValue, { color: isPositive ? c.profit : c.loss }]}>
                             {profit != null ? `₹${Number(profit).toFixed(0)}` : "—"}
                         </Text>
                     </View>
-                    <View style={styles.metricItem}>
-                        <Text style={styles.metricLabel}>Max Drawdown</Text>
-                        <Text style={[styles.metricValue, { color: "#F23645" }]}>
+                    <View style={s.metricItem}>
+                        <View style={s.metricLabelRow}>
+                            <TrendingDown size={12} color={c.loss} />
+                            <Text style={s.metricLabel}>Max Drawdown</Text>
+                        </View>
+                        <Text style={[s.metricValue, { color: c.loss }]}>
                             {drawdown != null ? `₹${Number(drawdown).toFixed(0)}` : "—"}
                         </Text>
                     </View>
                 </View>
-                <View style={styles.metricsRow}>
-                    <View style={styles.metricItem}>
-                        <Text style={styles.metricLabel}>Created On</Text>
-                        <Text style={styles.metricValue}>{createdOn}</Text>
+                <View style={s.metricsRow}>
+                    <View style={s.metricItem}>
+                        <View style={s.metricLabelRow}>
+                            <CalendarDays size={12} color={c.textMuted} />
+                            <Text style={s.metricLabel}>Created On</Text>
+                        </View>
+                        <Text style={s.metricValue}>{createdOn}</Text>
                     </View>
-                    <View style={styles.metricItem}>
-                        <Text style={styles.metricLabel}>Selling Price</Text>
-                        <Text style={[styles.metricValue, { color: "#2962FF" }]}>
+                    <View style={s.metricItem}>
+                        <View style={s.metricLabelRow}>
+                            <Tag size={12} color={c.gold} />
+                            <Text style={s.metricLabel}>Selling Price</Text>
+                        </View>
+                        <Text style={[s.metricValue, { color: c.gold }]}>
                             {sellingPrice != null ? `₹${Number(sellingPrice).toFixed(0)}` : "—"}
                         </Text>
                     </View>
                 </View>
 
                 {/* Toggles Row */}
-                <View style={styles.togglesRow}>
-                    <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>Private</Text>
+                <View style={s.togglesRow}>
+                    <View style={s.toggleItem}>
+                        <Text style={s.toggleLabel}>Private</Text>
                         <Switch
                             value={!!item.isPrivate}
                             onValueChange={(val) => handlePrivate(index, val)}
-                            trackColor={{ false: "#d1d5db", true: "#2962FF" }}
-                            thumbColor="#fff"
+                            trackColor={{ false: c.border, true: c.gold }}
+                            thumbColor={isDark ? c.surface : c.white}
+                            ios_backgroundColor={c.border}
                         />
                     </View>
-                    <View style={styles.toggleItem}>
-                        <Text style={styles.toggleLabel}>Monetize</Text>
+                    <View style={s.toggleItem}>
+                        <Text style={s.toggleLabel}>Monetize</Text>
                         <Switch
                             value={!!item.monetize}
                             disabled={item.isPrivate}
                             onValueChange={(val) => handleMonetize(index, val)}
-                            trackColor={{ false: "#d1d5db", true: "#2962FF" }}
-                            thumbColor="#fff"
+                            trackColor={{ false: c.border, true: c.gold }}
+                            thumbColor={isDark ? c.surface : c.white}
+                            ios_backgroundColor={c.border}
                         />
                     </View>
                 </View>
@@ -295,31 +330,31 @@ const BasicBacktesterHomePage = () => {
         const pages: number[] = [];
         for (let i = 1; i <= totalPages; i++) pages.push(i);
         return (
-            <View style={styles.paginationContainer}>
+            <View style={s.paginationContainer}>
                 <TouchableOpacity
-                    style={[styles.pageBtn, currentPage === 1 && styles.pageBtnDisabled]}
+                    style={[s.pageBtn, currentPage === 1 && s.pageBtnDisabled]}
                     onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                 >
-                    <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#4C525E" : "#787B86"} />
+                    <ChevronLeft size={16} color={currentPage === 1 ? c.textMuted : c.textSecondary} />
                 </TouchableOpacity>
                 {pages.map((p) => (
                     <TouchableOpacity
                         key={p}
-                        style={[styles.pageBtn, currentPage === p && styles.pageBtnActive]}
+                        style={[s.pageBtn, currentPage === p && s.pageBtnActive]}
                         onPress={() => setCurrentPage(p)}
                     >
-                        <Text style={[styles.pageBtnText, currentPage === p && styles.pageBtnTextActive]}>
+                        <Text style={[s.pageBtnText, currentPage === p && s.pageBtnTextActive]}>
                             {p}
                         </Text>
                     </TouchableOpacity>
                 ))}
                 <TouchableOpacity
-                    style={[styles.pageBtn, currentPage === totalPages && styles.pageBtnDisabled]}
+                    style={[s.pageBtn, currentPage === totalPages && s.pageBtnDisabled]}
                     onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                 >
-                    <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#4C525E" : "#787B86"} />
+                    <ChevronRight size={16} color={currentPage === totalPages ? c.textMuted : c.textSecondary} />
                 </TouchableOpacity>
             </View>
         );
@@ -327,9 +362,11 @@ const BasicBacktesterHomePage = () => {
 
     const StrategyList = ({ strategies }: { strategies: any[] }) => (
         strategies.length === 0 ? (
-            <View style={styles.emptyBox}>
-                <Ionicons name="document-outline" size={36} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No strategies found.</Text>
+            <View style={s.emptyBox}>
+                <View style={s.emptyIconWrap}>
+                    <FileText size={30} color={c.gold} />
+                </View>
+                <Text style={s.emptyText}>No strategies found.</Text>
             </View>
         ) : (
             <View>
@@ -343,70 +380,71 @@ const BasicBacktesterHomePage = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={s.container}>
             {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Backtester Home</Text>
-                <View style={styles.breadcrumb}>
-                    <Text style={styles.breadcrumbText}>Pages</Text>
-                    <ChevronRight size={13} color="#4C525E" />
-                    <Text style={styles.breadcrumbText}>Basic Backtester</Text>
+            <View style={s.header}>
+                <Text style={s.headerTitle}>Backtester Home</Text>
+                <View style={s.breadcrumb}>
+                    <Text style={s.breadcrumbText}>Pages</Text>
+                    <ChevronRight size={13} color={c.textMuted} />
+                    <Text style={s.breadcrumbAccent}>Basic Backtester</Text>
                 </View>
             </View>
 
             <ScrollView
-                style={styles.scrollView}
+                style={s.scrollView}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={s.scrollContent}
             >
-                <View style={styles.card}>
+                <View style={s.card}>
                     {/* Card Header */}
-                    <View style={styles.cardHeader}>
-                        <Text style={styles.cardTitle}>Your saved strategies</Text>
+                    <View style={s.cardHeader}>
+                        <Text style={s.cardTitle}>Your saved strategies</Text>
                         <TouchableOpacity
-                            style={styles.createButton}
+                            style={s.createButton}
+                            activeOpacity={0.85}
                             onPress={() => {
                                 dispatch(clearValues());
                                 requestAnimationFrame(() => router.push("/basic-backtester"));
                             }}
                         >
-                            <Ionicons name="add" size={15} color="white" />
-                            <Text style={styles.createButtonText}>Create new</Text>
+                            <Plus size={15} color={c.onGold} />
+                            <Text style={s.createButtonText}>Create new</Text>
                         </TouchableOpacity>
                     </View>
 
                     {/* Search Bar */}
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search" size={16} color="#4C525E" style={{ marginRight: 8 }} />
+                    <View style={s.searchContainer}>
+                        <Search size={16} color={c.textMuted} style={{ marginRight: 8 }} />
                         <TextInput
-                            style={styles.searchInput}
+                            style={s.searchInput}
                             placeholder="Search strategies..."
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={c.textMuted}
                             value={searchQuery}
                             onChangeText={(text) => { setSearchQuery(text); setCurrentPage(1); }}
                         />
                         {searchQuery.length > 0 && (
                             <TouchableOpacity onPress={() => { setSearchQuery(""); setCurrentPage(1); }}>
-                                <Ionicons name="close-circle" size={18} color="#4C525E" />
+                                <X size={18} color={c.textMuted} />
                             </TouchableOpacity>
                         )}
                     </View>
 
                     {/* Tabs */}
-                    <View style={styles.tabContainer}>
+                    <View style={s.tabContainer}>
                         {[
                             { id: "1", label: "Your strategies", type: "all" },
                             { id: "2", label: "Purchased", type: "purchased" },
                         ].map((tab) => (
                             <TouchableOpacity
                                 key={tab.id}
-                                style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+                                style={[s.tab, activeTab === tab.id && s.activeTab]}
                                 onPress={() => toggleTab(tab.id, tab.type)}
                             >
                                 <Text
                                     style={[
-                                        styles.tabText,
-                                        activeTab === tab.id && styles.activeTabText,
+                                        s.tabText,
+                                        activeTab === tab.id && s.activeTabText,
                                     ]}
                                 >
                                     {tab.label}
@@ -416,11 +454,11 @@ const BasicBacktesterHomePage = () => {
                     </View>
 
                     {/* Content */}
-                    <View style={styles.content}>
+                    <View style={s.content}>
                         {loading ? (
-                            <View style={styles.loaderBox}>
-                                <ActivityIndicator size="large" color="#2962FF" />
-                                <Text style={styles.loaderText}>Loading strategies...</Text>
+                            <View style={s.loaderBox}>
+                                <ActivityIndicator size="large" color={c.gold} />
+                                <Text style={s.loaderText}>Loading strategies...</Text>
                             </View>
                         ) : (
                             <StrategyList strategies={paginatedStrategies} />
@@ -432,187 +470,225 @@ const BasicBacktesterHomePage = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#131722",
+        backgroundColor: c.background,
     },
 
     /* ── Header ── */
     header: {
-        backgroundColor: "#1E222D",
-        paddingHorizontal: 16,
-        paddingVertical: 14,
+        backgroundColor: c.headerBg,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: "rgba(255,255,255,0.06)",
-        elevation: 3,
+        borderBottomColor: c.border,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 3,
+        shadowOpacity: isDark ? 0.3 : 0.04,
+        shadowRadius: 4,
+        elevation: 2,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#D1D4DC",
+        fontSize: 20,
+        fontWeight: "800",
+        letterSpacing: -0.3,
+        color: c.text,
     },
     breadcrumb: {
         flexDirection: "row",
         alignItems: "center",
-        marginTop: 3,
+        marginTop: 4,
         gap: 4,
     },
-    breadcrumbText: { fontSize: 12, color: "#4C525E" },
+    breadcrumbText: { fontSize: 12, fontWeight: "500", color: c.textMuted },
+    breadcrumbAccent: { fontSize: 12, fontWeight: "700", color: c.gold },
 
     /* ── Scroll ── */
     scrollView: { flex: 1 },
-    scrollContent: { padding: 12, paddingBottom: 30 },
+    scrollContent: { padding: 16, paddingBottom: 36 },
 
     /* ── Card ── */
     card: {
-        backgroundColor: "#1E222D",
-        borderRadius: 12,
+        backgroundColor: c.card,
+        borderRadius: 20,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
-        elevation: 1,
+        borderColor: c.border,
         overflow: "hidden",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: isDark ? 0.35 : 0.06,
+        shadowRadius: 14,
+        elevation: 3,
     },
     cardHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: 16,
+        paddingHorizontal: 18,
+        paddingVertical: 18,
         borderBottomWidth: 1,
-        borderBottomColor: "rgba(255,255,255,0.06)",
+        borderBottomColor: c.borderLight,
     },
-    cardTitle: { fontSize: 15, fontWeight: "600", color: "#D1D4DC" },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        letterSpacing: -0.2,
+        color: c.text,
+        flex: 1,
+    },
     createButton: {
-        backgroundColor: "#2962FF",
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderRadius: 10,
+        backgroundColor: c.gold,
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderRadius: 12,
         flexDirection: "row",
         alignItems: "center",
-        gap: 4,
+        gap: 5,
+        shadowColor: c.goldDeep,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 4,
     },
-    createButtonText: { color: "white", fontSize: 13, fontWeight: "600" },
+    createButtonText: { color: c.onGold, fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
 
     /* ── Search ── */
     searchContainer: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#363A45",
-        borderRadius: 10,
-        marginHorizontal: 16,
-        marginTop: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        backgroundColor: c.inputBg,
+        borderRadius: 14,
+        marginHorizontal: 18,
+        marginTop: 16,
+        paddingHorizontal: 14,
+        paddingVertical: 11,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: c.inputBorder,
     },
     searchInput: {
         flex: 1,
-        fontSize: 13,
-        color: "#D1D4DC",
+        fontSize: 14,
+        fontWeight: "500",
+        color: c.text,
         padding: 0,
     },
 
     /* ── Tabs ── */
     tabContainer: {
         flexDirection: "row",
-        backgroundColor: "#2A2E39",
-        margin: 16,
-        borderRadius: 10,
+        backgroundColor: c.surfaceElevated,
+        marginHorizontal: 18,
+        marginTop: 16,
+        borderRadius: 14,
         padding: 4,
+        borderWidth: 1,
+        borderColor: c.borderLight,
     },
     tab: {
         flex: 1,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingVertical: 10,
+        borderRadius: 10,
         alignItems: "center",
     },
     activeTab: {
-        backgroundColor: "#1E222D",
-        elevation: 0,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        backgroundColor: c.gold,
+        shadowColor: c.goldDeep,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
     },
-    tabText: { fontSize: 13, fontWeight: "600", color: "#4C525E" },
-    activeTabText: { color: "#D1D4DC" },
+    tabText: { fontSize: 13, fontWeight: "700", color: c.textSecondary },
+    activeTabText: { color: c.onGold },
 
-    content: { padding: 16 },
+    content: { padding: 18 },
 
     /* ── Strategy Cards ── */
     stratCard: {
-        backgroundColor: "#1E222D",
-        borderRadius: 12,
+        backgroundColor: c.surface,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
-        padding: 14,
-        marginBottom: 10,
-        elevation: 1,
+        borderColor: c.border,
+        padding: 16,
+        marginBottom: 12,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.25 : 0.04,
+        shadowRadius: 8,
+        elevation: 2,
     },
     stratCardHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        marginBottom: 12,
+        marginBottom: 14,
     },
     stratName: {
-        fontSize: 14,
-        fontWeight: "700",
-        color: "#2962FF",
+        fontSize: 15,
+        fontWeight: "800",
+        letterSpacing: -0.2,
+        color: c.text,
         flex: 1,
         marginRight: 8,
     },
     stratActions: {
         flexDirection: "row",
-        gap: 4,
+        gap: 6,
     },
     actionBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 6,
-        backgroundColor: "#2A2E39",
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        backgroundColor: c.surfaceElevated,
+        borderWidth: 1,
+        borderColor: c.borderLight,
         alignItems: "center",
         justifyContent: "center",
     },
+    actionBtnDanger: {
+        backgroundColor: c.lossBg,
+        borderColor: c.lossBg,
+    },
     metricsRow: {
         flexDirection: "row",
-        gap: 8,
-        marginBottom: 12,
+        gap: 10,
+        marginBottom: 10,
     },
     metricItem: {
         flex: 1,
-        backgroundColor: "#2A2E39",
-        borderRadius: 8,
-        padding: 10,
+        backgroundColor: c.surfaceElevated,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: c.borderLight,
+        padding: 12,
+    },
+    metricLabelRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        marginBottom: 6,
     },
     metricLabel: {
         fontSize: 10,
-        fontWeight: "600",
-        color: "#4C525E",
+        fontWeight: "700",
+        letterSpacing: 0.6,
+        color: c.textMuted,
         textTransform: "uppercase",
-        marginBottom: 4,
     },
     metricValue: {
-        fontSize: 13,
-        fontWeight: "700",
-        color: "#D1D4DC",
+        fontSize: 15,
+        fontWeight: "800",
+        color: c.text,
         fontVariant: ["tabular-nums"] as any,
     },
     togglesRow: {
         flexDirection: "row",
-        gap: 16,
+        gap: 20,
         borderTopWidth: 1,
-        borderTopColor: "rgba(255,255,255,0.06)",
-        paddingTop: 10,
+        borderTopColor: c.borderLight,
+        paddingTop: 14,
+        marginTop: 4,
     },
     toggleItem: {
         flexDirection: "row",
@@ -621,45 +697,64 @@ const styles = StyleSheet.create({
     },
     toggleLabel: {
         fontSize: 12,
-        fontWeight: "600",
-        color: "#787B86",
+        fontWeight: "700",
+        color: c.textSecondary,
     },
 
     /* ── States ── */
-    loaderBox: { paddingVertical: 40, alignItems: "center", gap: 12 },
-    loaderText: { fontSize: 14, color: "#787B86" },
-    emptyBox: { paddingVertical: 40, alignItems: "center", gap: 12 },
-    emptyText: { fontSize: 15, color: "#787B86" },
+    loaderBox: { paddingVertical: 48, alignItems: "center", gap: 14 },
+    loaderText: { fontSize: 14, fontWeight: "500", color: c.textSecondary },
+    emptyBox: { paddingVertical: 48, alignItems: "center", gap: 14 },
+    emptyIconWrap: {
+        width: 64,
+        height: 64,
+        borderRadius: 20,
+        backgroundColor: c.goldLight,
+        borderWidth: 1,
+        borderColor: c.border,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    emptyText: { fontSize: 15, fontWeight: "600", color: c.textSecondary },
 
     /* ── Pagination ── */
     paginationContainer: {
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        marginTop: 16,
-        gap: 6,
+        marginTop: 18,
+        gap: 8,
     },
     pageBtn: {
-        width: 34,
-        height: 34,
-        borderRadius: 8,
-        backgroundColor: "#2A2E39",
+        minWidth: 36,
+        height: 36,
+        paddingHorizontal: 8,
+        borderRadius: 10,
+        backgroundColor: c.surfaceElevated,
+        borderWidth: 1,
+        borderColor: c.border,
         alignItems: "center",
         justifyContent: "center",
     },
     pageBtnActive: {
-        backgroundColor: "#2962FF",
+        backgroundColor: c.gold,
+        borderColor: c.gold,
+        shadowColor: c.goldDeep,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 3,
     },
     pageBtnDisabled: {
         opacity: 0.4,
     },
     pageBtnText: {
         fontSize: 13,
-        fontWeight: "600",
-        color: "#787B86",
+        fontWeight: "700",
+        color: c.textSecondary,
     },
     pageBtnTextActive: {
-        color: "#FFFFFF",
+        color: c.onGold,
     },
 });
 

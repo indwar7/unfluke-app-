@@ -19,10 +19,12 @@ import { useFormik } from "formik";
 import { createSelector } from "reselect";
 import { router, Stack } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useOnboarding } from "@/redux/contextHelper";
-import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 // Redux actions
 import {
@@ -34,7 +36,9 @@ import Toast from "react-native-toast-message";
 
 const logoLight = require("../assets/images/unfluke/UNFLUKE -05-NEW.png");
 
-const c = Colors.light;
+// Fixed near-black header tone so the brand panel stays dark in both themes
+// (in dark mode c.primary is gold, so we use a dedicated dark value here).
+const HEADER_BG = "#0A0B0E";
 
 interface LoginState {
   user: any;
@@ -46,6 +50,9 @@ interface LoginState {
 }
 
 const UnflukeLogin = () => {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
+
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<any>();
@@ -140,46 +147,48 @@ const UnflukeLogin = () => {
       <Stack.Screen options={{ headerShown: false, title: "" }} />
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
-        style={styles.container}
+        style={s.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={s.scrollContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Dark Header */}
-          <View style={[styles.darkHeader, { paddingTop: insets.top + 40 }]}>
+          <View style={[s.darkHeader, { paddingTop: insets.top + 40 }]}>
+            <View style={s.headerGlow} />
             <Image
               source={logoLight}
-              style={styles.logo}
+              style={[s.logo, !isDark && { tintColor: "#fff" }]}
               resizeMode="contain"
             />
-            <Text style={styles.tagline}>
+            <Text style={s.tagline}>
               Backtest &middot; Analyse &middot; Trade smarter
             </Text>
           </View>
 
-          {/* White Form Card */}
-          <View style={styles.card}>
-            <View style={styles.cardBody}>
+          {/* Form Card */}
+          <View style={s.card}>
+            <View style={s.cardHandle} />
+            <View style={s.cardBody}>
               {/* Welcome */}
-              <Text style={styles.welcomeTitle}>Welcome back</Text>
-              <Text style={styles.welcomeSubtitle}>
+              <Text style={s.welcomeTitle}>Welcome back</Text>
+              <Text style={s.welcomeSubtitle}>
                 Sign in to continue to Unfluke
               </Text>
 
               {/* Phone Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Mobile number</Text>
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Mobile number</Text>
                 <View style={[
-                  styles.inputRow,
-                  validation.touched.phone && validation.errors.phone && styles.inputError,
+                  s.inputRow,
+                  validation.touched.phone && validation.errors.phone && s.inputError,
                 ]}>
-                  <Text style={styles.countryCode}>+91</Text>
-                  <View style={styles.inputDivider} />
+                  <Text style={s.countryCode}>+91</Text>
+                  <View style={s.inputDivider} />
                   <TextInput
-                    style={styles.input}
+                    style={s.input}
                     placeholder="98765 43210"
                     placeholderTextColor={c.textMuted}
                     keyboardType="numeric"
@@ -193,21 +202,21 @@ const UnflukeLogin = () => {
                   />
                 </View>
                 {validation.touched.phone && validation.errors.phone ? (
-                  <Text style={styles.errorText}>
+                  <Text style={s.errorText}>
                     {validation.errors.phone}
                   </Text>
                 ) : null}
               </View>
 
               {/* Password Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Password</Text>
                 <View style={[
-                  styles.inputRow,
-                  validation.touched.password && validation.errors.password && styles.inputError,
+                  s.inputRow,
+                  validation.touched.password && validation.errors.password && s.inputError,
                 ]}>
                   <TextInput
-                    style={[styles.input, { flex: 1 }]}
+                    style={[s.input, { flex: 1 }]}
                     placeholder="Enter Password"
                     placeholderTextColor={c.textMuted}
                     secureTextEntry={!passwordShow}
@@ -217,7 +226,7 @@ const UnflukeLogin = () => {
                   />
                   <TouchableOpacity
                     onPress={() => setPasswordShow(!passwordShow)}
-                    style={styles.eyeBtn}
+                    style={s.eyeBtn}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     {passwordShow ? (
@@ -228,7 +237,7 @@ const UnflukeLogin = () => {
                   </TouchableOpacity>
                 </View>
                 {validation.touched.password && validation.errors.password ? (
-                  <Text style={styles.errorText}>
+                  <Text style={s.errorText}>
                     {validation.errors.password}
                   </Text>
                 ) : null}
@@ -237,43 +246,50 @@ const UnflukeLogin = () => {
               {/* Forgot Password */}
               <TouchableOpacity
                 onPress={() => router.push("/forgot-password" as any)}
-                style={styles.forgotBtn}
+                style={s.forgotBtn}
               >
-                <Text style={styles.forgotText}>Forgot password?</Text>
+                <Text style={s.forgotText}>Forgot password?</Text>
               </TouchableOpacity>
 
               {/* Sign In Button */}
               <TouchableOpacity
-                style={[styles.button, isLoading && styles.buttonDisabled]}
+                style={[s.button, isLoading && s.buttonDisabled]}
                 onPress={() => {
                   setIsLoading(true);
                   validation.handleSubmit();
                 }}
                 disabled={isLoading}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>Sign In</Text>
-                )}
+                <LinearGradient
+                  colors={[c.goldBright, c.gold, c.goldDeep]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={s.buttonGradient}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color={c.onGold} />
+                  ) : (
+                    <Text style={s.buttonText}>Sign In</Text>
+                  )}
+                </LinearGradient>
               </TouchableOpacity>
             </View>
 
             {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>New to Unfluke?</Text>
-              <View style={styles.dividerLine} />
+            <View style={s.dividerRow}>
+              <View style={s.dividerLine} />
+              <Text style={s.dividerText}>New to Unfluke?</Text>
+              <View style={s.dividerLine} />
             </View>
 
             {/* Signup Link */}
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
+            <View style={s.signupContainer}>
+              <Text style={s.signupText}>Don't have an account? </Text>
               <TouchableOpacity
                 onPress={() => router.push("/registerpage" as any)}
               >
-                <Text style={styles.signupLink}>Sign up</Text>
+                <Text style={s.signupLink}>Sign up</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -284,175 +300,205 @@ const UnflukeLogin = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: c.primary,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: HEADER_BG,
+    },
+    scrollContainer: {
+      flexGrow: 1,
+    },
 
-  // Dark header
-  darkHeader: {
-    backgroundColor: c.primary,
-    paddingBottom: 60,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logo: {
-    width: 180,
-    height: 60,
-    tintColor: "#fff",
-  },
-  tagline: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.5)",
-    marginTop: 6,
-    letterSpacing: 0.5,
-  },
+    // Dark header
+    darkHeader: {
+      backgroundColor: HEADER_BG,
+      paddingBottom: 64,
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+    },
+    headerGlow: {
+      position: "absolute",
+      top: -120,
+      width: 320,
+      height: 320,
+      borderRadius: 160,
+      backgroundColor: c.gold,
+      opacity: 0.1,
+    },
+    logo: {
+      width: 180,
+      height: 60,
+    },
+    tagline: {
+      fontSize: 13,
+      color: "rgba(255,255,255,0.55)",
+      marginTop: 8,
+      letterSpacing: 0.5,
+    },
 
-  // White card
-  card: {
-    flex: 1,
-    backgroundColor: c.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    marginTop: -24,
-    paddingTop: 8,
-  },
-  cardBody: {
-    paddingHorizontal: 24,
-    paddingTop: 28,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: c.text,
-    marginBottom: 4,
-  },
-  welcomeSubtitle: {
-    fontSize: 14,
-    color: c.textSecondary,
-    marginBottom: 28,
-  },
+    // Form card
+    card: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      marginTop: -24,
+      paddingTop: 8,
+      borderTopWidth: isDark ? 1 : 0,
+      borderColor: c.border,
+    },
+    cardHandle: {
+      alignSelf: "center",
+      width: 44,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: c.border,
+      marginTop: 12,
+      marginBottom: 4,
+    },
+    cardBody: {
+      paddingHorizontal: 24,
+      paddingTop: 22,
+    },
+    welcomeTitle: {
+      fontSize: 26,
+      fontWeight: "800",
+      color: c.text,
+      letterSpacing: -0.4,
+      marginBottom: 6,
+    },
+    welcomeSubtitle: {
+      fontSize: 14,
+      color: c.textSecondary,
+      marginBottom: 28,
+    },
 
-  // Form
-  inputGroup: {
-    marginBottom: 18,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: c.textSecondary,
-    marginBottom: 8,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: c.inputBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: c.inputBorder,
-    paddingHorizontal: 14,
-    height: 52,
-  },
-  countryCode: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: c.textSecondary,
-    marginRight: 10,
-  },
-  inputDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: c.border,
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: c.text,
-    fontWeight: "500",
-    padding: 0,
-  },
-  inputError: {
-    borderColor: c.error,
-    borderWidth: 1.5,
-  },
-  eyeBtn: {
-    padding: 6,
-  },
-  forgotBtn: {
-    alignSelf: "flex-end",
-    marginBottom: 24,
-    marginTop: -6,
-  },
-  forgotText: {
-    color: c.loss,
-    fontSize: 13,
-    fontWeight: "600",
-  },
+    // Form
+    inputGroup: {
+      marginBottom: 18,
+    },
+    label: {
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      color: c.textMuted,
+      marginBottom: 8,
+    },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.inputBg,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      paddingHorizontal: 16,
+      height: 54,
+    },
+    countryCode: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: c.text,
+      marginRight: 10,
+    },
+    inputDivider: {
+      width: 1,
+      height: 24,
+      backgroundColor: c.border,
+      marginRight: 12,
+    },
+    input: {
+      flex: 1,
+      fontSize: 15,
+      color: c.text,
+      fontWeight: "500",
+      padding: 0,
+    },
+    inputError: {
+      borderColor: c.error,
+      borderWidth: 1.5,
+    },
+    eyeBtn: {
+      padding: 6,
+    },
+    forgotBtn: {
+      alignSelf: "flex-end",
+      marginBottom: 24,
+      marginTop: -4,
+    },
+    forgotText: {
+      color: c.gold,
+      fontSize: 13,
+      fontWeight: "700",
+    },
 
-  // Button
-  button: {
-    backgroundColor: c.primary,
-    borderRadius: 14,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  errorText: {
-    color: c.error,
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: "500",
-  },
+    // Button
+    button: {
+      borderRadius: 16,
+      overflow: "hidden",
+    },
+    buttonGradient: {
+      height: 54,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 16,
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+    buttonText: {
+      color: c.onGold,
+      fontSize: 16,
+      fontWeight: "800",
+      letterSpacing: 0.4,
+    },
+    errorText: {
+      color: c.error,
+      fontSize: 12,
+      marginTop: 6,
+      fontWeight: "600",
+    },
 
-  // Divider
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: c.border,
-  },
-  dividerText: {
-    fontSize: 12,
-    color: c.textMuted,
-    paddingHorizontal: 12,
-  },
+    // Divider
+    dividerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 24,
+      marginTop: 28,
+      marginBottom: 16,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: c.border,
+    },
+    dividerText: {
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      color: c.textMuted,
+      paddingHorizontal: 12,
+    },
 
-  // Signup
-  signupContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 32,
-  },
-  signupText: {
-    fontSize: 14,
-    color: c.textSecondary,
-  },
-  signupLink: {
-    fontSize: 14,
-    color: c.profit,
-    fontWeight: "700",
-  },
-});
+    // Signup
+    signupContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingBottom: 36,
+    },
+    signupText: {
+      fontSize: 14,
+      color: c.textSecondary,
+    },
+    signupLink: {
+      fontSize: 14,
+      color: c.gold,
+      fontWeight: "800",
+    },
+  });
 
 export default UnflukeLogin;

@@ -13,8 +13,26 @@ import {
     Pressable,
     useWindowDimensions,
 } from "react-native";
-import { X } from "lucide-react-native";
+import {
+    X,
+    LayoutGrid,
+    Bot,
+    BarChart3,
+    LineChart,
+    Target,
+    Search,
+    FlaskConical,
+    Timer,
+    Activity,
+    Zap,
+    User,
+    Gem,
+    Wallet,
+    ChevronRight,
+} from "lucide-react-native";
 import { router } from "expo-router";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 interface SidebarMenuProps {
     visible: boolean;
@@ -24,26 +42,28 @@ interface SidebarMenuProps {
 const STATUS_BAR_HEIGHT = Platform.OS === "android" ? (StatusBar.currentHeight || 24) : 44;
 
 const MENU_ITEMS = [
-    { label: "Dashboard", icon: "🏠", route: "/dashboard" },
-    { label: "AI-Bot", icon: "🤖", route: "/chatbot" },
-    { label: "Fundamental", icon: "📊", route: "/fundamental" },
-    { label: "Historical Charts", icon: "📈", route: "/historical" },
-    { label: "Strategy Charts", icon: "🎯", route: "/strategy-charts" },
-    { label: "Technical Scanner", icon: "🔍", route: "/scannermain" },
-    { label: "Fundamental Scanner", icon: "🔬", route: "/scannerfundamental" },
-    { label: "Simple Backtest", icon: "⏱️", route: "/basic-backtester-main" },
-    { label: "Advanced Backtest", icon: "📉", route: "/advanced-backtester-main" },
-    { label: "Option Simulator", icon: "⚡", route: "/simulator" },
+    { label: "Dashboard", Icon: LayoutGrid, route: "/dashboard" },
+    { label: "AI-Bot", Icon: Bot, route: "/chatbot" },
+    { label: "Fundamental", Icon: BarChart3, route: "/fundamental" },
+    { label: "Historical Charts", Icon: LineChart, route: "/historical" },
+    { label: "Strategy Charts", Icon: Target, route: "/strategy-charts" },
+    { label: "Technical Scanner", Icon: Search, route: "/scannermain" },
+    { label: "Fundamental Scanner", Icon: FlaskConical, route: "/scannerfundamental" },
+    { label: "Simple Backtest", Icon: Timer, route: "/basic-backtester-main" },
+    { label: "Advanced Backtest", Icon: Activity, route: "/advanced-backtester-main" },
+    { label: "Option Simulator", Icon: Zap, route: "/simulator" },
 ];
 
 const BOTTOM_ITEMS = [
-    { label: "Profile", icon: "👤", route: "/profile" },
-    { label: "Pricing", icon: "💎", route: "/pricing" },
-    { label: "My Earnings", icon: "💰", route: "/leads" },
+    { label: "Profile", Icon: User, route: "/profile" },
+    { label: "Pricing", Icon: Gem, route: "/pricing" },
+    { label: "My Earnings", Icon: Wallet, route: "/leads" },
 ];
 
 const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
     const { width } = useWindowDimensions();
+    const { colors: c, isDark } = useTheme();
+    const styles = makeStyles(c);
     const sidebarWidth = Math.min(300, width * 0.78);
     const slideAnim = useRef(new Animated.Value(-sidebarWidth)).current;
 
@@ -97,9 +117,13 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
                     ]}
                 >
                     {/* Header */}
-                    <View style={[styles.sidebarHeader, { paddingTop: STATUS_BAR_HEIGHT + 10 }]}>
+                    <View style={[styles.sidebarHeader, { paddingTop: STATUS_BAR_HEIGHT + 12 }]}>
                         <Image
-                            source={require("../assets/images/unfluke/UNFLUKE -09-New.png")}
+                            source={
+                                isDark
+                                    ? require("../assets/images/unfluke/UNFLUKE -05-NEW.png")
+                                    : require("../assets/images/unfluke/UNFLUKE -01-NEW.png")
+                            }
                             style={styles.logo}
                             resizeMode="contain"
                         />
@@ -108,7 +132,7 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
                             style={styles.closeButton}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <X size={20} color="#6b7280" />
+                            <X size={18} color={c.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -126,10 +150,13 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
                                 key={index}
                                 style={styles.menuItem}
                                 onPress={() => handleNavigation(item.route)}
-                                activeOpacity={0.6}
+                                activeOpacity={0.7}
                             >
-                                <Text style={styles.menuIcon}>{item.icon}</Text>
+                                <View style={styles.menuIconWrap}>
+                                    <item.Icon size={18} color={c.gold} />
+                                </View>
                                 <Text style={styles.menuLabel}>{item.label}</Text>
+                                <ChevronRight size={16} color={c.textMuted} />
                             </TouchableOpacity>
                         ))}
 
@@ -142,10 +169,13 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
                                 key={`bottom-${index}`}
                                 style={styles.menuItem}
                                 onPress={() => handleNavigation(item.route)}
-                                activeOpacity={0.6}
+                                activeOpacity={0.7}
                             >
-                                <Text style={styles.menuIcon}>{item.icon}</Text>
+                                <View style={styles.menuIconWrap}>
+                                    <item.Icon size={18} color={c.gold} />
+                                </View>
                                 <Text style={styles.menuLabel}>{item.label}</Text>
+                                <ChevronRight size={16} color={c.textMuted} />
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -160,10 +190,10 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
     );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors) => StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: c.overlay,
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
@@ -173,11 +203,13 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         bottom: 0,
-        backgroundColor: "#ffffff",
+        backgroundColor: c.surface,
+        borderRightWidth: 1,
+        borderRightColor: c.border,
         shadowColor: "#000",
         shadowOffset: { width: 4, height: 0 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
         elevation: 20,
     },
     sidebarHeader: {
@@ -185,19 +217,19 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 18,
-        paddingBottom: 14,
+        paddingBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: "#e5e7eb",
-        backgroundColor: "#fafbfc",
+        borderBottomColor: c.borderLight,
+        backgroundColor: c.headerBg,
     },
     logo: {
-        width: 90,
+        width: 104,
         height: 30,
     },
     closeButton: {
         padding: 8,
-        borderRadius: 8,
-        backgroundColor: "#f3f4f6",
+        borderRadius: 10,
+        backgroundColor: c.inputBg,
     },
     menuScroll: {
         flex: 1,
@@ -208,50 +240,55 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         fontSize: 11,
-        fontWeight: "700",
-        color: "#9ca3af",
+        fontWeight: "800",
+        color: c.textMuted,
         paddingHorizontal: 20,
-        paddingTop: 14,
-        paddingBottom: 6,
-        letterSpacing: 1,
+        paddingTop: 16,
+        paddingBottom: 8,
+        letterSpacing: 1.4,
     },
     menuItem: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 13,
-        paddingHorizontal: 20,
+        paddingVertical: 11,
+        paddingHorizontal: 14,
         marginHorizontal: 8,
         marginVertical: 1,
-        borderRadius: 10,
+        borderRadius: 12,
+        gap: 12,
     },
-    menuIcon: {
-        fontSize: 17,
-        marginRight: 14,
-        width: 24,
-        textAlign: "center",
+    menuIconWrap: {
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        backgroundColor: c.goldLight,
+        alignItems: "center",
+        justifyContent: "center",
     },
     menuLabel: {
-        fontSize: 15,
-        fontWeight: "500",
-        color: "#1f2937",
+        flex: 1,
+        fontSize: 14.5,
+        fontWeight: "600",
+        color: c.text,
     },
     divider: {
         height: 1,
-        backgroundColor: "#e5e7eb",
+        backgroundColor: c.borderLight,
         marginHorizontal: 20,
-        marginVertical: 10,
+        marginVertical: 12,
     },
     sidebarFooter: {
         borderTopWidth: 1,
-        borderTopColor: "#e5e7eb",
-        paddingVertical: 14,
+        borderTopColor: c.borderLight,
+        paddingVertical: 16,
         paddingHorizontal: 20,
-        backgroundColor: "#fafbfc",
+        backgroundColor: c.headerBg,
     },
     footerText: {
         fontSize: 12,
-        color: "#9ca3af",
+        color: c.textMuted,
         textAlign: "center",
+        letterSpacing: 0.3,
     },
 });
 

@@ -17,7 +17,6 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { Ionicons } from "@expo/vector-icons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 import Markdown from "react-native-markdown-display";
@@ -40,8 +39,10 @@ import ShowResultsLink from "../../components/UnflukeMain/Chatbot/ShowResultsLin
 import { createSelector } from "reselect";
 import { layoutModeTypes } from "../../components/UnflukeMain/constants/layout";
 import { Config } from "../../helpers/config";
-import { Bot, CircleUserRound } from "lucide-react-native";
+import { Bot, CircleUserRound, Send, FileText } from "lucide-react-native";
 import { ScrollView as HScrollView } from "react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const AIChatbot = ({
   defaultInput,
@@ -73,6 +74,8 @@ const AIChatbot = ({
   const [scannerResults, setScannerResults] = useState({});
   const [scannerResultsType, setScannerResultsType] = useState("fundamental");
   const { width } = useWindowDimensions()
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
   //stores
   const auth = useSelector((store) => store.Login);
   const selectDashboardData = createSelector(
@@ -704,21 +707,21 @@ const AIChatbot = ({
         <View
           key={index}
           style={[
-            styles.messageContainer,
-            isBot ? styles.botMessageContainer : styles.userMessageContainer,
+            s.messageContainer,
+            isBot ? s.botMessageContainer : s.userMessageContainer,
           ]}
         >
           {/* Bot icon */}
           {isBot && (
-            <View style={styles.iconContainer}>
-              <Bot />
+            <View style={[s.iconContainer, s.botIconContainer]}>
+              <Bot size={18} color={c.gold} />
             </View>
           )}
 
           {/* User icon */}
           {isUser && (
-            <View style={styles.iconContainer}>
-              <CircleUserRound />
+            <View style={[s.iconContainer, s.userIconContainer]}>
+              <CircleUserRound size={18} color={c.textSecondary} />
             </View>
           )}
 
@@ -726,33 +729,21 @@ const AIChatbot = ({
           {msg.sender !== "bot-stream" && (
             <View
               style={[
-                styles.messageBubble,
-                isUser
-                  ? styles.userMessage
-                  : [
-                    styles.botMessage,
-                    { backgroundColor: isDarkMode ? "#343A43" : "#F5F5F5" },
-                  ],
-                msg.sender === "bot-loading" && styles.loadingMessage,
+                s.messageBubble,
+                isUser ? s.userMessage : s.botMessage,
+                msg.sender === "bot-loading" && s.loadingMessage,
               ]}
             >
               {msg.resultsLink ? (
                 <Text
                   style={[
-                    styles.messageText,
-                    {
-                      color:
-                        isDarkMode && !isUser
-                          ? "#FFFFFF"
-                          : isUser
-                            ? "#FFFFFF"
-                            : "#171717",
-                    },
+                    s.messageText,
+                    { color: isUser ? c.onGold : c.text },
                   ]}
                 >
                   Thank you for using UnflukeAI. You can view your results{" "}
                   <Text
-                    style={styles.linkText}
+                    style={s.linkText}
                     onPress={() => resultsLinkAction(msg.resultsLink)}
                   >
                     here
@@ -763,25 +754,22 @@ const AIChatbot = ({
                 <Markdown
                   style={{
                     body: {
-                      color:
-                        isDarkMode && !isUser
-                          ? "#FFFFFF"
-                          : isUser
-                            ? "#FFFFFF"
-                            : "#171717",
+                      color: isUser ? c.onGold : c.text,
                       fontSize: 16,
                       lineHeight: 22,
                     },
                     link: {
-                      color: "#2563EB",
+                      color: isUser ? c.onGold : c.gold,
                     },
                     code_inline: {
-                      backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                      backgroundColor: isUser ? c.transparent : c.surfaceElevated,
+                      color: isUser ? c.onGold : c.text,
                       padding: 2,
                       borderRadius: 4,
                     },
                     code_block: {
-                      backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                      backgroundColor: isUser ? c.transparent : c.surfaceElevated,
+                      color: isUser ? c.onGold : c.text,
                       padding: 10,
                       borderRadius: 8,
                       marginVertical: 5,
@@ -805,18 +793,18 @@ const AIChatbot = ({
 
               {/* Options buttons */}
               {msg.options && msg.options.length > 0 && (
-                <View style={styles.optionsContainer}>
+                <View style={s.optionsContainer}>
                   {msg.options.map((option, optionIndex) => (
                     <TouchableOpacity
                       key={optionIndex}
-                      style={styles.optionButton}
+                      style={s.optionButton}
                       onPress={() => {
                         if (index === messages.length - 1) {
                           setOptionToPrompt(option);
                         }
                       }}
                     >
-                      <Text style={styles.optionButtonText}>{option}</Text>
+                      <Text style={s.optionButtonText}>{option}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -826,24 +814,26 @@ const AIChatbot = ({
 
           {/* Streaming message */}
           {isStream && index === messages.length - 1 && streamingMessage && (
-            <View style={[styles.messageBubble, styles.botMessage]}>
+            <View style={[s.messageBubble, s.botMessage]}>
               <Markdown
                 style={{
                   body: {
-                    color: isDarkMode ? "#FFFFFF" : "#171717",
+                    color: c.text,
                     fontSize: 16,
                     lineHeight: 22,
                   },
                   link: {
-                    color: "#2563EB",
+                    color: c.gold,
                   },
                   code_inline: {
-                    backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                    backgroundColor: c.surfaceElevated,
+                    color: c.text,
                     padding: 2,
                     borderRadius: 4,
                   },
                   code_block: {
-                    backgroundColor: isDarkMode ? "#374151" : "#F3F4F6",
+                    backgroundColor: c.surfaceElevated,
+                    color: c.text,
                     padding: 10,
                     borderRadius: 8,
                     marginVertical: 5,
@@ -861,24 +851,24 @@ const AIChatbot = ({
             msg.docs &&
             Object.keys(msg.docs).length > 0 && (
               <TouchableOpacity
-                style={styles.sourcesButton}
+                style={s.sourcesButton}
                 onPress={() => {
                   setSources(msg.docs);
                   setSourcesModalOpen(true);
                 }}
               >
-                <Ionicons name="document-text" size={18} color="#6B7280" />
+                <FileText size={18} color={c.textSecondary} />
               </TouchableOpacity>
             )}
         </View>
       );
     },
-    [isDarkMode, resultsLinkAction, setOptionToPrompt, streamingMessage]
+    [isDarkMode, c, s, resultsLinkAction, setOptionToPrompt, streamingMessage]
   );
   console.log(chatbotGuideOpen, ChatbotGuide);
 
   return (
-    <View style={[styles.container, isDarkMode && styles.darkContainer]}>
+    <View style={s.container}>
       {/* Modals */}
       {sourcesModalOpen && (
         <SourcesModal
@@ -906,11 +896,11 @@ const AIChatbot = ({
       )}
 
       {/* Bot Navigation Tabs */}
-      <View style={styles.tabContainer}>
+      <View style={s.tabContainer}>
         <HScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScrollContent}
+          contentContainerStyle={s.tabScrollContent}
         >
           {bots.map((bot, i) => {
             const isActive = selectedBot === bot;
@@ -918,12 +908,8 @@ const AIChatbot = ({
               <TouchableOpacity
                 key={i}
                 style={[
-                  styles.pillTab,
-                  isActive
-                    ? styles.pillTabActive
-                    : isDarkMode
-                      ? styles.pillTabInactiveDark
-                      : styles.pillTabInactive,
+                  s.pillTab,
+                  isActive ? s.pillTabActive : s.pillTabInactive,
                 ]}
                 onPress={() => {
                   if (loading) return;
@@ -937,12 +923,8 @@ const AIChatbot = ({
               >
                 <Text
                   style={[
-                    styles.pillTabText,
-                    isActive
-                      ? styles.pillTabTextActive
-                      : isDarkMode
-                        ? styles.pillTabTextInactiveDark
-                        : styles.pillTabTextInactive,
+                    s.pillTabText,
+                    isActive ? s.pillTabTextActive : s.pillTabTextInactive,
                   ]}
                 >
                   {bot}
@@ -956,8 +938,8 @@ const AIChatbot = ({
       {/* Chat Messages */}
       <KeyboardAwareScrollView
         ref={scrollViewRef}
-        style={[styles.chatArea, isDarkMode && styles.darkChatArea]}
-        contentContainerStyle={styles.chatContent}
+        style={s.chatArea}
+        contentContainerStyle={s.chatContent}
         onContentSizeChange={scrollToBottom}
         enableOnAndroid={true}
         enableAutomaticScroll={true}
@@ -970,15 +952,11 @@ const AIChatbot = ({
             .filter((msg) => msg.mode === selectedBot)
             .map((msg, index) => renderMessage(msg, index))
         ) : (
-          <View style={styles.explanationContainer}>
-            <Text
-              style={[
-                styles.explanationText,
-                { color: isDarkMode ? "#FFFFFF" : "#171717" },
-              ]}
-            >
-              {botExplanation}
-            </Text>
+          <View style={s.explanationContainer}>
+            <View style={s.explanationIcon}>
+              <Bot size={28} color={c.gold} />
+            </View>
+            <Text style={s.explanationText}>{botExplanation}</Text>
           </View>
         )}
       </KeyboardAwareScrollView>
@@ -986,16 +964,13 @@ const AIChatbot = ({
       {/* Quick Questions */}
       {showQuickQuestions &&
         messages.filter((msg) => msg.mode === selectedBot).length === 0 && (
-          <View style={styles.quickQuestionsContainer}>
-            <View style={styles.questionChipsContainer}>
+          <View style={s.quickQuestionsContainer}>
+            <Text style={s.quickQuestionsLabel}>Try asking</Text>
+            <View style={s.questionChipsContainer}>
               {botQuestions[selectedBot]?.map((question, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={[
-                    styles.questionChip,
-                    isDarkMode && styles.questionChipDark,
-                    { maxWidth: width - 40 }
-                  ]}
+                  style={[s.questionChip, { maxWidth: width - 40 }]}
                   onPress={() => {
                     if (!loading) {
                       setInput(question);
@@ -1003,14 +978,7 @@ const AIChatbot = ({
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text
-                    style={[
-                      styles.questionChipText,
-                      { color: isDarkMode ? "#FFFFFF" : "#6B7280" },
-                    ]}
-                  >
-                    {question}
-                  </Text>
+                  <Text style={s.questionChipText}>{question}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1018,17 +986,12 @@ const AIChatbot = ({
         )}
 
       {/* Input Area */}
-      <View
-        style={[styles.inputContainer, isDarkMode && styles.darkInputContainer]}
-      >
-        <View style={[styles.inputGroup, isDarkMode && styles.darkInputGroup]}>
+      <View style={s.inputContainer}>
+        <View style={s.inputGroup}>
           <TextInput
-            style={[
-              styles.textInput,
-              { color: isDarkMode ? "#F9FAFB" : "#111827" },
-            ]}
+            style={s.textInput}
             placeholder="Type your message..."
-            placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
+            placeholderTextColor={c.textMuted}
             value={input}
             onChangeText={handleInputChange}
             onSubmitEditing={handleKeyDown}
@@ -1036,11 +999,11 @@ const AIChatbot = ({
             maxLength={1000}
           />
           <TouchableOpacity
-            style={[styles.sendButton, loading && styles.disabledButton]}
+            style={[s.sendButton, loading && s.disabledButton]}
             onPress={handleMessage}
             disabled={loading}
           >
-            <Ionicons name="send" size={18} color="#FFFFFF" />
+            <Send size={18} color={c.onGold} />
           </TouchableOpacity>
         </View>
       </View>
@@ -1048,229 +1011,251 @@ const AIChatbot = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  darkContainer: {
-    backgroundColor: "#111827",
-  },
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
 
-  // Tab Navigation
-  tabContainer: {
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  tabScrollContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  pillTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  pillTabActive: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
-  },
-  pillTabInactive: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-  },
-  pillTabInactiveDark: {
-    backgroundColor: "#374151",
-    borderColor: "#4B5563",
-  },
-  pillTabText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  pillTabTextActive: {
-    color: "#FFFFFF",
-  },
-  pillTabTextInactive: {
-    color: "#6B7280",
-  },
-  pillTabTextInactiveDark: {
-    color: "#D1D5DB",
-  },
-  // Chat Area
-  chatArea: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  darkChatArea: {
-    backgroundColor: "#111827",
-  },
-  chatContent: {
-    paddingVertical: 16,
-    flexGrow: 1,
-  },
-  explanationContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  explanationText: {
-    fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
-    lineHeight: 28,
-  },
+    // Tab Navigation
+    tabContainer: {
+      paddingTop: 10,
+      paddingBottom: 6,
+    },
+    tabScrollContent: {
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    pillTab: {
+      paddingHorizontal: 16,
+      paddingVertical: 9,
+      borderRadius: 20,
+      borderWidth: 1,
+    },
+    pillTabActive: {
+      backgroundColor: c.gold,
+      borderColor: c.gold,
+    },
+    pillTabInactive: {
+      backgroundColor: c.surface,
+      borderColor: c.border,
+    },
+    pillTabText: {
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    pillTabTextActive: {
+      color: c.onGold,
+    },
+    pillTabTextInactive: {
+      color: c.textSecondary,
+    },
 
-  // Messages
-  messageContainer: {
-    flexDirection: "row",
-    marginVertical: 8,
-    alignItems: "flex-end",
-  },
-  botMessageContainer: {
-    justifyContent: "flex-start",
-  },
-  userMessageContainer: {
-    justifyContent: "flex-start",
-    flexDirection: "row-reverse",
-  },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    marginHorizontal: 4,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  messageBubble: {
-    maxWidth: "80%",
-    paddingHorizontal: 12,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginHorizontal: 4,
-  },
-  userMessage: {
-    backgroundColor: "#111827",
-    alignSelf: "flex-end",
-  },
-  botMessage: {
-    backgroundColor: "#F5F5F5",
-    alignSelf: "flex-start",
-  },
-  loadingMessage: {
-    opacity: 0.7,
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  linkText: {
-    color: "#2563EB",
-    textDecorationLine: "underline",
-  },
-  sourcesButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
+    // Chat Area
+    chatArea: {
+      flex: 1,
+      paddingHorizontal: 16,
+      backgroundColor: c.background,
+    },
+    chatContent: {
+      paddingVertical: 16,
+      flexGrow: 1,
+    },
+    explanationContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 32,
+      gap: 16,
+    },
+    explanationIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    explanationText: {
+      fontSize: 17,
+      fontWeight: "600",
+      textAlign: "center",
+      lineHeight: 26,
+      color: c.textSecondary,
+    },
 
-  // Options
-  optionsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 8,
-    gap: 8,
-  },
-  optionButton: {
-    backgroundColor: "#10B981",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    flex: 1,
-    minWidth: 100,
-  },
-  optionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    textAlign: "center",
-    fontWeight: "500",
-  },
+    // Messages
+    messageContainer: {
+      flexDirection: "row",
+      marginVertical: 8,
+      alignItems: "flex-end",
+    },
+    botMessageContainer: {
+      justifyContent: "flex-start",
+    },
+    userMessageContainer: {
+      justifyContent: "flex-start",
+      flexDirection: "row-reverse",
+    },
+    iconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      marginHorizontal: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+    },
+    botIconContainer: {
+      backgroundColor: c.goldLight,
+      borderColor: c.border,
+    },
+    userIconContainer: {
+      backgroundColor: c.surfaceElevated,
+      borderColor: c.border,
+    },
+    messageBubble: {
+      maxWidth: "80%",
+      paddingHorizontal: 14,
+      paddingVertical: 4,
+      borderRadius: 16,
+      marginHorizontal: 4,
+    },
+    userMessage: {
+      backgroundColor: c.gold,
+      alignSelf: "flex-end",
+      borderBottomRightRadius: 6,
+    },
+    botMessage: {
+      backgroundColor: c.card,
+      alignSelf: "flex-start",
+      borderWidth: 1,
+      borderColor: c.border,
+      borderBottomLeftRadius: 6,
+    },
+    loadingMessage: {
+      opacity: 0.7,
+    },
+    messageText: {
+      fontSize: 16,
+      lineHeight: 22,
+    },
+    linkText: {
+      color: c.gold,
+      fontWeight: "700",
+      textDecorationLine: "underline",
+    },
+    sourcesButton: {
+      padding: 8,
+      marginLeft: 6,
+      borderRadius: 10,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
 
-  // Quick Questions
-  quickQuestionsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  questionChipsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
-  },
-  questionChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-  },
-  questionChipDark: {
-    borderColor: "#4B5563",
-    backgroundColor: "#374151",
-  },
-  questionChipText: {
-    fontSize: 13,
-    textAlign: "center",
-    flexShrink: 1,
-  },
+    // Options
+    optionsContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginTop: 10,
+      gap: 8,
+    },
+    optionButton: {
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: c.gold,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      flex: 1,
+      minWidth: 100,
+    },
+    optionButtonText: {
+      color: c.gold,
+      fontSize: 12,
+      textAlign: "center",
+      fontWeight: "700",
+    },
 
-  // Input Area
-  inputContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    paddingBottom: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-  },
-  darkInputContainer: {
-    backgroundColor: "#1F2937",
-    borderTopColor: "#374151",
-  },
-  inputGroup: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    backgroundColor: "#F5F5F5",
-    borderRadius: 24,
-    paddingHorizontal: 4,
-    paddingBottom: 4,
-    paddingRight: 6,
-    paddingVertical: 4,
-  },
-  textInput: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    maxHeight: 120,
-    color: "#111827",
-    backgroundColor: "transparent",
-  },
-  darkTextInput: {
-    color: "#F9FAFB",
-    backgroundColor: "transparent",
-  },
-  darkInputGroup: {
-    backgroundColor: "#374151",
-  },
-  sendButton: {
-    backgroundColor: "#111827",
-    padding: 10,
-    borderRadius: 20,
-    marginLeft: 4,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-});
+    // Quick Questions
+    quickQuestionsContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    quickQuestionsLabel: {
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      color: c.textMuted,
+      textAlign: "center",
+      marginBottom: 12,
+    },
+    questionChipsContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
+      gap: 8,
+    },
+    questionChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 14,
+      backgroundColor: c.card,
+    },
+    questionChipText: {
+      fontSize: 13,
+      textAlign: "center",
+      flexShrink: 1,
+      color: c.textSecondary,
+      fontWeight: "500",
+    },
+
+    // Input Area
+    inputContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      paddingBottom: 20,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+      backgroundColor: c.surface,
+    },
+    inputGroup: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      backgroundColor: c.inputBg,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 24,
+      paddingHorizontal: 4,
+      paddingBottom: 4,
+      paddingRight: 6,
+      paddingVertical: 4,
+    },
+    textInput: {
+      flex: 1,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      maxHeight: 120,
+      color: c.text,
+      backgroundColor: "transparent",
+    },
+    sendButton: {
+      backgroundColor: c.gold,
+      padding: 11,
+      borderRadius: 20,
+      marginLeft: 4,
+    },
+    disabledButton: {
+      opacity: 0.5,
+    },
+  });
 
 export default AIChatbot;

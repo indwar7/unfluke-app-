@@ -11,11 +11,24 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSelector, useDispatch } from "react-redux";
 import { Config } from "../../helpers/config";
 import axios from "axios";
 import { useLocalSearchParams } from "expo-router";
-import { ChevronRight, Trash2, Plus } from "lucide-react-native";
+import {
+  ChevronRight,
+  Trash2,
+  Plus,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Loader,
+  AlertTriangle,
+} from "lucide-react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { Radius, Space, Shadow } from "@/constants/Theme";
+import { ProBadge } from "@/components/ui/Premium";
 
 import {
   clearValues,
@@ -43,9 +56,9 @@ import { backendSocket } from "../../socket/socket";
 import { useBottomGutter } from "../../utils/bottomGutter";
 
 const AdvancedBacktester = () => {
-  const isDark = true;
+  const { colors: c, isDark } = useTheme();
   const bottomGutter = useBottomGutter();
-  const dynamicStyles = createStyles(isDark, bottomGutter);
+  const dynamicStyles = makeStyles(c, isDark, bottomGutter);
 
   const advancedState = useSelector((store: any) => store.AdvancedBacktester);
   const auth = useSelector((store: any) => store.Login);
@@ -272,11 +285,14 @@ const AdvancedBacktester = () => {
     <SafeAreaView style={dynamicStyles.safeArea}>
       {/* ✅ Single clean header */}
       <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.headerTitle}>Advanced Backtester</Text>
+        <View style={dynamicStyles.headerTopRow}>
+          <Text style={dynamicStyles.headerTitle}>Advanced Backtester</Text>
+          <ProBadge />
+        </View>
         <View style={dynamicStyles.breadcrumb}>
           <Text style={dynamicStyles.breadcrumbText}>Pages</Text>
-          <ChevronRight size={13} color="#787B86" />
-          <Text style={dynamicStyles.breadcrumbText}>Advanced Backtester</Text>
+          <ChevronRight size={13} color={c.textMuted} />
+          <Text style={dynamicStyles.breadcrumbActive}>Advanced Backtester</Text>
         </View>
       </View>
 
@@ -286,36 +302,38 @@ const AdvancedBacktester = () => {
         contentContainerStyle={dynamicStyles.contentContainer}
       >
         {/* Strategy Name + Re-entries */}
-        <View style={dynamicStyles.formRow}>
-          <View style={dynamicStyles.formGroup}>
-            <Text style={dynamicStyles.label}>Strategy Name</Text>
-            <TextInput
-              style={dynamicStyles.input}
-              placeholder="Enter here"
-              placeholderTextColor="#787B86"
-              value={advancedState.strategyName}
-              onChangeText={(text) => dispatchChange("strategyName", text)}
-            />
-          </View>
+        <View style={dynamicStyles.formCard}>
+          <View style={dynamicStyles.formRow}>
+            <View style={dynamicStyles.formGroup}>
+              <Text style={dynamicStyles.label}>Strategy Name</Text>
+              <TextInput
+                style={dynamicStyles.input}
+                placeholder="Enter here"
+                placeholderTextColor={c.textMuted}
+                value={advancedState.strategyName}
+                onChangeText={(text) => dispatchChange("strategyName", text)}
+              />
+            </View>
 
-          <View style={dynamicStyles.formGroup}>
-            <Text style={dynamicStyles.label}>Re-entries</Text>
-            <View style={dynamicStyles.pickerContainer}>
-              <Picker
-                selectedValue={advancedState.entries}
-                onValueChange={(val) => dispatchChange("entries", val)}
-                style={dynamicStyles.picker}
-                dropdownIconColor="#D1D4DC"
-              >
-                {reEntriesGlobal.map((i) => (
-                  <Picker.Item
-                    key={i}
-                    label={(i + 1).toString()}
-                    value={i + 1}
-                    color="#D1D4DC"
-                  />
-                ))}
-              </Picker>
+            <View style={dynamicStyles.formGroup}>
+              <Text style={dynamicStyles.label}>Re-entries</Text>
+              <View style={dynamicStyles.pickerContainer}>
+                <Picker
+                  selectedValue={advancedState.entries}
+                  onValueChange={(val) => dispatchChange("entries", val)}
+                  style={dynamicStyles.picker}
+                  dropdownIconColor={c.gold}
+                >
+                  {reEntriesGlobal.map((i) => (
+                    <Picker.Item
+                      key={i}
+                      label={(i + 1).toString()}
+                      value={i + 1}
+                      color={isDark ? c.text : undefined}
+                    />
+                  ))}
+                </Picker>
+              </View>
             </View>
           </View>
         </View>
@@ -323,21 +341,31 @@ const AdvancedBacktester = () => {
         {/* Entry Section */}
         <View style={dynamicStyles.section}>
           <View style={dynamicStyles.sectionHeader}>
-            <Text style={dynamicStyles.sectionTitle}>Entry</Text>
+            <View style={dynamicStyles.sectionTitleRow}>
+              <View style={[dynamicStyles.sectionIcon, dynamicStyles.sectionIconEntry]}>
+                <ArrowDownToLine size={15} color={c.profit} />
+              </View>
+              <Text style={dynamicStyles.sectionTitle}>Entry</Text>
+            </View>
             <View style={dynamicStyles.buttonGroup}>
               <TouchableOpacity
                 style={[dynamicStyles.button, dynamicStyles.buttonDanger]}
                 onPress={removeLeg}
+                activeOpacity={0.8}
               >
-                <Trash2 size={16} color="#FFFFFF" />
-                <Text style={dynamicStyles.buttonText}>Delete leg</Text>
+                <Trash2 size={16} color={c.loss} />
+                <Text style={dynamicStyles.buttonDangerText}>Delete leg</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[dynamicStyles.button, dynamicStyles.buttonPrimary]}
-                onPress={addLeg}
-              >
-                <Plus size={16} color="#FFFFFF" />
-                <Text style={dynamicStyles.buttonText}>Add Leg</Text>
+              <TouchableOpacity onPress={addLeg} activeOpacity={0.85}>
+                <LinearGradient
+                  colors={[c.goldBright, c.gold, c.goldDeep]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[dynamicStyles.button, dynamicStyles.buttonPrimary]}
+                >
+                  <Plus size={16} color={c.onGold} />
+                  <Text style={dynamicStyles.buttonText}>Add Leg</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -352,7 +380,12 @@ const AdvancedBacktester = () => {
 
         {/* Exit Section */}
         <View style={dynamicStyles.section}>
-          <Text style={dynamicStyles.sectionTitle}>Exit</Text>
+          <View style={dynamicStyles.sectionTitleRow}>
+            <View style={[dynamicStyles.sectionIcon, dynamicStyles.sectionIconExit]}>
+              <ArrowUpFromLine size={15} color={c.loss} />
+            </View>
+            <Text style={dynamicStyles.sectionTitle}>Exit</Text>
+          </View>
           <LegTabs
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -366,27 +399,35 @@ const AdvancedBacktester = () => {
 
         {/* Submit */}
         <TouchableOpacity
-          style={[
-            dynamicStyles.submitButton,
-            isBacktesting && dynamicStyles.submitButtonDisabled,
-          ]}
+          style={dynamicStyles.submitWrap}
           onPress={handleSubmit}
           disabled={isBacktesting}
+          activeOpacity={0.85}
         >
-          {isBacktesting ? (
-            <View style={dynamicStyles.submitRow}>
-              <ActivityIndicator size="small" color="#fff" />
-              <Text style={dynamicStyles.submitButtonText}> Processing...</Text>
-            </View>
-          ) : (
-            <Text style={dynamicStyles.submitButtonText}>Save Strategy</Text>
-          )}
+          <LinearGradient
+            colors={[c.goldBright, c.gold, c.goldDeep]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              dynamicStyles.submitButton,
+              isBacktesting && dynamicStyles.submitButtonDisabled,
+            ]}
+          >
+            {isBacktesting ? (
+              <View style={dynamicStyles.submitRow}>
+                <ActivityIndicator size="small" color={c.onGold} />
+                <Text style={dynamicStyles.submitButtonText}> Processing...</Text>
+              </View>
+            ) : (
+              <Text style={dynamicStyles.submitButtonText}>Save Strategy</Text>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Alerts */}
         {isBacktesting && (
           <View style={dynamicStyles.alertSuccess}>
-            <ActivityIndicator size="small" color="#089981" />
+            <Loader size={18} color={c.gold} />
             <Text style={dynamicStyles.alertSuccessText}>
               Your results will be generated soon. Please wait...
             </Text>
@@ -395,12 +436,14 @@ const AdvancedBacktester = () => {
 
         {!!resultsMessage && (
           <View style={dynamicStyles.alertDanger}>
+            <AlertTriangle size={18} color={c.loss} />
             <Text style={dynamicStyles.alertDangerText}>{resultsMessage}</Text>
           </View>
         )}
 
         {errorDialog.trim() !== "" && (
           <View style={dynamicStyles.alertDanger}>
+            <AlertTriangle size={18} color={c.loss} />
             <Text style={dynamicStyles.alertDangerText}>{errorDialog}</Text>
           </View>
         )}
@@ -409,142 +452,194 @@ const AdvancedBacktester = () => {
   );
 };
 
-const createStyles = (isDark: boolean, bottomGutter = 0) =>
+const makeStyles = (c: AppColors, isDark: boolean, bottomGutter = 0) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: "#131722",
+      backgroundColor: c.background,
     },
 
     /* ── Header ── */
     header: {
-      backgroundColor: "#1E222D",
-      paddingHorizontal: 16,
-      paddingVertical: 14,
+      backgroundColor: c.headerBg,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.lg,
       borderBottomWidth: 1,
-      borderBottomColor: "rgba(255,255,255,0.06)",
-      elevation: 3,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
+      borderBottomColor: c.border,
+      ...Shadow.sm,
+    },
+    headerTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     headerTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: "#D1D4DC",
+      fontSize: 20,
+      fontWeight: "800",
+      letterSpacing: -0.3,
+      color: c.text,
     },
     breadcrumb: {
       flexDirection: "row",
       alignItems: "center",
-      marginTop: 3,
+      marginTop: 4,
       gap: 4,
     },
-    breadcrumbText: { fontSize: 12, color: "#787B86" },
+    breadcrumbText: { fontSize: 12, fontWeight: "500", color: c.textMuted },
+    breadcrumbActive: { fontSize: 12, fontWeight: "700", color: c.gold },
 
     /* ── Scroll ── */
     scrollView: { flex: 1 },
     contentContainer: {
-      padding: 12,
+      padding: Space.lg,
       paddingBottom: 40 + bottomGutter,
       // ✅ NO paddingTop: 85
     },
 
     /* ── Form ── */
-    formRow: { flexDirection: "column", gap: 16, marginBottom: 24 },
+    formCard: {
+      backgroundColor: c.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: Space.lg,
+      marginBottom: Space.xxl,
+      ...Shadow.sm,
+    },
+    formRow: { flexDirection: "column", gap: Space.lg },
     formGroup: { flex: 1 },
     label: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: "#D1D4DC",
-      marginBottom: 8,
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      color: c.textMuted,
+      marginBottom: Space.sm,
     },
     input: {
       borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.06)",
-      borderRadius: 8,
-      padding: 12,
-      fontSize: 14,
-      color: "#D1D4DC",
-      backgroundColor: "#363A45",
+      borderColor: c.inputBorder,
+      borderRadius: Radius.md,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      fontSize: 15,
+      color: c.text,
+      backgroundColor: c.inputBg,
     },
     pickerContainer: {
       borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.06)",
-      borderRadius: 8,
-      backgroundColor: "#363A45",
+      borderColor: c.inputBorder,
+      borderRadius: Radius.md,
+      backgroundColor: c.inputBg,
       overflow: "hidden",
     },
-    picker: { color: "#D1D4DC", height: 50 },
+    picker: { color: c.text, height: 50 },
 
     /* ── Sections ── */
-    section: { marginBottom: 24 },
+    section: { marginBottom: Space.xxl },
     sectionHeader: {
       flexDirection: "column",
-      gap: 12,
-      marginBottom: 16,
+      gap: Space.md,
+      marginBottom: Space.lg,
     },
+    sectionTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Space.sm,
+      marginBottom: Space.md,
+    },
+    sectionIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: Radius.sm,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    sectionIconEntry: { backgroundColor: c.profitBg },
+    sectionIconExit: { backgroundColor: c.lossBg },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: "bold",
-      color: "#D1D4DC",
+      fontWeight: "800",
+      letterSpacing: -0.2,
+      color: c.text,
     },
-    buttonGroup: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+    buttonGroup: { flexDirection: "row", gap: Space.sm, flexWrap: "wrap" },
     button: {
       flexDirection: "row",
       alignItems: "center",
       paddingVertical: 10,
       paddingHorizontal: 16,
-      borderRadius: 8,
+      borderRadius: Radius.md,
       gap: 8,
     },
-    buttonPrimary: { backgroundColor: "#2962FF" },
-    buttonDanger: { backgroundColor: "#F23645" },
-    buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+    buttonPrimary: {
+      ...Shadow.gold,
+    },
+    buttonDanger: {
+      backgroundColor: c.lossBg,
+      borderWidth: 1,
+      borderColor: c.loss,
+    },
+    buttonText: { color: c.onGold, fontSize: 14, fontWeight: "700" },
+    buttonDangerText: { color: c.loss, fontSize: 14, fontWeight: "700" },
 
     /* ── Submit ── */
-    submitButton: {
-      backgroundColor: "#2962FF",
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-      borderRadius: 8,
-      alignItems: "center",
-      marginBottom: 16,
+    submitWrap: {
       alignSelf: "flex-start",
-      minWidth: 160,
+      marginBottom: Space.lg,
+      ...Shadow.gold,
     },
-    submitButtonDisabled: { backgroundColor: "#4C525E" },
-    submitButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+    submitButton: {
+      paddingVertical: 15,
+      paddingHorizontal: 28,
+      borderRadius: Radius.md,
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: 170,
+    },
+    submitButtonDisabled: { opacity: 0.6 },
+    submitButtonText: {
+      color: c.onGold,
+      fontSize: 16,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+    },
     submitRow: { flexDirection: "row", alignItems: "center" },
 
     /* ── Alerts ── */
     alertSuccess: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#1E222D",
-      borderRadius: 12,
+      backgroundColor: c.goldLight,
+      borderRadius: Radius.lg,
       borderWidth: 1,
-      borderColor: "#089981",
-      padding: 16,
-      gap: 12,
-      marginBottom: 16,
+      borderColor: c.gold,
+      padding: Space.lg,
+      gap: Space.md,
+      marginBottom: Space.lg,
     },
     alertSuccessText: {
       flex: 1,
-      fontSize: 15,
-      color: "#089981",
+      fontSize: 14,
+      fontWeight: "600",
+      color: isDark ? c.gold : c.goldDeep,
     },
     alertDanger: {
-      backgroundColor: "#1E222D",
-      borderRadius: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.lossBg,
+      borderRadius: Radius.lg,
       borderWidth: 1,
-      borderColor: "#F23645",
-      padding: 16,
-      marginBottom: 16,
+      borderColor: c.loss,
+      padding: Space.lg,
+      gap: Space.md,
+      marginBottom: Space.lg,
     },
     alertDangerText: {
-      fontSize: 15,
-      color: "#F23645",
+      flex: 1,
+      fontSize: 14,
+      fontWeight: "600",
+      color: c.loss,
     },
   });
 

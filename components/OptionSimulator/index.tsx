@@ -10,6 +10,18 @@ import {
   SafeAreaView,
   useWindowDimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  TrendingUp,
+  CalendarDays,
+  ChevronRight,
+  Minus,
+  Plus,
+  Clock,
+  AlertTriangle,
+  RotateCcw,
+  X,
+} from 'lucide-react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import moment from 'moment';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,6 +37,8 @@ import { CustomExpirySelect, CustomSelect } from './Selects';
 import { createSelector } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import { StrategyChartInstruments } from '../../redux/Unfluke_slices/strategyCharts/thunk';
+import { useTheme } from '@/constants/ThemeContext';
+import type { AppColors } from '@/constants/Colors';
 
 const data = createSelector(
   (state) => state.StrategyCharts,
@@ -32,6 +46,8 @@ const data = createSelector(
 );
 
 const OptionSimulator = () => {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
   const [user, setUser] = useState(null);
   const { width } = useWindowDimensions();
   const dispatch = useDispatch();
@@ -307,37 +323,59 @@ const OptionSimulator = () => {
       return adj.isAfter(exp);
     };
     const disabled = wouldExceed();
+    const negative = minutes < 0;
+    const tone = negative ? c.loss : c.profit;
+    const toneBg = negative ? c.lossBg : c.profitBg;
     return (
       <TouchableOpacity
         key={label}
-        style={[styles.timeButton, { backgroundColor: disabled ? '#9ca3af' : color }]}
+        activeOpacity={0.8}
+        style={[
+          s.timeButton,
+          {
+            backgroundColor: disabled ? c.surfaceElevated : toneBg,
+            borderColor: disabled ? c.border : tone,
+          },
+        ]}
         onPress={() => !disabled && adjustTime(minutes)}
         disabled={disabled}
       >
-        <Text style={styles.timeButtonText}>{label}</Text>
+        <View style={s.timeButtonInner}>
+          {negative ? (
+            <Minus size={11} color={disabled ? c.textMuted : tone} strokeWidth={2.5} />
+          ) : (
+            <Plus size={11} color={disabled ? c.textMuted : tone} strokeWidth={2.5} />
+          )}
+          <Text style={[s.timeButtonText, { color: disabled ? c.textMuted : tone }]}>{label}</Text>
+        </View>
       </TouchableOpacity>
     );
   };
 
   const renderInfoCard = (label, value) => (
-    <View key={label} style={[styles.infoCard, { minWidth: (width - 44) / 2 }]}>
-      <Text style={styles.infoCardLabel}>{label}</Text>
-      <Text style={styles.infoCardValue}>{value}</Text>
+    <View key={label} style={[s.infoCard, { minWidth: (width - 44) / 2 }]}>
+      <Text style={s.infoCardLabel}>{label}</Text>
+      <Text style={s.infoCardValue}>{value}</Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={s.container}>
 
       {/* ✅ Single heading - only shown here, no nav header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Option Simulator</Text>
-        <Text style={styles.headerSub}>Pages · Simulator</Text>
+      <View style={s.header}>
+        <View style={s.headerIcon}>
+          <TrendingUp size={20} color={c.gold} strokeWidth={2.4} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>Option Simulator</Text>
+          <Text style={s.headerSub}>Pages · Simulator</Text>
+        </View>
       </View>
 
-      <ScrollView ref={scrollViewRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} style={s.scrollView} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.infoCardsContainer}>
+        <View style={s.infoCardsContainer}>
           {renderInfoCard('Spot Price', selectedInstrument.spotPrice)}
           {renderInfoCard('Futures Price', selectedInstrument.futurePrice)}
           {renderInfoCard('Lot Size', selectedInstrument.lotSize)}
@@ -345,11 +383,11 @@ const OptionSimulator = () => {
         </View>
 
         {instruments?.length > 0 && expiries?.length > 0 ? (
-          <View style={styles.selectionContainer}>
-            <Text style={styles.sectionTitle}>Select Index/Stock</Text>
-            <View style={styles.selectionRow}>
-              <View style={styles.selectorContainer}>
-                <Text style={styles.selectorLabel}>Index / Stock</Text>
+          <View style={s.selectionContainer}>
+            <Text style={s.sectionTitle}>Select Index/Stock</Text>
+            <View style={s.selectionRow}>
+              <View style={s.selectorContainer}>
+                <Text style={s.selectorLabel}>Index / Stock</Text>
                 <CustomSelect
                   name="choices-instrument-default"
                   options={instruments[0].options}
@@ -361,8 +399,8 @@ const OptionSimulator = () => {
                   }}
                 />
               </View>
-              <View style={styles.selectorContainer}>
-                <Text style={styles.selectorLabel}>Select Expiry</Text>
+              <View style={s.selectorContainer}>
+                <Text style={s.selectorLabel}>Select Expiry</Text>
                 <CustomExpirySelect
                   name="choices-expiry-default"
                   selected={expiry}
@@ -372,43 +410,56 @@ const OptionSimulator = () => {
                 />
               </View>
             </View>
-            <View style={styles.selectionRow}>
-              <View style={styles.selectorContainer}>
-                <Text style={styles.selectorLabel}>Start Date</Text>
-                <TouchableOpacity style={styles.datePickerButton} onPress={() => { setActivePickerType('start'); setStartDatePickerVisibility(true); }}>
-                  <Text style={styles.datePickerText}>{moment(startDate).format('DD MMM YYYY')}</Text>
+            <View style={s.selectionRow}>
+              <View style={s.selectorContainer}>
+                <Text style={s.selectorLabel}>Start Date</Text>
+                <TouchableOpacity style={s.datePickerButton} onPress={() => { setActivePickerType('start'); setStartDatePickerVisibility(true); }}>
+                  <CalendarDays size={15} color={c.gold} strokeWidth={2.2} />
+                  <Text style={s.datePickerText}>{moment(startDate).format('DD MMM YYYY')}</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.selectorContainer}>
-                <Text style={styles.selectorLabel}>Payoff Date</Text>
-                <TouchableOpacity style={styles.datePickerButton} onPress={() => { setActivePickerType('payoff'); setPayoffDatePickerVisibility(true); }}>
-                  <Text style={styles.datePickerText}>{moment(payOffDate).format('DD MMM YYYY')}</Text>
+              <View style={s.selectorContainer}>
+                <Text style={s.selectorLabel}>Payoff Date</Text>
+                <TouchableOpacity style={s.datePickerButton} onPress={() => { setActivePickerType('payoff'); setPayoffDatePickerVisibility(true); }}>
+                  <CalendarDays size={15} color={c.gold} strokeWidth={2.2} />
+                  <Text style={s.datePickerText}>{moment(payOffDate).format('DD MMM YYYY')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
             <TouchableOpacity
-              style={[styles.actionButton, isLoading && styles.disabledButton]}
+              activeOpacity={0.85}
+              style={[s.actionButtonWrap, isLoading && s.disabledButton]}
               onPress={() => { setForceRefresh(p => p + 1); handleGetOptionChain(); }}
               disabled={isLoading}
             >
-              {isLoading ? (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator size="small" color="#fff" />
-                  <Text style={styles.actionButtonText}> Loading...</Text>
-                </View>
-              ) : (
-                <Text style={styles.actionButtonText}>Get Option Chain →</Text>
-              )}
+              <LinearGradient
+                colors={[c.goldBright, c.gold, c.goldDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.actionButton}
+              >
+                {isLoading ? (
+                  <View style={s.loadingRow}>
+                    <ActivityIndicator size="small" color={c.onGold} />
+                    <Text style={s.actionButtonText}> Loading...</Text>
+                  </View>
+                ) : (
+                  <View style={s.loadingRow}>
+                    <Text style={s.actionButtonText}>Get Option Chain</Text>
+                    <ChevronRight size={17} color={c.onGold} strokeWidth={2.6} />
+                  </View>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         ) : expiriesError ? (
-          <View style={styles.loaderBox}>
-            <Text style={[styles.loaderText, { color: '#F23645' }]}>Failed to load data. Please check your connection and try again.</Text>
+          <View style={s.loaderBox}>
+            <Text style={[s.loaderText, { color: c.loss }]}>Failed to load data. Please check your connection and try again.</Text>
           </View>
         ) : (
-          <View style={styles.loaderBox}>
-            <ActivityIndicator size="large" color="#2962FF" />
-            <Text style={styles.loaderText}>Loading instruments & expiries...</Text>
+          <View style={s.loaderBox}>
+            <ActivityIndicator size="large" color={c.gold} />
+            <Text style={s.loaderText}>Loading instruments & expiries...</Text>
           </View>
         )}
 
@@ -419,30 +470,34 @@ const OptionSimulator = () => {
             selectedExpiry={expiry?.to_expiry} expiry={expiries}
           />
         ) : (
-          <View style={styles.loaderBox}>
-            <ActivityIndicator size="large" color="#2962FF" />
-            <Text style={styles.loaderText}>Loading strategies...</Text>
+          <View style={s.loaderBox}>
+            <ActivityIndicator size="large" color={c.gold} />
+            <Text style={s.loaderText}>Loading strategies...</Text>
           </View>
         )}
 
-        <View style={styles.timeControlsContainer}>
-          <View style={styles.timeControlsRow}>
+        <View style={s.timeControlsContainer}>
+          <View style={s.timeControlsRow}>
             {renderTimeBtn('-1 day', -1, '#ef4444')}
             {renderTimeBtn('-30 min', -30, '#ef4444')}
             {renderTimeBtn('-15 min', -15, '#ef4444')}
             {renderTimeBtn('-5 min', -5, '#ef4444')}
           </View>
-          <View style={styles.currentTimeContainer}>
-            <View style={styles.currentTimeButton}>
-              <Text style={styles.currentTimeText}>{currentDateTime}</Text>
+          <View style={s.currentTimeContainer}>
+            <View style={s.currentTimeButton}>
+              <Clock size={14} color={c.gold} strokeWidth={2.3} />
+              <Text style={s.currentTimeText}>{currentDateTime}</Text>
             </View>
             {expiry?.to_expiry && (
-              <Text style={styles.expiryWarning}>
-                Expiry: {moment(expiry.to_expiry, 'DDMMMYY').format('DD MMM YYYY')}
-              </Text>
+              <View style={s.expiryWarningRow}>
+                <AlertTriangle size={12} color={c.loss} strokeWidth={2.3} />
+                <Text style={s.expiryWarning}>
+                  Expiry: {moment(expiry.to_expiry, 'DDMMMYY').format('DD MMM YYYY')}
+                </Text>
+              </View>
             )}
           </View>
-          <View style={styles.timeControlsRow}>
+          <View style={s.timeControlsRow}>
             {renderTimeBtn('+5 min', 5, '#16a34a')}
             {renderTimeBtn('+15 min', 15, '#16a34a')}
             {renderTimeBtn('+30 min', 30, '#16a34a')}
@@ -460,10 +515,10 @@ const OptionSimulator = () => {
 
         {isTimeChanged && displayExpiry && displayName ? (
           <View
-            style={styles.optionChainContainer}
+            style={s.optionChainContainer}
             onLayout={(e) => { optionChainYRef.current = e.nativeEvent.layout.y; }}
           >
-            <Text style={styles.optionChainTitle}>
+            <Text style={s.optionChainTitle}>
               {displayExpiry?.split('-').join('')} — Option Chain — {displayName} Future: {selectedInstrument.futurePrice}
             </Text>
             <OptionChainTable
@@ -472,9 +527,9 @@ const OptionSimulator = () => {
             />
           </View>
         ) : (
-          <View style={[styles.loaderBox, { height: 400, marginBottom: 20 }]}>
-            <ActivityIndicator size="large" color="#2962FF" />
-            <Text style={styles.loaderText}>Loading Option Table...</Text>
+          <View style={[s.loaderBox, { height: 400, marginBottom: 20 }]}>
+            <ActivityIndicator size="large" color={c.gold} />
+            <Text style={s.loaderText}>Loading Option Table...</Text>
           </View>
         )}
 
@@ -487,18 +542,30 @@ const OptionSimulator = () => {
           maximumDate={getMaxDate()} minimumDate={startDate} date={payOffDate} />
 
         <Modal visible={isModalOpen} transparent animationType="fade" onRequestClose={() => { setIsModalOpen(false); setPendingSelection(null); }}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Confirm Instrument Change</Text>
-              <Text style={styles.modalBody}>
+          <View style={s.modalOverlay}>
+            <View style={s.modalContainer}>
+              <View style={s.modalIconWrap}>
+                <AlertTriangle size={22} color={c.gold} strokeWidth={2.3} />
+              </View>
+              <Text style={s.modalTitle}>Confirm Instrument Change</Text>
+              <Text style={s.modalBody}>
                 Changing to "{pendingSelection?.label}" will clear current positions. Proceed?
               </Text>
-              <View style={styles.modalButtons}>
-                <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#2563eb' }]} onPress={handleModalReset}>
-                  <Text style={styles.modalBtnText}>Reset</Text>
+              <View style={s.modalButtons}>
+                <TouchableOpacity activeOpacity={0.85} style={s.modalResetWrap} onPress={handleModalReset}>
+                  <LinearGradient
+                    colors={[c.goldBright, c.gold, c.goldDeep]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={s.modalButton}
+                  >
+                    <RotateCcw size={15} color={c.onGold} strokeWidth={2.4} />
+                    <Text style={s.modalBtnText}>Reset</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#6b7280' }]} onPress={() => { setIsModalOpen(false); setPendingSelection(null); }}>
-                  <Text style={styles.modalBtnText}>Cancel</Text>
+                <TouchableOpacity activeOpacity={0.8} style={[s.modalButton, s.modalCancelButton]} onPress={() => { setIsModalOpen(false); setPendingSelection(null); }}>
+                  <X size={15} color={c.textSecondary} strokeWidth={2.4} />
+                  <Text style={s.modalCancelText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -510,34 +577,51 @@ const OptionSimulator = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#131722',
+    backgroundColor: c.background,
   },
 
   /* ── Single header ── */
   header: {
-    backgroundColor: '#1E222D',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: c.headerBg,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    shadowOpacity: isDark ? 0.3 : 0.06,
+    shadowRadius: 4,
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.goldLight,
+    borderWidth: 1,
+    borderColor: c.gold,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#D1D4DC',
+    fontWeight: '800',
+    color: c.text,
+    letterSpacing: 0.2,
   },
   headerSub: {
-    fontSize: 12,
-    color: '#787B86',
-    marginTop: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: c.textMuted,
+    marginTop: 3,
   },
 
   scrollView: {
@@ -547,57 +631,74 @@ const styles = StyleSheet.create({
   loaderBox: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1E222D',
-    borderRadius: 8,
+    backgroundColor: c.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: c.border,
     marginBottom: 16,
     paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   loaderText: {
-    marginTop: 10,
+    marginTop: 12,
     fontSize: 13,
-    color: '#787B86',
+    fontWeight: '500',
+    color: c.textSecondary,
+    textAlign: 'center',
   },
   infoCardsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
     marginBottom: 16,
-    marginTop: 12,
+    marginTop: 14,
   },
   infoCard: {
     flex: 1,
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
     elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.2 : 0.04,
+    shadowRadius: 3,
   },
   infoCardLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#787B86',
-    marginBottom: 6,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: c.textMuted,
+    marginBottom: 8,
   },
   infoCardValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#D1D4DC',
+    fontSize: 22,
+    fontWeight: '800',
+    color: c.text,
     fontVariant: ['tabular-nums'],
+    letterSpacing: 0.2,
   },
   selectionContainer: {
-    backgroundColor: '#1E222D',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: c.card,
+    borderRadius: 18,
+    padding: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.22 : 0.05,
+    shadowRadius: 6,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#D1D4DC',
-    marginBottom: 14,
+    fontWeight: '800',
+    color: c.text,
+    marginBottom: 16,
+    letterSpacing: 0.2,
   },
   selectionRow: {
     flexDirection: 'row',
@@ -606,68 +707,158 @@ const styles = StyleSheet.create({
   },
   selectorContainer: { flex: 1 },
   selectorLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#787B86',
-    marginBottom: 6,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: c.textMuted,
+    marginBottom: 8,
   },
   datePickerButton: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#363A45',
-  },
-  datePickerText: { fontSize: 15, color: '#D1D4DC' },
-  actionButton: {
-    backgroundColor: '#2962FF',
-    paddingVertical: 13,
-    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-  },
-  disabledButton: { backgroundColor: '#4C525E' },
-  actionButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  loadingRow: { flexDirection: 'row', alignItems: 'center' },
-  timeControlsContainer: {
-    backgroundColor: '#1E222D',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: c.inputBorder,
     borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: c.inputBg,
+  },
+  datePickerText: { fontSize: 14, fontWeight: '600', color: c.text },
+  actionButtonWrap: {
+    borderRadius: 14,
+    marginTop: 6,
+    shadowColor: c.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  actionButton: {
+    paddingVertical: 15,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: { opacity: 0.6, shadowOpacity: 0 },
+  actionButtonText: { color: c.onGold, fontSize: 15, fontWeight: '800', letterSpacing: 0.3 },
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  timeControlsContainer: {
+    backgroundColor: c.card,
+    borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.22 : 0.05,
+    shadowRadius: 6,
   },
   timeControlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   timeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1,
     minWidth: 68,
     alignItems: 'center',
   },
-  timeButtonText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-  currentTimeContainer: { alignItems: 'center', marginVertical: 16 },
+  timeButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  timeButtonText: { fontSize: 11, fontWeight: '700' },
+  currentTimeContainer: { alignItems: 'center', marginVertical: 18 },
   currentTimeButton: {
-    backgroundColor: '#2962FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: c.surfaceElevated,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: c.gold,
   },
-  currentTimeText: { color: '#D1D4DC', fontSize: 14, fontWeight: '600' },
-  expiryWarning: { fontSize: 12, color: '#F23645', marginTop: 8 },
+  currentTimeText: { color: c.text, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  expiryWarningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 10,
+  },
+  expiryWarning: { fontSize: 12, fontWeight: '600', color: c.loss },
   optionChainContainer: { marginTop: 16, marginBottom: 20, alignItems: 'center' },
-  optionChainTitle: { fontSize: 13, fontWeight: '600', color: '#787B86', marginBottom: 12, textAlign: 'center' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
-  modalContainer: { backgroundColor: '#1E222D', borderRadius: 12, padding: 24, width: '88%', maxWidth: 400 },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: '#D1D4DC', marginBottom: 12, textAlign: 'center' },
-  modalBody: { fontSize: 14, color: '#787B86', lineHeight: 22, marginBottom: 20, textAlign: 'center' },
-  modalButtons: { flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  modalBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  optionChainTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    color: c.textSecondary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  modalContainer: {
+    backgroundColor: c.surfaceElevated,
+    borderRadius: 20,
+    padding: 24,
+    width: '88%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: c.border,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isDark ? 0.5 : 0.18,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.goldLight,
+    borderWidth: 1,
+    borderColor: c.gold,
+    marginBottom: 14,
+  },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: c.text, marginBottom: 10, textAlign: 'center', letterSpacing: 0.2 },
+  modalBody: { fontSize: 14, fontWeight: '500', color: c.textSecondary, lineHeight: 22, marginBottom: 22, textAlign: 'center' },
+  modalButtons: { flexDirection: 'row', gap: 12, width: '100%' },
+  modalResetWrap: {
+    flex: 1,
+    borderRadius: 12,
+    shadowColor: c.gold,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  modalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 13,
+    borderRadius: 12,
+  },
+  modalCancelButton: {
+    backgroundColor: c.surface,
+    borderWidth: 1.5,
+    borderColor: c.border,
+  },
+  modalBtnText: { color: c.onGold, fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
+  modalCancelText: { color: c.textSecondary, fontSize: 15, fontWeight: '700' },
 });
 
 export default OptionSimulator;

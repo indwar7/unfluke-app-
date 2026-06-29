@@ -24,7 +24,17 @@ import { getCsvUrl } from "../../apis/BasicBacktester";
 import { store } from "../../redux/store";
 import { useDispatch } from "react-redux";
 import { setEditStrategy } from "../../redux/slices/basicBacktester/reducer";
-import { ChevronRight } from 'lucide-react-native';
+import {
+  ChevronRight,
+  Pencil,
+  Clock,
+  RefreshCw,
+  Activity,
+} from 'lucide-react-native';
+
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { GoldButton } from "@/components/ui/Premium";
 
 const ViewStrategy = () => {
 
@@ -80,7 +90,8 @@ const ViewStrategy = () => {
   }
 
   // Theme
-  const styles = createStyles();
+  const { colors: c, isDark } = useTheme();
+  const styles = createStyles(c, isDark);
 
   // Save strategy to AsyncStorage (localStorage equivalent)
   useEffect(() => {
@@ -215,21 +226,20 @@ const ViewStrategy = () => {
   };
 
   const renderIcon = (name, size = 16, color) => {
+    const iconColor = color || c.textMuted;
     const iconMap = {
-      'chevron-right': 'chevron-forward',
-      'edit': 'create-outline',
-      'clock': 'time-outline',
-      'refresh': 'refresh-outline',
-      'activity': 'pulse-outline',
+      'chevron-right': ChevronRight,
+      'edit': Pencil,
+      'clock': Clock,
+      'refresh': RefreshCw,
+      'activity': Activity,
     };
 
-    return (
-      <Ionicons
-        name={iconMap[name] || name}
-        size={size}
-        color={color || '#787B86'}
-      />
-    );
+    const IconComponent = iconMap[name];
+    if (IconComponent) {
+      return <IconComponent size={size} color={iconColor} />;
+    }
+    return <Ionicons name={name} size={size} color={iconColor} />;
   };
 
   const formatTime = (timeObj) => {
@@ -247,18 +257,17 @@ const ViewStrategy = () => {
             <Text style={styles.title}>Strategy</Text>
             <View style={styles.breadcrumb}>
               <Text style={styles.breadcrumbText}>Strategy</Text>
-              <ChevronRight size={13} color="#787B86" />
+              <ChevronRight size={13} color={c.textMuted} />
               <Text style={styles.breadcrumbText}>view Strategy</Text>
             </View>
           </View>
           {!isAdvanced && (
-            <TouchableOpacity
-              style={styles.editButton}
+            <GoldButton
+              label="Edit Strategy"
               onPress={handleEdit}
-            >
-              {renderIcon('edit', 16, '#FFFFFF')}
-              <Text style={styles.editButtonText}>Edit Strategy</Text>
-            </TouchableOpacity>
+              icon={<Pencil size={15} color={c.onGold} />}
+              style={styles.editButton}
+            />
           )}
 
         </View>
@@ -322,7 +331,9 @@ const ViewStrategy = () => {
             Object.keys(legSummaries).length > 0 && (
             <View style={styles.legSummariesContainer}>
               <View style={styles.legSummariesHeader}>
-                {renderIcon('activity', 20, '#2962FF')}
+                <View style={styles.legSummariesIcon}>
+                  {renderIcon('activity', 18, c.gold)}
+                </View>
                 <Text style={styles.legSummariesTitle}>Leg Summaries</Text>
               </View>
 
@@ -362,7 +373,7 @@ const ViewStrategy = () => {
             />
           ) : (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#2962FF" />
+              <ActivityIndicator size="large" color={c.gold} />
               <Text style={styles.loadingText}>Loading the strategy...</Text>
             </View>
           )}
@@ -372,135 +383,149 @@ const ViewStrategy = () => {
   );
 };
 
-const createStyles = () => StyleSheet.create({
+const createStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#131722',
+    backgroundColor: c.background,
   },
   pageContent: {
-    paddingTop: 0,
-    paddingHorizontal: 12,
-    paddingBottom: 20
+    paddingTop: 4,
+    paddingHorizontal: 14,
+    paddingBottom: 28,
   },
   headerLeft: {
     flex: 1,
   },
   headerContainer: {
-    paddingBottom: 18,
+    paddingTop: 6,
+    paddingBottom: 20,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     flexWrap: "wrap",
-    gap: 10
+    gap: 12,
   },
   title: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#D1D4DC",
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+    color: c.text,
   },
   breadcrumb: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 5,
+    gap: 2,
   },
   breadcrumbText: {
     fontSize: 12,
-    color: "#787B86",
+    fontWeight: "600",
+    color: c.textMuted,
   },
   editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2962FF',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginTop: 12,
-  },
-  editButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
+    minWidth: 130,
   },
   mainCard: {
-    backgroundColor: '#1E222D',
-    borderRadius: 12,
+    backgroundColor: c.card,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    padding: 16,
-    marginBottom: 15,
+    borderColor: c.border,
+    padding: 18,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOpacity: isDark ? 0.3 : 0.05,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   cardHeader: {
-    marginBottom: 24,
+    marginBottom: 22,
   },
   cardHeaderContent: {
-    gap: 8,
+    gap: 12,
   },
   strategyName: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#D1D4DC',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    color: c.text,
     marginBottom: 8,
   },
   summaryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
   },
   basicSummaryGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     flexWrap: 'wrap',
   },
   summaryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2E39',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
+    backgroundColor: c.surfaceElevated,
+    borderWidth: 1,
+    borderColor: c.borderLight,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
     flex: 1,
     minWidth: 100,
   },
   summaryText: {
-    fontSize: 12,
-    color: '#787B86',
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textSecondary,
     marginLeft: 8,
     flex: 1,
     fontVariant: ['tabular-nums'],
   },
   legSummariesContainer: {
-    backgroundColor: '#1E222D',
-    borderRadius: 8,
+    backgroundColor: c.surfaceElevated,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
     padding: 16,
   },
   legSummariesHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
+    gap: 10,
+  },
+  legSummariesIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.goldLight,
+    borderWidth: 1,
+    borderColor: c.gold + '55',
   },
   legSummariesTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#D1D4DC',
-    marginLeft: 8,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: c.textMuted,
   },
   legSummariesList: {
-    gap: 12,
+    gap: 10,
   },
   legSummaryItem: {
-    backgroundColor: '#2A2E39',
-    borderRadius: 6,
+    backgroundColor: c.card,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    padding: 12,
+    borderColor: c.border,
+    padding: 14,
   },
   legNumber: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#D1D4DC',
-    marginBottom: 6,
+    fontWeight: '700',
+    color: c.text,
+    marginBottom: 10,
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -508,17 +533,17 @@ const createStyles = () => StyleSheet.create({
     gap: 8,
   },
   tag: {
-    backgroundColor: 'rgba(41,98,255,0.2)',
+    backgroundColor: c.goldLight,
     borderWidth: 1,
-    borderColor: 'rgba(41,98,255,0.3)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    borderColor: c.gold + '40',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   tagText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#2962FF',
+    fontWeight: '700',
+    color: isDark ? c.gold : c.goldDeep,
   },
   contentSection: {
     marginTop: 0,
@@ -527,13 +552,17 @@ const createStyles = () => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
-    padding: 40,
+    padding: 48,
+    backgroundColor: c.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: c.border,
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#D1D4DC',
+    marginTop: 14,
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textSecondary,
   },
 });
 

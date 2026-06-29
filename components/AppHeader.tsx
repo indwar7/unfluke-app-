@@ -3,7 +3,7 @@ import {
   View, Text, Image, TouchableOpacity, StyleSheet,
   Pressable, Modal, ScrollView,
 } from "react-native";
-import { Bell, User, X } from "lucide-react-native";
+import { Bell, X, Menu, LogOut, User as UserIcon, Crown, Gem, Wallet } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../redux/Unfluke_slices/thunks";
@@ -15,6 +15,9 @@ import {
   getNotifications,
   postReadNotifications,
 } from "../Unfluke_helpers/backend_helper";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import BottomNav from "@/components/ui/BottomNav";
 
 interface NotifItem {
   _id?: string;
@@ -24,17 +27,25 @@ interface NotifItem {
   userID?: string;
 }
 
+const initials = (name?: string) => {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "U";
+};
+
 /* ═══════════════════════════════════════════════════
    NOTIFICATION PANEL
 ═══════════════════════════════════════════════════ */
 const NotificationPanel = ({
   visible, onClose, notifications, totalCount, hasMore,
-  onMarkAllRead, onLoadMore, loading,
+  onMarkAllRead, onLoadMore, loading, top,
 }: {
   visible: boolean; onClose: () => void;
   notifications: NotifItem[]; totalCount: number; hasMore: boolean;
-  onMarkAllRead: () => void; onLoadMore: () => void; loading: boolean;
+  onMarkAllRead: () => void; onLoadMore: () => void; loading: boolean; top: number;
 }) => {
+  const { colors: c } = useTheme();
+  const s = makeStyles(c);
   const fmtTime = (d: string) => {
     try {
       const date = new Date(d);
@@ -62,7 +73,7 @@ const NotificationPanel = ({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={s.notifOverlay} onPress={onClose}>
-        <Pressable style={s.notifPanel} onPress={e => e.stopPropagation()}>
+        <Pressable style={[s.notifPanel, { marginTop: top }]} onPress={e => e.stopPropagation()}>
           <View style={s.notifHeader}>
             <Text style={s.notifTitle}>
               NOTIFICATIONS {totalCount > 0 ? `(${totalCount})` : ""}
@@ -74,44 +85,45 @@ const NotificationPanel = ({
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <X size={18} color="#6b7280" />
+                <X size={18} color={c.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
           {notifications.length === 0 && !loading ? (
             <View style={s.notifEmpty}>
-              <Text style={{ fontSize: 32, marginBottom: 10 }}>🔔</Text>
+              <View style={s.notifEmptyIcon}>
+                <Bell size={22} color={c.gold} />
+              </View>
               <Text style={s.notifEmptyTitle}>No new notifications</Text>
               <Text style={s.notifEmptySub}>Backtest results and alerts will appear here</Text>
             </View>
           ) : (
             <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-              {notifications.map((item, idx) => (
-                <View key={item._id || `n-${idx}`} style={[s.notifItem, !item.is_read && s.notifItemUnread]}>
-                  {!item.is_read && <View style={s.notifDot} />}
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                      <View style={[s.notifBadge, {
-                        backgroundColor: item.content?.includes("Alert") ? "#FEF3C7" : "#EEF2FF"
-                      }]}>
-                        <Text style={[s.notifBadgeText, {
-                          color: item.content?.includes("Alert") ? "#92400E" : "#4338CA"
-                        }]}>
-                          {item.content?.includes("Alert") ? "Alert" : "Message"}
-                        </Text>
+              {notifications.map((item, idx) => {
+                const isAlert = item.content?.includes("Alert");
+                return (
+                  <View key={item._id || `n-${idx}`} style={[s.notifItem, !item.is_read && s.notifItemUnread]}>
+                    {!item.is_read && <View style={s.notifDot} />}
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                        <View style={[s.notifBadge, { backgroundColor: isAlert ? c.warningLight : c.goldLight }]}>
+                          <Text style={[s.notifBadgeText, { color: isAlert ? c.warning : c.gold }]}>
+                            {isAlert ? "Alert" : "Message"}
+                          </Text>
+                        </View>
+                        <Text style={s.notifTime}>{fmtTime(item.createdAt)}</Text>
                       </View>
-                      <Text style={s.notifTime}>{fmtTime(item.createdAt)}</Text>
+                      <Text style={s.notifItemTitle} numberOfLines={3}>
+                        {stripHtml(item.content)}
+                      </Text>
                     </View>
-                    <Text style={s.notifItemTitle} numberOfLines={3}>
-                      {stripHtml(item.content)}
-                    </Text>
                   </View>
-                </View>
-              ))}
+                );
+              })}
 
               {hasMore && !loading && (
                 <TouchableOpacity onPress={onLoadMore} style={{ paddingVertical: 12 }}>
-                  <Text style={{ textAlign: "center", fontSize: 12, fontWeight: "700", color: "#4f46e5" }}>
+                  <Text style={{ textAlign: "center", fontSize: 12, fontWeight: "700", color: c.gold }}>
                     Load More ({totalCount - notifications.length} remaining)
                   </Text>
                 </TouchableOpacity>
@@ -129,11 +141,18 @@ const NotificationPanel = ({
    appears above every screen element, no zIndex fights
 ═══════════════════════════════════════════════════ */
 const ProfilePopup = ({
-  visible, onClose, user, onLogout, isLoggingOut,
+  visible, onClose, user, onLogout, isLoggingOut, top,
 }: {
   visible: boolean; onClose: () => void;
-  user: any; onLogout: () => void; isLoggingOut: boolean;
+  user: any; onLogout: () => void; isLoggingOut: boolean; top: number;
 }) => {
+  const { colors: c } = useTheme();
+  const s = makeStyles(c);
+  const menu = [
+    { label: "Profile", Icon: UserIcon, route: "/profile" },
+    { label: "My Earnings", Icon: Wallet, route: "/leads" },
+    { label: "Pricing", Icon: Gem, route: "/pricing" },
+  ];
   return (
     <Modal
       visible={visible}
@@ -141,33 +160,37 @@ const ProfilePopup = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      {/* Full-screen dismiss area */}
       <Pressable style={s.profileOverlay} onPress={onClose}>
-        {/* Stop tap propagation on the popup itself */}
-        <Pressable style={s.profilePopup} onPress={e => e.stopPropagation()}>
+        <Pressable style={[s.profilePopup, { marginTop: top }]} onPress={e => e.stopPropagation()}>
           {/* User info */}
           <View style={s.profileTop}>
-            <View style={s.profileAvatar}><User size={20} color="#fff" /></View>
+            <View style={s.profileAvatar}>
+              <Text style={s.profileAvatarText}>{initials(user?.name)}</Text>
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.profileName} numberOfLines={1}>{user?.name ?? "User"}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={s.profileName} numberOfLines={1}>{user?.name ?? "User"}</Text>
+                <View style={s.proPill}>
+                  <Crown size={9} color={c.onGold} />
+                  <Text style={s.proPillText}>PRO</Text>
+                </View>
+              </View>
               <Text style={s.profileEmail} numberOfLines={1}>{user?.email ?? ""}</Text>
             </View>
           </View>
 
           <View style={s.divider} />
 
-          {[
-            { label: "Profile", icon: "👤", route: "/profile" },
-            { label: "My Earnings", icon: "💰", route: "/leads" },
-            { label: "Pricing", icon: "💎", route: "/pricing" },
-          ].map(item => (
+          {menu.map(item => (
             <TouchableOpacity
               key={item.route}
               style={s.menuItem}
               activeOpacity={0.7}
               onPress={() => { onClose(); router.push(item.route as any); }}
             >
-              <Text style={s.menuIcon}>{item.icon}</Text>
+              <View style={s.menuIconWrap}>
+                <item.Icon size={16} color={c.textSecondary} />
+              </View>
               <Text style={s.menuLabel}>{item.label}</Text>
             </TouchableOpacity>
           ))}
@@ -180,8 +203,10 @@ const ProfilePopup = ({
             onPress={onLogout}
             disabled={isLoggingOut}
           >
-            <Text style={s.menuIcon}>🚪</Text>
-            <Text style={[s.menuLabel, { color: "#ef4444" }]}>
+            <View style={[s.menuIconWrap, { backgroundColor: c.lossBg }]}>
+              <LogOut size={16} color={c.loss} />
+            </View>
+            <Text style={[s.menuLabel, { color: c.loss }]}>
               {isLoggingOut ? "Logging out..." : "Logout"}
             </Text>
           </TouchableOpacity>
@@ -197,6 +222,8 @@ const ProfilePopup = ({
 export const AppHeader = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c);
   const [menuVisible, setMenuVisible] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -348,6 +375,9 @@ export const AppHeader = () => {
     }
   };
 
+  // Dropdowns sit just under the header bar.
+  const dropdownTop = insets.top + 52;
+
   return (
     <>
       <View style={[s.container, { paddingTop: insets.top }]}>
@@ -359,13 +389,17 @@ export const AppHeader = () => {
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.6}
           >
-            <Text style={s.hamburger}>☰</Text>
+            <Menu size={22} color={c.text} />
           </TouchableOpacity>
 
           {/* Logo */}
           <TouchableOpacity onPress={() => router.push("/dashboard" as any)} activeOpacity={0.8}>
             <Image
-              source={require("../assets/images/unfluke/UNFLUKE -09-New.png")}
+              source={
+                isDark
+                  ? require("../assets/images/unfluke/UNFLUKE -05-NEW.png")
+                  : require("../assets/images/unfluke/UNFLUKE -01-NEW.png")
+              }
               style={s.logo}
               resizeMode="contain"
             />
@@ -379,7 +413,7 @@ export const AppHeader = () => {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               onPress={handleBellPress}
             >
-              <Bell size={20} color="#333" />
+              <Bell size={20} color={c.text} />
               {(unread > 0 || badge) && (
                 <View style={s.badge}>
                   <Text style={s.badgeText}>{unread > 9 ? "9+" : unread > 0 ? unread : "•"}</Text>
@@ -389,23 +423,26 @@ export const AppHeader = () => {
 
             {/* Profile avatar */}
             <TouchableOpacity
-              style={s.iconBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               onPress={() => { setNotifOpen(false); setProfileOpen(v => !v); }}
+              activeOpacity={0.8}
             >
-              <View style={s.avatar}><User size={16} color="#fff" /></View>
+              <View style={s.avatar}>
+                <Text style={s.avatarText}>{initials(user?.name)}</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      {/* ✅ Profile popup as Modal — renders above EVERYTHING, zero zIndex issues */}
+      {/* Profile popup as Modal — renders above EVERYTHING */}
       <ProfilePopup
         visible={profileOpen}
         onClose={() => setProfileOpen(false)}
         user={user}
         onLogout={handleLogout}
         isLoggingOut={isLoggingOut}
+        top={dropdownTop}
       />
 
       {/* Notification panel */}
@@ -418,6 +455,7 @@ export const AppHeader = () => {
         onMarkAllRead={markAllRead}
         onLoadMore={handleLoadMore}
         loading={loading}
+        top={dropdownTop}
       />
 
       {/* Sidebar */}
@@ -430,6 +468,8 @@ export const AppHeader = () => {
    SCREEN WITH HEADER
 ═══════════════════════════════════════════════════ */
 export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => {
+  const { colors: c } = useTheme();
+  const s = makeStyles(c);
   // Auth guard: every protected screen wraps with ScreenWithHeader, so
   // redirect to /login from one place instead of guarding each screen.
   const user = useSelector((state: any) => state?.Login?.user ?? null);
@@ -437,8 +477,6 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
 
   useEffect(() => {
     if (!user?._id && !isUserLogout) {
-      // No user and not a normal logout transition — likely a deep link
-      // or back-stack jump while signed out. Send them to login.
       try { router.replace("/login"); } catch { }
     }
   }, [user, isUserLogout]);
@@ -451,123 +489,135 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
     <View style={[s.screen, style]}>
       <AppHeader />
       <View style={s.screenContent}>{children}</View>
+      <BottomNav />
     </View>
   );
 };
 
 /* ═══════════════════════════════════════════════════
-   STYLES
+   STYLES (theme-aware)
 ═══════════════════════════════════════════════════ */
-const s = StyleSheet.create({
+const makeStyles = (c: AppColors) => StyleSheet.create({
   // Header bar
   container: {
-    backgroundColor: "#fff",
+    backgroundColor: c.headerBg,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-    elevation: 4,
+    borderBottomColor: c.border,
     zIndex: 10,
   },
   row: {
     flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10,
+    paddingHorizontal: 14, paddingTop: 6, paddingBottom: 10,
   },
-  hamburger: { fontSize: 22, color: "#333" },
-  logo: { width: 80, height: 28 },
-  rightIcons: { flexDirection: "row", alignItems: "center", marginLeft: "auto", gap: 4 },
+  logo: { width: 104, height: 30 },
+  rightIcons: { flexDirection: "row", alignItems: "center", marginLeft: "auto", gap: 6 },
   iconBtn: { padding: 8, position: "relative" },
   badge: {
     position: "absolute", top: 4, right: 4,
-    backgroundColor: "#ef4444", borderRadius: 8,
+    backgroundColor: c.loss, borderRadius: 8,
     minWidth: 16, height: 16,
     alignItems: "center", justifyContent: "center", paddingHorizontal: 3,
+    borderWidth: 1.5, borderColor: c.headerBg,
   },
-  badgeText: { color: "#fff", fontSize: 9, fontWeight: "700" },
+  badgeText: { color: "#fff", fontSize: 9, fontWeight: "800" },
   avatar: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: "#4f46e5", alignItems: "center", justifyContent: "center",
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: c.gold, alignItems: "center", justifyContent: "center",
   },
+  avatarText: { color: c.onGold, fontSize: 13, fontWeight: "800" },
 
-  // ✅ Profile popup — Modal-based, positioned top-right like a dropdown
+  // Profile popup
   profileOverlay: {
     flex: 1,
-    // transparent background — tapping outside closes it
     backgroundColor: "transparent",
-    // align popup to top-right corner (where the avatar button is)
     justifyContent: "flex-start",
     alignItems: "flex-end",
-    paddingTop: 60,   // roughly below the header bar
     paddingRight: 10,
   },
   profilePopup: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    width: 230,
+    backgroundColor: c.surfaceElevated,
+    borderRadius: 16,
+    width: 244,
     paddingBottom: 6,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
     elevation: 24,
   },
   profileTop: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
   profileAvatar: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: "#4f46e5", alignItems: "center", justifyContent: "center",
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: c.gold, alignItems: "center", justifyContent: "center",
   },
-  profileName: { fontSize: 14, fontWeight: "700", color: "#111827" },
-  profileEmail: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
-  divider: { height: 1, backgroundColor: "#f3f4f6" },
+  profileAvatarText: { color: c.onGold, fontSize: 15, fontWeight: "800" },
+  profileName: { fontSize: 14, fontWeight: "700", color: c.text, maxWidth: 110 },
+  profileEmail: { fontSize: 11, color: c.textMuted, marginTop: 2 },
+  proPill: {
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: c.gold, borderRadius: 999,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  proPillText: { fontSize: 9, fontWeight: "800", color: c.onGold, letterSpacing: 0.5 },
+  divider: { height: 1, backgroundColor: c.borderLight, marginHorizontal: 4 },
   menuItem: {
     flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 13, gap: 12,
+    paddingHorizontal: 14, paddingVertical: 11, gap: 12,
   },
-  menuIcon: { fontSize: 16 },
-  menuLabel: { fontSize: 14, color: "#374151", fontWeight: "500" },
+  menuIconWrap: {
+    width: 30, height: 30, borderRadius: 9,
+    backgroundColor: c.inputBg, alignItems: "center", justifyContent: "center",
+  },
+  menuLabel: { fontSize: 14, color: c.text, fontWeight: "600" },
 
   // Notifications
   notifOverlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.3)",
+    flex: 1, backgroundColor: c.overlay,
     justifyContent: "flex-start", alignItems: "flex-end",
-    paddingTop: 60, paddingRight: 10,
+    paddingRight: 10,
   },
   notifPanel: {
-    backgroundColor: "#fff", borderRadius: 14,
-    width: 300, maxHeight: 440,
-    elevation: 10, shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15, shadowRadius: 10, overflow: "hidden",
+    backgroundColor: c.surfaceElevated, borderRadius: 16,
+    width: 304, maxHeight: 440,
+    borderWidth: 1, borderColor: c.border,
+    elevation: 12, shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22, shadowRadius: 16, overflow: "hidden",
   },
   notifHeader: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  notifTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  markAllBtn: { paddingHorizontal: 8, paddingVertical: 4, backgroundColor: "#EEF2FF", borderRadius: 6 },
-  markAllText: { fontSize: 11, color: "#4f46e5", fontWeight: "600" },
+  notifTitle: { fontSize: 12, fontWeight: "800", color: c.text, letterSpacing: 0.8 },
+  markAllBtn: { paddingHorizontal: 9, paddingVertical: 4, backgroundColor: c.goldLight, borderRadius: 8 },
+  markAllText: { fontSize: 11, color: c.gold, fontWeight: "700" },
   notifEmpty: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 20 },
-  notifEmptyTitle: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  notifEmptySub: { fontSize: 12, color: "#9ca3af", marginTop: 6, textAlign: "center", lineHeight: 18 },
+  notifEmptyIcon: {
+    width: 52, height: 52, borderRadius: 26, backgroundColor: c.goldLight,
+    alignItems: "center", justifyContent: "center", marginBottom: 12,
+  },
+  notifEmptyTitle: { fontSize: 14, fontWeight: "700", color: c.text },
+  notifEmptySub: { fontSize: 12, color: c.textMuted, marginTop: 6, textAlign: "center", lineHeight: 18 },
   notifItem: {
     flexDirection: "row", alignItems: "flex-start",
     paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: "#f3f4f6",
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  notifItemUnread: { backgroundColor: "#f0f4ff" },
+  notifItemUnread: { backgroundColor: c.goldLight },
   notifDot: {
     width: 8, height: 8, borderRadius: 4,
-    backgroundColor: "#4f46e5", marginTop: 6, marginRight: 10, flexShrink: 0,
+    backgroundColor: c.gold, marginTop: 6, marginRight: 10, flexShrink: 0,
   },
-  notifBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4 },
-  notifBadgeText: { fontSize: 10, fontWeight: "700" },
-  notifItemTitle: { fontSize: 13, fontWeight: "600", color: "#111827", lineHeight: 18 },
-  notifItemDesc: { fontSize: 12, color: "#6b7280", marginTop: 3, lineHeight: 17 },
-  notifTime: { fontSize: 10, color: "#9ca3af" },
+  notifBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  notifBadgeText: { fontSize: 10, fontWeight: "800" },
+  notifItemTitle: { fontSize: 13, fontWeight: "600", color: c.text, lineHeight: 18 },
+  notifTime: { fontSize: 10, color: c.textMuted },
 
   // Screen wrapper
-  screen: { flex: 1, backgroundColor: "#f9fafb" },
+  screen: { flex: 1, backgroundColor: c.background },
   screenContent: { flex: 1 },
 });
 

@@ -12,7 +12,10 @@ import {
   ActivityIndicator, Dimensions, StyleSheet, Modal, FlatList,
   KeyboardAvoidingView, Platform, Keyboard,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Search, X, ChevronDown, ChevronRight, Check,
+  AlertCircle, TrendingUp, TrendingDown,
+} from "lucide-react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedStock } from "../redux/Unfluke_slices/globalStock/reducer";
@@ -20,17 +23,15 @@ import {
   useCompany, useFinancials, getPeriodKeys, formatPeriodLabel,
   getRatioPeriodKeys, getMergedRatioData,
 } from "../hooks/useFundamentalData";
-import {
-  ACCENT, ACCENT_LIGHT, BG, CARD_BG,
-  TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED, BORDER_COLOR, RED, GREEN,
-  fmt,
-} from "../components/fundamentals/constants";
+import { fmt } from "../components/fundamentals/constants";
 import { ScreenWithHeader } from "../components/AppHeader";
 import { BalanceSheetTab, PLStyleTab, KeyRatiosTab } from "../components/fundamentals/FinancialTabs";
 import {
   ChartsTab, BulkBlockDealsTab, CorporateEventsTab,
   ShareholdingPatternsTab, DocumentsTab,
 } from "../components/fundamentals/DataTabs";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const SEARCH_URL = "https://api.unfluke.in/api/historicData/search?searchQuery=";
@@ -65,18 +66,23 @@ interface SearchResult {
 /* ═══════════════════════════════════════════════════════
    RATIO CARD
 ═══════════════════════════════════════════════════════ */
-function RatioCardInline({ label, value, yoyChange }: {
-  label: string; value: any; yoyChange?: number;
+function RatioCardInline({ label, value, yoyChange, s, c }: {
+  label: string; value: any; yoyChange?: number; s: any; c: AppColors;
 }) {
   const isPositive = (yoyChange ?? 0) >= 0;
   return (
-    <View style={st.rcCard}>
-      <Text style={st.rcLabel} numberOfLines={1}>{label}</Text>
-      <Text style={st.rcValue} numberOfLines={1}>{fmt(value)}</Text>
+    <View style={s.rcCard}>
+      <Text style={s.rcLabel} numberOfLines={1}>{label}</Text>
+      <Text style={s.rcValue} numberOfLines={1}>{fmt(value)}</Text>
       {yoyChange !== undefined && !isNaN(yoyChange) && (
-        <Text style={[st.rcYoy, { color: isPositive ? GREEN : RED }]} numberOfLines={1}>
-          {isPositive ? "↗" : "↘"} {isPositive ? "+" : ""}{yoyChange.toFixed(1)}%
-        </Text>
+        <View style={s.rcYoyRow}>
+          {isPositive
+            ? <TrendingUp size={10} color={c.profit} strokeWidth={2.5} />
+            : <TrendingDown size={10} color={c.loss} strokeWidth={2.5} />}
+          <Text style={[s.rcYoy, { color: isPositive ? c.profit : c.loss }]} numberOfLines={1}>
+            {isPositive ? "+" : ""}{yoyChange.toFixed(1)}%
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -85,34 +91,34 @@ function RatioCardInline({ label, value, yoyChange }: {
 /* ═══════════════════════════════════════════════════════
    PERIOD PICKER
 ═══════════════════════════════════════════════════════ */
-function PeriodPicker({ items, selected, onSelect }: {
-  items: string[]; selected: string; onSelect: (v: string) => void;
+function PeriodPicker({ items, selected, onSelect, s, c }: {
+  items: string[]; selected: string; onSelect: (v: string) => void; s: any; c: AppColors;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <View>
-      <TouchableOpacity style={st.picker} onPress={() => setOpen(true)} activeOpacity={0.7}>
-        <Text style={st.pickerText}>{selected ? formatPeriodLabel(selected) : "Year"}</Text>
-        <Ionicons name="chevron-down" size={14} color={TEXT_MUTED} />
+      <TouchableOpacity style={s.picker} onPress={() => setOpen(true)} activeOpacity={0.7}>
+        <Text style={s.pickerText}>{selected ? formatPeriodLabel(selected) : "Year"}</Text>
+        <ChevronDown size={14} color={c.gold} strokeWidth={2.4} />
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade">
-        <TouchableOpacity style={st.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={st.pickerModal}>
-            <Text style={st.pickerTitle}>Select Period</Text>
+        <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={s.pickerModal}>
+            <Text style={s.pickerTitle}>Select Period</Text>
             <FlatList
               data={items}
               keyExtractor={i => i}
               style={{ maxHeight: 380 }}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[st.pickerRow, item === selected && st.pickerRowOn]}
+                  style={[s.pickerRow, item === selected && s.pickerRowOn]}
                   onPress={() => { onSelect(item); setOpen(false); }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[st.pickerRowText, item === selected && st.pickerRowTextOn]}>
+                  <Text style={[s.pickerRowText, item === selected && s.pickerRowTextOn]}>
                     {formatPeriodLabel(item)}
                   </Text>
-                  {item === selected && <Ionicons name="checkmark" size={18} color={ACCENT} />}
+                  {item === selected && <Check size={18} color={c.gold} strokeWidth={2.6} />}
                 </TouchableOpacity>
               )}
             />
@@ -127,6 +133,8 @@ function PeriodPicker({ items, selected, onSelect }: {
    MAIN SCREEN
 ═══════════════════════════════════════════════════════ */
 export default function FundamentalScreen() {
+  const { colors: c, isDark } = useTheme();
+  const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
   const dispatch = useDispatch();
   const scrollRef = useRef<ScrollView>(null);
   const tabScrollRef = useRef<ScrollView>(null);
@@ -306,7 +314,7 @@ export default function FundamentalScreen() {
       if (activeTab === "Documents")
         return <DocumentsTab capcode={capcode} companyName={companyName} />;
       if (!financials)
-        return <Text style={st.emptyMsg}>No data. Try toggling S / C.</Text>;
+        return <Text style={s.emptyMsg}>No data. Try toggling S / C.</Text>;
       if (activeTab === "Balance Sheet")
         return <BalanceSheetTab response={financials.balanceSheet} period={period} />;
       if (activeTab === "Profit & Loss")
@@ -321,11 +329,11 @@ export default function FundamentalScreen() {
     } catch (err) {
       console.error("[FundamentalScreen] renderTab:", err);
       return (
-        <View style={st.center}>
-          <Ionicons name="alert-circle-outline" size={44} color={RED} />
-          <Text style={st.emptyMsg}>Something went wrong.</Text>
-          <TouchableOpacity style={st.retryBtn} onPress={() => refetchFin()}>
-            <Text style={st.retryBtnText}>Retry</Text>
+        <View style={s.center}>
+          <AlertCircle size={44} color={c.loss} strokeWidth={1.8} />
+          <Text style={s.emptyMsg}>Something went wrong.</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => refetchFin()}>
+            <Text style={s.retryBtnText}>Retry</Text>
           </TouchableOpacity>
         </View>
       );
@@ -339,28 +347,28 @@ export default function FundamentalScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={90}
       >
-        <View style={st.root}>
+        <View style={s.root}>
 
           {/* ── Title ── */}
-          <View style={st.titleBar}>
-            <Text style={st.titleText}>
+          <View style={s.titleBar}>
+            <Text style={s.titleText}>
               Fundamental Screener{" "}
-              <Text style={st.titleAccent}>({activeTab})</Text>
+              <Text style={s.titleAccent}>({activeTab})</Text>
             </Text>
-            <Text style={st.titleSub}>Get all your summary at one place</Text>
+            <Text style={s.titleSub}>Get all your summary at one place</Text>
           </View>
 
           {/* ── Search Bar ── */}
-          <View style={[st.searchOuter, { zIndex: 200 }]}>
-            <View style={st.searchPill}>
+          <View style={[s.searchOuter, { zIndex: 200 }]}>
+            <View style={s.searchPill}>
               {searching
-                ? <ActivityIndicator size="small" color={ACCENT} style={st.searchIcon} />
-                : <Ionicons name="search" size={18} color={TEXT_MUTED} style={st.searchIcon} />}
+                ? <ActivityIndicator size="small" color={c.gold} style={s.searchIcon} />
+                : <Search size={18} color={c.textMuted} strokeWidth={2.2} style={s.searchIcon} />}
               <TextInput
                 ref={inputRef}
-                style={st.searchInput}
+                style={s.searchInput}
                 placeholder="Search company (e.g. Reliance, TCS…)"
-                placeholderTextColor="#bbb"
+                placeholderTextColor={c.textMuted}
                 value={query}
                 onChangeText={t => {
                   setQuery(t);
@@ -379,14 +387,14 @@ export default function FundamentalScreen() {
                   activeOpacity={0.7}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="close-circle" size={20} color={TEXT_MUTED} />
+                  <X size={20} color={c.textMuted} strokeWidth={2.2} />
                 </TouchableOpacity>
               )}
             </View>
 
             {/* Search Dropdown */}
             {showDrop && results.length > 0 && (
-              <View style={st.searchDrop}>
+              <View style={s.searchDrop}>
                 <FlatList
                   data={results}
                   keyExtractor={(item, i) => String(item?.["Capitaline Code"] ?? i)}
@@ -396,17 +404,17 @@ export default function FundamentalScreen() {
                     const sym = [item.NSESYMBOL, item.BSESYMBOL].filter(Boolean).join(" · ");
                     return (
                       <TouchableOpacity
-                        style={st.searchDropRow}
+                        style={s.searchDropRow}
                         onPress={() => selectStock(item)}
                         activeOpacity={0.7}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text style={st.searchDropName} numberOfLines={1}>
+                          <Text style={s.searchDropName} numberOfLines={1}>
                             {item?.["Company Name"] || "—"}
                           </Text>
-                          {!!sym && <Text style={st.searchDropSym}>{sym}</Text>}
+                          {!!sym && <Text style={s.searchDropSym}>{sym}</Text>}
                         </View>
-                        <Ionicons name="chevron-forward" size={15} color={TEXT_MUTED} />
+                        <ChevronRight size={15} color={c.textMuted} strokeWidth={2.2} />
                       </TouchableOpacity>
                     );
                   }}
@@ -416,33 +424,33 @@ export default function FundamentalScreen() {
           </View>
 
           {/* ── Tab Bar + S/C Toggle ── */}
-          <View style={st.tabBar}>
+          <View style={s.tabBar}>
             <ScrollView
               ref={tabScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={st.tabScroll}
+              contentContainerStyle={s.tabScroll}
             >
               {SECTIONS.map(sec => (
                 <TouchableOpacity
                   key={sec}
-                  style={[st.tab, activeTab === sec && st.tabOn]}
+                  style={[s.tab, activeTab === sec && s.tabOn]}
                   onPress={() => switchTab(sec)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[st.tabText, activeTab === sec && st.tabTextOn]}>{sec}</Text>
+                  <Text style={[s.tabText, activeTab === sec && s.tabTextOn]}>{sec}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <View style={st.scWrap}>
+            <View style={s.scWrap}>
               {(["S", "C"] as const).map(t => (
                 <TouchableOpacity
                   key={t}
-                  style={[st.scBtn, stockType === t && st.scBtnOn]}
+                  style={[s.scBtn, stockType === t && s.scBtnOn]}
                   onPress={() => setStockType(t)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[st.scText, stockType === t && st.scTextOn]}>{t}</Text>
+                  <Text style={[s.scText, stockType === t && s.scTextOn]}>{t}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -450,14 +458,16 @@ export default function FundamentalScreen() {
 
           {/* ── Ratio Cards Strip ── */}
           {ratioCards.length > 0 && !isLoading && (
-            <View style={st.ratioStripWrap}>
-              <View style={st.ratioStripContent}>
-                {ratioCards.map((c, i) => (
+            <View style={s.ratioStripWrap}>
+              <View style={s.ratioStripContent}>
+                {ratioCards.map((card, i) => (
                   <RatioCardInline
-                    key={`${c.label}-${i}`}
-                    label={c.label}
-                    value={c.value}
-                    yoyChange={c.yoyChange}
+                    key={`${card.label}-${i}`}
+                    label={card.label}
+                    value={card.value}
+                    yoyChange={card.yoyChange}
+                    s={s}
+                    c={c}
                   />
                 ))}
               </View>
@@ -466,23 +476,23 @@ export default function FundamentalScreen() {
 
           {/* ── Period Picker ── */}
           {showPeriodRow && periodKeys.length > 0 && !isLoading && (
-            <View style={st.periodRow}>
-              <Text style={st.periodLabel}>Period:</Text>
-              <PeriodPicker items={periodKeys} selected={period} onSelect={setPeriod} />
+            <View style={s.periodRow}>
+              <Text style={s.periodLabel}>Period</Text>
+              <PeriodPicker items={periodKeys} selected={period} onSelect={setPeriod} s={s} c={c} />
             </View>
           )}
 
           {/* ── Content ── */}
           {isLoading && showPeriodRow ? (
-            <View style={st.center}>
-              <ActivityIndicator size="large" color={ACCENT} />
-              <Text style={st.loadingText}>Loading {companyName}…</Text>
+            <View style={s.center}>
+              <ActivityIndicator size="large" color={c.gold} />
+              <Text style={s.loadingText}>Loading {companyName}…</Text>
             </View>
           ) : (
             <ScrollView
               ref={scrollRef}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={st.scrollContent}
+              contentContainerStyle={s.scrollContent}
               onScrollBeginDrag={() => setShowDrop(false)}
               nestedScrollEnabled
             >
@@ -495,146 +505,161 @@ export default function FundamentalScreen() {
   );
 }
 
-const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: c.background },
 
   // Title
   titleBar: {
-    backgroundColor: CARD_BG,
+    backgroundColor: c.surface,
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 12,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: c.borderLight,
   },
-  titleText: { fontSize: 18, fontWeight: "700", color: TEXT_PRIMARY, letterSpacing: -0.3 },
-  titleAccent: { color: ACCENT, fontWeight: "700" },
-  titleSub: { fontSize: 12, color: TEXT_MUTED, marginTop: 3, letterSpacing: 0.1 },
+  titleText: { fontSize: 19, fontWeight: "800", color: c.text, letterSpacing: -0.4 },
+  titleAccent: { color: c.gold, fontWeight: "800" },
+  titleSub: { fontSize: 12.5, color: c.textMuted, marginTop: 4, letterSpacing: 0.1 },
 
   // Search
   searchOuter: {
-    backgroundColor: CARD_BG,
+    backgroundColor: c.surface,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER_COLOR,
+    borderBottomColor: c.border,
   },
   searchPill: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#F8FAFC", borderRadius: 12,
-    paddingHorizontal: 12, height: 46,
-    borderWidth: 1, borderColor: "#E2E8F0",
+    backgroundColor: c.inputBg, borderRadius: 14,
+    paddingHorizontal: 14, height: 48,
+    borderWidth: 1, borderColor: c.inputBorder,
   },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: TEXT_PRIMARY, paddingVertical: 0 },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 14.5, color: c.text, paddingVertical: 0, fontWeight: "500" },
   searchDrop: {
-    position: "absolute", top: 66, left: 16, right: 16,
-    backgroundColor: CARD_BG, borderRadius: 14,
+    position: "absolute", top: 70, left: 16, right: 16,
+    backgroundColor: c.surfaceElevated, borderRadius: 16,
     elevation: 16, shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12, shadowRadius: 20,
-    borderWidth: 1, borderColor: BORDER_COLOR,
+    shadowOpacity: isDark ? 0.5 : 0.14, shadowRadius: 22,
+    borderWidth: 1, borderColor: c.border,
     zIndex: 999, overflow: "hidden",
   },
   searchDropRow: {
     flexDirection: "row", alignItems: "center",
-    paddingVertical: 13, paddingHorizontal: 16,
-    borderBottomWidth: 1, borderBottomColor: "#F3F4F6",
+    paddingVertical: 14, paddingHorizontal: 16,
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  searchDropName: { fontSize: 14, fontWeight: "600", color: TEXT_PRIMARY },
-  searchDropSym: { fontSize: 12, color: TEXT_MUTED, marginTop: 2 },
+  searchDropName: { fontSize: 14.5, fontWeight: "700", color: c.text },
+  searchDropSym: { fontSize: 12, color: c.textMuted, marginTop: 3, fontWeight: "600", letterSpacing: 0.3 },
 
   // Tabs
   tabBar: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: CARD_BG,
-    borderBottomWidth: 1, borderBottomColor: BORDER_COLOR,
+    backgroundColor: c.surface,
+    borderBottomWidth: 1, borderBottomColor: c.border,
     paddingLeft: 12,
   },
-  tabScroll: { paddingRight: 8, paddingVertical: 6 },
+  tabScroll: { paddingRight: 8, paddingVertical: 8 },
   tab: {
-    paddingVertical: 8, paddingHorizontal: 14,
-    marginRight: 6, borderRadius: 20,
-    backgroundColor: "transparent",
+    paddingVertical: 8, paddingHorizontal: 15,
+    marginRight: 7, borderRadius: 20,
+    backgroundColor: c.surfaceElevated,
+    borderWidth: 1, borderColor: c.border,
   },
-  tabOn: { backgroundColor: "#1A1A2E" },
-  tabText: { fontSize: 13, color: TEXT_MUTED, fontWeight: "500" },
-  tabTextOn: { color: "#FFFFFF", fontWeight: "700" },
+  tabOn: { backgroundColor: c.gold, borderColor: c.gold },
+  tabText: { fontSize: 13, color: c.textSecondary, fontWeight: "600" },
+  tabTextOn: { color: c.onGold, fontWeight: "800" },
   scWrap: {
-    flexDirection: "row", marginRight: 12, marginLeft: 4,
-    backgroundColor: "#F1F5F9", borderRadius: 20, padding: 3,
+    flexDirection: "row", marginRight: 12, marginLeft: 6,
+    backgroundColor: c.surfaceElevated, borderRadius: 20, padding: 3,
+    borderWidth: 1, borderColor: c.border,
   },
-  scBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  scBtnOn: { backgroundColor: "#1A1A2E" },
-  scText: { fontSize: 12, fontWeight: "600", color: TEXT_MUTED },
-  scTextOn: { color: "#fff" },
+  scBtn: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: 18 },
+  scBtnOn: { backgroundColor: c.gold },
+  scText: { fontSize: 12.5, fontWeight: "700", color: c.textSecondary },
+  scTextOn: { color: c.onGold, fontWeight: "800" },
 
   // Ratio Cards Strip
   ratioStripWrap: {
-    backgroundColor: BG,
+    backgroundColor: c.background,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER_COLOR,
+    borderBottomColor: c.borderLight,
   },
   ratioStripContent: {
     flexDirection: "row",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 8,
   },
   rcCard: {
-    backgroundColor: CARD_BG, borderRadius: 12,
-    paddingVertical: 10, paddingHorizontal: 10,
+    backgroundColor: c.card, borderRadius: 14,
+    paddingVertical: 12, paddingHorizontal: 11,
     flex: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 6,
+    shadowOpacity: isDark ? 0.35 : 0.06, shadowRadius: 8,
     elevation: 3, borderWidth: 1,
-    borderColor: BORDER_COLOR, justifyContent: "center",
+    borderColor: c.border, justifyContent: "center",
   },
-  rcLabel: { fontSize: 8.5, color: TEXT_MUTED, fontWeight: "500", marginBottom: 4 },
-  rcValue: { fontSize: 13, fontWeight: "800", color: TEXT_PRIMARY, marginBottom: 2 },
-  rcYoy: { fontSize: 8, fontWeight: "600", marginTop: 2 },
+  rcLabel: {
+    fontSize: 8.5, color: c.textMuted, fontWeight: "700",
+    marginBottom: 6, letterSpacing: 0.5, textTransform: "uppercase",
+  },
+  rcValue: {
+    fontSize: 14, fontWeight: "800", color: c.text,
+    marginBottom: 2, fontVariant: ["tabular-nums"],
+  },
+  rcYoyRow: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: 3 },
+  rcYoy: { fontSize: 8.5, fontWeight: "700", fontVariant: ["tabular-nums"] },
 
   // Period Picker
   periodRow: {
     flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 8,
-    backgroundColor: BG, gap: 10,
+    paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: c.background, gap: 10,
   },
-  periodLabel: { fontSize: 13, fontWeight: "600", color: TEXT_SECONDARY },
+  periodLabel: {
+    fontSize: 11, fontWeight: "700", color: c.textMuted,
+    letterSpacing: 1.2, textTransform: "uppercase",
+  },
   picker: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#F8FAFC", borderRadius: 10,
-    paddingHorizontal: 12, height: 36,
-    minWidth: 80, borderWidth: 1,
-    borderColor: "#E2E8F0", gap: 6,
+    backgroundColor: c.surface, borderRadius: 12,
+    paddingHorizontal: 14, height: 38,
+    minWidth: 86, borderWidth: 1,
+    borderColor: c.border, gap: 6,
   },
-  pickerText: { fontSize: 13, color: TEXT_PRIMARY, fontWeight: "500" },
+  pickerText: { fontSize: 13, color: c.text, fontWeight: "700" },
   overlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.4)",
+    flex: 1, backgroundColor: c.overlay,
     justifyContent: "center", alignItems: "center",
   },
   pickerModal: {
-    backgroundColor: CARD_BG, borderRadius: 16,
-    width: SCREEN_W * 0.8, maxHeight: 480, padding: 20,
+    backgroundColor: c.surfaceElevated, borderRadius: 20,
+    width: SCREEN_W * 0.8, maxHeight: 480, padding: 22,
+    borderWidth: 1, borderColor: c.border,
   },
-  pickerTitle: { fontSize: 18, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 14 },
+  pickerTitle: { fontSize: 18, fontWeight: "800", color: c.text, marginBottom: 16, letterSpacing: -0.3 },
   pickerRow: {
     flexDirection: "row", justifyContent: "space-between",
     alignItems: "center", paddingVertical: 14,
-    paddingHorizontal: 10, borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    paddingHorizontal: 12, borderBottomWidth: 1,
+    borderBottomColor: c.borderLight,
   },
-  pickerRowOn: { backgroundColor: ACCENT_LIGHT, borderRadius: 8 },
-  pickerRowText: { fontSize: 16, color: TEXT_PRIMARY },
-  pickerRowTextOn: { color: ACCENT, fontWeight: "600" },
+  pickerRowOn: { backgroundColor: c.goldLight, borderRadius: 10, borderBottomColor: "transparent" },
+  pickerRowText: { fontSize: 16, color: c.text, fontWeight: "500" },
+  pickerRowTextOn: { color: c.gold, fontWeight: "800" },
 
   // Content
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 15, color: TEXT_MUTED },
-  emptyMsg: { padding: 32, textAlign: "center", color: TEXT_MUTED, fontSize: 15 },
+  loadingText: { marginTop: 14, fontSize: 14.5, color: c.textMuted, fontWeight: "600" },
+  emptyMsg: { padding: 32, textAlign: "center", color: c.textMuted, fontSize: 15, fontWeight: "500" },
   scrollContent: { padding: 16, paddingBottom: 60 },
   retryBtn: {
-    marginTop: 16, backgroundColor: ACCENT,
-    paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8,
+    marginTop: 18, backgroundColor: c.gold,
+    paddingHorizontal: 28, paddingVertical: 12, borderRadius: 12,
   },
-  retryBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  retryBtnText: { color: c.onGold, fontWeight: "800", fontSize: 14, letterSpacing: 0.3 },
 });

@@ -18,6 +18,10 @@ import {
 import { ScreenWithHeader } from "../components/AppHeader";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { Search, Save, Share2, ScanLine, AlertTriangle } from "lucide-react-native";
 
 // Import converted components
 import IndicatorList from "../components/UnflukeMain/Scanner/IndicatorList";
@@ -52,8 +56,8 @@ import { backendSocket } from "../socket/socket";
 
 const Scanner = ({ shared }) => {
 
-  const isDark = false; // Force light mode — app does not use dark mode
-  const dynamicStyles = styles(isDark);
+  const { colors: c, isDark } = useTheme();
+  const dynamicStyles = makeStyles(c, isDark);
 
   const [type, setType] = useState();
 
@@ -813,6 +817,13 @@ const Scanner = ({ shared }) => {
             {/* Header */}
             {!shared && (
               <View style={dynamicStyles.header}>
+                <View style={dynamicStyles.headerIconWrap}>
+                  {type === "alerts" ? (
+                    <AlertTriangle size={18} color={c.gold} strokeWidth={2.4} />
+                  ) : (
+                    <ScanLine size={18} color={c.gold} strokeWidth={2.4} />
+                  )}
+                </View>
                 <Text style={dynamicStyles.headerTitle}>
                   {!type
                     ? ""
@@ -838,7 +849,7 @@ const Scanner = ({ shared }) => {
                 <TextInput
                   style={dynamicStyles.input}
                   placeholder="Enter scanner name"
-                  placeholderTextColor="#4C525E"
+                  placeholderTextColor={c.textMuted}
                   value={scannerState.name}
                   onChangeText={(text) =>
                     handleAllChanges({ target: { name: "name", value: text } })
@@ -856,7 +867,7 @@ const Scanner = ({ shared }) => {
                 <TextInput
                   style={[dynamicStyles.input, dynamicStyles.textArea]}
                   placeholder="Enter scanner description"
-                  placeholderTextColor="#4C525E"
+                  placeholderTextColor={c.textMuted}
                   value={scannerState.description}
                   onChangeText={(text) =>
                     handleAllChanges({
@@ -940,8 +951,12 @@ const Scanner = ({ shared }) => {
                   style={[dynamicStyles.button, dynamicStyles.buttonSecondary]}
                   onPress={handleSaving}
                   disabled={loading}
+                  activeOpacity={0.8}
                 >
-                  <Text style={dynamicStyles.buttonTextSecondary}>Save</Text>
+                  <View style={dynamicStyles.buttonInner}>
+                    <Save size={15} color={c.text} strokeWidth={2.2} />
+                    <Text style={dynamicStyles.buttonTextSecondary}>Save</Text>
+                  </View>
                 </TouchableOpacity>
               )}
 
@@ -954,8 +969,12 @@ const Scanner = ({ shared }) => {
                     style={[dynamicStyles.button, dynamicStyles.buttonSecondary]}
                     onPress={handleShare}
                     disabled={loading}
+                    activeOpacity={0.8}
                   >
-                    <Text style={dynamicStyles.buttonTextSecondary}>Share</Text>
+                    <View style={dynamicStyles.buttonInner}>
+                      <Share2 size={15} color={c.text} strokeWidth={2.2} />
+                      <Text style={dynamicStyles.buttonTextSecondary}>Share</Text>
+                    </View>
                   </TouchableOpacity>
                 )}
 
@@ -964,15 +983,26 @@ const Scanner = ({ shared }) => {
                   style={[dynamicStyles.button, dynamicStyles.buttonPrimary]}
                   onPress={handleSubmit}
                   disabled={loading}
+                  activeOpacity={0.85}
                 >
-                  <Text style={dynamicStyles.buttonTextPrimary}>Submit</Text>
+                  <LinearGradient
+                    colors={[c.goldBright, c.gold, c.goldDeep]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={dynamicStyles.buttonGradient}
+                  >
+                    <View style={dynamicStyles.buttonInner}>
+                      <Search size={15} color={c.onGold} strokeWidth={2.4} />
+                      <Text style={dynamicStyles.buttonTextPrimary}>Submit</Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
               )}
             </View>
             {/* Loading Spinner */}
             {loading && (
               <View style={dynamicStyles.loadingCard}>
-                <ActivityIndicator size="large" color="#FFFFFF" />
+                <ActivityIndicator size="large" color={c.gold} />
                 <Text style={dynamicStyles.loadingText}>{statusMessage}</Text>
               </View>
             )}
@@ -982,6 +1012,7 @@ const Scanner = ({ shared }) => {
               <View>
                 {resultsMessage ? (
                   <View style={dynamicStyles.warningCard}>
+                    <AlertTriangle size={16} color={c.loss} strokeWidth={2.2} />
                     <Text style={dynamicStyles.warningText}>
                       {resultsMessage}
                     </Text>
@@ -1033,46 +1064,79 @@ const Scanner = ({ shared }) => {
 };
 
 // Styles
-const styles = (isDark) =>
+const makeStyles = (c: AppColors, isDark: boolean) =>
   StyleSheet.create({
     keyboardView: {
       flex: 1,
     },
     container: {
       flex: 1,
-      backgroundColor: '#131722',
+      backgroundColor: c.background,
     },
     contentContainer: {
-      padding: 12,
+      padding: 16,
     },
     mainContent: {
       flex: 1,
     },
     header: {
-      marginBottom: 18,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 20,
+    },
+    headerIconWrap: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: isDark ? c.goldDeep : c.goldMuted,
     },
     headerTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: '#D1D4DC',
+      fontSize: 19,
+      fontWeight: "800",
+      color: c.text,
+      letterSpacing: 0.2,
     },
     inputContainer: {
       marginBottom: 16,
+      backgroundColor: c.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 16,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.3 : 0.06,
+          shadowRadius: 10,
+        },
+        android: {
+          elevation: 2,
+        },
+      }),
     },
     label: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: '#787B86',
-      marginBottom: 8,
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      color: c.textMuted,
+      marginBottom: 10,
     },
     input: {
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.06)',
-      borderRadius: 8,
-      padding: 12,
+      borderColor: c.inputBorder,
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
       fontSize: 14,
-      color: '#D1D4DC',
-      backgroundColor: '#363A45',
+      color: c.text,
+      backgroundColor: c.inputBg,
     },
     textArea: {
       textAlignVertical: "top",
@@ -1097,47 +1161,73 @@ const styles = (isDark) =>
       justifyContent: "space-between",
     },
     button: {
-      paddingVertical: 12,
-      borderRadius: 8,
+      borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
-      maxWidth: 90,
       flex: 1,
+      overflow: "hidden",
+    },
+    buttonInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+    },
+    buttonGradient: {
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
     },
     buttonPrimary: {
-      backgroundColor: "#2962FF",
+      ...Platform.select({
+        ios: {
+          shadowColor: c.gold,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 10,
+        },
+        android: {
+          elevation: 3,
+        },
+      }),
     },
     buttonSecondary: {
-      backgroundColor: '#2A2E39',
+      backgroundColor: c.surfaceElevated,
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.06)',
+      borderColor: c.border,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
     },
     buttonTextPrimary: {
-      color: "#FFFFFF",
-      fontWeight: "600",
+      color: c.onGold,
+      fontWeight: "800",
       fontSize: 13,
+      letterSpacing: 0.3,
     },
     buttonTextSecondary: {
-      color: '#D1D4DC',
-      fontWeight: "600",
+      color: c.text,
+      fontWeight: "700",
       fontSize: 13,
+      letterSpacing: 0.3,
     },
     loadingCard: {
-      backgroundColor: '#1E222D',
-      borderRadius: 12,
+      backgroundColor: c.card,
+      borderRadius: 16,
       padding: 20,
       flexDirection: "row",
       alignItems: "center",
       gap: 16,
       marginBottom: 16,
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.06)',
+      borderColor: c.border,
       ...Platform.select({
         ios: {
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.35 : 0.08,
+          shadowRadius: 12,
         },
         android: {
           elevation: 3,
@@ -1146,24 +1236,29 @@ const styles = (isDark) =>
     },
     loadingText: {
       fontSize: 15,
-      color: '#D1D4DC',
+      color: c.textSecondary,
       flex: 1,
     },
     warningCard: {
-      backgroundColor: 'rgba(242,54,69,0.15)',
-      borderRadius: 12,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+      backgroundColor: c.lossBg,
+      borderRadius: 14,
       padding: 16,
       marginBottom: 16,
       borderWidth: 1,
-      borderColor: 'rgba(242,54,69,0.3)',
+      borderColor: isDark ? "rgba(242,97,87,0.35)" : "rgba(224,72,59,0.25)",
     },
     warningText: {
-      fontSize: 15,
-      color: '#F23645',
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 20,
+      color: c.loss,
     },
     resultsInfo: {
-      fontSize: 14,
-      color: '#787B86',
+      fontSize: 13,
+      color: c.textSecondary,
       marginBottom: 12,
     },
   });

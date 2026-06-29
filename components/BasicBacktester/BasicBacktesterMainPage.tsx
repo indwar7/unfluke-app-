@@ -9,7 +9,7 @@ import {
   Alert,
   SafeAreaView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "expo-router";
 import axios from "axios";
@@ -22,14 +22,32 @@ import {
   setEditStrategy,
   clearValues,
 } from "../../redux/slices/basicBacktester/reducer";
-import { ChevronRight, Eye, Plus } from "lucide-react-native";
+import {
+  ChevronRight,
+  Eye,
+  Plus,
+  Calendar,
+  BarChart3,
+  PieChart,
+  TrendingUp,
+  LineChart,
+  Wallet,
+  FileText,
+} from "lucide-react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { Radius, Space, Shadow } from "@/constants/Theme";
 
 const cardWidth = "100%";
+
+const cardIcons = [BarChart3, LineChart, PieChart, TrendingUp, Wallet];
 
 const BasicBacktesterMainPage = () => {
   const dispatch = useDispatch();
   const auth = useSelector((store: any) => store.Login);
   const router = useRouter();
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
   const [defaultStrategies, setDefaultStrategies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(12);
@@ -133,105 +151,133 @@ const BasicBacktesterMainPage = () => {
     router.push("/basic-backtester");
   };
 
-  const renderStrategyCard = (item, index) => (
-    <View key={index} style={styles.cardContainer}>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardTitleSection}>
-            <View style={styles.imageContainer}>
-              <Ionicons
-                name={["stats-chart", "bar-chart", "pie-chart", "trending-up", "cash"][index % 5] as any}
-                size={28}
-                color="#2962FF"
-              />
+  const renderStrategyCard = (item, index) => {
+    const CardIcon = cardIcons[index % cardIcons.length];
+    const profitRaw = item.rateOfInterest ? parseFloat(item.rateOfInterest) : null;
+    const profitPositive = profitRaw == null ? true : profitRaw >= 0;
+    const profitColor =
+      profitRaw == null ? c.textSecondary : profitPositive ? c.profit : c.loss;
+    return (
+      <View key={index} style={s.cardContainer}>
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <View style={s.cardTitleSection}>
+              <View style={s.imageContainer}>
+                <CardIcon size={24} color={c.gold} strokeWidth={2.2} />
+              </View>
+              <View style={s.titleContainer}>
+                <Text style={s.cardTitle} numberOfLines={2}>{item.name}</Text>
+              </View>
             </View>
-            <View style={styles.titleContainer}>
-              <Text style={styles.cardTitle} numberOfLines={2}>{item.name}</Text>
+            <View style={s.actionButtons}>
+              <TouchableOpacity onPress={() => handleView(item)} style={s.actionButton}>
+                <Eye size={18} color={c.gold} strokeWidth={2.2} />
+              </TouchableOpacity>
             </View>
           </View>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity onPress={() => handleView(item)} style={styles.actionButton}>
-              <Ionicons name="eye" size={18} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.cardContent}>
-          <View style={styles.detailsSection}>
-            <Text style={styles.detailsLabel}>Details</Text>
-            <Text style={styles.detailsText}>
-              Overall Profit: {item.rateOfInterest && parseFloat(item.rateOfInterest).toFixed(2)}
-            </Text>
-            <Text style={styles.detailsText}>
-              Max Drawdown: {item.maxDrawdown == null ? "—" : formatNumber(item.maxDrawdown)}
-            </Text>
-          </View>
-          <View style={styles.dateSection}>
-            <Ionicons name="calendar" size={12} color="#9CA3AF" />
-            <Text style={styles.dateText}>{item.createdOn}</Text>
+
+          <View style={s.divider} />
+
+          <View style={s.cardContent}>
+            <View style={s.metricsRow}>
+              <View style={s.metricBlock}>
+                <Text style={s.metricLabel}>Overall Profit</Text>
+                <Text style={[s.metricValue, { color: profitColor }]}>
+                  {item.rateOfInterest && parseFloat(item.rateOfInterest).toFixed(2)}
+                </Text>
+              </View>
+              <View style={s.metricDividerVertical} />
+              <View style={s.metricBlock}>
+                <Text style={s.metricLabel}>Max Drawdown</Text>
+                <Text style={[s.metricValue, { color: c.loss }]}>
+                  {item.maxDrawdown == null ? "—" : formatNumber(item.maxDrawdown)}
+                </Text>
+              </View>
+            </View>
+            <View style={s.dateSection}>
+              <Calendar size={12} color={c.textMuted} strokeWidth={2.2} />
+              <Text style={s.dateText}>{item.createdOn}</Text>
+            </View>
           </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     // ✅ SafeAreaView only — NO ScreenWithHeader wrapper (that was causing the duplicate navbar)
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={s.container}>
 
       {/* Single clean header */}
-      <View style={styles.header}>
+      <View style={s.header}>
         <View>
-          <Text style={styles.title}>Backtester Main</Text>
-          <View style={styles.breadcrumb}>
-            <Text style={styles.breadcrumbText}>Pages</Text>
-            <ChevronRight size={13} color="#4C525E" />
-            <Text style={styles.breadcrumbText}>Basic Backtester</Text>
+          <Text style={s.title}>Backtester Main</Text>
+          <View style={s.breadcrumb}>
+            <Text style={s.breadcrumbText}>Pages</Text>
+            <ChevronRight size={13} color={c.textMuted} />
+            <Text style={s.breadcrumbTextActive}>Basic Backtester</Text>
           </View>
         </View>
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.viewSavedButton} onPress={navigateToSaved}>
-            <Eye color="#000" size={12} />
-            <Text style={styles.viewSavedButtonText}>View saved</Text>
+        <View style={s.buttonGroup}>
+          <TouchableOpacity style={s.viewSavedButton} onPress={navigateToSaved} activeOpacity={0.7}>
+            <Eye color={c.text} size={13} strokeWidth={2.2} />
+            <Text style={s.viewSavedButtonText}>View saved</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.createNewButton} onPress={handleClick}>
-            <Plus color="white" size={12} strokeWidth={3} />
-            <Text style={styles.createNewButtonText}>Create new</Text>
+          <TouchableOpacity onPress={handleClick} activeOpacity={0.85} style={s.createNewWrap}>
+            <LinearGradient
+              colors={[c.goldBright, c.gold, c.goldDeep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.createNewButton}
+            >
+              <Plus color={c.onGold} size={13} strokeWidth={3} />
+              <Text style={s.createNewButtonText}>Create new</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.pageContent}>
+      <View style={s.pageContent}>
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2962FF" />
-            <Text style={styles.loadingText}>Loading strategies...</Text>
+          <View style={s.loadingContainer}>
+            <ActivityIndicator size="large" color={c.gold} />
+            <Text style={s.loadingText}>Loading strategies...</Text>
           </View>
         ) : (
           <ScrollView
-            style={styles.scrollView}
+            style={s.scrollView}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={s.scrollContent}
           >
             {defaultStrategies.length > 0 ? (
               <>
-                <View style={styles.cardsContainer}>
+                <View style={s.cardsContainer}>
                   {defaultStrategies.slice(0, visibleCount).map((item, index) =>
                     renderStrategyCard(item, index)
                   )}
                 </View>
                 {visibleCount < defaultStrategies.length && (
-                  <View style={styles.loadMoreContainer}>
-                    <TouchableOpacity style={styles.loadMoreButton} onPress={loadMore}>
-                      <Text style={styles.loadMoreButtonText}>Load More</Text>
+                  <View style={s.loadMoreContainer}>
+                    <TouchableOpacity onPress={loadMore} activeOpacity={0.85} style={s.loadMoreWrap}>
+                      <LinearGradient
+                        colors={[c.goldBright, c.gold, c.goldDeep]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={s.loadMoreButton}
+                      >
+                        <Text style={s.loadMoreButtonText}>Load More</Text>
+                      </LinearGradient>
                     </TouchableOpacity>
                   </View>
                 )}
               </>
             ) : (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="document-outline" size={48} color="#9CA3AF" />
-                <Text style={styles.emptyText}>No strategies found.</Text>
-                <Text style={styles.emptySubText}>Create your first strategy to get started.</Text>
+              <View style={s.emptyContainer}>
+                <View style={s.emptyIconWrap}>
+                  <FileText size={36} color={c.gold} strokeWidth={1.8} />
+                </View>
+                <Text style={s.emptyText}>No strategies found.</Text>
+                <Text style={s.emptySubText}>Create your first strategy to get started.</Text>
               </View>
             )}
           </ScrollView>
@@ -241,44 +287,47 @@ const BasicBacktesterMainPage = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#131722',
+    backgroundColor: c.background,
   },
 
   /* ── Single header with title + buttons ── */
   header: {
-    backgroundColor: '#1E222D',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    backgroundColor: c.headerBg,
+    paddingHorizontal: Space.lg,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    ...Shadow.sm,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#D1D4DC',
+    fontSize: 20,
+    fontWeight: '800',
+    color: c.text,
+    letterSpacing: 0.2,
   },
   breadcrumb: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 3,
+    marginTop: 4,
     gap: 4,
   },
   breadcrumbText: {
     fontSize: 12,
-    color: '#4C525E',
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+  breadcrumbTextActive: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.gold,
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -289,37 +338,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    backgroundColor: '#2A2E39',
-    gap: 4,
+    borderColor: c.border,
+    borderRadius: Radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: c.surfaceElevated,
+    gap: 6,
   },
   viewSavedButtonText: {
-    fontWeight: '600',
-    color: '#D1D4DC',
+    fontWeight: '700',
+    color: c.text,
     fontSize: 12,
+  },
+  createNewWrap: {
+    borderRadius: Radius.md,
+    ...Shadow.gold,
   },
   createNewButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    backgroundColor: '#2962FF',
-    gap: 4,
+    borderRadius: Radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    gap: 6,
   },
   createNewButtonText: {
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: '800',
+    color: c.onGold,
     fontSize: 12,
+    letterSpacing: 0.3,
   },
 
   /* ── Content ── */
   pageContent: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: Space.md,
   },
   loadingContainer: {
     flex: 1,
@@ -327,27 +380,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#787B86',
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textSecondary,
   },
   scrollView: { flex: 1 },
-  scrollContent: { paddingTop: 12, paddingBottom: 20 },
-  cardsContainer: { gap: 12 },
+  scrollContent: { paddingTop: Space.md, paddingBottom: Space.xl },
+  cardsContainer: { gap: Space.md },
   cardContainer: { width: cardWidth },
   card: {
-    backgroundColor: '#1E222D',
-    borderRadius: 12,
+    backgroundColor: c.card,
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    elevation: 1,
+    borderColor: c.border,
+    ...Shadow.sm,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: 16,
-    paddingBottom: 8,
+    padding: Space.lg,
+    paddingBottom: Space.md,
   },
   cardTitleSection: {
     flexDirection: 'row',
@@ -356,33 +410,78 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   imageContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: '#2A2E39',
+    width: 52,
+    height: 52,
+    borderRadius: Radius.md,
+    backgroundColor: c.goldLight,
+    borderWidth: 1,
+    borderColor: isDark ? c.border : c.goldMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
   titleContainer: { flex: 1 },
   cardTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#D1D4DC',
-    lineHeight: 20,
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.text,
+    lineHeight: 21,
   },
   actionButtons: { flexDirection: 'row', gap: 8 },
-  actionButton: { width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
-  cardContent: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 16,
-    gap: 12,
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.surfaceElevated,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  detailsSection: { gap: 4 },
-  detailsLabel: { fontSize: 12, color: '#4C525E', marginBottom: 2 },
-  detailsText: { fontSize: 14, fontWeight: '500', color: '#D1D4DC', lineHeight: 20, fontVariant: ['tabular-nums'] as any },
-  dateSection: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  dateText: { fontSize: 12, color: '#4C525E' },
+  divider: {
+    height: 1,
+    backgroundColor: c.borderLight,
+    marginHorizontal: Space.lg,
+  },
+  cardContent: {
+    paddingHorizontal: Space.lg,
+    paddingTop: Space.md,
+    paddingBottom: Space.lg,
+    gap: Space.md,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metricBlock: {
+    flex: 1,
+    gap: 5,
+  },
+  metricDividerVertical: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: c.borderLight,
+    marginHorizontal: Space.md,
+  },
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: c.textMuted,
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: c.text,
+    fontVariant: ['tabular-nums'] as any,
+  },
+  dateSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingTop: 2,
+  },
+  dateText: { fontSize: 12, fontWeight: '600', color: c.textMuted },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -390,17 +489,30 @@ const styles = StyleSheet.create({
     padding: 40,
     marginTop: 40,
   },
-  emptyText: { fontSize: 18, fontWeight: '600', color: '#787B86', marginTop: 16, textAlign: 'center' },
-  emptySubText: { fontSize: 14, color: '#4C525E', marginTop: 8, textAlign: 'center' },
-  loadMoreContainer: { alignItems: 'center', marginTop: 20, marginBottom: 16 },
-  loadMoreButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    backgroundColor: '#2962FF',
-    borderRadius: 10,
-    elevation: 2,
+  emptyIconWrap: {
+    width: 84,
+    height: 84,
+    borderRadius: Radius.xl,
+    backgroundColor: c.goldLight,
+    borderWidth: 1,
+    borderColor: isDark ? c.border : c.goldMuted,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  loadMoreButtonText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+  emptyText: { fontSize: 18, fontWeight: '800', color: c.text, marginTop: 16, textAlign: 'center' },
+  emptySubText: { fontSize: 14, fontWeight: '500', color: c.textSecondary, marginTop: 8, textAlign: 'center' },
+  loadMoreContainer: { alignItems: 'center', marginTop: Space.xl, marginBottom: Space.lg },
+  loadMoreWrap: {
+    borderRadius: Radius.md,
+    ...Shadow.gold,
+  },
+  loadMoreButton: {
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    borderRadius: Radius.md,
+  },
+  loadMoreButtonText: { fontSize: 14, fontWeight: '800', color: c.onGold, letterSpacing: 0.3 },
 });
 
 export default BasicBacktesterMainPage;

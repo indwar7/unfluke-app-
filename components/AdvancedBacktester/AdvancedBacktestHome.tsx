@@ -11,12 +11,23 @@ import {
   Share,
 } from "react-native";
 import { Switch } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import axios from "axios";
-import { ChevronRight } from "lucide-react-native";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Pencil,
+  Share2,
+  Eye,
+  Trash2,
+  Plus,
+  FileText,
+  TrendingDown,
+  CalendarDays,
+} from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   fetchAdvancedStrategyDetails,
   toggleStrategyMonetize,
@@ -24,9 +35,13 @@ import {
 } from "../../apis/BasicBacktester";
 import { deepCopy } from "../../components/UnflukeMain/Utils/common_vars";
 import { Config } from "../../helpers/config";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const AdvancedBacktesterHome = () => {
   const router = useRouter();
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const [savedStrategies, setSavedStrategies] = useState([]);
   const [listStrategies, setListStrategies] = useState([]);
@@ -219,16 +234,16 @@ const AdvancedBacktesterHome = () => {
           </TouchableOpacity>
           <View style={styles.stratActions}>
             <TouchableOpacity style={styles.actionBtn} onPress={() => navigateToStrategyPage(item.user, item._id)}>
-              <Ionicons name="pencil" size={15} color="#2962FF" />
+              <Pencil size={15} color={c.gold} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn} onPress={() => shareBacktester(item.fileName)}>
-              <Ionicons name="share-outline" size={15} color="#2962FF" />
+              <Share2 size={15} color={c.gold} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn} onPress={() => navigateToStrategyView(item.fileName)}>
-              <Ionicons name="eye" size={15} color="#089981" />
+              <Eye size={15} color={c.profit} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => handleDeleteStrategy(item._id)}>
-              <Ionicons name="trash" size={15} color="#F23645" />
+            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDanger]} onPress={() => handleDeleteStrategy(item._id)}>
+              <Trash2 size={15} color={c.loss} />
             </TouchableOpacity>
           </View>
         </View>
@@ -236,13 +251,19 @@ const AdvancedBacktesterHome = () => {
         {/* Metrics Row */}
         <View style={styles.metricsRow}>
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Max Drawdown</Text>
-            <Text style={[styles.metricValue, { color: "#F23645" }]}>
+            <View style={styles.metricLabelRow}>
+              <TrendingDown size={12} color={c.textMuted} />
+              <Text style={styles.metricLabel}>Max Drawdown</Text>
+            </View>
+            <Text style={[styles.metricValue, { color: c.loss }]}>
               {drawdown != null ? `₹${Number(drawdown).toFixed(0)}` : "—"}
             </Text>
           </View>
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Created On</Text>
+            <View style={styles.metricLabelRow}>
+              <CalendarDays size={12} color={c.textMuted} />
+              <Text style={styles.metricLabel}>Created On</Text>
+            </View>
             <Text style={styles.metricValue}>{createdOn}</Text>
           </View>
         </View>
@@ -254,8 +275,9 @@ const AdvancedBacktesterHome = () => {
             <Switch
               value={!!item.isPrivate}
               onValueChange={(val) => handlePrivate(index, val)}
-              trackColor={{ false: "#363A45", true: "#2962FF" }}
-              thumbColor="#fff"
+              trackColor={{ false: c.inputBorder, true: c.gold }}
+              thumbColor={c.white}
+              ios_backgroundColor={c.inputBorder}
             />
           </View>
           <View style={styles.toggleItem}>
@@ -264,8 +286,9 @@ const AdvancedBacktesterHome = () => {
               value={!!item.monetize}
               disabled={item.isPrivate}
               onValueChange={(val) => handleMonetize(index, val)}
-              trackColor={{ false: "#363A45", true: "#2962FF" }}
-              thumbColor="#fff"
+              trackColor={{ false: c.inputBorder, true: c.gold }}
+              thumbColor={c.white}
+              ios_backgroundColor={c.inputBorder}
             />
           </View>
         </View>
@@ -290,7 +313,7 @@ const AdvancedBacktesterHome = () => {
           onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
         >
-          <Ionicons name="chevron-back" size={16} color={currentPage === 1 ? "#4C525E" : "#D1D4DC"} />
+          <ChevronLeft size={16} color={currentPage === 1 ? c.textMuted : c.text} />
         </TouchableOpacity>
         {pages.map((p) => (
           <TouchableOpacity
@@ -308,7 +331,7 @@ const AdvancedBacktesterHome = () => {
           onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages}
         >
-          <Ionicons name="chevron-forward" size={16} color={currentPage === totalPages ? "#4C525E" : "#D1D4DC"} />
+          <ChevronRight size={16} color={currentPage === totalPages ? c.textMuted : c.text} />
         </TouchableOpacity>
       </View>
     );
@@ -317,7 +340,9 @@ const AdvancedBacktesterHome = () => {
   const StrategyList = ({ strategies }: { strategies: any[] }) => (
     strategies.length === 0 ? (
       <View style={styles.emptyBox}>
-        <Ionicons name="document-outline" size={36} color="#787B86" />
+        <View style={styles.emptyIconWrap}>
+          <FileText size={30} color={c.gold} />
+        </View>
         <Text style={styles.emptyText}>No strategies found.</Text>
       </View>
     ) : (
@@ -333,13 +358,13 @@ const AdvancedBacktesterHome = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ✅ Single clean header - no paddingTop hack */}
+      {/* Single clean header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Backtester Home</Text>
         <View style={styles.breadcrumb}>
           <Text style={styles.breadcrumbText}>Pages</Text>
-          <ChevronRight size={13} color="#787B86" />
-          <Text style={styles.breadcrumbText}>Advanced Backtester</Text>
+          <ChevronRight size={13} color={c.textMuted} />
+          <Text style={styles.breadcrumbActive}>Advanced Backtester</Text>
         </View>
       </View>
 
@@ -353,11 +378,18 @@ const AdvancedBacktesterHome = () => {
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Your saved strategies</Text>
             <TouchableOpacity
-              style={styles.createButton}
+              activeOpacity={0.85}
               onPress={() => router.push("/advanced-backtester")}
             >
-              <Ionicons name="add" size={15} color="white" />
-              <Text style={styles.createButtonText}>Create new</Text>
+              <LinearGradient
+                colors={[c.goldBright, c.gold, c.goldDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.createButton}
+              >
+                <Plus size={15} color={c.onGold} />
+                <Text style={styles.createButtonText}>Create new</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
@@ -388,7 +420,7 @@ const AdvancedBacktesterHome = () => {
           <View style={styles.content}>
             {loading ? (
               <View style={styles.loaderBox}>
-                <ActivityIndicator size="large" color="#2962FF" />
+                <ActivityIndicator size="large" color={c.gold} />
                 <Text style={styles.loaderText}>Loading strategies...</Text>
               </View>
             ) : (
@@ -401,235 +433,280 @@ const AdvancedBacktesterHome = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#131722",
-    // ✅ NO paddingTop: 85 — header handles spacing
-  },
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
 
-  /* ── Header ── */
-  header: {
-    backgroundColor: "#1E222D",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#D1D4DC",
-  },
-  breadcrumb: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 3,
-    gap: 4,
-  },
-  breadcrumbText: {
-    fontSize: 12,
-    color: "#787B86",
-  },
+    /* ── Header ── */
+    header: {
+      backgroundColor: c.headerBg,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.05,
+      shadowRadius: 6,
+      elevation: 3,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: "800",
+      color: c.text,
+      letterSpacing: 0.2,
+    },
+    breadcrumb: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 4,
+      gap: 4,
+    },
+    breadcrumbText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: c.textMuted,
+    },
+    breadcrumbActive: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: c.gold,
+    },
 
-  /* ── Scroll ── */
-  scrollView: { flex: 1 },
-  scrollContent: { padding: 12, paddingBottom: 30 },
+    /* ── Scroll ── */
+    scrollView: { flex: 1 },
+    scrollContent: { padding: 14, paddingBottom: 36 },
 
-  /* ── Card ── */
-  card: {
-    backgroundColor: "#1E222D",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    elevation: 1,
-    overflow: "hidden",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#D1D4DC",
-  },
-  createButton: {
-    backgroundColor: "#2962FF",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  createButtonText: {
-    color: "white",
-    fontSize: 13,
-    fontWeight: "600",
-  },
+    /* ── Card ── */
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.25 : 0.06,
+      shadowRadius: 12,
+      elevation: 2,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 18,
+      paddingVertical: 18,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderLight,
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: c.text,
+      letterSpacing: 0.2,
+    },
+    createButton: {
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+    createButtonText: {
+      color: c.onGold,
+      fontSize: 13,
+      fontWeight: "800",
+      letterSpacing: 0.2,
+    },
 
-  /* ── Tabs ── */
-  tabContainer: {
-    flexDirection: "row",
-    backgroundColor: "#2A2E39",
-    margin: 16,
-    borderRadius: 8,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  activeTab: {
-    backgroundColor: "#363A45",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  tabText: { fontSize: 13, fontWeight: "600", color: "#787B86" },
-  activeTabText: { color: "#D1D4DC" },
+    /* ── Tabs ── */
+    tabContainer: {
+      flexDirection: "row",
+      backgroundColor: c.surfaceElevated,
+      marginHorizontal: 18,
+      marginTop: 18,
+      borderRadius: 12,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 9,
+      alignItems: "center",
+    },
+    activeTab: {
+      backgroundColor: c.gold,
+      shadowColor: c.gold,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.35,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    tabText: { fontSize: 13, fontWeight: "700", color: c.textMuted },
+    activeTabText: { color: c.onGold },
 
-  content: { padding: 16 },
+    content: { padding: 18 },
 
-  /* ── Strategy Cards ── */
-  stratCard: {
-    backgroundColor: "#2A2E39",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    padding: 14,
-    marginBottom: 10,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  stratCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  stratName: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#2962FF",
-    flex: 1,
-    marginRight: 8,
-  },
-  stratActions: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  actionBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: "#363A45",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  metricsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
-  },
-  metricItem: {
-    flex: 1,
-    backgroundColor: "#1E222D",
-    borderRadius: 8,
-    padding: 10,
-  },
-  metricLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#787B86",
-    textTransform: "uppercase",
-    marginBottom: 4,
-  },
-  metricValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#D1D4DC",
-    fontVariant: ["tabular-nums"],
-  },
-  togglesRow: {
-    flexDirection: "row",
-    gap: 16,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.06)",
-    paddingTop: 10,
-  },
-  toggleItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  toggleLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#787B86",
-  },
+    /* ── Strategy Cards ── */
+    stratCard: {
+      backgroundColor: c.surfaceElevated,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.22 : 0.04,
+      shadowRadius: 8,
+      elevation: 1,
+    },
+    stratCardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 14,
+    },
+    stratName: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: c.text,
+      flex: 1,
+      marginRight: 8,
+      letterSpacing: 0.1,
+    },
+    stratActions: {
+      flexDirection: "row",
+      gap: 6,
+    },
+    actionBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    actionBtnDanger: {
+      backgroundColor: c.lossBg,
+      borderColor: c.lossBg,
+    },
+    metricsRow: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 14,
+    },
+    metricItem: {
+      flex: 1,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+      padding: 12,
+    },
+    metricLabelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      marginBottom: 6,
+    },
+    metricLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: c.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    metricValue: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: c.text,
+      fontVariant: ["tabular-nums"],
+    },
+    togglesRow: {
+      flexDirection: "row",
+      gap: 18,
+      borderTopWidth: 1,
+      borderTopColor: c.borderLight,
+      paddingTop: 12,
+    },
+    toggleItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    toggleLabel: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: c.textSecondary,
+    },
 
-  /* ── States ── */
-  loaderBox: {
-    paddingVertical: 40,
-    alignItems: "center",
-    gap: 12,
-  },
-  loaderText: { fontSize: 14, color: "#787B86" },
-  emptyBox: {
-    paddingVertical: 40,
-    alignItems: "center",
-    gap: 12,
-  },
-  emptyText: { fontSize: 15, color: "#787B86" },
+    /* ── States ── */
+    loaderBox: {
+      paddingVertical: 44,
+      alignItems: "center",
+      gap: 14,
+    },
+    loaderText: { fontSize: 14, fontWeight: "600", color: c.textSecondary },
+    emptyBox: {
+      paddingVertical: 44,
+      alignItems: "center",
+      gap: 14,
+    },
+    emptyIconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 20,
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyText: { fontSize: 15, fontWeight: "600", color: c.textSecondary },
 
-  /* ── Pagination ── */
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 16,
-    gap: 6,
-  },
-  pageBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    backgroundColor: "#2A2E39",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pageBtnActive: {
-    backgroundColor: "#2962FF",
-  },
-  pageBtnDisabled: {
-    opacity: 0.4,
-  },
-  pageBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#D1D4DC",
-  },
-  pageBtnTextActive: {
-    color: "#ffffff",
-  },
-});
+    /* ── Pagination ── */
+    paginationContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 18,
+      gap: 6,
+    },
+    pageBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 11,
+      backgroundColor: c.surfaceElevated,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pageBtnActive: {
+      backgroundColor: c.gold,
+      borderColor: c.gold,
+    },
+    pageBtnDisabled: {
+      opacity: 0.4,
+    },
+    pageBtnText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.text,
+      fontVariant: ["tabular-nums"],
+    },
+    pageBtnTextActive: {
+      color: c.onGold,
+    },
+  });
 
 export default AdvancedBacktesterHome;

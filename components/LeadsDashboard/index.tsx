@@ -11,14 +11,17 @@ import { createSelector } from "reselect";
 import MyEarnings from "./MyEarnings";
 import StrategyEarnings from "./StrategyEarnings";
 
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Widgets from "./widgets";
-import { ChevronRight } from "lucide-react-native";
+import { ChevronRight, Wallet, BarChart3 } from "lucide-react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { Radius, Space, Shadow } from "@/constants/Theme";
 
 const LeadsDashBoard = () => {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
+
   const [activeTab, setActiveTab] = useState("my-earnings");
-  // Always white theme — no dark mode in this app
-  const isDarkMode = false;
 
   const auth = createSelector(
     (state) => state.Login,
@@ -32,39 +35,39 @@ const LeadsDashBoard = () => {
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      style={s.container}
+      contentContainerStyle={s.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      <View>
-        <Text style={styles.title}>My Earnings</Text>
-        <View style={styles.breadcrumb}>
-          <Text style={styles.breadcrumbText}>Pages</Text>
-          <ChevronRight size={13} color="#6B7280" />
-          <Text style={styles.breadcrumbText}>My Earnings</Text>
+      <View style={s.header}>
+        <Text style={s.title}>My Earnings</Text>
+        <View style={s.breadcrumb}>
+          <Text style={s.breadcrumbText}>Pages</Text>
+          <ChevronRight size={13} color={c.textMuted} />
+          <Text style={s.breadcrumbCurrent}>My Earnings</Text>
         </View>
       </View>
 
       <Widgets />
 
-      <View style={styles.tabContainer}>
-        <View style={styles.tabBar}>
+      <View style={s.tabContainer}>
+        <View style={s.tabBar}>
           <TouchableOpacity
+            activeOpacity={0.85}
             onPress={() => handleTabChange("my-earnings")}
             style={[
-              styles.tabButton,
-              activeTab === "my-earnings" && styles.activeTabButton,
+              s.tabButton,
+              activeTab === "my-earnings" && s.activeTabButton,
             ]}
           >
-            <Icon
-              name="cash"
-              size={18}
-              color={activeTab === "my-earnings" ? "#111827" : "#6b7280"}
+            <Wallet
+              size={17}
+              color={activeTab === "my-earnings" ? c.onGold : c.textMuted}
             />
             <Text
               style={[
-                styles.tabButtonText,
-                activeTab === "my-earnings" && styles.activeTabButtonText,
+                s.tabButtonText,
+                activeTab === "my-earnings" && s.activeTabButtonText,
               ]}
             >
               My Earnings
@@ -72,21 +75,21 @@ const LeadsDashBoard = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
+            activeOpacity={0.85}
             onPress={() => handleTabChange("strategy-earnings")}
             style={[
-              styles.tabButton,
-              activeTab === "strategy-earnings" && styles.activeTabButton,
+              s.tabButton,
+              activeTab === "strategy-earnings" && s.activeTabButton,
             ]}
           >
-            <Icon
-              name="chart-bar"
-              size={18}
-              color={activeTab === "strategy-earnings" ? "#111827" : "#6b7280"}
+            <BarChart3
+              size={17}
+              color={activeTab === "strategy-earnings" ? c.onGold : c.textMuted}
             />
             <Text
               style={[
-                styles.tabButtonText,
-                activeTab === "strategy-earnings" && styles.activeTabButtonText,
+                s.tabButtonText,
+                activeTab === "strategy-earnings" && s.activeTabButtonText,
               ]}
             >
               Strategies Earnings
@@ -94,7 +97,7 @@ const LeadsDashBoard = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.tabContent}>
+        <View style={s.tabContent}>
           {activeTab === "my-earnings" && <MyEarnings user={user} />}
           {activeTab === "strategy-earnings" && <StrategyEarnings user={user} />}
         </View>
@@ -103,72 +106,86 @@ const LeadsDashBoard = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 12,
-    backgroundColor: "#f9fafb",
-    // No paddingTop — ScreenWithHeader already accounts for the header
-  },
-  contentContainer: {
-    paddingBottom: 130,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  breadcrumb: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  breadcrumbText: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  tabContainer: {
-    marginTop: 16,
-  },
-  tabBar: {
-    flexDirection: "row",
-    backgroundColor: "#e5e7eb",
-    borderRadius: 8,
-    padding: 4,
-    marginBottom: 16,
-    maxWidth: 400,
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    gap: 8,
-  },
-  activeTabButton: {
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6b7280",
-  },
-  activeTabButtonText: {
-    color: "#111827",
-  },
-  tabContent: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      padding: Space.md,
+      backgroundColor: c.background,
+      // No paddingTop — ScreenWithHeader already accounts for the header
+    },
+    contentContainer: {
+      paddingBottom: 130,
+    },
+    header: {
+      marginBottom: Space.xs,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: "800",
+      letterSpacing: -0.4,
+      color: c.text,
+    },
+    breadcrumb: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 4,
+      gap: 2,
+    },
+    breadcrumbText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: c.textMuted,
+    },
+    breadcrumbCurrent: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: c.gold,
+    },
+    tabContainer: {
+      marginTop: Space.lg,
+    },
+    tabBar: {
+      flexDirection: "row",
+      backgroundColor: c.surfaceElevated,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 5,
+      marginBottom: Space.lg,
+      gap: 4,
+    },
+    tabButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 11,
+      paddingHorizontal: 12,
+      borderRadius: Radius.md,
+      gap: 8,
+    },
+    activeTabButton: {
+      backgroundColor: c.gold,
+      ...Shadow.gold,
+    },
+    tabButtonText: {
+      fontSize: 13.5,
+      fontWeight: "700",
+      letterSpacing: 0.2,
+      color: c.textMuted,
+    },
+    activeTabButtonText: {
+      color: c.onGold,
+    },
+    tabContent: {
+      backgroundColor: c.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+      ...Shadow.sm,
+    },
+  });
 
 export default LeadsDashBoard;

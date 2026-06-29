@@ -9,7 +9,7 @@ import {
   useColorScheme,
   StatusBar,
 } from "react-native";
-import { ChevronRight } from "lucide-react-native"; // or your preferred icon library
+import { ChevronRight, FlaskConical } from "lucide-react-native"; // or your preferred icon library
 // import BreadCrumb from "../../../../components/Common/BreadCrumb";
 import StrategyFilters from "../UnflukeMain/BasicBacktester/StrategyFilters";
 import StrategyLegs from "../../components/UnflukeMain/BasicBacktester/StrategyLegs";
@@ -28,13 +28,16 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import MessageModal from "./MessageModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { GoldButton } from "@/components/ui/Premium";
 
 const BasicBacktester = () => {
 
   const colorScheme = useColorScheme();
-  const isDark = false;
+  const { colors: c, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const styles = createStyles(isDark, insets.bottom);
+  const styles = createStyles(c, isDark, insets.bottom);
   const [subUrl, setSubUrl] = useState("");
   const globalState = useSelector((store: any) => store.Layout);
   const backtester = useSelector((store: any) => store.BasicBacktester);
@@ -194,12 +197,17 @@ const BasicBacktester = () => {
       <View style={styles.pageContent}>
         <View style={styles.headerContainer}>
           {/* Left section: Title + breadcrumb */}
-          <View>
-            <Text style={styles.title}>Backtester Main</Text>
-            <View style={styles.breadcrumb}>
-              <Text style={styles.breadcrumbText}>Pages</Text>
-              <ChevronRight size={13} color="#787B86" />
-              <Text style={styles.breadcrumbText}>Basic Backtester</Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIcon}>
+              <FlaskConical size={20} color={c.gold} strokeWidth={2.2} />
+            </View>
+            <View style={styles.headerTextWrap}>
+              <Text style={styles.title}>Backtester Main</Text>
+              <View style={styles.breadcrumb}>
+                <Text style={styles.breadcrumbText}>Pages</Text>
+                <ChevronRight size={13} color={c.textMuted} style={styles.breadcrumbIcon} />
+                <Text style={styles.breadcrumbTextActive}>Basic Backtester</Text>
+              </View>
             </View>
           </View>
           {/* Right section: Buttons */}
@@ -237,24 +245,12 @@ const BasicBacktester = () => {
             )}
 
             {/* Save Strategy Button */}
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                isBacktesting && styles.saveButtonDisabled,
-              ]}
+            <GoldButton
+              label="Save Strategy"
               onPress={handleSubmit}
               disabled={isBacktesting}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.saveButtonText,
-                  isBacktesting && styles.saveButtonTextDisabled,
-                ]}
-              >
-                Save Strategy
-              </Text>
-            </TouchableOpacity>
+              style={styles.saveButton}
+            />
           </View>
         </ScrollView>
       </View>
@@ -262,30 +258,51 @@ const BasicBacktester = () => {
   );
 };
 
-const createStyles = (isDark, bottomInset = 0) =>
+const createStyles = (c: AppColors, isDark: boolean, bottomInset = 0) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: "#131722",
+      backgroundColor: c.background,
     },
     pageContent: {
       flex: 1,
-      paddingHorizontal: 12,
+      paddingHorizontal: 14,
     },
     scrollContent: {
       paddingBottom: Math.max(bottomInset, 16) + 48,
     },
     headerContainer: {
-      paddingBottom: 14,
+      paddingTop: 6,
+      paddingBottom: 16,
       flexDirection: "row",
       justifyContent: "space-between",
+      alignItems: "center",
       flexWrap: "wrap",
       gap: 10,
     },
+    headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    headerIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: isDark ? c.goldMuted : c.gold,
+    },
+    headerTextWrap: {
+      flexShrink: 1,
+    },
     title: {
-      fontSize: 17,
-      fontWeight: "bold",
-      color: "#D1D4DC",
+      fontSize: 18,
+      fontWeight: "800",
+      letterSpacing: 0.2,
+      color: c.text,
     },
     breadcrumb: {
       flexDirection: "row",
@@ -293,8 +310,18 @@ const createStyles = (isDark, bottomInset = 0) =>
       marginTop: 4,
     },
     breadcrumbText: {
-      fontSize: 12,
-      color: "#787B86",
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      color: c.textMuted,
+    },
+    breadcrumbTextActive: {
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      color: c.gold,
     },
     breadcrumbIcon: {
       marginHorizontal: 4,
@@ -303,35 +330,9 @@ const createStyles = (isDark, bottomInset = 0) =>
       flex: 1,
     },
     saveButton: {
-      backgroundColor: "#2962FF",
-      paddingVertical: 12,
-      // paddingHorizontal: 16,
-      borderRadius: 6,
       alignSelf: "flex-end", // float-end equivalent
-      marginTop: 16,
-      minWidth: 130, // w-lg equivalent
-      elevation: 2, // Android shadow
-      shadowColor: "#000", // iOS shadow
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.1,
-      shadowRadius: 3.84,
-    },
-    saveButtonDisabled: {
-      backgroundColor: "#2A2E39",
-      elevation: 0,
-      shadowOpacity: 0,
-    },
-    saveButtonText: {
-      color: "#FFFFFF",
-      fontSize: 14,
-      fontWeight: "600",
-      textAlign: "center",
-    },
-    saveButtonTextDisabled: {
-      color: "#4C525E",
+      marginTop: 18,
+      minWidth: 160, // w-lg equivalent
     },
   });
 

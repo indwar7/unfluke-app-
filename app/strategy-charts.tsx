@@ -4,12 +4,17 @@ import {
   ActivityIndicator, TextInput, Modal, FlatList, Dimensions,
   Alert,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { ScreenWithHeader } from "@/components/AppHeader";
 import { WebView } from "react-native-webview";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  X, Check, Search, ChevronDown, RefreshCw, AlertCircle, LineChart,
+} from "lucide-react-native";
 import { useBottomGutter } from "@/utils/bottomGutter";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const WIDTH = Dimensions.get("window").width;
 const BASE = "https://api.unfluke.in";
@@ -395,6 +400,8 @@ if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('READY');
 // Main Screen
 // ============================================================
 export default function StrategyChartsScreen() {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
   const screenBottomGutter = useBottomGutter();
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -696,37 +703,42 @@ export default function StrategyChartsScreen() {
     const filtered = searchable ? data.filter((i: string) => i.toLowerCase().includes(search.toLowerCase())) : data;
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-        <TouchableOpacity style={[styles.modalOverlay, { paddingBottom: bottomGutter }]} activeOpacity={1} onPress={onClose}>
-          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <Text style={styles.modalTitle}>{title}</Text>
-              <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#787B86" />
+        <TouchableOpacity style={[s.modalOverlay, { paddingBottom: bottomGutter }]} activeOpacity={1} onPress={onClose}>
+          <View style={s.modalContent} onStartShouldSetResponder={() => true}>
+            <View style={s.modalGrabber} />
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <Text style={s.modalTitle}>{title}</Text>
+              <TouchableOpacity onPress={onClose} style={s.modalClose} activeOpacity={0.7}>
+                <X size={20} color={c.textSecondary} />
               </TouchableOpacity>
             </View>
             {searchable && (
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search..."
-                value={search}
-                onChangeText={setSearch}
-                placeholderTextColor="#4C525E"
-                autoFocus
-              />
+              <View style={s.searchWrap}>
+                <Search size={18} color={c.textMuted} />
+                <TextInput
+                  style={s.searchInput}
+                  placeholder="Search..."
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholderTextColor={c.textMuted}
+                  autoFocus
+                />
+              </View>
             )}
             <FlatList
               data={filtered}
               keyExtractor={(item, i) => `${item}-${i}`}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.pickerItem, selected === item && styles.pickerItemActive]}
+                  style={[s.pickerItem, selected === item && s.pickerItemActive]}
                   onPress={() => { onSelect(item); onClose(); }}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[styles.pickerItemText, selected === item && styles.pickerItemTextActive]}>{item}</Text>
-                  {selected === item && <Ionicons name="checkmark" size={18} color="#2962FF" />}
+                  <Text style={[s.pickerItemText, selected === item && s.pickerItemTextActive]}>{item}</Text>
+                  {selected === item && <Check size={18} color={c.gold} />}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={{ textAlign: "center", color: "#4C525E", padding: 20 }}>No items found</Text>}
+              ListEmptyComponent={<Text style={s.pickerEmpty}>No items found</Text>}
             />
           </View>
         </TouchableOpacity>
@@ -736,15 +748,15 @@ export default function StrategyChartsScreen() {
 
   // ── Form Field ─────────────────────────────────────────────
   const FormField = ({ label, value, onPress, disabled = false }: any) => (
-    <View style={styles.fieldGroup}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+    <View style={s.fieldGroup}>
+      <Text style={s.fieldLabel}>{label}</Text>
       <TouchableOpacity
-        style={[styles.fieldInput, disabled && { opacity: 0.45 }]}
+        style={[s.fieldInput, disabled && { opacity: 0.45 }]}
         onPress={disabled ? undefined : onPress}
         activeOpacity={0.7}
       >
-        <Text style={styles.fieldValue} numberOfLines={1}>{value || "Select..."}</Text>
-        <Ionicons name="chevron-down" size={16} color="#787B86" />
+        <Text style={s.fieldValue} numberOfLines={1}>{value || "Select..."}</Text>
+        <ChevronDown size={16} color={c.textMuted} />
       </TouchableOpacity>
     </View>
   );
@@ -816,29 +828,34 @@ export default function StrategyChartsScreen() {
   return (
     <ScreenWithHeader>
       {/* Header */}
-      <View style={styles.headerBar}>
-        <View>
-          <Text style={styles.headerTitle}>Strategy Charts</Text>
-          <Text style={styles.headerSub}>{selectedInstrument} - {chartType}</Text>
+      <View style={s.headerBar}>
+        <View style={s.headerTitleRow}>
+          <View style={s.headerIcon}>
+            <LineChart size={18} color={c.gold} />
+          </View>
+          <View>
+            <Text style={s.headerTitle}>Strategy Charts</Text>
+            <Text style={s.headerSub}>{selectedInstrument} · {chartType}</Text>
+          </View>
         </View>
-        <TouchableOpacity onPress={() => setRefreshKey((k) => k + 1)} style={styles.refreshBtn}>
-          <Ionicons name="refresh" size={18} color="#2962FF" />
+        <TouchableOpacity onPress={() => setRefreshKey((k) => k + 1)} style={s.refreshBtn} activeOpacity={0.7}>
+          <RefreshCw size={17} color={c.gold} />
         </TouchableOpacity>
       </View>
 
       {/* TradingView Chart */}
-      <View style={styles.chartContainer}>
+      <View style={s.chartContainer}>
         {!chartReady && (
-          <View style={styles.chartLoader}>
-            <ActivityIndicator color="#2962FF" size="large" />
-            <Text style={styles.chartLoaderText}>Loading TradingView...</Text>
+          <View style={s.chartLoader}>
+            <ActivityIndicator color={c.gold} size="large" />
+            <Text style={s.chartLoaderText}>Loading TradingView...</Text>
           </View>
         )}
         {chartLoading && chartReady && (
-          <View style={styles.chartLoadingOverlay}>
-            <View style={styles.chartLoadingToast}>
-              <ActivityIndicator color="#fff" size="small" />
-              <Text style={styles.chartLoadingToastText}>Chart is loading...</Text>
+          <View style={s.chartLoadingOverlay}>
+            <View style={s.chartLoadingToast}>
+              <ActivityIndicator color={c.gold} size="small" />
+              <Text style={s.chartLoadingToastText}>Chart is loading...</Text>
             </View>
           </View>
         )}
@@ -864,12 +881,12 @@ export default function StrategyChartsScreen() {
 
       {/* Form */}
       <ScrollView
-        style={{ flex: 1, backgroundColor: "#131722" }}
+        style={{ flex: 1, backgroundColor: c.background }}
         contentContainerStyle={{ padding: 16, paddingBottom: 60 + screenBottomGutter }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Configure Strategy</Text>
+        <View style={s.card}>
+          <Text style={s.sectionTitle}>Configure Strategy</Text>
 
           <FormField
             label="Chart Type"
@@ -885,16 +902,17 @@ export default function StrategyChartsScreen() {
 
           {/* Option Type */}
           {(chartType === "Options Chart" || chartType === "Spread Chart" || chartType === "Butterfly Chart") && (
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Type</Text>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Type</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {["CE - Call", "PE - Put"].map((t) => (
                   <TouchableOpacity
                     key={t}
-                    style={[styles.radioBtn, optionType === t && styles.radioBtnActive]}
+                    style={[s.radioBtn, optionType === t && s.radioBtnActive]}
                     onPress={() => setOptionType(t)}
+                    activeOpacity={0.8}
                   >
-                    <Text style={[styles.radioText, optionType === t && styles.radioTextActive]}>{t}</Text>
+                    <Text style={[s.radioText, optionType === t && s.radioTextActive]}>{t}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -927,13 +945,13 @@ export default function StrategyChartsScreen() {
                 <View style={{ flex: 1 }}><PickStrike label="Put Strike" value={s4} list={putStrikes} onSet={setS4} /></View>
               </View>
               <View style={{ flexDirection: "row", gap: 10 }}>
-                <View style={[styles.fieldGroup, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>Call Lots</Text>
-                  <TextInput style={styles.fieldInputText} value={callLots} onChangeText={setCallLots} keyboardType="numeric" />
+                <View style={[s.fieldGroup, { flex: 1 }]}>
+                  <Text style={s.fieldLabel}>Call Lots</Text>
+                  <TextInput style={s.fieldInputText} value={callLots} onChangeText={setCallLots} keyboardType="numeric" placeholderTextColor={c.textMuted} />
                 </View>
-                <View style={[styles.fieldGroup, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>Put Lots</Text>
-                  <TextInput style={styles.fieldInputText} value={putLots} onChangeText={setPutLots} keyboardType="numeric" />
+                <View style={[s.fieldGroup, { flex: 1 }]}>
+                  <Text style={s.fieldLabel}>Put Lots</Text>
+                  <TextInput style={s.fieldInputText} value={putLots} onChangeText={setPutLots} keyboardType="numeric" placeholderTextColor={c.textMuted} />
                 </View>
               </View>
             </>
@@ -971,13 +989,13 @@ export default function StrategyChartsScreen() {
 
           {chartType === "Straddle Combo Chart" && (
             <>
-              <Text style={{ fontWeight: "700", marginBottom: 6, color: "#D1D4DC", fontSize: 12 }}>Call Strikes</Text>
+              <Text style={s.comboLabel}>Call Strikes</Text>
               <View style={{ flexDirection: "row", gap: 6 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Call 1" value={s1} list={callStrikes} onSet={setS1} /></View>
                 <View style={{ flex: 1 }}><PickStrike label="Call 2" value={s2} list={callStrikes} onSet={setS2} /></View>
                 <View style={{ flex: 1 }}><PickStrike label="Call 3" value={s3} list={callStrikes} onSet={setS3} /></View>
               </View>
-              <Text style={{ fontWeight: "700", marginBottom: 6, marginTop: 4, color: "#D1D4DC", fontSize: 12 }}>Put Strikes</Text>
+              <Text style={[s.comboLabel, { marginTop: 4 }]}>Put Strikes</Text>
               <View style={{ flexDirection: "row", gap: 6 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Put 1" value={s4} list={putStrikes} onSet={setS4} /></View>
                 <View style={{ flex: 1 }}><PickStrike label="Put 2" value={s5} list={putStrikes} onSet={setS5} /></View>
@@ -988,24 +1006,31 @@ export default function StrategyChartsScreen() {
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={[styles.primaryBtn, chartLoading && { opacity: 0.65 }]}
+            style={[s.primaryBtn, chartLoading && { opacity: 0.65 }]}
             onPress={() => handleSubmit()}
             disabled={chartLoading}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            {chartLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.primaryBtnText}>Submit</Text>
-            )}
+            <LinearGradient
+              colors={[c.goldBright, c.gold, c.goldDeep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.primaryBtnGradient}
+            >
+              {chartLoading ? (
+                <ActivityIndicator color={c.onGold} size="small" />
+              ) : (
+                <Text style={s.primaryBtnText}>Submit</Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
         {/* Error banner */}
         {!!error && (
-          <View style={styles.errorCard}>
-            <Ionicons name="alert-circle-outline" size={18} color="#F23645" />
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={s.errorCard}>
+            <AlertCircle size={18} color={c.loss} />
+            <Text style={s.errorText}>{error}</Text>
           </View>
         )}
       </ScrollView>
@@ -1035,38 +1060,45 @@ export default function StrategyChartsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   headerBar: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: "#1E222D", borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border,
   },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#D1D4DC" },
-  headerSub: { fontSize: 12, color: "#787B86", marginTop: 2 },
-  refreshBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: "#2A2E39",
+  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  headerIcon: {
+    width: 38, height: 38, borderRadius: 12, backgroundColor: c.goldLight,
     alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: c.gold,
+  },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.text, letterSpacing: -0.3 },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2, fontWeight: "600" },
+  refreshBtn: {
+    width: 38, height: 38, borderRadius: 12, backgroundColor: c.goldLight,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: c.border,
   },
 
   chartContainer: {
     height: 420,
-    backgroundColor: "#131722",
+    backgroundColor: c.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: c.border,
     overflow: "hidden",
   },
   chartLoader: {
     ...StyleSheet.absoluteFillObject as any,
-    backgroundColor: "#131722",
+    backgroundColor: c.surface,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
     gap: 8,
   },
-  chartLoaderText: { fontSize: 13, color: "#787B86", marginTop: 4 },
+  chartLoaderText: { fontSize: 13, color: c.textMuted, marginTop: 4, fontWeight: "600" },
   chartLoadingOverlay: {
     ...StyleSheet.absoluteFillObject as any,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: c.overlay,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 20,
@@ -1074,73 +1106,96 @@ const styles = StyleSheet.create({
   chartLoadingToast: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.78)",
+    backgroundColor: c.surfaceElevated,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 24,
     gap: 10,
+    borderWidth: 1,
+    borderColor: c.border,
   },
-  chartLoadingToastText: { color: "#D1D4DC", fontSize: 14, fontWeight: "600" },
+  chartLoadingToastText: { color: c.text, fontSize: 14, fontWeight: "700" },
 
   card: {
-    backgroundColor: "#1E222D", borderRadius: 12, padding: 16, marginBottom: 14,
-    elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06, shadowRadius: 3,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.card, borderRadius: 18, padding: 18, marginBottom: 14,
+    elevation: 2, shadowColor: "#0B0D12", shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.25 : 0.08, shadowRadius: 12,
+    borderWidth: 1, borderColor: c.border,
   },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#D1D4DC", marginBottom: 14 },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: c.text, marginBottom: 16, letterSpacing: -0.2 },
 
-  fieldGroup: { marginBottom: 12 },
-  fieldLabel: { fontSize: 11, fontWeight: "600", color: "#787B86", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
+  fieldGroup: { marginBottom: 14 },
+  fieldLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted, marginBottom: 7, textTransform: "uppercase", letterSpacing: 1 },
   fieldInput: {
-    backgroundColor: "#363A45", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12,
+    backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13,
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
   },
   fieldInputText: {
-    backgroundColor: "#363A45", borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: "#D1D4DC", fontWeight: "600",
+    backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13, fontSize: 14, color: c.text, fontWeight: "700",
   },
-  fieldValue: { fontSize: 14, color: "#D1D4DC", fontWeight: "600", flex: 1 },
+  fieldValue: { fontSize: 14, color: c.text, fontWeight: "700", flex: 1 },
 
   radioBtn: {
-    flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", backgroundColor: "#363A45", alignItems: "center",
+    flex: 1, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: c.inputBorder, backgroundColor: c.inputBg, alignItems: "center",
   },
-  radioBtnActive: { backgroundColor: "#2A2E39", borderColor: "#2962FF" },
-  radioText: { fontSize: 12, color: "#787B86", fontWeight: "600" },
-  radioTextActive: { color: "#2962FF", fontWeight: "700" },
+  radioBtnActive: { backgroundColor: c.goldLight, borderColor: c.gold },
+  radioText: { fontSize: 12, color: c.textSecondary, fontWeight: "700" },
+  radioTextActive: { color: c.gold, fontWeight: "800" },
+
+  comboLabel: { fontWeight: "700", marginBottom: 8, color: c.textSecondary, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.6 },
 
   primaryBtn: {
-    backgroundColor: "#2962FF", paddingVertical: 14, borderRadius: 10,
-    alignItems: "center", marginTop: 12, flexDirection: "row", justifyContent: "center", gap: 8,
+    borderRadius: 14, marginTop: 14, overflow: "hidden",
+    shadowColor: c.goldDeep, shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35, shadowRadius: 16, elevation: 8,
   },
-  primaryBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  primaryBtnGradient: {
+    paddingVertical: 15, alignItems: "center", justifyContent: "center",
+    flexDirection: "row", gap: 8,
+  },
+  primaryBtnText: { color: c.onGold, fontSize: 15, fontWeight: "800", letterSpacing: 0.3 },
 
   errorCard: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "rgba(242,54,69,0.1)", borderRadius: 10, padding: 14,
-    borderWidth: 1, borderColor: "rgba(242,54,69,0.3)", marginBottom: 12,
+    backgroundColor: c.lossBg, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: c.loss, marginBottom: 12,
   },
-  errorText: { color: "#F23645", fontWeight: "600", fontSize: 13, flex: 1 },
+  errorText: { color: c.loss, fontWeight: "700", fontSize: 13, flex: 1 },
 
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
   modalContent: {
-    backgroundColor: "#1E222D", borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 20, maxHeight: "75%",
+    backgroundColor: c.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 20, paddingTop: 12, maxHeight: "75%",
+    borderWidth: 1, borderColor: c.border,
   },
-  modalTitle: { fontSize: 17, fontWeight: "700", color: "#D1D4DC" },
+  modalGrabber: {
+    width: 40, height: 4, borderRadius: 2, backgroundColor: c.border,
+    alignSelf: "center", marginBottom: 12,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "800", color: c.text, letterSpacing: -0.2 },
+  modalClose: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: c.surfaceElevated,
+    alignItems: "center", justifyContent: "center",
+  },
+  searchWrap: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: c.inputBg, borderRadius: 12, paddingHorizontal: 12,
+    marginBottom: 12, borderWidth: 1, borderColor: c.inputBorder,
+  },
   searchInput: {
-    backgroundColor: "#363A45", borderRadius: 10, padding: 12,
-    fontSize: 14, marginBottom: 12, color: "#D1D4DC",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    flex: 1, paddingVertical: 12,
+    fontSize: 14, color: c.text,
   },
   pickerItem: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingVertical: 14, paddingHorizontal: 12,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
+    paddingVertical: 14, paddingHorizontal: 12, borderRadius: 12,
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  pickerItemActive: { backgroundColor: "#2A2E39" },
-  pickerItemText: { fontSize: 14, color: "#D1D4DC", fontWeight: "500" },
-  pickerItemTextActive: { color: "#2962FF", fontWeight: "700" },
+  pickerItemActive: { backgroundColor: c.goldLight },
+  pickerItemText: { fontSize: 14, color: c.text, fontWeight: "600" },
+  pickerItemTextActive: { color: c.gold, fontWeight: "800" },
+  pickerEmpty: { textAlign: "center", color: c.textMuted, padding: 20, fontWeight: "600" },
 });

@@ -1,5 +1,7 @@
 // Unfluke Pro — Premium Design System
-// Refined financial aesthetic: black actions, gold accents, green/red sentiment
+// Refined financial aesthetic: clean light + deep-black/gold dark.
+// Light  : white surfaces, subtle shadows, amber/gold accents on key metrics.
+// Dark   : near-black canvas, GOLD accent throughout (NOT blue), green/red sentiment.
 
 export interface AppColors {
   // Core
@@ -35,10 +37,13 @@ export interface AppColors {
   loss: string;
   lossBg: string;
 
-  // Premium accents
-  gold: string;
-  goldLight: string;
-  goldMuted: string;
+  // Premium accents (gold)
+  gold: string;        // primary accent / fill
+  goldBright: string;  // highlights, large numbers
+  goldDeep: string;    // gradient end / pressed
+  goldLight: string;   // tinted backgrounds / badges
+  goldMuted: string;   // secondary gold / icons
+  onGold: string;      // text/icon color that sits ON a gold fill
 
   // Utility
   black: string;
@@ -63,113 +68,119 @@ export const Colors: {
 } = {
   light: {
     // Core
-    primary: "#1A1A2E",
-    primaryMuted: "#2D2D44",
+    primary: "#0E0E12",
+    primaryMuted: "#3A3A44",
     secondary: "#6B7280",
-    background: "#F7F7F8",
+    background: "#F4F4F6",
     surface: "#FFFFFF",
     surfaceElevated: "#FFFFFF",
     card: "#FFFFFF",
 
     // Text
-    text: "#0F172A",
-    textSecondary: "#64748B",
-    textMuted: "#94A3B8",
+    text: "#0E0F14",
+    textSecondary: "#5B6472",
+    textMuted: "#9AA2B1",
 
     // Borders
-    border: "#E2E8F0",
-    borderLight: "#F1F5F9",
+    border: "#E6E8EC",
+    borderLight: "#F0F1F4",
 
     // Semantic
     error: "#DC2626",
-    errorLight: "#FEE2E2",
-    warning: "#D97706",
-    warningLight: "#FEF3C7",
-    success: "#059669",
-    successLight: "#D1FAE5",
+    errorLight: "#FEECEC",
+    warning: "#C8881A",
+    warningLight: "#FBF1DC",
+    success: "#0E9E6E",
+    successLight: "#E3F7EE",
     info: "#2563EB",
 
     // Financial
-    profit: "#059669",
-    profitBg: "#ECFDF5",
-    loss: "#DC2626",
-    lossBg: "#FEF2F2",
+    profit: "#0E9E6E",
+    profitBg: "#E6F7EF",
+    loss: "#E0483B",
+    lossBg: "#FCECEA",
 
-    // Premium accents
-    gold: "#B8860B",
-    goldLight: "#F5E6C8",
-    goldMuted: "#D4A843",
+    // Premium accents — warm amber/gold for light surfaces
+    gold: "#C99A2E",
+    goldBright: "#B8860B",
+    goldDeep: "#A87A12",
+    goldLight: "#FBF1D8",
+    goldMuted: "#D9B450",
+    onGold: "#1A1404",
 
     // Utility
     black: "#000000",
     white: "#FFFFFF",
     transparent: "transparent",
-    overlay: "rgba(0,0,0,0.5)",
+    overlay: "rgba(8,10,16,0.45)",
 
     // Component-specific
     headerBg: "#FFFFFF",
     tabBarBg: "#FFFFFF",
-    tabBarActive: "#1A1A2E",
-    tabBarInactive: "#94A3B8",
-    inputBg: "#F8FAFC",
-    inputBorder: "#E2E8F0",
-    badgeBg: "#1A1A2E",
+    tabBarActive: "#0E0E12",
+    tabBarInactive: "#9AA2B1",
+    inputBg: "#F6F7F9",
+    inputBorder: "#E6E8EC",
+    badgeBg: "#0E0E12",
     badgeText: "#FFFFFF",
   },
   dark: {
-    // Core
-    primary: "#E2E8F0",
-    primaryMuted: "#94A3B8",
-    secondary: "#9CA3AF",
-    background: "#0F172A",
-    surface: "#1E293B",
-    surfaceElevated: "#334155",
-    card: "#1E293B",
+    // Core — deep near-black canvas, layered charcoal surfaces
+    primary: "#E9C46A",
+    primaryMuted: "#8A7A4E",
+    secondary: "#9BA0AA",
+    background: "#0A0B0E",
+    surface: "#14161B",
+    surfaceElevated: "#1C1F26",
+    card: "#14161B",
 
     // Text
-    text: "#F1F5F9",
-    textSecondary: "#94A3B8",
-    textMuted: "#64748B",
+    text: "#F4F5F7",
+    textSecondary: "#A6ABB5",
+    textMuted: "#6C727E",
 
     // Borders
-    border: "#334155",
-    borderLight: "#1E293B",
+    border: "#262A33",
+    borderLight: "#1E222A",
 
     // Semantic
-    error: "#F87171",
-    errorLight: "#7F1D1D",
-    warning: "#FBBF24",
-    warningLight: "#78350F",
-    success: "#34D399",
-    successLight: "#064E3B",
-    info: "#60A5FA",
+    error: "#F26157",
+    errorLight: "#2A1614",
+    warning: "#E9C46A",
+    warningLight: "#2A2410",
+    success: "#2DD4A0",
+    successLight: "#0F2A22",
+    info: "#5FA3FF",
 
     // Financial
-    profit: "#34D399",
-    profitBg: "#064E3B",
-    loss: "#F87171",
-    lossBg: "#7F1D1D",
+    profit: "#2DD4A0",
+    profitBg: "#0F2A22",
+    loss: "#F26157",
+    lossBg: "#2A1614",
 
-    // Premium accents
-    gold: "#D4A843",
-    goldLight: "#3D2E0A",
-    goldMuted: "#B8860B",
+    // Premium accents — bright gold, the signature of the dark theme
+    gold: "#E9C46A",
+    goldBright: "#F4D27A",
+    goldDeep: "#C99A2E",
+    goldLight: "#211B0C",
+    goldMuted: "#B8973F",
+    onGold: "#15110A",
 
     // Utility
     black: "#000000",
     white: "#FFFFFF",
     transparent: "transparent",
-    overlay: "rgba(0,0,0,0.7)",
+    overlay: "rgba(0,0,0,0.66)",
 
     // Component-specific
-    headerBg: "#0F172A",
-    tabBarBg: "#1E293B",
-    tabBarActive: "#F1F5F9",
-    tabBarInactive: "#64748B",
-    inputBg: "#1E293B",
-    inputBorder: "#334155",
-    badgeBg: "#F1F5F9",
-    badgeText: "#0F172A",
+    headerBg: "#0C0D11",
+    tabBarBg: "#101217",
+    tabBarActive: "#E9C46A",
+    tabBarInactive: "#6C727E",
+    inputBg: "#181B21",
+    inputBorder: "#2A2F39",
+    badgeBg: "#E9C46A",
+    badgeText: "#15110A",
   },
 };
 

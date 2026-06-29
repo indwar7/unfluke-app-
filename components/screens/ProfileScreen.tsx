@@ -39,9 +39,14 @@ import { loginSuccess } from "../../redux//Unfluke_slices/auth/login/reducer";
 import OTPVerificationModal from "../../components/UnflukeMain/Authentication/OtpVerificationProfile";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { KeyboardAvoidingView } from "react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 
 const Settings = () => {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("1");
   const { width } = useWindowDimensions()
@@ -99,8 +104,10 @@ const Settings = () => {
   const user = useSelector(authUser);
   const tiers = useSelector(membershipPlans);
 
-  const [email, setEmail] = useState(user.email);
-  const [isEmailVerified, setIsEmailVerified] = useState(!!user.emailVerified);
+  // user can briefly become null during logout — guard every access so the
+  // screen never crashes while ScreenWithHeader redirects to /login.
+  const [email, setEmail] = useState(user?.email);
+  const [isEmailVerified, setIsEmailVerified] = useState(!!user?.emailVerified);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
 
 
@@ -335,6 +342,7 @@ const Settings = () => {
   };
 
   useEffect(() => {
+    if (!user) return;
     tiers.forEach((plan) => {
       if (user.tier == plan.tier) {
         setUsersTier(plan);
@@ -369,122 +377,133 @@ const Settings = () => {
     }
   }, [dispatch]);
 
+  // During logout `user` becomes null; bail out of the render to avoid
+  // reading user.* on null. ScreenWithHeader handles the redirect to /login.
+  if (!user) return null;
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <View style={isTablet ? styles.rowLayout : styles.columnLayout}>
+      <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
+        <View style={s.content}>
+          <View style={isTablet ? s.rowLayout : s.columnLayout}>
             {/* Left Profile Card */}
-            <View style={[isTablet ? styles.leftCard : styles.fullWidthCard, {
+            <View style={[isTablet ? s.leftCard : s.fullWidthCard, {
               width: isTablet ? "25%" : "100%",
             }]}>
-              <View style={styles.card}>
+              <View style={s.card}>
                 {/* User Avatar */}
-                <View style={styles.avatarContainer}>
-                  <View style={styles.avatar}>
-                    <Feather name="user" size={40} color="#9CA3AF" />
+                <View style={s.avatarContainer}>
+                  <View style={s.avatar}>
+                    <Feather name="user" size={40} color={c.gold} />
                   </View>
                 </View>
 
                 {/* User Name */}
-                <Text style={styles.userName}>{user.name}</Text>
+                <Text style={s.userName}>{user.name}</Text>
 
                 {/* Account Info */}
-                <View style={styles.accountInfoContainer}>
-                  <Text style={styles.accountInfoLabel}>Account Information</Text>
-                  <View style={styles.planBadge}>
-                    <Text style={styles.planBadgeText}>{accountInfo.plan}</Text>
+                <View style={s.accountInfoContainer}>
+                  <Text style={s.accountInfoLabel}>Account Information</Text>
+                  <View style={s.planBadge}>
+                    <Ionicons name="star" size={11} color={c.onGold} />
+                    <Text style={s.planBadgeText}>{accountInfo.plan}</Text>
                   </View>
                 </View>
 
+                {/* Appearance / Theme toggle */}
+                <ThemeToggle style={{ marginBottom: 16 }} />
+
                 {/* Alerts Notification Section */}
-                <View style={styles.alertsSection}>
-                  <Text style={styles.alertsSectionTitle}>Alerts Notification</Text>
+                <View style={s.alertsSection}>
+                  <Text style={s.alertsSectionTitle}>Alerts Notification</Text>
 
                   {/* Telegram */}
-                  <View style={styles.alertRow}>
-                    <View style={styles.telegramIcon}>
+                  <View style={s.alertRow}>
+                    <View style={s.telegramIcon}>
                       <MaterialCommunityIcons
                         name="send-circle"
                         size={18}
-                        color="white"
+                        color={c.onGold}
                       />
                     </View>
                     {user.telegramUsername ? (
-                      <View style={styles.alertInputContainer}>
+                      <View style={s.alertInputContainer}>
                         <TextInput
-                          style={styles.alertInput}
+                          style={s.alertInput}
                           value={user.telegramUsername}
                           editable={false}
                           placeholder="Username"
+                          placeholderTextColor={c.textMuted}
                         />
-                        <View style={styles.alertActions}>
+                        <View style={s.alertActions}>
                           <TouchableOpacity
-                            style={styles.openButton}
+                            style={s.openButton}
                             onPress={() => Linking.openURL("https://t.me/unflukebotbot")}
                           >
-                            <MaterialIcons name="open-in-new" size={14} color="white" />
+                            <MaterialIcons name="open-in-new" size={14} color="#FFFFFF" />
                           </TouchableOpacity>
                           <TouchableOpacity
-                            style={styles.closeButton}
+                            style={s.closeButton}
                             onPress={deactivateTelegram}
                           >
-                            <Ionicons name="close" size={14} color="white" />
+                            <Ionicons name="close" size={14} color="#FFFFFF" />
                           </TouchableOpacity>
                         </View>
                       </View>
                     ) : (
                       <TouchableOpacity
-                        style={styles.alertInputContainer}
+                        style={s.alertInputContainer}
                         onPress={() => router.push("/activate-telegram")}
                       >
-                        <Text style={[styles.alertInput, { color: "#9ca3af", paddingVertical: 10 }]}>
+                        <Text style={[s.alertInput, { color: c.textMuted, paddingVertical: 10 }]}>
                           Not Connected
                         </Text>
-                        <View style={styles.warningButton}>
-                          <Ionicons name="warning" size={14} color="white" />
+                        <View style={s.warningButton}>
+                          <Ionicons name="warning" size={14} color="#FFFFFF" />
                         </View>
                       </TouchableOpacity>
                     )}
                   </View>
 
                   {/* Email */}
-                  <View style={styles.alertRow}>
-                    <View style={styles.emailIcon}>
-                      <MaterialCommunityIcons name="email" size={18} color="white" />
+                  <View style={s.alertRow}>
+                    <View style={s.emailIcon}>
+                      <MaterialCommunityIcons name="email" size={18} color={c.onGold} />
                     </View>
                     {isEmailVerified ? (
-                      <View style={styles.alertInputContainer}>
+                      <View style={s.alertInputContainer}>
                         <TextInput
-                          style={styles.alertInput}
+                          style={s.alertInput}
                           value={email || user.email}
                           editable={false}
+                          placeholderTextColor={c.textMuted}
                         />
-                        <View style={styles.checkButton}>
-                          <Ionicons name="checkmark" size={14} color="white" />
+                        <View style={s.checkButton}>
+                          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                         </View>
                       </View>
                     ) : (
-                      <View style={styles.alertInputContainer}>
+                      <View style={s.alertInputContainer}>
                         <TextInput
-                          style={styles.alertInput}
+                          style={s.alertInput}
                           value={email}
                           onChangeText={setEmail}
                           placeholder="Enter email"
+                          placeholderTextColor={c.textMuted}
                         />
                         <TouchableOpacity
-                          style={styles.warningButton}
+                          style={s.warningButton}
                           onPress={handleSendOtp}
                           disabled={isSendingOtp}
                         >
                           {isSendingOtp ? (
-                            <ActivityIndicator size="small" color="white" />
+                            <ActivityIndicator size="small" color="#FFFFFF" />
                           ) : (
-                            <MaterialIcons name="open-in-new" size={14} color="white" />
+                            <MaterialIcons name="open-in-new" size={14} color="#FFFFFF" />
                           )}
                         </TouchableOpacity>
                       </View>
@@ -494,45 +513,45 @@ const Settings = () => {
                   {/* Email Verification Status */}
                   <View
                     style={[
-                      styles.verificationBox,
+                      s.verificationBox,
                       isEmailVerified
-                        ? styles.verificationBoxSuccess
-                        : styles.verificationBoxError,
+                        ? s.verificationBoxSuccess
+                        : s.verificationBoxError,
                     ]}
                   >
-                    <View style={styles.verificationContent}>
-                      <View style={styles.verificationLeft}>
+                    <View style={s.verificationContent}>
+                      <View style={s.verificationLeft}>
                         <View
                           style={[
-                            styles.verificationIconContainer,
+                            s.verificationIconContainer,
                             isEmailVerified
-                              ? styles.verificationIconSuccess
-                              : styles.verificationIconError,
+                              ? s.verificationIconSuccess
+                              : s.verificationIconError,
                           ]}
                         >
                           {isEmailVerified ? (
-                            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                            <Ionicons name="checkmark-circle" size={20} color={c.success} />
                           ) : (
-                            <Ionicons name="alert-circle" size={20} color="#EF4444" />
+                            <Ionicons name="alert-circle" size={20} color={c.error} />
                           )}
                         </View>
-                        <View style={styles.verificationTextContainer}>
+                        <View style={s.verificationTextContainer}>
                           <Text
                             style={[
-                              styles.verificationTitle,
+                              s.verificationTitle,
                               isEmailVerified
-                                ? styles.verificationTitleSuccess
-                                : styles.verificationTitleError,
+                                ? s.verificationTitleSuccess
+                                : s.verificationTitleError,
                             ]}
                           >
                             {isEmailVerified ? "Email Verified" : "Email Not Verified"}
                           </Text>
                           <Text
                             style={[
-                              styles.verificationDescription,
+                              s.verificationDescription,
                               isEmailVerified
-                                ? styles.verificationDescSuccess
-                                : styles.verificationDescError,
+                                ? s.verificationDescSuccess
+                                : s.verificationDescError,
                             ]}
                           >
                             {isEmailVerified
@@ -543,31 +562,31 @@ const Settings = () => {
                       </View>
                       {!isEmailVerified && (
                         <TouchableOpacity
-                          style={styles.resendButton}
+                          style={s.resendButton}
                           onPress={handleSendOtp}
                           disabled={isSendingOtp}
                         >
-                          <MaterialCommunityIcons name="send" size={16} color="white" />
-                          <Text style={styles.resendButtonText}>
+                          <MaterialCommunityIcons name="send" size={16} color={c.onGold} />
+                          <Text style={s.resendButtonText}>
                             {isSendingOtp ? "Sending..." : "Resend"}
                           </Text>
                         </TouchableOpacity>
                       )}
                     </View>
                     {!isEmailVerified && (
-                      <View style={styles.verificationFooter}>
-                        <Text style={styles.verificationFooterText}>
+                      <View style={s.verificationFooter}>
+                        <Text style={s.verificationFooterText}>
                           Check your inbox and enter the OTP
                         </Text>
                         <TouchableOpacity onPress={handleSendOtp}>
-                          <Text style={styles.verifyNowText}>Verify Now</Text>
+                          <Text style={s.verifyNowText}>Verify Now</Text>
                         </TouchableOpacity>
                       </View>
                     )}
                     {isEmailVerified && (
-                      <View style={styles.securityFooter}>
-                        <MaterialCommunityIcons name="shield-check" size={16} color="#10B981" />
-                        <Text style={styles.securityText}>Account Security Enhanced</Text>
+                      <View style={s.securityFooter}>
+                        <MaterialCommunityIcons name="shield-check" size={16} color={c.success} />
+                        <Text style={s.securityText}>Account Security Enhanced</Text>
                       </View>
                     )}
                   </View>
@@ -576,24 +595,24 @@ const Settings = () => {
             </View>
 
             {/* Right Content Card */}
-            <View style={[isTablet ? styles.rightCard : styles.fullWidthCard, {
+            <View style={[isTablet ? s.rightCard : s.fullWidthCard, {
               width: isTablet ? "75%" : "100%",
             }]}>
-              <View style={[styles.card, styles.rightCardContent]}>
+              <View style={[s.card, s.rightCardContent]}>
                 {/* Tabs Header */}
-                <View style={styles.tabsContainer}>
-                  <View style={styles.tabsWrapper}>
+                <View style={s.tabsContainer}>
+                  <View style={s.tabsWrapper}>
                     <TouchableOpacity
                       style={[
-                        styles.tab,
-                        activeTab === "1" && styles.tabActive,
+                        s.tab,
+                        activeTab === "1" && s.tabActive,
                       ]}
                       onPress={() => setActiveTab("1")}
                     >
                       <Text
                         style={[
-                          styles.tabText,
-                          activeTab === "1" && styles.tabTextActive,
+                          s.tabText,
+                          activeTab === "1" && s.tabTextActive,
                         ]}
                       >
                         Personal Details
@@ -601,15 +620,15 @@ const Settings = () => {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
-                        styles.tab,
-                        activeTab === "2" && styles.tabActive,
+                        s.tab,
+                        activeTab === "2" && s.tabActive,
                       ]}
                       onPress={() => setActiveTab("2")}
                     >
                       <Text
                         style={[
-                          styles.tabText,
-                          activeTab === "2" && styles.tabTextActive,
+                          s.tabText,
+                          activeTab === "2" && s.tabTextActive,
                         ]}
                       >
                         Change Password
@@ -619,84 +638,87 @@ const Settings = () => {
                 </View>
 
                 {/* Tab Content */}
-                <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+                <ScrollView style={s.tabContent} showsVerticalScrollIndicator={false}>
                   {activeTab === "1" && (
                     <View>
                       {/* Personal Info */}
-                      <View style={styles.personalInfoSection}>
-                        <View style={[styles.inputRow, {
+                      <View style={s.personalInfoSection}>
+                        <View style={[s.inputRow, {
                           flexDirection: isTablet ? "row" : "column",
                         }]}>
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Full Name</Text>
+                          <View style={s.inputGroup}>
+                            <Text style={s.label}>Full Name</Text>
                             <TextInput
-                              style={styles.input}
+                              style={s.input}
                               value={user.name}
                               editable={false}
+                              placeholderTextColor={c.textMuted}
                             />
                           </View>
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Phone Number</Text>
+                          <View style={s.inputGroup}>
+                            <Text style={s.label}>Phone Number</Text>
                             <TextInput
-                              style={styles.input}
+                              style={s.input}
                               value={user.phoneNos}
                               editable={false}
+                              placeholderTextColor={c.textMuted}
                             />
                           </View>
                         </View>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.label}>Email Address</Text>
+                        <View style={s.inputGroup}>
+                          <Text style={s.label}>Email Address</Text>
                           <TextInput
-                            style={styles.input}
+                            style={s.input}
                             value={user.email}
                             editable={false}
+                            placeholderTextColor={c.textMuted}
                           />
                         </View>
                       </View>
 
                       {/* Bottom Section */}
-                      <View style={styles.bottomSection}>
+                      <View style={s.bottomSection}>
                         {/* Pending Credits */}
-                        <View style={styles.creditsCard}>
-                          <View style={styles.creditsHeader}>
+                        <View style={s.creditsCard}>
+                          <View style={s.creditsHeader}>
                             <MaterialCommunityIcons
                               name="equalizer"
                               size={20}
-                              color="#374151"
+                              color={c.gold}
                             />
-                            <Text style={styles.creditsTitle}>Pending Credits</Text>
+                            <Text style={s.creditsTitle}>Pending Credits</Text>
                           </View>
-                          <View style={styles.creditsContent}>
+                          <View style={s.creditsContent}>
                             {[
                               {
                                 label: "Alerts",
                                 val: user.backtests,
                                 max: usersTier.backtests,
-                                color: "#06B6D4",
+                                color: c.info,
                               },
                               {
                                 label: "Scanners",
                                 val: user.scans_limit,
                                 max: usersTier.scans_limit,
-                                color: "#2563EB",
+                                color: c.gold,
                               },
                               {
                                 label: "Advanced Backtest",
                                 val: user.live_scanner_emails,
                                 max: usersTier.live_scanner_emails,
-                                color: "#F97316",
+                                color: c.warning,
                               },
                             ].map((item, i) => (
-                              <View key={i} style={styles.creditItem}>
-                                <Text style={styles.creditLabel}>{item.label}</Text>
-                                <View style={styles.creditValue}>
+                              <View key={i} style={s.creditItem}>
+                                <Text style={s.creditLabel}>{item.label}</Text>
+                                <View style={s.creditValue}>
                                   <View
                                     style={[
-                                      styles.creditDot,
+                                      s.creditDot,
                                       { backgroundColor: item.color },
                                     ]}
                                   />
-                                  <Text style={styles.creditText}>
+                                  <Text style={s.creditText}>
                                     {item.val}/{item.max} Pending
                                   </Text>
                                 </View>
@@ -706,31 +728,31 @@ const Settings = () => {
                         </View>
 
                         {/* Share Referral Code */}
-                        <View style={styles.referralCard}>
-                          <View style={styles.referralHeader}>
+                        <View style={s.referralCard}>
+                          <View style={s.referralHeader}>
                             <MaterialCommunityIcons
                               name="share-variant"
                               size={20}
-                              color="#374151"
+                              color={c.gold}
                             />
-                            <Text style={styles.referralTitle}>Share your Code</Text>
+                            <Text style={s.referralTitle}>Share your Code</Text>
                           </View>
-                          <View style={styles.referralContent}>
-                            <Text style={styles.referralCode}>{user.hisReferral}</Text>
-                            <Text style={styles.referralDescription}>
+                          <View style={s.referralContent}>
+                            <Text style={s.referralCode}>{user.hisReferral}</Text>
+                            <Text style={s.referralDescription}>
                               Share the redeem code with others to get extra cashbacks and
                               rewards
                             </Text>
                             <TouchableOpacity
-                              style={styles.copyButton}
+                              style={s.copyButton}
                               onPress={handleCopyLink}
                             >
                               <MaterialCommunityIcons
                                 name="content-copy"
                                 size={16}
-                                color="white"
+                                color={c.onGold}
                               />
-                              <Text style={styles.copyButtonText}>Copy Link</Text>
+                              <Text style={s.copyButtonText}>Copy Link</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -739,42 +761,45 @@ const Settings = () => {
                   )}
 
                   {activeTab === "2" && (
-                    <View style={styles.passwordSection}>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Current Password</Text>
+                    <View style={s.passwordSection}>
+                      <View style={s.inputGroup}>
+                        <Text style={s.label}>Current Password</Text>
                         <TextInput
-                          style={styles.input}
+                          style={s.input}
                           placeholder="Enter current password"
+                          placeholderTextColor={c.textMuted}
                           secureTextEntry
                           value={oldPassword}
                           onChangeText={setOldPassword}
                         />
                       </View>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.label}>New Password</Text>
+                      <View style={s.inputGroup}>
+                        <Text style={s.label}>New Password</Text>
                         <TextInput
-                          style={styles.input}
+                          style={s.input}
                           placeholder="Enter new password"
+                          placeholderTextColor={c.textMuted}
                           secureTextEntry
                           value={newPassword}
                           onChangeText={setNewPassword}
                         />
                       </View>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Confirm Password</Text>
+                      <View style={s.inputGroup}>
+                        <Text style={s.label}>Confirm Password</Text>
                         <TextInput
-                          style={styles.input}
+                          style={s.input}
                           placeholder="Confirm password"
+                          placeholderTextColor={c.textMuted}
                           secureTextEntry
                           value={confirmPassword}
                           onChangeText={setConfirmPassword}
                         />
                       </View>
                       <TouchableOpacity
-                        style={styles.updateButton}
+                        style={s.updateButton}
                         onPress={changeYourPassword}
                       >
-                        <Text style={styles.updateButtonText}>Update Password</Text>
+                        <Text style={s.updateButtonText}>Update Password</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -797,10 +822,10 @@ const Settings = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F7F8",
+    backgroundColor: c.background,
   },
   content: {
     padding: 12,
@@ -822,16 +847,16 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   card: {
-    backgroundColor: "white",
-    borderRadius: 16,
+    backgroundColor: c.card,
+    borderRadius: 18,
     padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowColor: "#0B0D12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.3 : 0.06,
+    shadowRadius: 12,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: c.border,
   },
   avatarContainer: {
     alignItems: "center",
@@ -841,49 +866,56 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: c.goldLight,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#E2E8F0",
+    borderColor: c.gold,
   },
   userName: {
     fontSize: 20,
     fontWeight: "800",
     textAlign: "center",
-    marginBottom: 16,
-    color: "#0F172A",
+    marginBottom: 12,
+    color: c.text,
   },
   accountInfoContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   accountInfoLabel: {
-    fontSize: 14,
-    color: "#64748B",
-    marginBottom: 8,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: c.textMuted,
+    marginBottom: 10,
   },
   planBadge: {
-    backgroundColor: "#F5E6C8",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: c.gold,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 999,
   },
   planBadgeText: {
-    color: "#B8860B",
+    color: c.onGold,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   alertsSection: {
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
+    borderTopColor: c.border,
     paddingTop: 16,
   },
   alertsSectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     marginBottom: 12,
-    color: "#0F172A",
+    color: c.text,
   },
   alertRow: {
     flexDirection: "row",
@@ -891,19 +923,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   telegramIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#1A1A2E",
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: c.gold,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 8,
   },
   emailIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#1A1A2E",
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: c.gold,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 8,
@@ -916,14 +948,14 @@ const styles = StyleSheet.create({
   },
   alertInput: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: c.inputBg,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     fontSize: 14,
-    color: "#0F172A",
+    color: c.text,
   },
   alertActions: {
     flexDirection: "row",
@@ -933,7 +965,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#10B981",
+    backgroundColor: c.success,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -941,7 +973,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#EF4444",
+    backgroundColor: c.error,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -949,7 +981,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#EF4444",
+    backgroundColor: c.error,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -957,7 +989,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#10B981",
+    backgroundColor: c.success,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -965,15 +997,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 16,
     borderRadius: 14,
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
   verificationBoxSuccess: {
-    backgroundColor: "#ECFDF5",
-    borderColor: "#A7F3D0",
+    backgroundColor: c.successLight,
+    borderColor: c.success,
   },
   verificationBoxError: {
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FECACA",
+    backgroundColor: c.errorLight,
+    borderColor: c.error,
   },
   verificationContent: {
     flexDirection: "row",
@@ -991,123 +1023,123 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   verificationIconSuccess: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: c.successLight,
   },
   verificationIconError: {
-    backgroundColor: "#FEE2E2",
+    backgroundColor: c.errorLight,
   },
   verificationTextContainer: {
     flex: 1,
   },
   verificationTitle: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 4,
   },
   verificationTitleSuccess: {
-    color: "#065F46",
+    color: c.success,
   },
   verificationTitleError: {
-    color: "#991B1B",
+    color: c.error,
   },
   verificationDescription: {
     fontSize: 12,
   },
   verificationDescSuccess: {
-    color: "#059669",
+    color: c.success,
   },
   verificationDescError: {
-    color: "#DC2626",
+    color: c.error,
   },
   resendButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A1A2E",
+    backgroundColor: c.gold,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 7,
+    borderRadius: 10,
     gap: 4,
   },
   resendButtonText: {
-    color: "white",
+    color: c.onGold,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   verificationFooter: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#FECACA",
+    borderTopColor: c.error,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   verificationFooterText: {
     fontSize: 12,
-    color: "#B91C1C",
+    color: c.error,
     flex: 1,
   },
   verifyNowText: {
     fontSize: 12,
-    color: "#B91C1C",
-    fontWeight: "600",
+    color: c.error,
+    fontWeight: "700",
     textDecorationLine: "underline",
   },
   securityFooter: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#A7F3D0",
+    borderTopColor: c.success,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   securityText: {
     fontSize: 12,
-    color: "#065F46",
-    fontWeight: "600",
+    color: c.success,
+    fontWeight: "700",
   },
   tabsContainer: {
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: c.border,
     paddingBottom: 16,
     marginBottom: 16,
   },
   tabsWrapper: {
     flexDirection: "row",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
+    backgroundColor: c.inputBg,
+    borderRadius: 14,
     padding: 4,
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 6,
+    borderRadius: 10,
     alignItems: "center",
   },
   tabActive: {
-    backgroundColor: "white",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    backgroundColor: c.gold,
+    shadowColor: "#C99A2E",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
     elevation: 2,
   },
   tabText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#94A3B8",
+    fontWeight: "700",
+    color: c.textMuted,
   },
   tabTextActive: {
-    color: "#0F172A",
+    color: c.onGold,
   },
   tabContent: {
     flex: 1,
   },
   personalInfoSection: {
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: c.border,
     paddingBottom: 16,
     marginBottom: 24,
   },
@@ -1121,27 +1153,28 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontWeight: "500",
-    color: "#64748B",
+    fontWeight: "600",
+    color: c.textSecondary,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: c.inputBg,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: c.inputBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     fontSize: 14,
-    color: "#0F172A",
+    color: c.text,
   },
   bottomSection: {
     gap: 16,
   },
   creditsCard: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
+    borderColor: c.border,
+    borderRadius: 14,
+    backgroundColor: c.surface,
   },
   creditsHeader: {
     flexDirection: "row",
@@ -1149,12 +1182,12 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: c.border,
   },
   creditsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "700",
+    color: c.text,
   },
   creditsContent: {
     padding: 16,
@@ -1164,14 +1197,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: c.inputBg,
     padding: 12,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: c.borderLight,
   },
   creditLabel: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#0F172A",
+    fontWeight: "600",
+    color: c.text,
   },
   creditValue: {
     flexDirection: "row",
@@ -1185,11 +1220,12 @@ const styles = StyleSheet.create({
   },
   creditText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#0F172A",
+    fontWeight: "600",
+    color: c.textSecondary,
+    fontVariant: ["tabular-nums"],
   },
   referralCard: {
-    borderRadius: 12,
+    borderRadius: 14,
   },
   referralHeader: {
     flexDirection: "row",
@@ -1199,55 +1235,64 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   referralTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
+    color: c.text,
   },
   referralContent: {
     padding: 24,
-    borderRadius: 12,
-    backgroundColor: "#F5E6C8",
+    borderRadius: 16,
+    backgroundColor: c.goldLight,
+    borderWidth: 1,
+    borderColor: c.gold,
     alignItems: "center",
   },
   referralCode: {
     fontSize: 32,
-    fontWeight: "700",
-    color: "#B8860B",
+    fontWeight: "800",
+    color: isDark ? c.goldBright : c.goldDeep,
     marginBottom: 8,
+    letterSpacing: 1,
   },
   referralDescription: {
     fontSize: 14,
-    color: "#64748B",
+    color: c.textSecondary,
     textAlign: "center",
     marginBottom: 16,
   },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A1A2E",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    backgroundColor: c.gold,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
     borderRadius: 12,
     gap: 8,
   },
   copyButtonText: {
-    color: "white",
+    color: c.onGold,
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "800",
   },
   passwordSection: {
     gap: 2,
   },
   updateButton: {
-    backgroundColor: "#1A1A2E",
-    paddingVertical: 12,
+    backgroundColor: c.gold,
+    paddingVertical: 14,
     borderRadius: 14,
     alignItems: "center",
+    shadowColor: "#C99A2E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 3,
   },
   updateButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
+    color: c.onGold,
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
 });
 

@@ -14,13 +14,20 @@ import { createSelector } from "reselect";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Send, AtSign, HelpCircle } from "lucide-react-native";
 
 import { postData } from "../Unfluke_helpers/backend_helper";
 import { loginSuccess } from "../redux/Unfluke_slices/auth/login/reducer";
 import { ScreenWithHeader } from "@/components/AppHeader";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { Surface, SectionLabel } from "@/components/ui/Premium";
+import { Radius, Space, Shadow } from "@/constants/Theme";
 
 const ActivateTelegram = () => {
+  const { colors: c } = useTheme();
+  const s = makeStyles(c);
   const dispatch = useDispatch();
   const [username, setUsername] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,22 +85,57 @@ const ActivateTelegram = () => {
     }
   };
 
+  const steps = [
+    {
+      key: "1",
+      node: (
+        <Text style={s.stepText}>
+          Open Telegram on your phone and go to{" "}
+          <Text style={s.bold}>Settings</Text>
+        </Text>
+      ),
+    },
+    {
+      key: "2",
+      node: (
+        <Text style={s.stepText}>
+          Tap on your <Text style={s.bold}>profile picture</Text> at the top
+        </Text>
+      ),
+    },
+    {
+      key: "3",
+      node: (
+        <Text style={s.stepText}>
+          Your username is shown below your name. If you don't have one, set it
+          there.
+        </Text>
+      ),
+    },
+  ];
+
   return (
     <ScreenWithHeader>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Connect Telegram</Text>
-        <Text style={styles.subtitle}>
+      <ScrollView style={s.container} contentContainerStyle={s.content}>
+        <View style={s.heroIconWrap}>
+          <Send size={26} color={c.gold} strokeWidth={2.2} />
+        </View>
+
+        <Text style={s.title}>Connect Telegram</Text>
+        <Text style={s.subtitle}>
           Enter your Telegram username to receive alerts on Telegram
         </Text>
 
-        <View style={styles.inputRow}>
-          <View style={styles.atSign}>
-            <Text style={styles.atText}>@</Text>
+        <SectionLabel style={s.fieldLabel}>Telegram Username</SectionLabel>
+
+        <View style={s.inputRow}>
+          <View style={s.atSign}>
+            <AtSign size={18} color={c.textMuted} strokeWidth={2.2} />
           </View>
           <TextInput
-            style={styles.input}
+            style={s.input}
             placeholder="your_telegram_username"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={c.textMuted}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -103,121 +145,163 @@ const ActivateTelegram = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, isSubmitting && styles.buttonDisabled]}
+          activeOpacity={0.85}
+          style={[s.button, isSubmitting && s.buttonDisabled]}
           onPress={submitUsername}
           disabled={isSubmitting}
         >
-          {isSubmitting ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.buttonText}>Submit</Text>
-          )}
+          <LinearGradient
+            colors={[c.goldBright, c.gold, c.goldDeep]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={s.buttonGradient}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color={c.onGold} />
+            ) : (
+              <View style={s.buttonInner}>
+                <Send size={16} color={c.onGold} strokeWidth={2.4} />
+                <Text style={s.buttonText}>Submit</Text>
+              </View>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
 
-        <View style={styles.stepsContainer}>
-          <Text style={styles.stepsTitle}>How to find your Telegram username?</Text>
-
-          <View style={styles.step}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>1</Text>
-            </View>
-            <Text style={styles.stepText}>
-              Open Telegram on your phone and go to{" "}
-              <Text style={styles.bold}>Settings</Text>
+        <Surface style={s.stepsContainer}>
+          <View style={s.stepsHeader}>
+            <HelpCircle size={16} color={c.gold} strokeWidth={2.2} />
+            <Text style={s.stepsTitle}>
+              How to find your Telegram username?
             </Text>
           </View>
 
-          <View style={styles.step}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>2</Text>
+          {steps.map((step) => (
+            <View key={step.key} style={s.step}>
+              <View style={s.stepNumber}>
+                <Text style={s.stepNumberText}>{step.key}</Text>
+              </View>
+              {step.node}
             </View>
-            <Text style={styles.stepText}>
-              Tap on your <Text style={styles.bold}>profile picture</Text> at the top
-            </Text>
-          </View>
-
-          <View style={styles.step}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>3</Text>
-            </View>
-            <Text style={styles.stepText}>
-              Your username is shown below your name. If you don't have one, set it
-              there.
-            </Text>
-          </View>
-        </View>
+          ))}
+        </Surface>
       </ScrollView>
       <Toast />
     </ScreenWithHeader>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f7" },
-  content: { padding: 24, paddingTop: 32 },
-  title: { fontSize: 22, fontWeight: "700", color: "#1a202c", marginBottom: 8 },
-  subtitle: { fontSize: 14, color: "#64748b", marginBottom: 28, lineHeight: 20 },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    marginBottom: 16,
-    overflow: "hidden",
-  },
-  atSign: {
-    backgroundColor: "#f1f5f9",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRightWidth: 1,
-    borderRightColor: "#e2e8f0",
-  },
-  atText: { fontSize: 16, color: "#64748b", fontWeight: "600" },
-  input: {
-    flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: "#1a202c",
-  },
-  button: {
-    backgroundColor: "#5b4d8e",
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginBottom: 36,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: "white", fontSize: 15, fontWeight: "700" },
-  stepsContainer: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  stepsTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1e293b",
-    marginBottom: 16,
-  },
-  step: { flexDirection: "row", alignItems: "flex-start", marginBottom: 14 },
-  stepNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#5b4d8e",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-    marginTop: 1,
-  },
-  stepNumberText: { color: "white", fontSize: 12, fontWeight: "700" },
-  stepText: { flex: 1, fontSize: 13, color: "#475569", lineHeight: 20 },
-  bold: { fontWeight: "700", color: "#1e293b" },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    content: { padding: Space.xxl, paddingTop: Space.xxxl, paddingBottom: 48 },
+    heroIconWrap: {
+      width: 56,
+      height: 56,
+      borderRadius: Radius.lg,
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: Space.lg,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "800",
+      letterSpacing: -0.4,
+      color: c.text,
+      marginBottom: Space.sm,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: c.textSecondary,
+      marginBottom: Space.xxl,
+      lineHeight: 20,
+    },
+    fieldLabel: { marginBottom: Space.sm },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.inputBg,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      marginBottom: Space.lg,
+      overflow: "hidden",
+    },
+    atSign: {
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      borderRightWidth: 1,
+      borderRightColor: c.inputBorder,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    input: {
+      flex: 1,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      fontSize: 15,
+      color: c.text,
+    },
+    button: {
+      borderRadius: Radius.md,
+      marginBottom: Space.xxxl,
+      ...Shadow.gold,
+    },
+    buttonDisabled: { opacity: 0.6 },
+    buttonGradient: {
+      borderRadius: Radius.md,
+      paddingVertical: 16,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    buttonInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    buttonText: {
+      color: c.onGold,
+      fontSize: 15,
+      fontWeight: "800",
+      letterSpacing: 0.4,
+    },
+    stepsContainer: {
+      padding: Space.lg,
+    },
+    stepsHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: Space.lg,
+    },
+    stepsTitle: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.text,
+    },
+    step: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      marginBottom: Space.md,
+    },
+    stepNumber: {
+      width: 24,
+      height: 24,
+      borderRadius: Radius.full,
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: c.gold,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: Space.md,
+      marginTop: 1,
+    },
+    stepNumberText: { color: c.gold, fontSize: 12, fontWeight: "800" },
+    stepText: { flex: 1, fontSize: 13, color: c.textSecondary, lineHeight: 20 },
+    bold: { fontWeight: "700", color: c.text },
+  });
 
 export default ActivateTelegram;

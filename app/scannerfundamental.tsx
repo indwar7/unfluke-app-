@@ -8,10 +8,15 @@ import {
   StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
 import { ChevronRight, Eye, Plus } from "lucide-react-native";
 import { ScreenWithHeader } from "../components/AppHeader";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const ScannerFundamental = () => {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c);
   const [defaultScanners, setDefaultScanners] = useState({});
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
@@ -56,13 +61,14 @@ const ScannerFundamental = () => {
     const displayItems = items.slice(0, 6);
 
     return (
-      <View style={styles.cardContainer}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>
+      <View style={s.cardContainer}>
+        <View style={s.cardHeader}>
+          <Text style={s.cardTitle}>
             {capitalizeFirstLetter(title.replace("-", " "))}
           </Text>
           <TouchableOpacity
-            style={styles.showAllButton}
+            activeOpacity={0.85}
+            style={s.showAllButton}
             onPress={() =>
               navigation.navigate("scannerlist", {
                 category: title,
@@ -72,19 +78,21 @@ const ScannerFundamental = () => {
               })
             }
           >
-            <Text style={styles.showAllButtonText}>Show All Scans</Text>
+            <Text style={s.showAllButtonText}>Show All Scans</Text>
+            <ChevronRight size={13} color={c.gold} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
         <ScrollView
-          style={styles.scannerList}
-          contentContainerStyle={styles.scannerListContent}
+          style={s.scannerList}
+          contentContainerStyle={s.scannerListContent}
           showsVerticalScrollIndicator={false}
         >
           {displayItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.scannerItem}
+              activeOpacity={0.75}
+              style={s.scannerItem}
               onPress={() =>
                 navigation.navigate("scanner", {
                   state: item,
@@ -93,15 +101,17 @@ const ScannerFundamental = () => {
                 })
               }
             >
-              <View style={styles.scannerItemContent}>
+              <View style={s.scannerItemContent}>
                 <Text
-                  style={styles.scannerName}
+                  style={s.scannerName}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
                   {item.name}
                 </Text>
-                <ChevronRight size={16} color="#4C525E" />
+                <View style={s.scannerItemChevron}>
+                  <ChevronRight size={16} color={c.textMuted} />
+                </View>
               </View>
             </TouchableOpacity>
           ))}
@@ -112,51 +122,58 @@ const ScannerFundamental = () => {
 
   return (
     <ScreenWithHeader>
-      <View style={styles.container}>
-        <View style={styles.headerContainer}>
+      <View style={s.container}>
+        <View style={s.headerContainer}>
           {/* Left section: Title + breadcrumb */}
           <View>
-            <Text style={styles.title}>Scanner Home</Text>
-            <View style={styles.breadcrumb}>
-              <Text style={styles.breadcrumbText}>Pages</Text>
-              <ChevronRight size={13} color="#787B86" />
-              <Text style={styles.breadcrumbText}>Fundamental Scanner</Text>
+            <Text style={s.title}>Scanner Home</Text>
+            <View style={s.breadcrumb}>
+              <Text style={s.breadcrumbText}>Pages</Text>
+              <ChevronRight size={13} color={c.textMuted} />
+              <Text style={s.breadcrumbActive}>Fundamental Scanner</Text>
             </View>
           </View>
 
           {/* Right section: Buttons */}
-          <View style={styles.buttonGroup}>
+          <View style={s.buttonGroup}>
             <TouchableOpacity
-              style={styles.viewSavedButton}
+              activeOpacity={0.8}
+              style={s.viewSavedButton}
               onPress={() => navigation.navigate("scannerhome")}
             >
-              <Eye color="#D1D4DC" size={12} />
-              <Text style={styles.viewSavedButtonText}>View saved</Text>
+              <Eye color={c.textSecondary} size={14} />
+              <Text style={s.viewSavedButtonText}>View saved</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.createNewButton}
+              activeOpacity={0.85}
               onPress={() =>
                 navigation.navigate("scanner", {
                   type: "fundamental",
                 })
               }
             >
-              <Plus color="white" size={12} strokeWidth={3} />
-
-              <Text style={styles.createNewButtonText}>Create new</Text>
+              <LinearGradient
+                colors={[c.goldBright, c.gold, c.goldDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.createNewButton}
+              >
+                <Plus color={c.onGold} size={14} strokeWidth={3} />
+                <Text style={s.createNewButtonText}>Create new</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
 
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2962FF" />
-            <Text style={styles.loadingText}>Loading scanners...</Text>
+          <View style={s.loadingContainer}>
+            <ActivityIndicator size="large" color={c.gold} />
+            <Text style={s.loadingText}>Loading scanners...</Text>
           </View>
         ) : (
           <ScrollView
-            contentContainerStyle={styles.scannerGrid}
+            contentContainerStyle={s.scannerGrid}
             showsVerticalScrollIndicator={false}
           >
             {Object.keys(defaultScanners).map((category) => (
@@ -173,151 +190,178 @@ const ScannerFundamental = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: "#131722",
-    padding: 12,
-    paddingBottom: 20,
-  },
-  headerContainer: {
-    paddingBottom: 18,
-    flexDirection: "column",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: 10
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#D1D4DC",
-  },
-  breadcrumb: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  breadcrumbText: {
-    fontSize: 12,
-    color: "#787B86",
-  },
-  buttonGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 9,
-  },
-  viewSavedButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    backgroundColor: "#2A2E39",
-  },
-  viewSavedButtonText: {
-    fontWeight: "600",
-    color: "#D1D4DC",
-    marginLeft: 3,
-    fontSize: 12,
-  },
-  createNewButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    backgroundColor: "#2962FF",
-  },
-  createNewButtonText: {
-    fontWeight: "600",
-    color: "white",
-    marginLeft: 3,
-    fontSize: 12,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    borderRadius: 8,
-    backgroundColor: "#1E222D",
-  },
-  loadingText: {
-    marginTop: 8,
-    color: "#787B86",
-  },
-  scannerGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 18,
-    paddingBottom: 110,
-  },
-  cardContainer: {
-    width: "100%",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-    backgroundColor: "#1E222D",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center", // Changed from 'center' to 'flex-start'
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#D1D4DC",
-    flex: 1, // Added to allow text to take available space
-    marginRight: 8, // Added to create space between title and button
-    flexWrap: "wrap", // Allow text to wrap
-  },
-  showAllButton: {
-    backgroundColor: "#2962FF",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignSelf: "flex-end", // Align button to bottom of header
-  },
-  showAllButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 11,
-  },
-  scannerList: {
-    maxHeight: 320,
-  },
-  scannerListContent: {
-    paddingRight: 8,
-  },
-  scannerItem: {
-    backgroundColor: "#2A2E39",
-    borderRadius: 6,
-    padding: 12,
-    marginBottom: 8,
-  },
-  scannerItemContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flex: 1, // Add this to allow proper space distribution
-  },
-  scannerName: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#D1D4DC",
-    flex: 1, // Add this to allow text to take available space
-    marginRight: 8, // Add space between text and icon
-    flexWrap: "wrap", // Allow text wrapping
-  },
-});
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      backgroundColor: c.background,
+      padding: 16,
+      paddingBottom: 20,
+    },
+    headerContainer: {
+      paddingBottom: 20,
+      flexDirection: "column",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 14,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: "800",
+      color: c.text,
+      letterSpacing: -0.4,
+    },
+    breadcrumb: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 6,
+      gap: 2,
+    },
+    breadcrumbText: {
+      fontSize: 12,
+      fontWeight: "500",
+      color: c.textMuted,
+    },
+    breadcrumbActive: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: c.gold,
+    },
+    buttonGroup: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    viewSavedButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      backgroundColor: c.surface,
+    },
+    viewSavedButtonText: {
+      fontWeight: "700",
+      color: c.textSecondary,
+      fontSize: 13,
+    },
+    createNewButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    createNewButtonText: {
+      fontWeight: "800",
+      color: c.onGold,
+      fontSize: 13,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 32,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 18,
+      backgroundColor: c.card,
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 13,
+      fontWeight: "600",
+      color: c.textMuted,
+    },
+    scannerGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      gap: 18,
+      paddingBottom: 110,
+    },
+    cardContainer: {
+      width: "100%",
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.card,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: c.text,
+      flex: 1,
+      marginRight: 10,
+      flexWrap: "wrap",
+      letterSpacing: -0.2,
+    },
+    showAllButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: c.gold,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      alignSelf: "flex-end",
+    },
+    showAllButtonText: {
+      color: c.gold,
+      fontWeight: "800",
+      fontSize: 11,
+      letterSpacing: 0.2,
+    },
+    scannerList: {
+      maxHeight: 320,
+    },
+    scannerListContent: {
+      paddingRight: 4,
+    },
+    scannerItem: {
+      backgroundColor: c.surfaceElevated,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.borderLight,
+      padding: 14,
+      marginBottom: 10,
+    },
+    scannerItemContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flex: 1,
+    },
+    scannerName: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: c.text,
+      flex: 1,
+      marginRight: 8,
+      flexWrap: "wrap",
+    },
+    scannerItemChevron: {
+      width: 26,
+      height: 26,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.goldLight,
+    },
+  });
 
 export default ScannerFundamental;

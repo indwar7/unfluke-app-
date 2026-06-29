@@ -30,16 +30,19 @@ import {
 } from "../redux/Unfluke_slices/thunks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
+import { ShieldCheck, ArrowLeft, RotateCw } from "lucide-react-native";
 
 // Import images
 const logoLight = require("../assets/images/unfluke/UNFLUKE -05-NEW.png");
 
-const c = Colors.light;
-
 const OTP_LENGTH = 6;
 
 const OtpVerification = () => {
+  const { colors: c, isDark } = useTheme();
+  const s = makeStyles(c, isDark);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -314,40 +317,45 @@ const OtpVerification = () => {
       <Stack.Screen options={{ headerShown: false, title: "" }} />
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
-        style={styles.container}
+        style={s.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={s.scrollContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Dark Header */}
-          <View style={[styles.darkHeader, { paddingTop: insets.top + 40 }]}>
+          <View style={[s.darkHeader, { paddingTop: insets.top + 40 }]}>
             <Image
               source={logoLight}
-              style={styles.logo}
+              style={s.logo}
               resizeMode="contain"
             />
-            <Text style={styles.tagline}>
+            <Text style={s.tagline}>
               Backtest &middot; Analyse &middot; Trade smarter
             </Text>
           </View>
 
-          {/* White Form Card */}
-          <View style={styles.card}>
-            <View style={styles.cardBody}>
+          {/* Form Card */}
+          <View style={s.card}>
+            <View style={s.cardBody}>
+              {/* Gold shield badge */}
+              <View style={s.badge}>
+                <ShieldCheck size={26} color={c.gold} strokeWidth={2.2} />
+              </View>
+
               {/* Title */}
-              <Text style={styles.welcomeTitle}>Verify your number</Text>
-              <Text style={styles.welcomeSubtitle}>
+              <Text style={s.welcomeTitle}>Verify your number</Text>
+              <Text style={s.welcomeSubtitle}>
                 Enter the 6-digit OTP sent to{" "}
-                <Text style={styles.phoneHighlight}>
+                <Text style={s.phoneHighlight}>
                   +91 {formatPhoneNumber(phoneNumber)}
                 </Text>
               </Text>
 
               {/* OTP Input Boxes */}
-              <View style={styles.otpRow}>
+              <View style={s.otpRow}>
                 {Array.from({ length: OTP_LENGTH }).map((_, index) => (
                   <TextInput
                     key={index}
@@ -355,14 +363,15 @@ const OtpVerification = () => {
                       inputRefs.current[index] = ref;
                     }}
                     style={[
-                      styles.otpBox,
+                      s.otpBox,
                       validation.values.otp[index]
-                        ? styles.otpBoxFilled
+                        ? s.otpBoxFilled
                         : null,
                       validation.touched.otp && validation.errors.otp
-                        ? styles.otpBoxError
+                        ? s.otpBoxError
                         : null,
                     ]}
+                    placeholderTextColor={c.textMuted}
                     keyboardType="numeric"
                     maxLength={1}
                     value={validation.values.otp[index] || ""}
@@ -374,37 +383,51 @@ const OtpVerification = () => {
                 ))}
               </View>
               {validation.touched.otp && validation.errors.otp ? (
-                <Text style={styles.errorText}>{validation.errors.otp}</Text>
+                <Text style={s.errorText}>{validation.errors.otp}</Text>
               ) : null}
 
-              {/* Verify OTP Button */}
+              {/* Verify OTP Button — gold gradient CTA */}
               <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
+                style={[s.button, loading && s.buttonDisabled]}
                 onPress={() => validation.handleSubmit()}
                 disabled={loading}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>Verify OTP</Text>
-                )}
+                <LinearGradient
+                  colors={[c.goldBright, c.gold, c.goldDeep]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={s.buttonGradient}
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color={c.onGold} />
+                  ) : (
+                    <Text style={s.buttonText}>Verify OTP</Text>
+                  )}
+                </LinearGradient>
               </TouchableOpacity>
 
               {/* Resend OTP */}
               <TouchableOpacity
-                style={styles.resendBtn}
+                style={s.resendBtn}
                 onPress={handleResendOtp}
                 disabled={!canResend || resendLoading}
               >
                 {resendLoading ? (
                   <ActivityIndicator
                     size="small"
-                    color={c.textSecondary}
+                    color={c.gold}
                     style={{ marginRight: 8 }}
                   />
+                ) : canResend ? (
+                  <RotateCw
+                    size={15}
+                    color={c.gold}
+                    strokeWidth={2.2}
+                    style={{ marginRight: 7 }}
+                  />
                 ) : null}
-                <Text style={styles.resendText}>
+                <Text style={[s.resendText, canResend && s.resendTextActive]}>
                   {resendLoading
                     ? "Sending..."
                     : !canResend
@@ -415,11 +438,14 @@ const OtpVerification = () => {
             </View>
 
             {/* Back to Forgot Password */}
-            <View style={styles.backContainer}>
+            <View style={s.backContainer}>
               <TouchableOpacity
+                style={s.backRow}
                 onPress={() => navigation.navigate("forgot-password")}
+                activeOpacity={0.7}
               >
-                <Text style={styles.backLink}>Back to Forgot Password</Text>
+                <ArrowLeft size={16} color={c.gold} strokeWidth={2.4} />
+                <Text style={s.backLink}>Back to Forgot Password</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -430,146 +456,184 @@ const OtpVerification = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: c.primary,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDark ? c.background : c.primary,
+    },
+    scrollContainer: {
+      flexGrow: 1,
+    },
 
-  // Dark header
-  darkHeader: {
-    backgroundColor: c.primary,
-    paddingBottom: 60,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logo: {
-    width: 180,
-    height: 60,
-    tintColor: "#fff",
-  },
-  tagline: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.5)",
-    marginTop: 6,
-    letterSpacing: 0.5,
-  },
+    // Dark hero header
+    darkHeader: {
+      backgroundColor: isDark ? c.background : c.primary,
+      paddingBottom: 64,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    logo: {
+      width: 180,
+      height: 60,
+      tintColor: "#fff",
+    },
+    tagline: {
+      fontSize: 12.5,
+      color: "rgba(255,255,255,0.55)",
+      marginTop: 8,
+      letterSpacing: 0.6,
+    },
 
-  // White card
-  card: {
-    flex: 1,
-    backgroundColor: c.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    marginTop: -24,
-    paddingTop: 8,
-  },
-  cardBody: {
-    paddingHorizontal: 24,
-    paddingTop: 28,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: c.text,
-    marginBottom: 4,
-  },
-  welcomeSubtitle: {
-    fontSize: 14,
-    color: c.textSecondary,
-    marginBottom: 28,
-    lineHeight: 20,
-  },
-  phoneHighlight: {
-    fontWeight: "600",
-    color: c.text,
-  },
+    // Form card
+    card: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      borderWidth: 1,
+      borderBottomWidth: 0,
+      borderColor: c.border,
+      marginTop: -26,
+      paddingTop: 8,
+    },
+    cardBody: {
+      paddingHorizontal: 24,
+      paddingTop: 30,
+    },
 
-  // OTP boxes
-  otpRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 12,
-    marginBottom: 8,
-  },
-  otpBox: {
-    width: 52,
-    height: 52,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    textAlign: "center",
-    fontSize: 20,
-    fontWeight: "bold" as any,
-    color: c.text,
-  },
-  otpBoxFilled: {
-    borderColor: c.primary,
-    backgroundColor: c.surface,
-  },
-  otpBoxError: {
-    borderColor: c.error,
-    borderWidth: 1.5,
-  },
+    // Gold shield badge
+    badge: {
+      width: 56,
+      height: 56,
+      borderRadius: 18,
+      backgroundColor: c.goldLight,
+      borderWidth: 1,
+      borderColor: c.gold,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 18,
+    },
 
-  // Button
-  button: {
-    backgroundColor: c.primary,
-    borderRadius: 14,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
+    welcomeTitle: {
+      fontSize: 25,
+      fontWeight: "800",
+      color: c.text,
+      marginBottom: 6,
+      letterSpacing: 0.2,
+    },
+    welcomeSubtitle: {
+      fontSize: 14,
+      color: c.textSecondary,
+      marginBottom: 30,
+      lineHeight: 21,
+    },
+    phoneHighlight: {
+      fontWeight: "700",
+      color: c.gold,
+    },
 
-  // Resend
-  resendBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
-  },
-  resendText: {
-    fontSize: 14,
-    color: c.textSecondary,
-    fontWeight: "500",
-  },
+    // OTP boxes
+    otpRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 11,
+      marginBottom: 8,
+    },
+    otpBox: {
+      width: 50,
+      height: 58,
+      backgroundColor: c.inputBg,
+      borderWidth: 1.5,
+      borderColor: c.inputBorder,
+      borderRadius: 14,
+      textAlign: "center",
+      fontSize: 22,
+      fontWeight: "800",
+      color: c.text,
+    },
+    otpBoxFilled: {
+      borderColor: c.gold,
+      backgroundColor: c.goldLight,
+      color: c.text,
+    },
+    otpBoxError: {
+      borderColor: c.error,
+      borderWidth: 1.5,
+    },
 
-  // Error
-  errorText: {
-    color: c.error,
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: "500",
-    textAlign: "center",
-  },
+    // Verify CTA
+    button: {
+      borderRadius: 16,
+      height: 54,
+      marginTop: 26,
+      overflow: "hidden",
+      shadowColor: c.gold,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.32,
+      shadowRadius: 14,
+      elevation: 6,
+    },
+    buttonGradient: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 16,
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+    buttonText: {
+      color: c.onGold,
+      fontSize: 16,
+      fontWeight: "800",
+      letterSpacing: 0.4,
+    },
 
-  // Back link
-  backContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  backLink: {
-    fontSize: 14,
-    color: c.profit,
-    fontWeight: "700",
-  },
-});
+    // Resend
+    resendBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 22,
+    },
+    resendText: {
+      fontSize: 14,
+      color: c.textSecondary,
+      fontWeight: "600",
+    },
+    resendTextActive: {
+      color: c.gold,
+      fontWeight: "700",
+    },
+
+    // Error
+    errorText: {
+      color: c.error,
+      fontSize: 12,
+      marginTop: 8,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+
+    // Back link
+    backContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingTop: 26,
+      paddingBottom: 34,
+    },
+    backRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    backLink: {
+      fontSize: 14,
+      color: c.gold,
+      fontWeight: "700",
+    },
+  });
 
 export default OtpVerification;

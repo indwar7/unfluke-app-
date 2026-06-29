@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
-import { View, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, Image, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setUserFromStorage } from '../redux/Unfluke_slices/auth/login/reducer';
+import { useTheme } from '../constants/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function IndexScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const dispatch = useDispatch();
+  const { colors: c } = useTheme();
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
@@ -52,11 +54,16 @@ export default function IndexScreen() {
   }, [isNavigating]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       <Image
         source={require('../assets/splash.png')}
         style={styles.splashImage}
         resizeMode="contain"
+      />
+      <ActivityIndicator
+        size="small"
+        color={c.gold}
+        style={styles.spinner}
       />
     </View>
   );
@@ -67,10 +74,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
   },
   splashImage: {
     width: width * 0.7,
     height: height * 0.4,
+  },
+  spinner: {
+    position: 'absolute',
+    bottom: height * 0.12,
   },
 });
