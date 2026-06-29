@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
   Platform,
   KeyboardAvoidingView,
+  Animated,
 } from "react-native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
@@ -39,10 +40,77 @@ import ShowResultsLink from "../../components/UnflukeMain/Chatbot/ShowResultsLin
 import { createSelector } from "reselect";
 import { layoutModeTypes } from "../../components/UnflukeMain/constants/layout";
 import { Config } from "../../helpers/config";
-import { Bot, CircleUserRound, Send, FileText } from "lucide-react-native";
+import {
+  Bot,
+  CircleUserRound,
+  FileText,
+  Filter,
+  Search,
+  LineChart,
+  ArrowUp,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react-native";
 import { ScrollView as HScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+
+// Animated three-dot "thinking" indicator for the bot bubble while streaming
+const TypingDots = ({ color }: { color: string }) => {
+  const dots = useRef([
+    new Animated.Value(0.3),
+    new Animated.Value(0.3),
+    new Animated.Value(0.3),
+  ]).current;
+
+  useEffect(() => {
+    const animations = dots.map((dot, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 160),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0.3,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    );
+    animations.forEach((a) => a.start());
+    return () => animations.forEach((a) => a.stop());
+  }, [dots]);
+
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 4 }}>
+      {dots.map((dot, i) => (
+        <Animated.View
+          key={i}
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: 4,
+            backgroundColor: color,
+            opacity: dot,
+            transform: [
+              {
+                scale: dot.interpolate({
+                  inputRange: [0.3, 1],
+                  outputRange: [0.85, 1.15],
+                }),
+              },
+            ],
+          }}
+        />
+      ))}
+    </View>
+  );
+};
 
 const AIChatbot = ({
   defaultInput,
@@ -119,6 +187,48 @@ const AIChatbot = ({
   );
 
   const bots = useMemo(() => allowedBots || allBots, [allowedBots, allBots]);
+
+  // Map each bot to a lucide icon for the mode chips
+  const botIcons = useMemo(
+    () => ({
+      "Company Fundamentals": FileText,
+      "Fundamental Screener": Filter,
+      Scanner: Search,
+      "Basic Backtest": LineChart,
+    }),
+    []
+  );
+
+  // Short suggestion pills shown under the mode chips
+  const botSuggestions = useMemo(
+    () => ({
+      "Company Fundamentals": [
+        "P/E vs sector",
+        "Debt trend",
+        "Promoter holding",
+        "ROE of Infosys",
+      ],
+      "Fundamental Screener": [
+        "P/E < 15",
+        "ROE > 20%",
+        "Debt/Equity < 0.5",
+        "Dividend yield > 3%",
+      ],
+      Scanner: [
+        "52-week high",
+        "Volume surge",
+        "RSI divergence",
+        "MACD crossover",
+      ],
+      "Basic Backtest": [
+        "SMA crossover",
+        "RSI strategy",
+        "Bollinger Bands",
+        "Mean reversion",
+      ],
+    }),
+    []
+  );
 
   // Add sample questions for each bot type
   const botQuestions = useMemo(
@@ -703,6 +813,124 @@ const AIChatbot = ({
       const isUser = msg.sender === "user";
       const isStream = msg.sender === "bot-stream";
 
+      // Inner content shared between the gold-gradient user bubble and the
+      // surface bot bubble — keeps every render branch identical.
+      const bubbleContent = (
+        <>
+          {msg.resultsLink ? (
+            <Text
+              style={[s.messageText, { color: isUser ? c.onGold : c.text }]}
+            >
+              Thank you for using UnflukeAI. You can view your results{" "}
+              <Text
+                style={s.linkText}
+                onPress={() => resultsLinkAction(msg.resultsLink)}
+              >
+                here
+              </Text>
+              .
+            </Text>
+          ) : (
+            <Markdown
+              style={{
+                body: {
+                  color: isUser ? c.onGold : c.text,
+                  fontSize: 15.5,
+                  lineHeight: 23,
+                },
+                link: {
+                  color: isUser ? c.onGold : c.gold,
+                  fontWeight: "700",
+                },
+                strong: {
+                  color: isUser ? c.onGold : c.text,
+                  fontWeight: "800",
+                },
+                code_inline: {
+                  backgroundColor: isUser ? c.transparent : c.surfaceElevated,
+                  color: isUser ? c.onGold : c.gold,
+                  fontVariant: ["tabular-nums"],
+                  paddingHorizontal: 5,
+                  paddingVertical: 2,
+                  borderRadius: 6,
+                },
+                code_block: {
+                  backgroundColor: isUser ? c.transparent : c.surfaceElevated,
+                  color: isUser ? c.onGold : c.text,
+                  fontVariant: ["tabular-nums"],
+                  padding: 12,
+                  borderRadius: 10,
+                  borderWidth: isUser ? 0 : 1,
+                  borderColor: c.border,
+                  marginVertical: 6,
+                },
+                fence: {
+                  backgroundColor: isUser ? c.transparent : c.surfaceElevated,
+                  color: isUser ? c.onGold : c.text,
+                  fontVariant: ["tabular-nums"],
+                  padding: 12,
+                  borderRadius: 10,
+                  borderWidth: isUser ? 0 : 1,
+                  borderColor: c.border,
+                  marginVertical: 6,
+                },
+                hr: {
+                  backgroundColor: c.border,
+                  height: 1,
+                  marginVertical: 8,
+                },
+                table: {
+                  borderColor: c.border,
+                  borderRadius: 10,
+                  marginVertical: 6,
+                },
+                th: {
+                  color: isUser ? c.onGold : c.textMuted,
+                  fontWeight: "700",
+                },
+                td: {
+                  color: isUser ? c.onGold : c.text,
+                  fontVariant: ["tabular-nums"],
+                },
+              }}
+            >
+              {msg.text?.replace("<<IKNOW>>", "") || ""}
+            </Markdown>
+          )}
+
+          {/* Progress bar for backtest */}
+          {isProgressing &&
+            index === messages.length - 1 &&
+            ProgressEventBar && (
+              <ProgressEventBar
+                auth={auth}
+                setIsProgressing={setIsProgressing}
+                stratId={stratId}
+              />
+            )}
+
+          {/* Options buttons */}
+          {msg.options && msg.options.length > 0 && (
+            <View style={s.optionsContainer}>
+              {msg.options.map((option, optionIndex) => (
+                <TouchableOpacity
+                  key={optionIndex}
+                  style={s.optionButton}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (index === messages.length - 1) {
+                      setOptionToPrompt(option);
+                    }
+                  }}
+                >
+                  <Text style={s.optionButtonText}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </>
+      );
+
       return (
         <View
           key={index}
@@ -711,153 +939,99 @@ const AIChatbot = ({
             isBot ? s.botMessageContainer : s.userMessageContainer,
           ]}
         >
-          {/* Bot icon */}
+          {/* Bot avatar */}
           {isBot && (
             <View style={[s.iconContainer, s.botIconContainer]}>
-              <Bot size={18} color={c.gold} />
+              <Bot size={16} color={c.gold} />
             </View>
           )}
 
-          {/* User icon */}
+          {/* User avatar */}
           {isUser && (
             <View style={[s.iconContainer, s.userIconContainer]}>
-              <CircleUserRound size={18} color={c.textSecondary} />
+              <CircleUserRound size={16} color={c.textSecondary} />
             </View>
           )}
 
-          {/* Message bubble */}
-          {msg.sender !== "bot-stream" && (
+          {/* User bubble — gold gradient with tail */}
+          {isUser && (
+            <LinearGradient
+              colors={[c.goldBright, c.gold, c.goldDeep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[s.messageBubble, s.userMessage]}
+            >
+              {bubbleContent}
+            </LinearGradient>
+          )}
+
+          {/* Bot bubble — surface card */}
+          {isBot && msg.sender !== "bot-stream" && (
             <View
               style={[
                 s.messageBubble,
-                isUser ? s.userMessage : s.botMessage,
+                s.botMessage,
                 msg.sender === "bot-loading" && s.loadingMessage,
               ]}
             >
-              {msg.resultsLink ? (
-                <Text
-                  style={[
-                    s.messageText,
-                    { color: isUser ? c.onGold : c.text },
-                  ]}
-                >
-                  Thank you for using UnflukeAI. You can view your results{" "}
-                  <Text
-                    style={s.linkText}
-                    onPress={() => resultsLinkAction(msg.resultsLink)}
-                  >
-                    here
-                  </Text>
-                  .
-                </Text>
-              ) : (
+              {bubbleContent}
+            </View>
+          )}
+
+          {/* Streaming bot bubble — shows live text or a thinking indicator */}
+          {isStream && index === messages.length - 1 && (
+            <View style={[s.messageBubble, s.botMessage]}>
+              {streamingMessage ? (
                 <Markdown
                   style={{
-                    body: {
-                      color: isUser ? c.onGold : c.text,
-                      fontSize: 16,
-                      lineHeight: 22,
-                    },
-                    link: {
-                      color: isUser ? c.onGold : c.gold,
-                    },
+                    body: { color: c.text, fontSize: 15.5, lineHeight: 23 },
+                    link: { color: c.gold, fontWeight: "700" },
+                    strong: { color: c.text, fontWeight: "800" },
                     code_inline: {
-                      backgroundColor: isUser ? c.transparent : c.surfaceElevated,
-                      color: isUser ? c.onGold : c.text,
-                      padding: 2,
-                      borderRadius: 4,
+                      backgroundColor: c.surfaceElevated,
+                      color: c.gold,
+                      fontVariant: ["tabular-nums"],
+                      paddingHorizontal: 5,
+                      paddingVertical: 2,
+                      borderRadius: 6,
                     },
                     code_block: {
-                      backgroundColor: isUser ? c.transparent : c.surfaceElevated,
-                      color: isUser ? c.onGold : c.text,
-                      padding: 10,
-                      borderRadius: 8,
-                      marginVertical: 5,
+                      backgroundColor: c.surfaceElevated,
+                      color: c.text,
+                      fontVariant: ["tabular-nums"],
+                      padding: 12,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: c.border,
+                      marginVertical: 6,
                     },
                   }}
                 >
-                  {msg.text?.replace("<<IKNOW>>", "") || ""}
+                  {streamingMessage}
                 </Markdown>
-              )}
-
-              {/* Progress bar for backtest */}
-              {isProgressing &&
-                index === messages.length - 1 &&
-                ProgressEventBar && (
-                  <ProgressEventBar
-                    auth={auth}
-                    setIsProgressing={setIsProgressing}
-                    stratId={stratId}
-                  />
-                )}
-
-              {/* Options buttons */}
-              {msg.options && msg.options.length > 0 && (
-                <View style={s.optionsContainer}>
-                  {msg.options.map((option, optionIndex) => (
-                    <TouchableOpacity
-                      key={optionIndex}
-                      style={s.optionButton}
-                      onPress={() => {
-                        if (index === messages.length - 1) {
-                          setOptionToPrompt(option);
-                        }
-                      }}
-                    >
-                      <Text style={s.optionButtonText}>{option}</Text>
-                    </TouchableOpacity>
-                  ))}
+              ) : (
+                <View style={s.thinkingRow}>
+                  <TypingDots color={c.gold} />
+                  <Text style={s.thinkingText}>Thinking…</Text>
                 </View>
               )}
             </View>
           )}
 
-          {/* Streaming message */}
-          {isStream && index === messages.length - 1 && streamingMessage && (
-            <View style={[s.messageBubble, s.botMessage]}>
-              <Markdown
-                style={{
-                  body: {
-                    color: c.text,
-                    fontSize: 16,
-                    lineHeight: 22,
-                  },
-                  link: {
-                    color: c.gold,
-                  },
-                  code_inline: {
-                    backgroundColor: c.surfaceElevated,
-                    color: c.text,
-                    padding: 2,
-                    borderRadius: 4,
-                  },
-                  code_block: {
-                    backgroundColor: c.surfaceElevated,
-                    color: c.text,
-                    padding: 10,
-                    borderRadius: 8,
-                    marginVertical: 5,
-                  },
-                }}
-              >
-                {streamingMessage}
-              </Markdown>
-            </View>
-          )}
-
-          {/* Sources icon */}
+          {/* Sources button */}
           {isBot &&
             !isStream &&
             msg.docs &&
             Object.keys(msg.docs).length > 0 && (
               <TouchableOpacity
                 style={s.sourcesButton}
+                activeOpacity={0.7}
                 onPress={() => {
                   setSources(msg.docs);
                   setSourcesModalOpen(true);
                 }}
               >
-                <FileText size={18} color={c.textSecondary} />
+                <FileText size={15} color={c.textSecondary} />
               </TouchableOpacity>
             )}
         </View>
@@ -895,7 +1069,32 @@ const AIChatbot = ({
         />
       )}
 
-      {/* Bot Navigation Tabs */}
+      {/* Header row — live status + refresh */}
+      <View style={s.headerRow}>
+        <View style={s.headerTitleWrap}>
+          <View style={s.headerTitleLine}>
+            <View style={s.liveDot} />
+            <Text style={s.headerTitle}>AI Bot</Text>
+          </View>
+          <Text style={s.headerSubtitle} numberOfLines={1}>
+            {loading ? `· analysing ${selectedBot}` : selectedBot}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={s.refreshButton}
+          activeOpacity={0.7}
+          disabled={loading}
+          onPress={() => {
+            if (loading) return;
+            setMessages([]);
+            addChatHistory([]);
+          }}
+        >
+          <RefreshCw size={17} color={loading ? c.textMuted : c.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Mode chips — bot selector */}
       <View style={s.tabContainer}>
         <HScrollView
           horizontal
@@ -904,13 +1103,11 @@ const AIChatbot = ({
         >
           {bots.map((bot, i) => {
             const isActive = selectedBot === bot;
+            const ChipIcon = botIcons[bot] || Sparkles;
             return (
               <TouchableOpacity
                 key={i}
-                style={[
-                  s.pillTab,
-                  isActive ? s.pillTabActive : s.pillTabInactive,
-                ]}
+                activeOpacity={0.85}
                 onPress={() => {
                   if (loading) return;
                   setSelectedBot(bot);
@@ -919,21 +1116,58 @@ const AIChatbot = ({
                     onTabChange(bot);
                   }
                 }}
-                activeOpacity={0.7}
               >
-                <Text
-                  style={[
-                    s.pillTabText,
-                    isActive ? s.pillTabTextActive : s.pillTabTextInactive,
-                  ]}
-                >
-                  {bot}
-                </Text>
+                {isActive ? (
+                  <LinearGradient
+                    colors={[c.goldBright, c.gold, c.goldDeep]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[s.pillTab, s.pillTabActive]}
+                  >
+                    <ChipIcon size={14} color={c.onGold} />
+                    <Text style={[s.pillTabText, s.pillTabTextActive]}>
+                      {bot}
+                    </Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={[s.pillTab, s.pillTabInactive]}>
+                    <ChipIcon size={14} color={c.textSecondary} />
+                    <Text style={[s.pillTabText, s.pillTabTextInactive]}>
+                      {bot}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
         </HScrollView>
       </View>
+
+      {/* Suggestion pills */}
+      {messages.filter((msg) => msg.mode === selectedBot).length === 0 && (
+        <View style={s.suggestionContainer}>
+          <HScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.suggestionScrollContent}
+          >
+            {botSuggestions[selectedBot]?.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={s.suggestionChip}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (!loading) {
+                    setInput(suggestion);
+                  }
+                }}
+              >
+                <Text style={s.suggestionChipText}>{suggestion}</Text>
+              </TouchableOpacity>
+            ))}
+          </HScrollView>
+        </View>
+      )}
 
       {/* Chat Messages */}
       <KeyboardAwareScrollView
@@ -990,7 +1224,7 @@ const AIChatbot = ({
         <View style={s.inputGroup}>
           <TextInput
             style={s.textInput}
-            placeholder="Type your message..."
+            placeholder="Ask anything about the markets…"
             placeholderTextColor={c.textMuted}
             value={input}
             onChangeText={handleInputChange}
@@ -1002,8 +1236,16 @@ const AIChatbot = ({
             style={[s.sendButton, loading && s.disabledButton]}
             onPress={handleMessage}
             disabled={loading}
+            activeOpacity={0.85}
           >
-            <Send size={18} color={c.onGold} />
+            <LinearGradient
+              colors={[c.goldBright, c.gold, c.goldDeep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.sendButtonGradient}
+            >
+              <ArrowUp size={20} color={c.onGold} strokeWidth={2.5} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -1018,7 +1260,59 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       backgroundColor: c.background,
     },
 
-    // Tab Navigation
+    // Header row
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 4,
+    },
+    headerTitleWrap: {
+      flex: 1,
+      marginRight: 12,
+    },
+    headerTitleLine: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+    },
+    liveDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: c.profit,
+      shadowColor: c.profit,
+      shadowOpacity: 0.6,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 0 },
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: "800",
+      letterSpacing: 0.2,
+      color: c.text,
+    },
+    headerSubtitle: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: c.textMuted,
+      marginTop: 2,
+      marginLeft: 15,
+    },
+    refreshButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+
+    // Mode chips
     tabContainer: {
       paddingTop: 10,
       paddingBottom: 6,
@@ -1028,14 +1322,21 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       gap: 8,
     },
     pillTab: {
-      paddingHorizontal: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      paddingHorizontal: 15,
       paddingVertical: 9,
-      borderRadius: 20,
+      borderRadius: 22,
       borderWidth: 1,
     },
     pillTabActive: {
-      backgroundColor: c.gold,
-      borderColor: c.gold,
+      borderColor: c.goldDeep,
+      shadowColor: c.gold,
+      shadowOpacity: isDark ? 0.45 : 0.3,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 4,
     },
     pillTabInactive: {
       backgroundColor: c.surface,
@@ -1049,6 +1350,28 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       color: c.onGold,
     },
     pillTabTextInactive: {
+      color: c.textSecondary,
+    },
+
+    // Suggestion pills
+    suggestionContainer: {
+      paddingBottom: 4,
+    },
+    suggestionScrollContent: {
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    suggestionChip: {
+      paddingHorizontal: 13,
+      paddingVertical: 7,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surfaceElevated,
+    },
+    suggestionChipText: {
+      fontSize: 12.5,
+      fontWeight: "600",
       color: c.textSecondary,
     },
 
@@ -1067,20 +1390,20 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       justifyContent: "center",
       alignItems: "center",
       paddingHorizontal: 32,
-      gap: 16,
+      gap: 18,
     },
     explanationIcon: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 68,
+      height: 68,
+      borderRadius: 34,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: c.goldLight,
       borderWidth: 1,
-      borderColor: c.border,
+      borderColor: isDark ? c.goldDeep : c.border,
     },
     explanationText: {
-      fontSize: 17,
+      fontSize: 16.5,
       fontWeight: "600",
       textAlign: "center",
       lineHeight: 26,
@@ -1101,9 +1424,9 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       flexDirection: "row-reverse",
     },
     iconContainer: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
       marginHorizontal: 6,
       alignItems: "center",
       justifyContent: "center",
@@ -1111,23 +1434,27 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
     },
     botIconContainer: {
       backgroundColor: c.goldLight,
-      borderColor: c.border,
+      borderColor: isDark ? c.goldDeep : c.border,
     },
     userIconContainer: {
       backgroundColor: c.surfaceElevated,
       borderColor: c.border,
     },
     messageBubble: {
-      maxWidth: "80%",
+      maxWidth: "82%",
       paddingHorizontal: 14,
       paddingVertical: 4,
-      borderRadius: 16,
+      borderRadius: 18,
       marginHorizontal: 4,
     },
     userMessage: {
-      backgroundColor: c.gold,
       alignSelf: "flex-end",
       borderBottomRightRadius: 6,
+      shadowColor: c.gold,
+      shadowOpacity: isDark ? 0.35 : 0.2,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 3,
     },
     botMessage: {
       backgroundColor: c.card,
@@ -1140,18 +1467,33 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       opacity: 0.7,
     },
     messageText: {
-      fontSize: 16,
-      lineHeight: 22,
+      fontSize: 15.5,
+      lineHeight: 23,
     },
     linkText: {
       color: c.gold,
       fontWeight: "700",
       textDecorationLine: "underline",
     },
+    thinkingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingVertical: 6,
+    },
+    thinkingText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: c.textMuted,
+      fontStyle: "italic",
+    },
     sourcesButton: {
-      padding: 8,
+      width: 32,
+      height: 32,
       marginLeft: 6,
-      borderRadius: 10,
+      borderRadius: 11,
+      alignItems: "center",
+      justifyContent: "center",
       backgroundColor: c.surface,
       borderWidth: 1,
       borderColor: c.border,
@@ -1162,6 +1504,7 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       flexDirection: "row",
       flexWrap: "wrap",
       marginTop: 10,
+      marginBottom: 6,
       gap: 8,
     },
     optionButton: {
@@ -1169,19 +1512,19 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       borderWidth: 1,
       borderColor: c.gold,
       paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 10,
+      paddingVertical: 9,
+      borderRadius: 12,
       flex: 1,
       minWidth: 100,
     },
     optionButtonText: {
       color: c.gold,
-      fontSize: 12,
+      fontSize: 12.5,
       textAlign: "center",
       fontWeight: "700",
     },
 
-    // Quick Questions
+    // Quick Questions (the "Try asking" block)
     quickQuestionsContainer: {
       paddingHorizontal: 16,
       paddingVertical: 12,
@@ -1220,7 +1563,7 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
     // Input Area
     inputContainer: {
       paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingTop: 10,
       paddingBottom: 20,
       borderTopWidth: 1,
       borderTopColor: c.border,
@@ -1232,26 +1575,35 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       backgroundColor: c.inputBg,
       borderWidth: 1,
       borderColor: c.inputBorder,
-      borderRadius: 24,
-      paddingHorizontal: 4,
-      paddingBottom: 4,
+      borderRadius: 26,
+      paddingLeft: 6,
       paddingRight: 6,
-      paddingVertical: 4,
+      paddingVertical: 6,
     },
     textInput: {
       flex: 1,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      fontSize: 16,
+      paddingHorizontal: 12,
+      paddingVertical: Platform.OS === "ios" ? 10 : 8,
+      fontSize: 15.5,
       maxHeight: 120,
       color: c.text,
       backgroundColor: "transparent",
     },
     sendButton: {
-      backgroundColor: c.gold,
-      padding: 11,
-      borderRadius: 20,
-      marginLeft: 4,
+      marginLeft: 6,
+      borderRadius: 21,
+      shadowColor: c.gold,
+      shadowOpacity: isDark ? 0.4 : 0.25,
+      shadowRadius: 7,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    sendButtonGradient: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: "center",
+      justifyContent: "center",
     },
     disabledButton: {
       opacity: 0.5,

@@ -89,21 +89,45 @@ const NiftyChart: React.FC = () => {
           }
         );
         if (!mounted.current) return;
-        if (!Array.isArray(res) || res.length === 0 || (res as any)?.Error) {
+
+        // Response may be a raw array of candles, or wrapped as { data: [...] }.
+        const rows: any[] = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+            ? res.data
+            : [];
+
+        if (rows.length === 0 || res?.Error) {
+          console.log("[NiftyChart] empty/err response:", JSON.stringify(res)?.slice(0, 160));
           if (!silent) setError(true);
           setLoading(false);
           return;
         }
-        const parsed: Candle[] = res
-          .map((el: any) => ({ time: new Date(el.a).getTime(), close: Number(el.e) }))
-          .filter((d: Candle) => !isNaN(d.close))
+
+        // Candle fields: { a:time, b:low, c:high, d:open, e:close, f:vol }.
+        // Be tolerant of alternative close keys just in case.
+        const parsed: Candle[] = rows
+          .map((el: any) => {
+            const t = new Date(el.a ?? el.time ?? el.date).getTime();
+            const close = Number(el.e ?? el.close ?? el.c);
+            return { time: t, close };
+          })
+          .filter((d: Candle) => !isNaN(d.close) && !isNaN(d.time))
           .sort((a: Candle, b: Candle) => a.time - b.time);
+
+        if (parsed.length < 2) {
+          if (!silent) setError(true);
+          setLoading(false);
+          return;
+        }
+
         setCandles(parsed.slice(-tf.points));
         setError(false);
         setLoading(false);
         draw.setValue(0);
         Animated.timing(draw, { toValue: 1, duration: 900, useNativeDriver: true }).start();
-      } catch {
+      } catch (err) {
+        console.log("[NiftyChart] fetch error:", (err as any)?.message || err);
         if (!mounted.current) return;
         if (!silent) setError(true);
         setLoading(false);

@@ -1,6 +1,7 @@
 // Unfluke Pro — Premium animated bottom navigation.
 // Tabs: Home · Scanner · AI Bot · Charts · Profile.
-// Active tab shows a gold pill that animates in; press gives a spring bounce.
+// Round icon chips, active gold halo, spring press. Device-safe: respects the
+// Android system gesture/back bar via safe-area insets so nothing overlaps.
 
 import React, { useEffect, useRef } from "react";
 import {
@@ -40,28 +41,24 @@ const NavItem: React.FC<{
   onPress: () => void;
 }> = ({ tab, active, c, onPress }) => {
   const scale = useRef(new Animated.Value(1)).current;
-  const pill = useRef(new Animated.Value(active ? 1 : 0)).current;
+  const lift = useRef(new Animated.Value(active ? 1 : 0)).current;
 
   useEffect(() => {
-    Animated.spring(pill, {
+    Animated.spring(lift, {
       toValue: active ? 1 : 0,
-      useNativeDriver: false,
+      useNativeDriver: true,
       friction: 7,
-      tension: 90,
+      tension: 80,
     }).start();
   }, [active]);
 
   const onPressIn = () =>
-    Animated.spring(scale, { toValue: 0.86, useNativeDriver: true, friction: 6 }).start();
+    Animated.spring(scale, { toValue: 0.84, useNativeDriver: true, friction: 6 }).start();
   const onPressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5, tension: 140 }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5, tension: 160 }).start();
 
-  const pillBg = pill.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["rgba(0,0,0,0)", c.goldLight],
-  });
-  const pillWidth = pill.interpolate({ inputRange: [0, 1], outputRange: [44, 78] });
-  const color = active ? c.gold : c.tabBarInactive;
+  const translateY = lift.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
+  const color = active ? c.onGold : c.tabBarInactive;
 
   return (
     <TouchableOpacity
@@ -71,19 +68,21 @@ const NavItem: React.FC<{
       onPressIn={onPressIn}
       onPressOut={onPressOut}
     >
-      <Animated.View style={{ transform: [{ scale }], alignItems: "center" }}>
-        <Animated.View
+      <Animated.View style={{ transform: [{ scale }, { translateY }], alignItems: "center" }}>
+        <View
           style={[
-            styles.pill,
-            { backgroundColor: pillBg, width: pillWidth },
+            styles.chip,
+            active
+              ? { backgroundColor: c.gold }
+              : { backgroundColor: "transparent" },
           ]}
         >
-          <tab.Icon size={21} color={color} strokeWidth={active ? 2.5 : 2} />
-        </Animated.View>
+          <tab.Icon size={20} color={color} strokeWidth={active ? 2.6 : 2} />
+        </View>
         <Text
           style={[
             styles.label,
-            { color, fontWeight: active ? "800" : "600" },
+            { color: active ? c.gold : c.tabBarInactive, fontWeight: active ? "800" : "600" },
           ]}
         >
           {tab.label}
@@ -94,10 +93,10 @@ const NavItem: React.FC<{
 };
 
 export const BottomNav: React.FC = () => {
-  const { colors: c } = useTheme();
+  const { colors: c, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname() || "";
-  const s = makeStyles(c);
+  const s = makeStyles(c, isDark);
 
   const isActive = (tab: Tab) =>
     tab.match.some((m) => pathname === m || pathname.startsWith(m + "/"));
@@ -107,8 +106,13 @@ export const BottomNav: React.FC = () => {
     router.push(tab.route as any);
   };
 
+  // Device-safe: add the system gesture/back-bar inset so the tab row never
+  // sits under Android's navigation bar. Minimum keeps it comfortable on
+  // gesture-nav phones (insets.bottom can be 0 there).
+  const bottomPad = Math.max(insets.bottom, Platform.OS === "android" ? 12 : 8);
+
   return (
-    <View style={[s.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[s.bar, { paddingBottom: bottomPad }]}>
       <View style={s.inner}>
         {TABS.map((tab) => (
           <NavItem
@@ -126,9 +130,10 @@ export const BottomNav: React.FC = () => {
 
 const styles = StyleSheet.create({
   item: { flex: 1, alignItems: "center", justifyContent: "center" },
-  pill: {
-    height: 34,
-    borderRadius: 999,
+  chip: {
+    width: 44,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -136,27 +141,27 @@ const styles = StyleSheet.create({
   label: { fontSize: 10.5, letterSpacing: 0.2 },
 });
 
-const makeStyles = (c: AppColors) =>
+const makeStyles = (c: AppColors, isDark: boolean) =>
   StyleSheet.create({
     bar: {
       backgroundColor: c.tabBarBg,
       borderTopWidth: 1,
       borderTopColor: c.border,
-      paddingTop: 8,
+      paddingTop: 10,
       ...Platform.select({
         ios: {
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -6 },
+          shadowOpacity: isDark ? 0.4 : 0.1,
+          shadowRadius: 16,
         },
-        android: { elevation: 16 },
+        android: { elevation: 20 },
       }),
     },
     inner: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 8,
+      paddingHorizontal: 6,
     },
   });
 

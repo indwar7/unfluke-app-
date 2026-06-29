@@ -81,10 +81,12 @@ const FEATURES = [
 ];
 
 const TOOLS = [
-  { id: 1, title: "Fundamentals", subtitle: "Company ratios & analysis", Icon: BarChart3, nav: "fundamental", tint: "gold" },
-  { id: 2, title: "Historical Charts", subtitle: "Price & volume history", Icon: LineChart, nav: "historical", tint: "info" },
-  { id: 3, title: "Strategy Charts", subtitle: "Visualize your strategies", Icon: Target, nav: "strategy-charts", tint: "violet" },
-  { id: 4, title: "Indicator Backtest", subtitle: "Backtest with indicators", Icon: Activity, nav: "basic-backtester-home", tint: "profit" },
+  { id: 1, title: "Fundamentals", subtitle: "Ratios & analysis", Icon: BarChart3, nav: "fundamental", tint: "gold" },
+  { id: 2, title: "Historical Charts", subtitle: "Price & volume", Icon: LineChart, nav: "historical", tint: "info" },
+  { id: 3, title: "Strategy Charts", subtitle: "Visualize strategies", Icon: Target, nav: "strategy-charts", tint: "violet" },
+  { id: 4, title: "Indicator Backtest", subtitle: "Backtest indicators", Icon: Activity, nav: "basic-backtester-home", tint: "profit" },
+  { id: 5, title: "Time Backtest", subtitle: "Test over time", Icon: Timer, nav: "basic-backtester-main", tint: "gold" },
+  { id: 6, title: "Fundamental Scan", subtitle: "Screen by financials", Icon: Search, nav: "scannerfundamental", tint: "info" },
 ];
 
 const UnDashboard = () => {
@@ -231,29 +233,38 @@ const UnDashboard = () => {
         </Reveal>
       )}
 
-      {/* Tools — merged list card */}
+      {/* More Tools — horizontal swiping mini-cards */}
       <Reveal index={isPaid ? 3 : 4}>
-        <Text style={[s.sectionTitle, { marginHorizontal: 16, marginTop: 4 }]}>More Tools</Text>
-        <View style={s.toolsCard}>
-          {TOOLS.map((t, i) => (
-            <TouchableOpacity
-              key={t.id}
-              style={[s.row, i < TOOLS.length - 1 && s.rowDivider]}
-              onPress={() => handleNavigation(t.nav)}
-              activeOpacity={0.7}
-            >
-              <View style={[s.rowIcon, { backgroundColor: tintBg(t.tint) }]}>
-                <t.Icon size={18} color={tintColor(t.tint)} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.rowTitle}>{t.title}</Text>
-                <Text style={s.rowSub} numberOfLines={1}>{t.subtitle}</Text>
-              </View>
-              <ChevronRight size={18} color={c.textMuted} />
-            </TouchableOpacity>
-          ))}
+        <View style={s.carouselHeader}>
+          <Text style={s.sectionTitle}>More Tools</Text>
+          <Text style={s.swipeHint}>Swipe →</Text>
         </View>
       </Reveal>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 6, gap: 12 }}
+        decelerationRate="fast"
+        snapToInterval={150}
+      >
+        {TOOLS.map((t) => (
+          <TouchableOpacity
+            key={t.id}
+            activeOpacity={0.88}
+            onPress={() => handleNavigation(t.nav)}
+            style={s.toolCard}
+          >
+            <View style={[s.toolCardIcon, { backgroundColor: tintBg(t.tint) }]}>
+              <t.Icon size={22} color={tintColor(t.tint)} />
+            </View>
+            <Text style={s.toolCardTitle} numberOfLines={1}>{t.title}</Text>
+            <Text style={s.toolCardSub} numberOfLines={2}>{t.subtitle}</Text>
+            <View style={s.toolCardArrow}>
+              <ChevronRight size={14} color={c.textMuted} />
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </ScrollView>
   );
 };
@@ -301,13 +312,20 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
     upgradeBtn: { backgroundColor: c.gold, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
     upgradeBtnText: { fontSize: 12.5, fontWeight: "800", color: c.onGold },
 
-    // Tools list
-    toolsCard: { backgroundColor: c.card, borderRadius: 20, borderWidth: 1, borderColor: c.border, overflow: "hidden", marginHorizontal: 16, marginTop: 12 },
-    row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 14, paddingVertical: 14 },
-    rowDivider: { borderBottomWidth: 1, borderBottomColor: c.borderLight },
-    rowIcon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-    rowTitle: { fontSize: 14.5, fontWeight: "700", color: c.text },
-    rowSub: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    // Tools horizontal mini-cards
+    toolCard: {
+      width: 138,
+      backgroundColor: c.card,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 14,
+      minHeight: 132,
+    },
+    toolCardIcon: { width: 46, height: 46, borderRadius: 13, alignItems: "center", justifyContent: "center", marginBottom: 12 },
+    toolCardTitle: { fontSize: 14, fontWeight: "800", color: c.text, letterSpacing: -0.2 },
+    toolCardSub: { fontSize: 11.5, color: c.textSecondary, marginTop: 3, lineHeight: 15 },
+    toolCardArrow: { position: "absolute", top: 14, right: 12 },
   });
 
 export default UnDashboard;
