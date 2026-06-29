@@ -1,12 +1,11 @@
-import React, { useRef } from "react";
+import React from "react";
 import {
   View,
   Text,
   Image,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Animated,
-  useWindowDimensions,
 } from "react-native";
 import { router } from "expo-router";
 import { useSelector } from "react-redux";
@@ -63,7 +62,6 @@ const CARD_GAP = 14;
 
 const UnDashboard = () => {
   const { colors: c, isDark } = useTheme();
-  const { height } = useWindowDimensions();
   const s = makeStyles(c, isDark);
   const user = useSelector(authSelector);
   const firstName = user?.name?.split(" ")[0] || "Trader";
@@ -73,8 +71,6 @@ const UnDashboard = () => {
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "short", day: "numeric", month: "short",
   });
-
-  const scrollY = useRef(new Animated.Value(0)).current;
 
   const handleNavigation = (nav: string) => {
     if (nav === "strategy-charts") {
@@ -86,31 +82,8 @@ const UnDashboard = () => {
 
   // Each feature card "wipes up & out" as it scrolls past the top.
   const renderFeature = (item: typeof FEATURES[number], index: number) => {
-    // Approximate card's vertical position within the scroll content.
-    const cardTop = index * (CARD_HEIGHT + CARD_GAP);
-    const inputRange = [
-      cardTop - height,
-      cardTop - height * 0.55,
-      cardTop - 40,
-    ];
-    const opacity = scrollY.interpolate({
-      inputRange,
-      outputRange: [1, 1, 0],
-      extrapolate: "clamp",
-    });
-    const translateY = scrollY.interpolate({
-      inputRange,
-      outputRange: [0, 0, -28],
-      extrapolate: "clamp",
-    });
-    const scale = scrollY.interpolate({
-      inputRange,
-      outputRange: [1, 1, 0.94],
-      extrapolate: "clamp",
-    });
-
     return (
-      <Animated.View key={item.id} style={{ opacity, transform: [{ translateY }, { scale }] }}>
+      <Reveal key={item.id} index={index} distance={16}>
         <TouchableOpacity
           style={s.featureCard}
           onPress={() => handleNavigation(item.nav)}
@@ -127,20 +100,15 @@ const UnDashboard = () => {
             <ChevronRight size={18} color={c.gold} />
           </View>
         </TouchableOpacity>
-      </Animated.View>
+      </Reveal>
     );
   };
 
   return (
-    <Animated.ScrollView
+    <ScrollView
       style={{ backgroundColor: c.background }}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
-      scrollEventThrottle={16}
-      onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-        { useNativeDriver: true }
-      )}
     >
       {/* Greeting */}
       <Reveal index={0}>
@@ -188,7 +156,7 @@ const UnDashboard = () => {
       <View>
         {FEATURES.map((f, i) => renderFeature(f, i))}
       </View>
-    </Animated.ScrollView>
+    </ScrollView>
   );
 };
 

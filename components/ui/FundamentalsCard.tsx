@@ -17,7 +17,7 @@ import {
 import { router } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { Search, ArrowUpRight, X } from "lucide-react-native";
-import { useCompany, useFinancials, getPeriodKeys } from "@/hooks/useFundamentalData";
+import { useCompany, useFinancials } from "@/hooks/useFundamentalData";
 import { setSelectedStock } from "@/redux/Unfluke_slices/globalStock/reducer";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
@@ -52,41 +52,45 @@ const FundamentalsCard: React.FC = () => {
   const companyName =
     company?.results?.[0]?.["Company Name"] || stock.name || stock.symbol;
 
-  // Pull a few headline ratios from the live financials, with YoY change.
+  // Pull headline ratios from the live financials.
+  // API shape: section.results = { "202503": [ { "Metric Name": number, ... } ], "202403": [...] }
+  // — period keys are YYYYMM strings, each maps to a one-element array whose
+  // keys ARE the metric names. Newest period = highest numeric key.
   const snapshot = useMemo(() => {
-    try {
-      const kf = financials?.ratios?.KeyFinancial;
-      const val1 = financials?.ratios?.Valuation1;
-      const pick = (res: any, key: string) => {
-        if (!res) return { value: null as number | null, yoy: undefined as number | undefined };
-        const periods = getPeriodKeys(res);
-        const latest = periods[0];
-        const prevP = periods[1];
-        const rows = res?.results?.[latest] || res?.results || [];
-        if (Array.isArray(rows)) {
-          const row = rows.find((r: any) =>
-            (r?.label || r?.name || r?.rowLabel || "").toString().includes(key)
-          );
-          if (row) {
-            const v = row[latest] ?? row.value;
-            const pv = prevP != null ? row[prevP] : undefined;
-            let yoy: number | undefined;
-            if (v != null && pv != null && Number(pv) !== 0)
-              yoy = ((Number(v) - Number(pv)) / Math.abs(Number(pv))) * 100;
-            if (v != null && !isNaN(Number(v))) return { value: Number(v), yoy };
+    const pick = (section: any, metricKey: string) => {
+      const result: { value: number | null; yoy?: number } = { value: null };
+      try {
+        const periodsObj = section?.results;
+        if (!periodsObj || typeof periodsObj !== "object") return result;
+        const periods = Object.keys(periodsObj)
+          .filter((k) => /^\d+$/.test(k))
+          .sort((a, b) => Number(b) - Number(a)); // newest first
+        if (!periods.length) return result;
+        const rowOf = (p: string) => {
+          const arr = periodsObj[p];
+          return Array.isArray(arr) ? arr[0] : arr;
+        };
+        const cur = rowOf(periods[0]);
+        const prev = periods[1] ? rowOf(periods[1]) : null;
+        const v = cur?.[metricKey];
+        if (v != null && !isNaN(Number(v))) {
+          result.value = Number(v);
+          const pv = prev?.[metricKey];
+          if (pv != null && Number(pv) !== 0) {
+            result.yoy = ((Number(v) - Number(pv)) / Math.abs(Number(pv))) * 100;
           }
         }
-        return { value: null, yoy: undefined };
-      };
-      return [
-        { label: "P/E", ...(pick(val1, "P/E").value != null ? pick(val1, "P/E") : pick(val1, "Price/Earnings")) },
-        { label: "ROE %", ...pick(kf, "ROE") },
-        { label: "EPS", ...pick(kf, "EPS") },
-        { label: "Debt/Eq", ...(pick(kf, "Debt-Equity").value != null ? pick(kf, "Debt-Equity") : pick(kf, "Debt/Equity")) },
-      ];
-    } catch {
-      return [];
-    }
+      } catch {}
+      return result;
+    };
+
+    const r = financials?.ratios;
+    return [
+      { label: "P/E", ...pick(r?.Valuation1, "Price Earning (P/E)") },
+      { label: "ROE %", ...pick(r?.DuPont, "ROE(%)") },
+      { label: "ROCE %", ...pick(r?.KeyFinancial, "ROCE (%)") },
+      { label: "Debt/Eq", ...pick(r?.KeyFinancial, "Debt-Equity Ratio") },
+    ];
   }, [financials]);
 
   const runSearch = useCallback((text: string) => {
@@ -205,7 +209,7 @@ const FundamentalsCard: React.FC = () => {
           {snapshot.map((st: any, i: number) => (
             <View key={st.label} style={[s.stat, i < snapshot.length - 1 && s.statDivider]}>
               <Text style={s.statValue}>
-                {st.value != null ? Number(st.value).toFixed(st.label === "EPS" || st.label === "P/E" ? 1 : 2) : "—"}
+                {st.value != null ? Number(st.value).toFixed(st.label === "Debt/Eq" ? 2 : 1) : "—"}
               </Text>
               <Text style={s.statLabel}>{st.label}</Text>
               {st.yoy != null && (
