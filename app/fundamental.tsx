@@ -582,10 +582,11 @@ const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   scTextOn: { color: c.onGold, fontWeight: "800" },
 
   // Ratio Cards Strip
+  // NOTE: no outer border/background band here — the individual rcCards already
+  // carry their own border + radius + shadow. A wrapper border/divider on top of
+  // that reads as a redundant "box around the whole group" (double border).
   ratioStripWrap: {
     backgroundColor: c.background,
-    borderBottomWidth: 1,
-    borderBottomColor: c.borderLight,
   },
   ratioStripContent: {
     flexDirection: "row",

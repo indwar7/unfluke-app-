@@ -1,18 +1,20 @@
 import React from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useTheme } from "@/constants/ThemeContext";
 
 const AppId = (cell) => {
   const navigation = useNavigation();
-  
+  const { colors: c } = useTheme();
+
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={() => {
         // Handle navigation if needed
         // navigation.navigate('Details', { id: cell.getValue() });
       }}
     >
-      <Text style={styles.appIdText}>
+      <Text style={[styles.appIdText, { color: c.text }]}>
         {cell.getValue() ? cell.getValue() < 10 ? cell.getValue() : cell.getValue() : ""}
       </Text>
     </TouchableOpacity>
@@ -20,31 +22,37 @@ const AppId = (cell) => {
 };
 
 const Name = (cell) => {
-  return <Text style={styles.text}>{cell.getValue()}</Text>;
+  const { colors: c } = useTheme();
+  return <Text style={[styles.text, { color: c.text }]}>{cell.getValue()}</Text>;
 };
 
 const Month = (cell) => {
+  const { colors: c } = useTheme();
   return (
-    <Text style={styles.text}>
+    <Text style={[styles.text, { color: c.text }]}>
       {cell.getValue().date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
     </Text>
   );
 };
 
 const Designation = (cell) => {
-  return <Text style={styles.text}>{cell.getValue()}</Text>;
+  const { colors: c } = useTheme();
+  return <Text style={[styles.text, { color: c.text }]}>{cell.getValue()}</Text>;
 };
 
 const DateCell = (cell) => {
-  return <Text style={styles.text}>{cell.getValue()}</Text>;
+  const { colors: c } = useTheme();
+  return <Text style={[styles.text, { color: c.text }]}>{cell.getValue()}</Text>;
 };
 
 const Contact = (cell) => {
-  return <Text style={styles.text}>{cell.getValue()}</Text>;
+  const { colors: c } = useTheme();
+  return <Text style={[styles.text, { color: c.text }]}>{cell.getValue()}</Text>;
 };
 
 const Type = (cell) => {
-  return <Text style={styles.text}>{cell.getValue()}</Text>;
+  const { colors: c } = useTheme();
+  return <Text style={[styles.text, { color: c.text }]}>{cell.getValue()}</Text>;
 };
 
 const Status = (cell) => {

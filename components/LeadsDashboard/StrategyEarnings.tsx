@@ -16,10 +16,14 @@ import { SetStrategyEarnings } from "../../redux/Unfluke_slices/thunks";
 import { AppId, Name } from "./TableCols";
 import { Search } from "lucide-react-native";
 import Toast from "react-native-toast-message";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 
 const StrategyEarnings = ({ user }) => {
   const { width, height } = useWindowDimensions()
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const dispatch = useDispatch();
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -141,7 +145,7 @@ const StrategyEarnings = ({ user }) => {
     return (
       <View style={styles.outerLoadingContainer}>
         <View style={[styles.loadingContainer,{height: height * 0.48}]}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={c.gold} />
           <Text style={styles.loadingText}>Loading strategy earnings...</Text>
         </View>
       </View>
@@ -167,9 +171,9 @@ const StrategyEarnings = ({ user }) => {
                 setCurrentPage(1);
               }}
               placeholder="Search for Name"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={c.textMuted}
             />
-            <Search color="#D3D3D3" style={styles.searchIcon} size={15} />
+            <Search color={c.textMuted} style={styles.searchIcon} size={15} />
           </View>
         </View>
 
@@ -286,42 +290,49 @@ const StrategyEarnings = ({ user }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
   outerContainer: {
     flex: 1,
     borderRadius: 8,
     borderWidth: 0.2,
+    borderColor: c.border,
     overflow: "hidden",
+    backgroundColor: c.card,
   },
   container: {
     flex: 1,
+    backgroundColor: c.card,
   },
   outerLoadingContainer: {
     borderWidth: 0.2,
+    borderColor: c.border,
     overflow: "hidden",
     borderRadius: 8,
+    backgroundColor: c.card,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: c.card,
   },
   loadingText: {
     marginTop: 10,
-    color: "#6b7280",
+    color: c.textSecondary,
     fontSize: 16,
   },
   header: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     padding: 16,
   },
   headerTitle: {
     fontSize: 15,
     fontWeight: "bold",
-    color: "#111827",
+    color: c.text,
   },
   searchContainer: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
@@ -333,48 +344,49 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: c.inputBorder,
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 9,
     paddingLeft: 37,
     fontSize: 13,
-    color: "#111827",
-    backgroundColor: "#ffffff",
+    color: c.text,
+    backgroundColor: c.inputBg,
   },
   searchIcon: {
     position: "absolute",
     left: 12,
     fontSize: 16,
-    color: "#6b7280",
+    color: c.textMuted,
   },
   tableContainer: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.border,
   },
   table: {
     minWidth: "100%",
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#f9fafb",
+    backgroundColor: isDark ? c.surfaceElevated : c.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
     paddingVertical: 12,
   },
   tableHeaderText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6b7280",
+    color: c.textMuted,
     textAlign: "center",
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    borderBottomColor: c.borderLight,
     paddingVertical: 12,
+    backgroundColor: c.card,
   },
   tableCell: {
     flex: 1, // Equal distribution of space
@@ -384,42 +396,29 @@ const styles = StyleSheet.create({
   },
   tableCellText: {
     fontSize: 14,
-    color: "#374151",
+    color: c.text,
     textAlign: "center",
   },
   tableBody: {
     flex: 1,
   },
- 
-  // slNoColumn: {
-  //   width: 60,
-  // },
-  // nameColumn: {
-  //   width: 150,
-  // },
-  // amountColumn: {
-  //   width: 120,
-  // },
-  // dateColumn: {
-  //   width: 100,
-  // },
   noDataContainer: {
     padding: 40,
     alignItems: "center",
   },
   noDataText: {
     fontSize: 16,
-    color: "#6b7280",
+    color: c.textMuted,
   },
   paginationContainer: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.border,
   },
   paginationInfo: {
     fontSize: 14,
-    color: "#6b7280",
+    color: c.textSecondary,
     marginBottom: 12,
   },
   paginationControls: {
@@ -435,25 +434,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 4,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: c.surfaceElevated,
+    borderWidth: 1,
+    borderColor: c.border,
     marginHorizontal: 2,
   },
   paginationButtonActive: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.gold,
+    borderColor: c.gold,
   },
   paginationButtonDisabled: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.background,
+    borderColor: c.borderLight,
+    opacity: 0.6,
   },
   paginationButtonText: {
     fontSize: 14,
-    color: "#374151",
+    color: c.text,
     fontWeight: "500",
   },
   paginationButtonTextActive: {
-    color: "#ffffff",
+    color: c.onGold,
   },
   paginationButtonTextDisabled: {
-    color: "#9ca3af",
+    color: c.textMuted,
   },
 });
 

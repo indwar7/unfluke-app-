@@ -85,16 +85,18 @@ function findNearestExpiry(dates: string[]): string {
 }
 
 // Build the TradingView chart HTML with custom Unfluke datafeed
-function buildChartHTML(): string {
+function buildChartHTML(isDark: boolean): string {
+  const bg = isDark ? "#0A0B0E" : "#FFFFFF";
+  const loadingColor = isDark ? "#8A8F98" : "#666";
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;background:#fff;}
+html,body{width:100%;height:100%;overflow:hidden;background:${bg};}
 #tv_chart_container{width:100%;height:100%;}
-.tv-loading{display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-family:sans-serif;font-size:14px;flex-direction:column;gap:10px;}
+.tv-loading{display:flex;align-items:center;justify-content:center;height:100%;color:${loadingColor};font-family:sans-serif;font-size:14px;flex-direction:column;gap:10px;}
 </style>
 </head><body>
 <div id="tv_chart_container">
@@ -109,6 +111,7 @@ dbg('HTML_LOADED');
 <script>
 var AUTH = { token: '', userId: '', mrkt: '' };
 var CHART_STATE = { chartType: 'Options Chart', formData: null, symbolNames: '' };
+var IS_DARK = ${isDark ? "true" : "false"};
 var tvWidget = null;
 var chartCreated = false;
 var fullName = '';
@@ -314,7 +317,7 @@ function createChart() {
     autosize: true,
     studies_overrides: {},
     timezone: 'Asia/Kolkata',
-    theme: 'Light',
+    theme: IS_DARK ? 'Dark' : 'Light',
     debug: false,
   });
 
@@ -344,6 +347,8 @@ function handleMsg(raw) {
       AUTH.token = msg.token || '';
       AUTH.userId = msg.userId || '';
       AUTH.mrkt = msg.mrkt || '';
+      if (typeof msg.isDark !== 'undefined') IS_DARK = !!msg.isDark;
+      try { document.body.style.background = IS_DARK ? '#0A0B0E' : '#FFFFFF'; } catch(e) {}
       createChart();
     } else if (msg.type === 'SET_SYMBOL') {
       CHART_STATE.chartType = msg.chartType || 'Options Chart';
@@ -467,9 +472,11 @@ export default function StrategyChartsScreen() {
   const tokenRef = useRef(token);
   const userIdRef = useRef(userId);
   const mrktRef = useRef(mrkt);
+  const isDarkRef = useRef(isDark);
   tokenRef.current = token;
   userIdRef.current = userId;
   mrktRef.current = mrkt;
+  isDarkRef.current = isDark;
 
   // Send INIT to WebView — reads from refs so callers don't need to re-bind
   const sendInit = useCallback(() => {
@@ -481,6 +488,7 @@ export default function StrategyChartsScreen() {
         token: tokenRef.current,
         userId: userIdRef.current,
         mrkt: mrktRef.current || "",
+        isDark: isDarkRef.current,
       }));
       webRef.current.injectJavaScript(`handleMsg(${msg}); true;`);
     }
@@ -805,7 +813,10 @@ export default function StrategyChartsScreen() {
     );
   };
 
-  const chartHTML = useMemo(() => buildChartHTML(), []);
+  // Baked with the active theme so the widget builds Dark/Light correctly and
+  // there is no white flash. Recomputing on isDark remounts the WebView, which
+  // rebuilds the TradingView widget in the new theme.
+  const chartHTML = useMemo(() => buildChartHTML(isDark), [isDark]);
   const chartSource = useMemo(() => ({ html: chartHTML, baseUrl: "https://unfluke.in" }), [chartHTML]);
 
   const handleWebViewMessage = useCallback((e: any) => {

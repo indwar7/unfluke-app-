@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Dimensions, StyleSheet, ScrollView } from "react-native";
 import { LineChart } from "react-native-chart-kit";
+import { useTheme } from "@/constants/ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const Graphs = (props) => {
   const [activeTab, setActiveTab] = useState("Profit"); // "Profit" | "Cumulative" | "Drawdown"
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   // Props: totalPNL, cummulative, drawDawn (Note: typo in prop name 'drawDawn' from parent)
   const { totalPNL, cummulative, drawDawn } = props;
@@ -57,7 +60,7 @@ const Graphs = (props) => {
   if (!chartData.data.length) {
     return (
       <View style={styles.chartContainer}>
-        <Text style={{ textAlign: 'center', margin: 20 }}>No chart data available</Text>
+        <Text style={{ textAlign: 'center', margin: 20, color: c.textSecondary }}>No chart data available</Text>
       </View>
     )
   }
@@ -105,19 +108,26 @@ const Graphs = (props) => {
             yAxisSuffix=""
             yAxisInterval={1}
             chartConfig={{
-              backgroundColor: "#ffffff",
-              backgroundGradientFrom: "#ffffff",
-              backgroundGradientTo: "#ffffff",
+              backgroundColor: c.card,
+              backgroundGradientFrom: c.card,
+              backgroundGradientTo: c.card,
               decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`, // Blue
-              labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+              // Gold accent line — matches the premium dark/amber theme
+              color: (opacity = 1) =>
+                isDark
+                  ? `rgba(233, 196, 106, ${opacity})`
+                  : `rgba(201, 154, 46, ${opacity})`,
+              labelColor: (opacity = 1) =>
+                isDark
+                  ? `rgba(166, 171, 181, ${opacity})`
+                  : `rgba(91, 100, 114, ${opacity})`,
               style: {
                 borderRadius: 16,
               },
               propsForDots: {
                 r: "3",
                 strokeWidth: "1",
-                stroke: "#2563EB",
+                stroke: c.gold,
               },
               propsForLabels: {
                 fontSize: 10
@@ -137,22 +147,24 @@ const Graphs = (props) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c, isDark) => StyleSheet.create({
   container: {
     marginVertical: 16,
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: c.border,
     padding: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: isDark ? 0.3 : 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   tabContainer: {
     flexDirection: "row",
     marginBottom: 16,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: c.surfaceElevated,
     borderRadius: 8,
     padding: 2,
   },
@@ -163,15 +175,15 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   activeTabButton: {
-    backgroundColor: "#2563EB",
+    backgroundColor: c.gold,
   },
   tabText: {
     fontSize: 13,
     fontWeight: "500",
-    color: "#4B5563",
+    color: c.textSecondary,
   },
   activeTabText: {
-    color: "#FFFFFF",
+    color: c.onGold,
     fontWeight: "600",
   },
   chartContainer: {

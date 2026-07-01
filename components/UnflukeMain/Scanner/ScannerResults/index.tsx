@@ -516,11 +516,12 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
             </View>
 
             {/* Table Body */}
-            <ScrollView
-              style={dynamicStyles.tableBody}
-              // nestedScrollEnabled={true}
-              showsHorizontalScrollIndicator={true}
-            >
+            {/* Rendered as a plain View (not a nested vertical ScrollView) so
+                every row flows into the page's outer ScrollView and ALL results
+                are reachable — matching the Cards view. A nested vertical
+                ScrollView here previously clipped the body to ~10 visible rows
+                and swallowed scroll gestures, so the rest were unreachable. */}
+            <View style={dynamicStyles.tableBody}>
               {sortedResults.map((row, rowIndex) => (
                 <TouchableOpacity
                   key={rowIndex}
@@ -585,7 +586,7 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
                   )}
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
         </ScrollView>
       </View>
@@ -784,9 +785,9 @@ const styles = (c: AppColors, isDark: boolean) =>
     },
 
     // Table Styles
-    tableContainer: {
-      maxHeight: 500,
-    },
+    // No maxHeight cap: the table body renders inline and scrolls with the
+    // page's outer ScrollView so all results are reachable (like Cards view).
+    tableContainer: {},
     tableHeader: {
       flexDirection: "row",
       backgroundColor: c.surfaceElevated,
@@ -820,9 +821,7 @@ const styles = (c: AppColors, isDark: boolean) =>
     sortIconActive: {
       color: isDark ? c.goldBright : c.gold,
     },
-    tableBody: {
-      maxHeight: 450,
-    },
+    tableBody: {},
     tableRow: {
       flexDirection: "row",
       borderBottomWidth: 1,

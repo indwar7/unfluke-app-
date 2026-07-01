@@ -222,8 +222,45 @@ const OptionSimulator = () => {
         const res = await getSimulatorExpiries({
           params: { optionName: selectedInstrument.name, optionType: 'CE - Call', id: user._id },
         });
-        if (res?.expiry_date) {
-          const newExpiries = [{ options: res.expiry_date.map((item) => ({ label: item.to_expiry.split('-').join('').toUpperCase(), value: item })) }];
+        // The option-simulator endpoint returns { expiry_date: ["DD-Mon-YY", ...] }.
+        // The simulator's date logic needs objects shaped { to_expiry, from_expiry }
+        // (both parsed via moment(x,'DDMMMYY')). Normalize the string list here,
+        // supporting both the string shape and the legacy object shape defensively.
+        const rawList = Array.isArray(res?.expiry_date) ? res.expiry_date : null;
+        if (rawList && rawList.length > 0) {
+          const normalized = rawList
+            .map((item) =>
+              typeof item === 'string'
+                ? { to_expiry: item, raw: item }
+                : { to_expiry: item?.to_expiry, from_expiry: item?.from_expiry, raw: item }
+            )
+            .filter((e) => e.to_expiry)
+            .sort(
+              (a, b) =>
+                moment(a.to_expiry, 'DDMMMYY').valueOf() - moment(b.to_expiry, 'DDMMMYY').valueOf()
+            );
+
+          // Fill from_expiry (start of each expiry's trading window). For string
+          // responses it is the previous expiry; for the earliest expiry fall back
+          // to ~7 days before it. Keep the original DD-Mon-YY format so all the
+          // existing moment(...,'DDMMMYY') calls keep working.
+          const withRange = normalized.map((e, idx) => {
+            const from =
+              e.from_expiry ||
+              (idx > 0
+                ? normalized[idx - 1].to_expiry
+                : moment(e.to_expiry, 'DDMMMYY').subtract(7, 'days').format('DD-MMM-YY'));
+            return { to_expiry: e.to_expiry, from_expiry: from };
+          });
+
+          const newExpiries = [
+            {
+              options: withRange.map((item) => ({
+                label: String(item.to_expiry).split('-').join('').toUpperCase(),
+                value: item,
+              })),
+            },
+          ];
           setExpiries(newExpiries);
           if (newExpiries[0]?.options[0]?.value) setExpiry(newExpiries[0].options[0].value);
         } else {

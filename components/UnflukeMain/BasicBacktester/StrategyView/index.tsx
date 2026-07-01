@@ -4,8 +4,11 @@ import GraphicalInfo from "./GraphicalInfo";
 import BackupTable from "./BackupTable";
 import ProfitTable from "./ProfitTable";
 import ProfitGraph from "./Graphs";
+import { useTheme } from "@/constants/ThemeContext";
 
 const GraphicBlocks = (props) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const {
     NewstrategyDataFromCSV,
     Loading,
@@ -90,15 +93,15 @@ const GraphicBlocks = (props) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c, isDark) => StyleSheet.create({
   container: {
     flexGrow: 1,
     flexDirection: "column",
   },
   combinedSection: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#fff",
+    borderColor: c.border,
+    backgroundColor: c.card,
     borderRadius: 10,
     padding: 10,
   },

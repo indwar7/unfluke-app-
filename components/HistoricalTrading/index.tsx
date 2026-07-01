@@ -26,14 +26,15 @@ function sendToWebView(webRef: React.RefObject<WebView>, msgObj: any) {
   webRef.current?.injectJavaScript(`handleMsg(${json}); true;`);
 }
 
-function buildHistoricalChartHTML(): string {
+function buildHistoricalChartHTML(isDark: boolean): string {
+  const bg = isDark ? "#0A0B0E" : "#FFFFFF";
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;background:#FFFFFF;}
+html,body{width:100%;height:100%;overflow:hidden;background:${bg};}
 #tv_chart_container{width:100%;height:100%;}
 </style>
 </head><body>
@@ -42,7 +43,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#FFFFFF;}
 <script>
 var AUTH = { token: '', userId: '', mrkt: '' };
 var HIST_STATE = { currentDateTime: '', symbol: '${DEFAULT_SYMBOL}' };
-var IS_DARK = false;
+var IS_DARK = ${isDark ? "true" : "false"};
 var tvWidget = null;
 var chartCreated = false;
 var fullName = undefined;
@@ -414,7 +415,7 @@ const Trading = () => {
   // CRITICAL: must be memoised. If the HTML string identity changes between
   // renders, WebView remounts → TradingView library reloads → Datafeed state
   // resets mid-fetch → chart shows "No data" even though the API returned bars.
-  const chartHTML = useMemo(() => buildHistoricalChartHTML(), []);
+  const chartHTML = useMemo(() => buildHistoricalChartHTML(isDark), [isDark]);
   const webViewSource = useMemo(
     () => ({ html: chartHTML, baseUrl: "https://unfluke.in" }),
     [chartHTML]
@@ -477,6 +478,9 @@ const Trading = () => {
             try {
               const parsed = JSON.parse(e.nativeEvent.data);
               if (parsed.type === "READY") {
+                // WebView (re)loaded — e.g. after a theme change remount.
+                // Allow re-sending INIT so the fresh widget gets auth + theme.
+                initSentRef.current = false;
                 sendInit();
               } else if (parsed.type === "LOADED") {
                 setChartReady(true);

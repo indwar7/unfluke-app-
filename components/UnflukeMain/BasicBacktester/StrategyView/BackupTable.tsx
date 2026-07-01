@@ -6,11 +6,11 @@ import {
   StyleSheet,
   useColorScheme,
 } from 'react-native';
+import { useTheme } from "@/constants/ThemeContext";
 
 const BackupTable = ({ backupTable }) => {
-  const colorScheme = useColorScheme();
-  const isDark = false;
-  const styles = createStyles(isDark);
+  const { colors: c, isDark } = useTheme();
+  const styles = createStyles(c, isDark);
 
   const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -109,7 +109,7 @@ const BackupTable = ({ backupTable }) => {
   );
 };
 
-const createStyles = (isDark) => StyleSheet.create({
+const createStyles = (c, isDark) => StyleSheet.create({
   container: {
     paddingHorizontal: 8,
     paddingBottom: 8,
@@ -120,14 +120,14 @@ const createStyles = (isDark) => StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: '600',
-    color: isDark ? '#E5E7EB' : '#374151',
+    color: c.text,
     marginBottom: 6,
   },
   card: {
-    backgroundColor: isDark ? '#111827' : '#FFFFFF',
+    backgroundColor: c.card,
     // borderRadius: 6,
     // borderWidth: 1,
-    // borderColor: isDark ? '#374151' : '#E5E7EB',
+    // borderColor: c.border,
   },
   cardBody: {
     padding: 0,
@@ -139,11 +139,11 @@ const createStyles = (isDark) => StyleSheet.create({
     flexDirection: 'row',
   },
   headerCell: {
-    // backgroundColor: isDark ? '#1F2937' : '#F3F4F6', // light gray
+    // backgroundColor: c.surfaceElevated, // light gray
     paddingVertical: 8,
     paddingHorizontal: 6,
     // borderTopWidth: 1,
-    borderColor: isDark ? '#374151' : '#E5E7EB',
+    borderColor: c.border,
     minWidth: 80,
     flex: 1,
   },
@@ -157,8 +157,8 @@ const createStyles = (isDark) => StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 6,
     borderTopWidth: 1,
-    borderColor: isDark ? '#374151' : '#E5E7EB',
-    backgroundColor: isDark ? '#111827' : '#FFFFFF',
+    borderColor: c.border,
+    backgroundColor: c.card,
     minWidth: 80,
     flex: 1,
   },
@@ -171,7 +171,7 @@ const createStyles = (isDark) => StyleSheet.create({
   headerText: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: isDark ? '#D1D5DB' : '#374151',
+    color: c.textSecondary,
     textAlign: 'center',   // ensure center
   },
 
@@ -183,21 +183,21 @@ const createStyles = (isDark) => StyleSheet.create({
   yearText: {
     fontSize: 13,
     fontWeight: '600',
-    color: isDark ? '#E5E7EB' : '#111827',
+    color: c.text,
     textAlign: 'center',   // center year also
   },
 
   positiveText: {
-    color: '#059669',
+    color: c.profit,
   },
   negativeText: {
-    color: '#DC2626',
+    color: c.loss,
   },
   positiveTextDark: {
-    color: '#10B981',
+    color: c.profit,
   },
   negativeTextDark: {
-    color: '#EF4444',
+    color: c.loss,
   },
 });
 

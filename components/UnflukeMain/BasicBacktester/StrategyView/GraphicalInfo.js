@@ -1,9 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, Dimensions, useWindowDimensions } from "react-native";
+import { useTheme } from "@/constants/ThemeContext";
 
 
 const GraphicalInfo = (props) => {
   const { width } = useWindowDimensions()
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const {
     numberOfTrades,
@@ -89,12 +92,12 @@ const GraphicalInfo = (props) => {
     {
       title: "Max Winning Streak Days",
       value: maxWinStreak,
-      customColor: "text-green-600", // Tailwind green-400
+      customColor: c.profit,
     },
     {
       title: "Max Losing Streak Days",
       value: maxLossStreak,
-      customColor: "text-red-600", // Tailwind red-400
+      customColor: c.loss,
     },
     {
       title: "Max Drawdown (Max DD Days)",
@@ -211,12 +214,12 @@ const GridExample = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c, isDark) => StyleSheet.create({
 
   wrapper: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 12,
     marginBottom: 15,
     flex:1,
@@ -232,10 +235,10 @@ padding:12
     // FIXED: Removed marginBottom and using gap instead
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.surfaceElevated,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     padding: 16,
     // Shadow for better visual separation
     shadowColor: "#000",
@@ -243,13 +246,13 @@ padding:12
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.05,
+    shadowOpacity: isDark ? 0.3 : 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   cardTitle: {
     fontSize: 14,
-    color: "#6b7280",
+    color: c.textMuted,
     marginBottom: 8,
     fontWeight: "500",
   },
@@ -259,13 +262,13 @@ padding:12
     lineHeight: 28,
   },
   positive: {
-    color: "#0d9488",
+    color: c.profit,
   },
   negative: {
-    color: "#dc2626",
+    color: c.loss,
   },
   defaultText: {
-    color: "#111827",
+    color: c.text,
   },
 });
 

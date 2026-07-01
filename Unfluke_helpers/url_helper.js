@@ -122,8 +122,14 @@ export const POST_STRATEGY_LIKE = "api/test-my-strategy/like/:id";
 
 // Unfluke - Option Simulator
 export const GET_OPTION_CHAIN = "api/optionChain";
+// NOTE: the legacy "api/historicalChart/getOptionsExpiryDate" route hangs
+// server-side (no response, connection kept open) which left the simulator
+// stuck on "-" / "Loading Option Table...". The option-simulator route below
+// serves the same expiry list and responds normally. The simulator's
+// fetchExpiries adapts its string[] response into the {to_expiry,from_expiry}
+// shape the date logic expects.
 export const GET_SIMULATOR_EXPIRIES =
-  "api/historicalChart/getOptionsExpiryDate";
+  "api/option-simulator/getOptionsExpiryDates";
 export const GET_CURRENT_DATA = "api/optionChain/fetchCurrentData";
 export const POST_PAYOFF_CHART_DATA = "api/optionChain/fetchPayoffChartData";
 export const POST_TICKER_PRICE = "api/optionChain/getPrice";

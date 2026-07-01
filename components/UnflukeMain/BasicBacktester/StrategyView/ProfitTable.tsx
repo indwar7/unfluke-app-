@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { File, Paths } from 'expo-file-system/next';
 import * as Sharing from 'expo-sharing';
+import { useTheme } from "@/constants/ThemeContext";
 
 const ProfitTable = (props) => {
   const {
@@ -22,9 +23,8 @@ const ProfitTable = (props) => {
     slippage,
   } = props;
 
-  const colorScheme = useColorScheme();
-  const isDark = false;
-  const styles = createStyles(isDark);
+  const { colors: c, isDark } = useTheme();
+  const styles = createStyles(c, isDark);
 
   // Handle file download for React Native
   const handleDownload = async (url, filename) => {
@@ -122,18 +122,18 @@ const ProfitTable = (props) => {
   );
 };
 
-const createStyles = (isDark) => StyleSheet.create({
+const createStyles = (c, isDark) => StyleSheet.create({
   container: {
     paddingTop: 8,
     paddingHorizontal: 16,
   },
   card: {
-    backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+    backgroundColor: c.card,
     borderRadius: 8,
     // Removed border to match border-0 class
   },
   cardHeader: {
-    backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+    backgroundColor: c.card,
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
     padding: 12,
@@ -148,8 +148,8 @@ const createStyles = (isDark) => StyleSheet.create({
   },
   downloadButton: {
     borderWidth: 1,
-    borderColor: '#3B82F6',
-    backgroundColor: isDark ? '#111827' : '#FFFFFF',
+    borderColor: c.gold,
+    backgroundColor: c.goldLight,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -157,7 +157,7 @@ const createStyles = (isDark) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     // Hover effect simulation with shadow
-    shadowColor: '#3B82F6',
+    shadowColor: c.gold,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -167,7 +167,7 @@ const createStyles = (isDark) => StyleSheet.create({
     elevation: 2,
   },
   downloadButtonText: {
-    color: isDark ? '#60A5FA' : '#1E40AF',
+    color: isDark ? c.gold : c.goldDeep,
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
