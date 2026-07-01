@@ -25,6 +25,9 @@ import {
 
 import { rankItem } from "@tanstack/match-sorter-utils";
 
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+
 // Column Filter
 const Filter = ({ column, table }) => {
   const columnFilterValue = column.getFilterValue();
@@ -52,6 +55,8 @@ const DebouncedInput = ({
   ...props
 }) => {
   const [value, setValue] = useState(initialValue);
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   useEffect(() => {
     setValue(initialValue);
@@ -71,7 +76,7 @@ const DebouncedInput = ({
       value={value}
       style={[styles.searchInput, props.style]} // Allow style override
       onChangeText={(text) => setValue(text)}
-      placeholderTextColor="#9ca3af" // Placeholder color
+      placeholderTextColor={c.textMuted} // Placeholder color
     />
   );
 };
@@ -93,6 +98,8 @@ const TableContainer = ({
   onTogglePrivate,
   onToggleMonetize,
 }) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState([
@@ -136,8 +143,8 @@ const TableContainer = ({
             <Switch
               value={row.original?.isPrivate || false}
               onValueChange={(value) => onTogglePrivate?.(row.original, value)}
-              trackColor={{ false: "#767577", true: "#81b0ff" }}
-              thumbColor={row.original?.isPrivate ? "#f5dd4b" : "#f4f3f4"}
+              trackColor={{ false: c.border, true: c.goldLight }}
+              thumbColor={row.original?.isPrivate ? c.gold : c.surface}
             />
           ),
         };
@@ -151,8 +158,8 @@ const TableContainer = ({
             <Switch
               value={row.original?.monetize || false}
               onValueChange={(value) => onToggleMonetize?.(row.original, value)}
-              trackColor={{ false: "#767577", true: "#81b0ff" }}
-              thumbColor={row.original?.monetize ? "#f5dd4b" : "#f4f3f4"}
+              trackColor={{ false: c.border, true: c.goldLight }}
+              thumbColor={row.original?.monetize ? c.gold : c.surface}
             />
           ),
         };
@@ -171,19 +178,19 @@ const TableContainer = ({
             style={[styles.actionButton, styles.editButton]}
             onPress={() => onEdit?.(row.original)}
           >
-            <Ionicons name="create-outline" size={16} color="#3b82f6" />
+            <Ionicons name="create-outline" size={16} color={c.gold} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.viewButton]}
             onPress={() => onView?.(row.original)}
           >
-            <Ionicons name="eye-outline" size={16} color="#10b981" />
+            <Ionicons name="eye-outline" size={16} color={c.success} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
             onPress={() => onDelete?.(row.original)}
           >
-            <Ionicons name="trash-outline" size={16} color="#ef4444" />
+            <Ionicons name="trash-outline" size={16} color={c.error} />
           </TouchableOpacity>
         </View>
       ),
@@ -192,7 +199,7 @@ const TableContainer = ({
     };
 
     return [...baseColumns, actionColumn];
-  }, [columns, onEdit, onView, onDelete, onTogglePrivate, onToggleMonetize]);
+  }, [columns, onEdit, onView, onDelete, onTogglePrivate, onToggleMonetize, isDark]);
 
   const table = useReactTable({
     columns: enhancedColumns,
@@ -506,7 +513,7 @@ const TableContainer = ({
             <Ionicons
               name="search-outline"
               size={20}
-              color="#6b7280"
+              color={c.textSecondary}
               style={styles.searchIcon}
             />
           </View>
@@ -531,13 +538,13 @@ const TableContainer = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: c.background,
   },
   searchContainer: {
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     padding: 16,
     marginBottom: 8,
   },
@@ -545,38 +552,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: c.inputBorder,
     borderRadius: 8,
     paddingHorizontal: 12,
-    backgroundColor: 'white',
+    backgroundColor: c.card,
   },
   searchInput: {
     height: 40,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: c.inputBorder,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 16,
-    backgroundColor: '#ffffff',
-    color: '#374151',
+    backgroundColor: c.inputBg,
+    color: c.text,
     flex: 1,
   },
   darkInput: {
-    backgroundColor: '#1f2937',
-    borderColor: '#4b5563',
-    color: '#f9fafb',
+    backgroundColor: c.surface,
+    borderColor: c.border,
+    color: c.text,
   },
   searchIcon: {
     marginLeft: 8,
   },
   tableContainer: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: c.border,
     borderRadius: 8,
     marginHorizontal: 4,
     overflow: 'hidden',
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     maxHeight: 600, // Set max height for ScrollView
   },
   tableBody: {
@@ -584,9 +591,9 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: c.surfaceElevated,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: c.border,
   },
   headerCell: {
     flex: 1,
@@ -594,7 +601,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRightWidth: 1,
-    borderRightColor: '#e5e7eb',
+    borderRightColor: c.border,
     minWidth: 100,
   },
   headerCellLast: {
@@ -603,7 +610,7 @@ const styles = StyleSheet.create({
   headerText: {
     fontWeight: 'bold',
     fontSize: 14,
-    color: '#374151',
+    color: c.text,
     textAlign: 'center',
   },
   sortIcon: {
@@ -612,8 +619,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: 'white',
+    borderBottomColor: c.border,
+    backgroundColor: c.card,
   },
   lastRow: {
     borderBottomWidth: 0,
@@ -624,7 +631,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRightWidth: 1,
-    borderRightColor: '#e5e7eb',
+    borderRightColor: c.border,
     minWidth: 100,
   },
   cellLast: {
@@ -632,7 +639,7 @@ const styles = StyleSheet.create({
   },
   cellText: {
     fontSize: 14,
-    color: '#374151',
+    color: c.textSecondary,
     textAlign: 'center',
   },
   actionContainer: {
@@ -644,16 +651,16 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 6,
     borderRadius: 4,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: c.surfaceElevated,
   },
   editButton: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: c.goldLight,
   },
   viewButton: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: c.successLight,
   },
   deleteButton: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: c.errorLight,
   },
   paginationContainer: {
     flexDirection: 'row',
@@ -667,28 +674,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: c.border,
     borderRadius: 6,
     marginHorizontal: 2,
     marginVertical: 2,
   },
   paginationButtonActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
+    backgroundColor: c.gold,
+    borderColor: c.gold,
   },
   paginationButtonDisabled: {
-    backgroundColor: '#f3f4f6',
-    borderColor: '#d1d5db',
+    backgroundColor: c.surfaceElevated,
+    borderColor: c.border,
   },
   paginationButtonText: {
     fontSize: 14,
-    color: '#374151',
+    color: c.textSecondary,
   },
   paginationButtonTextActive: {
-    color: 'white',
+    color: c.onGold,
   },
   paginationButtonTextDisabled: {
-    color: '#9ca3af',
+    color: c.textMuted,
   },
   ellipsis: {
     paddingHorizontal: 8,
@@ -696,7 +703,7 @@ const styles = StyleSheet.create({
   },
   ellipsisText: {
     fontSize: 14,
-    color: '#6b7280',
+    color: c.textSecondary,
   },
   filterContainer: {
     marginTop: 4,

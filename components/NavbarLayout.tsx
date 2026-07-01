@@ -20,6 +20,8 @@ import { logoutUser } from "../redux/Unfluke_slices/thunks";
 import { createSelector } from "reselect";
 
 import NotificationDropdown from "./ui/NotificationDropdown";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 interface NavbarLayoutProps {
   setMenuVisible: Dispatch<SetStateAction<boolean>>;
@@ -29,6 +31,8 @@ interface NavbarLayoutProps {
 const STATUS_BAR_HEIGHT = Platform.OS === "android" ? (StatusBar.currentHeight || 24) : 44;
 
 export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const notificationRef = useRef<any>(null);
   const [badgeCount, setBadgeCount] = useState(0);
   const [showBadge, setShowBadge] = useState(false);
@@ -112,7 +116,7 @@ export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
               onPress={handleBellPress}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Bell size={20} color="#333" />
+              <Bell size={20} color={c.text} />
               {showBadge && badgeCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
@@ -129,7 +133,7 @@ export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.profileCircle}>
-              <User size={16} color="#fff" />
+              <User size={16} color={c.onGold} />
             </View>
           </TouchableOpacity>
         </View>
@@ -186,11 +190,11 @@ export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   navbarWrapper: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
     zIndex: 100,
     elevation: 4,
     // NO marginBottom: -80! That was the main layout-breaking bug.
@@ -201,7 +205,7 @@ const styles = StyleSheet.create({
     paddingTop: STATUS_BAR_HEIGHT + 4,
     paddingBottom: 10,
     paddingHorizontal: 14,
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
   },
   hamburger: {
     padding: 8,
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
   },
   hamburgerText: {
     fontSize: 22,
-    color: "#333",
+    color: c.text,
   },
   logo: {
     width: 80,
@@ -232,7 +236,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 2,
     right: 2,
-    backgroundColor: "#2563EB",
+    backgroundColor: c.gold,
     borderRadius: 10,
     minWidth: 16,
     height: 16,
@@ -241,7 +245,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: "#FFFFFF",
+    color: c.onGold,
     fontSize: 9,
     fontWeight: "700",
   },
@@ -249,7 +253,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#4f46e5",
+    backgroundColor: c.gold,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -257,7 +261,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: STATUS_BAR_HEIGHT + 50,
     right: 12,
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 12,
     elevation: 8,
     shadowColor: "#000",
@@ -268,18 +272,18 @@ const styles = StyleSheet.create({
     width: 200,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: c.border,
   },
   profileName: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 13,
-    color: "#374151",
+    color: c.textSecondary,
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    borderBottomColor: c.borderLight,
   },
   nameHighlight: {
-    color: "#4f46e5",
+    color: c.gold,
     fontWeight: "700",
   },
   profileMenuItem: {
@@ -288,18 +292,18 @@ const styles = StyleSheet.create({
   },
   profileMenuText: {
     fontSize: 14,
-    color: "#374151",
+    color: c.textSecondary,
     fontWeight: "500",
   },
   logoutBtn: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: c.borderLight,
     marginTop: 4,
   },
   logoutText: {
-    color: "#ef4444",
+    color: c.error,
     fontWeight: "600",
     fontSize: 14,
   },

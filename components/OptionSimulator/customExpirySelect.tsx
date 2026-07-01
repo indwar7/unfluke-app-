@@ -9,8 +9,12 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { ChevronDown } from "lucide-react-native"; // install lucide-react-native
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const CustomExpirySelect = ({ options, selected, onChange, placeholder, name }) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const [open, setOpen] = useState(false);
 
   // Get selected value for comparison
@@ -29,7 +33,7 @@ const CustomExpirySelect = ({ options, selected, onChange, placeholder, name }) 
         <Text style={styles.buttonText}>
           {options.find((o) => o.value.to_expiry === selected?.to_expiry)?.label || placeholder}
         </Text>
-        <ChevronDown size={18} color="#787B86" />
+        <ChevronDown size={18} color={c.textSecondary} />
       </TouchableOpacity>
 
       {/* Dropdown Modal */}
@@ -61,7 +65,7 @@ const CustomExpirySelect = ({ options, selected, onChange, placeholder, name }) 
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     width: "100%",
   },
@@ -74,25 +78,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#363A45",
-    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.inputBg,
+    borderColor: c.inputBorder,
   },
   buttonText: {
-    color: "#D1D4DC",
+    color: c.text,
     fontSize: 16,
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: c.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
   dropdown: {
     width: "90%",
-    backgroundColor: "#1E222D",
+    backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: c.border,
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
@@ -103,11 +107,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: c.border,
   },
   optionText: {
     fontSize: 16,
-    color: "#D1D4DC",
+    color: c.text,
   },
 });
 

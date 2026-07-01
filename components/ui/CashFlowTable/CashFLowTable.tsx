@@ -342,6 +342,8 @@ import RNPickerSelect from "react-native-picker-select";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { getCashFlowData } from "../../../constants/Unfluke_helpers/backend_helper";
 import { formatNumberUS } from "../../../Unfluke_helpers/numberFormat";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const thickBorderRows = [
   "Net Cash from Operating Activities",
@@ -358,7 +360,10 @@ const CashFlowTable = ({ isConsolidated, company }) => {
   const [selectedYear, setSelectedYear] = useState(null);
   const { width } = useWindowDimensions();
   const route = useRoute();
-  
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
+  const pickerSelectStyles = makePickerSelectStyles(c, isDark);
+
   const isMobile = width < 768;
 
   useEffect(() => {
@@ -436,7 +441,7 @@ const CashFlowTable = ({ isConsolidated, company }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={c.gold} />
       </View>
     );
   }
@@ -472,7 +477,7 @@ const CashFlowTable = ({ isConsolidated, company }) => {
             style={pickerSelectStyles}
             Icon={() => (
               <View style={{ marginTop: 6 }}>
-                <Icon name="arrow-drop-down" size={24} color="#6b7280" />
+                <Icon name="arrow-drop-down" size={24} color={c.textSecondary} />
               </View>
             )}
           />
@@ -613,15 +618,15 @@ const CashFlowTable = ({ isConsolidated, company }) => {
   );
 };
 
-const pickerSelectStyles = StyleSheet.create({
+const makePickerSelectStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   inputIOS: {
     fontSize: 13,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 8,
-    color: "#111827",
+    color: c.text,
     paddingRight: 30,
   },
   inputAndroid: {
@@ -629,14 +634,14 @@ const pickerSelectStyles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 8,
-    color: "#111827",
+    color: c.text,
     paddingRight: 30,
   },
 });
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     // marginTop: 24,
@@ -653,7 +658,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   noDataText: {
-    color: "#6b7280",
+    color: c.textSecondary,
     fontSize: 14,
   },
 
@@ -664,21 +669,21 @@ const styles = StyleSheet.create({
   mobileTitle: {
     fontSize: 13,
     fontWeight: "bold",
-    color: "#111827",
+    color: c.text,
     marginBottom: 16,
   },
   pickerContainer: {
-    backgroundColor: "white",
+    backgroundColor: c.inputBg,
     borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
   },
   tableContainer: {
-    backgroundColor: "white",
+    backgroundColor: c.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -690,14 +695,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: c.surfaceElevated,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
   headerText: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#6b7280",
+    color: c.textSecondary,
     textTransform: "uppercase",
   },
   tableBody: {
@@ -709,21 +714,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
   thickBorderRow: {
     borderTopWidth: 2,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.border,
   },
   evenRow: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
   },
   oddRow: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.surface,
   },
   cellText: {
     fontSize: 13,
-    color: "#374151",
+    color: c.textSecondary,
   },
   metricCell: {
     flex: 1,
@@ -735,7 +740,7 @@ const styles = StyleSheet.create({
   },
   boldText: {
     fontWeight: "bold",
-    color: "#111827",
+    color: c.text,
   },
   uppercaseText: {
     textTransform: "uppercase",
@@ -749,16 +754,16 @@ const styles = StyleSheet.create({
   desktopTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#111827",
+    color: c.text,
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 16,
   },
   desktopTableContainer: {
-    backgroundColor: "white",
+    backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -768,9 +773,9 @@ const styles = StyleSheet.create({
   },
   desktopTableHeader: {
     flexDirection: "row",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.surfaceElevated,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
   desktopHeaderCell: {
     paddingVertical: 12,
@@ -779,12 +784,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minWidth: 100,
     borderRightWidth: 1,
-    borderRightColor: "#e5e7eb",
+    borderRightColor: c.border,
   },
   desktopHeaderText: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#6b7280",
+    color: c.textSecondary,
     textTransform: "uppercase",
     textAlign: "center",
   },
@@ -794,7 +799,7 @@ const styles = StyleSheet.create({
   desktopTableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
   desktopCell: {
     paddingVertical: 12,
@@ -802,15 +807,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minWidth: 100,
     borderRightWidth: 1,
-    borderRightColor: "#e5e7eb",
+    borderRightColor: c.border,
   },
   stickyColumn: {
     minWidth: 200,
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
   },
   desktopCellText: {
     fontSize: 13,
-    color: "#374151",
+    color: c.textSecondary,
   },
   centerText: {
     textAlign: "center",

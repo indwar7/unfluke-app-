@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { postPayOffChartData } from "../../../Unfluke_helpers/backend_helper";
 import { createSelector } from "reselect";
 import { useSelector } from "react-redux";
+import { useTheme } from "@/constants/ThemeContext";
 import {
   AreaChart,
   Area,
@@ -28,6 +29,7 @@ const PayoffChart = ({
   positions,
   updatePNLData,
 }) => {
+  const { colors: c, isDark } = useTheme();
   const [plData, setPlData] = useState([]);
   const [xDomain, setXDomain] = useState([null, null]);
   const [initialDomain, setInitialDomain] = useState([null, null]);
@@ -35,12 +37,12 @@ const PayoffChart = ({
   const panState = useRef({ dragging: false, startX: null, startDomain: null });
 
   const colors = {
-    grid: "rgba(255,255,255,0.06)",
-    axis: "#787B86",
-    label: "#D1D4DC",
-    tooltipBg: "#2A2E39",
-    tooltipText: "#D1D4DC",
-    background: "#1E222D",
+    grid: c.border,
+    axis: c.textSecondary,
+    label: c.text,
+    tooltipBg: c.surfaceElevated,
+    tooltipText: c.text,
+    background: c.card,
   };
 
   const selectDashboardData = createSelector(
@@ -167,10 +169,10 @@ const PayoffChart = ({
   const processedData = splitPositiveNegative(plData);
 
   return (
-    <div className="p-6 sm:p-8 border rounded-lg" style={{ backgroundColor: '#1E222D', borderColor: 'rgba(255,255,255,0.06)', color: '#D1D4DC' }}>
+    <div className="p-6 sm:p-8 border rounded-lg" style={{ backgroundColor: c.card, borderColor: c.border, color: c.text }}>
       <button
         className="mb-3 px-4 py-1.5 text-sm font-semibold rounded-md float-right"
-        style={{ backgroundColor: '#2962FF', color: '#FFFFFF', border: 'none' }}
+        style={{ backgroundColor: c.gold, color: c.onGold, border: 'none' }}
         onClick={handleResetZoom}
       >
         Reset Zoom
@@ -237,7 +239,7 @@ const PayoffChart = ({
             <Area
               type="monotone"
               dataKey="posPnl"
-              stroke="#089981"
+              stroke={c.profit}
               fill="url(#gradientGreen)"
               strokeWidth={2}
               connectNulls
@@ -246,7 +248,7 @@ const PayoffChart = ({
             <Area
               type="monotone"
               dataKey="negPnl"
-              stroke="#F23645"
+              stroke={c.loss}
               fill="url(#gradientRed)"
               strokeWidth={2}
               connectNulls
@@ -254,12 +256,12 @@ const PayoffChart = ({
             />
             <defs>
               <linearGradient id="gradientGreen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#089981" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#089981" stopOpacity={0} />
+                <stop offset="0%" stopColor={c.profit} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={c.profit} stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradientRed" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#F23645" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#F23645" stopOpacity={0} />
+                <stop offset="0%" stopColor={c.loss} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={c.loss} stopOpacity={0} />
               </linearGradient>
             </defs>
           </AreaChart>

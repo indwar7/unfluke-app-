@@ -4,10 +4,14 @@ import { useSelector, useDispatch } from "react-redux";
 import { updateMTMStopLoss } from "../../../../redux/slices/basicBacktester/reducer";
 import InfoIconCustom from "../../InfoIcon/InfoIconCustom";
 import { backtesterTooltipTexts } from "../../Utils/common_vars";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const MTMStopLoss = () => {
   const dispatch = useDispatch();
   const { MTMStopLoss } = useSelector((store) => store.BasicBacktester);
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   function handleChange(value) {
     // remove non-numeric/non-dot and prevent multiple dots
@@ -45,6 +49,7 @@ const MTMStopLoss = () => {
       <TextInput
         style={styles.input}
         placeholder="SL"
+        placeholderTextColor={c.textMuted}
         value={String(MTMStopLoss.value)}
         keyboardType="numeric"
         onChangeText={handleChange}
@@ -55,7 +60,7 @@ const MTMStopLoss = () => {
 
 export default MTMStopLoss;
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     width: "100%",
   },
@@ -68,16 +73,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginRight: 6,
-    color: "#000",
+    color: c.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#d1d5db", // Tailwind's border-gray-200
-    backgroundColor: "#fff",
+    borderColor: c.inputBorder,
+    backgroundColor: c.inputBg,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 6,
     fontSize: 14,
-    color: "#000",
+    color: c.text,
   },
 });

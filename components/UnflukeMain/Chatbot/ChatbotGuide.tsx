@@ -18,11 +18,15 @@ import {
   chatbotQuestions,
   question_tab_mapping,
 } from "../Utils/common_vars";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 
 const ChatbotGuide = ({ setChatbotGuideOpen, typeAndAsk, botType, isVisible = true }) => {
   const [hoveredQuestion, setHoveredQuestion] = React.useState(null);
 const { width: screenWidth, height: screenHeight } = useWindowDimensions()
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   // Handle back button on Android
   useEffect(() => {
@@ -73,7 +77,7 @@ console.log(chatbotInfo[botType])
               style={styles.closeButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <X size={24} color="#6b7280" />
+              <X size={24} color={c.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -134,15 +138,15 @@ console.log(chatbotInfo[botType])
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: c.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
   modalContainer: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderRadius: 16,
     maxWidth: 500,
 
@@ -162,12 +166,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#111827",
+    color: c.text,
     flex: 1,
   },
   closeButton: {
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#4b5563",
+    color: c.textSecondary,
     marginBottom: 24,
   },
   questionsSection: {
@@ -192,7 +196,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
+    color: c.text,
     marginBottom: 16,
   },
   questionContainer: {
@@ -205,7 +209,7 @@ const styles = StyleSheet.create({
   },
   bulletPoint: {
     fontSize: 16,
-    color: "#2563eb",
+    color: c.gold,
     marginRight: 10,
     marginTop: 2,
   },
@@ -213,7 +217,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     lineHeight: 22,
-    color: "#2563eb",
+    color: c.gold,
   },
   questionTextHovered: {
     textDecorationLine: "underline",
@@ -222,17 +226,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.border,
   },
   closeButtonFooter: {
-    backgroundColor: "#6b7280",
+    backgroundColor: c.surfaceElevated,
+    borderWidth: 1,
+    borderColor: c.border,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: "center",
   },
   closeButtonText: {
-    color: "#ffffff",
+    color: c.text,
     fontSize: 16,
     fontWeight: "600",
   },

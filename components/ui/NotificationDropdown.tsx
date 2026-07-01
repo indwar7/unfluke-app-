@@ -25,6 +25,8 @@ import {
   getNotifications,
   postReadNotifications,
 } from "../../Unfluke_helpers/backend_helper";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 type NotificationDropdownRef = {
   toggleDropdown: () => void;
@@ -46,6 +48,8 @@ const NotificationDropdown = forwardRef<
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const { width, height } = useWindowDimensions();
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const auth = createSelector(
     (state: any) => state.Login,
@@ -164,7 +168,7 @@ const NotificationDropdown = forwardRef<
       animationType="none"
       onRequestClose={toggleDropdown}
     >
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}>
+      <View style={{ flex: 1, backgroundColor: c.overlay }}>
         <Pressable style={StyleSheet.absoluteFill} onPress={toggleDropdown} />
 
         <Animated.View
@@ -181,7 +185,7 @@ const NotificationDropdown = forwardRef<
             <Text style={styles.headerTitle}>Notifications</Text>
             {badge && (
               <View style={styles.newBadge}>
-                <Text>{unreadCount} New</Text>
+                <Text style={styles.newBadgeText}>{unreadCount} New</Text>
               </View>
             )}
           </View>
@@ -220,51 +224,58 @@ export default NotificationDropdown;
    STYLES
 -------------------------------------------------- */
 
-const styles = StyleSheet.create({
-  modalContent: {
-    position: "absolute",
-    top: 60,
-    right: 16,
-    width: 320,
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    elevation: 8,
-    overflow: "hidden",
-  },
-  modalLight: {
-    backgroundColor: "#FFFFFF",
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  newBadge: {
-    marginTop: 8,
-    padding: 4,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 8,
-    alignSelf: "flex-start",
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  notificationItem: {
-    marginBottom: 12,
-  },
-  timestamp: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 4,
-  },
-  loadMoreText: {
-    textAlign: "center",
-    marginTop: 12,
-    color: "#2563EB",
-    fontWeight: "500",
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    modalContent: {
+      position: "absolute",
+      top: 60,
+      right: 16,
+      width: 320,
+      borderRadius: 12,
+      backgroundColor: c.card,
+      elevation: 8,
+      overflow: "hidden",
+    },
+    modalLight: {
+      backgroundColor: c.card,
+    },
+    header: {
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: c.text,
+    },
+    newBadge: {
+      marginTop: 8,
+      padding: 4,
+      backgroundColor: c.goldLight,
+      borderRadius: 8,
+      alignSelf: "flex-start",
+    },
+    newBadgeText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: c.gold,
+    },
+    scrollContent: {
+      padding: 16,
+    },
+    notificationItem: {
+      marginBottom: 12,
+    },
+    timestamp: {
+      fontSize: 12,
+      color: c.textSecondary,
+      marginTop: 4,
+    },
+    loadMoreText: {
+      textAlign: "center",
+      marginTop: 12,
+      color: c.gold,
+      fontWeight: "500",
+    },
+  });

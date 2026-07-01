@@ -11,6 +11,8 @@ import {
   Dimensions,
   useWindowDimensions,
 } from 'react-native';
+import { useTheme } from '@/constants/ThemeContext';
+import type { AppColors } from '@/constants/Colors';
 
 
 const OptionChainTable = ({
@@ -20,6 +22,8 @@ const OptionChainTable = ({
   currentDate,
   addPosition,
 }) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const { width, height } = useWindowDimensions()
 
   const [selectedPosition, setSelectedPosition] = useState('Buy');
@@ -399,35 +403,35 @@ const OptionChainTable = ({
 
 
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     marginTop: 20,
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
     overflow: 'hidden',
   },
   cardHeader: {
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#D1D4DC',
+    color: c.text,
     marginBottom: 4,
   },
   dateText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#787B86',
+    color: c.textSecondary,
   },
   tableContainer: {
-    backgroundColor: '#131722',
+    backgroundColor: c.background,
   },
   horizontalScrollContainer: {
     flex: 1,
@@ -439,9 +443,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stickyHeader: {
-    backgroundColor: '#2A2E39',
+    backgroundColor: c.surfaceElevated,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
     zIndex: 10,
   },
   tableBodyScroll: {
@@ -450,12 +454,12 @@ const styles = StyleSheet.create({
    tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
     minHeight: 50,
     alignItems: 'center',
   },
   striped: {
-    backgroundColor: '#1A1D2B',
+    backgroundColor: c.surface,
   },
   cell: {
     flex: 1,
@@ -470,14 +474,14 @@ const styles = StyleSheet.create({
     flex: 1.2,
   },
   strikeCell: {
-    backgroundColor: '#2A2E39',
+    backgroundColor: c.surfaceElevated,
     minWidth: 90,
     flex: 1.1,
   },
   headerText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#787B86',
+    color: c.textSecondary,
     textAlign: 'center',
   },
   strikeHeaderText: {
@@ -486,14 +490,14 @@ const styles = StyleSheet.create({
   cellText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#D1D4DC',
+    color: c.text,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
   strikeCellText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#D1D4DC',
+    color: c.text,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
@@ -510,17 +514,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buyButton: {
-    backgroundColor: '#089981',
+    backgroundColor: c.profit,
   },
   sellButton: {
-    backgroundColor: '#F23645',
+    backgroundColor: c.loss,
   },
   disabledButton: {
-    backgroundColor: 'rgba(8,153,129,0.3)',
+    backgroundColor: c.profitBg,
     opacity: 0.6,
   },
   disabledSellButton: {
-    backgroundColor: 'rgba(242,54,69,0.3)',
+    backgroundColor: c.lossBg,
     opacity: 0.6,
   },
   actionButtonText: {
@@ -535,9 +539,9 @@ const styles = StyleSheet.create({
   alignItems: 'center',
   paddingHorizontal: 16,
   paddingVertical: 12,
-  backgroundColor: '#1E222D',
+  backgroundColor: c.card,
   borderTopWidth: 1,
-  borderTopColor: 'rgba(255,255,255,0.06)',
+  borderTopColor: c.border,
 },
 legendItem: {
   flexDirection: 'row',
@@ -548,26 +552,26 @@ legendItem: {
 legendColor: {
   width: 12,
   height: 12,
-  backgroundColor: '#F7931A',
+  backgroundColor: c.gold,
   borderRadius: 2,
   borderWidth: 1,
-  borderColor: '#F7931A',
+  borderColor: c.gold,
   flexShrink: 0, // Prevent the color box from shrinking
 },
 legendText: {
   fontSize: 12,
-  color: '#787B86',
+  color: c.textSecondary,
   flexShrink: 1, // Allow text to shrink and wrap
 },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: c.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     borderRadius: 12,
     marginHorizontal: 24,
     maxWidth: 400,
@@ -581,20 +585,20 @@ legendText: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: '#2A2E39',
+    borderBottomColor: c.border,
+    backgroundColor: c.surfaceElevated,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#D1D4DC',
+    color: c.text,
   },
   closeButton: {
     padding: 4,
   },
   closeButtonText: {
     fontSize: 24,
-    color: '#787B86',
+    color: c.textSecondary,
     fontWeight: 'bold',
   },
   modalBody: {
@@ -603,7 +607,7 @@ legendText: {
   positionSummary: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#D1D4DC',
+    color: c.text,
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -630,7 +634,7 @@ legendText: {
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#2962FF',
+    borderColor: c.gold,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -638,11 +642,11 @@ legendText: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#2962FF',
+    backgroundColor: c.gold,
   },
   radioText: {
     fontSize: 16,
-    color: '#D1D4DC',
+    color: c.text,
     fontWeight: '500',
   },
   quantityContainer: {
@@ -651,39 +655,39 @@ legendText: {
   quantityLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#787B86',
+    color: c.textSecondary,
     marginBottom: 8,
   },
   quantitySelector: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
     borderRadius: 6,
     overflow: 'hidden',
   },
   quantityButton: {
-    backgroundColor: '#2A2E39',
+    backgroundColor: c.surfaceElevated,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
   },
   quantityButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#D1D4DC',
+    color: c.text,
   },
   quantityInput: {
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     minWidth: 60,
     alignItems: 'center',
   },
   quantityInputText: {
     fontSize: 16,
-    color: '#D1D4DC',
+    color: c.text,
     fontWeight: '500',
   },
   modalFooter: {
@@ -692,17 +696,17 @@ legendText: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: '#2A2E39',
+    borderTopColor: c.border,
+    backgroundColor: c.surfaceElevated,
   },
   addButton: {
     flex: 1,
-    backgroundColor: '#089981',
+    backgroundColor: c.profit,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#089981',
+    borderColor: c.profit,
   },
   addButtonText: {
     color: '#fff',
@@ -716,10 +720,10 @@ legendText: {
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F23645',
+    borderColor: c.loss,
   },
   closeModalButtonText: {
-    color: '#F23645',
+    color: c.loss,
     fontSize: 16,
     fontWeight: '600',
   },

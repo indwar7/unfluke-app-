@@ -10,10 +10,13 @@ import {
   TextInput,
 } from "react-native";
 import { ChevronDown, ChevronUp } from "lucide-react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const CustomExpirySelect = ({ options, selected, onChange, placeholder, name }) => {
-  
-    
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
+
   const [open, setOpen] = useState(false);
 
   return (
@@ -25,7 +28,7 @@ const CustomExpirySelect = ({ options, selected, onChange, placeholder, name }) 
         <Text style={styles.buttonText}>
           {options.find((o) => o.value.to_expiry === selected?.to_expiry)?.label || placeholder}
         </Text>
-        <ChevronDown size={18} color="#787B86" />
+        <ChevronDown size={18} color={c.textSecondary} />
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="fade">
@@ -62,6 +65,8 @@ const CustomSelect = ({
   name,
   disableTyping = false,
 }) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const containerRef = useRef(null);
@@ -117,9 +122,9 @@ const CustomSelect = ({
           {displayValue || placeholder}
         </Text>
         {open ? (
-          <ChevronUp size={18} color="#787B86" />
+          <ChevronUp size={18} color={c.textSecondary} />
         ) : (
-          <ChevronDown size={18} color="#787B86" />
+          <ChevronDown size={18} color={c.textSecondary} />
         )}
       </TouchableOpacity>
 
@@ -137,7 +142,7 @@ const CustomSelect = ({
                   <TextInput
                     style={styles.modalSearchInput}
                     placeholder={placeholder || "Search..."}
-                    placeholderTextColor="#4C525E"
+                    placeholderTextColor={c.textMuted}
                     value={inputValue}
                     onChangeText={handleInputChange}
                     autoFocus
@@ -184,7 +189,7 @@ const CustomSelect = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     width: "100%",
     zIndex: 1000,
@@ -202,17 +207,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#363A45",
-    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.inputBg,
+    borderColor: c.inputBorder,
   },
   buttonText: {
-    color: "#D1D4DC",
+    color: c.text,
     fontSize: 16,
     flex: 1,
     marginRight: 8,
   },
   placeholderText: {
-    color: "#4C525E",
+    color: c.textMuted,
   },
   input: {
     width: "100%",
@@ -221,13 +226,13 @@ const styles = StyleSheet.create({
     paddingRight: 36,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#363A45",
-    borderColor: "rgba(255,255,255,0.06)",
-    color: "#D1D4DC",
+    backgroundColor: c.inputBg,
+    borderColor: c.inputBorder,
+    color: c.text,
     fontSize: 16,
   },
   readOnly: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   iconContainer: {
     position: "absolute",
@@ -241,9 +246,9 @@ const styles = StyleSheet.create({
     top: "100%",
     left: 0,
     right: 0,
-    backgroundColor: "#2A2E39",
+    backgroundColor: c.surfaceElevated,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: c.border,
     borderTopWidth: 0,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
@@ -259,7 +264,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: c.overlay,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
@@ -268,7 +273,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 420,
     maxHeight: "70%",
-    backgroundColor: "#1E222D",
+    backgroundColor: c.card,
     borderRadius: 12,
     overflow: "hidden",
     shadowColor: "#000",
@@ -281,18 +286,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "#D1D4DC",
+    color: c.text,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: c.border,
   },
   modalScrollView: {
     maxHeight: 380,
   },
   dropdown: {
     position: "absolute",
-    backgroundColor: "#2A2E39",
+    backgroundColor: c.surfaceElevated,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: c.border,
     borderTopWidth: 0,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
@@ -307,27 +312,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: c.border,
   },
   selectedOption: {
-    backgroundColor: "#2A2E39",
+    backgroundColor: c.goldLight,
   },
   optionText: {
     fontSize: 16,
-    color: "#D1D4DC",
+    color: c.text,
   },
   selectedOptionText: {
-    color: "#D1D4DC",
+    color: c.gold,
     fontWeight: "500",
   },
   noMatch: {
     fontSize: 14,
-    color: "#4C525E",
+    color: c.textMuted,
     fontStyle: "italic",
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: c.overlay,
     justifyContent: "center",
     alignItems: "center",
   },

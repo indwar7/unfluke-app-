@@ -11,6 +11,8 @@ import {
   Keyboard,
 } from "react-native";
 import { ChevronDown } from "lucide-react-native"; // yarn add lucide-react-native
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const CustomSelect = ({
   options,
@@ -20,6 +22,8 @@ const CustomSelect = ({
   name,
   disableTyping = false,
 }) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
@@ -63,6 +67,7 @@ const CustomSelect = ({
         <TextInput
           style={[styles.input, disableTyping && styles.readOnly]}
           placeholder={placeholder}
+          placeholderTextColor={c.textMuted}
           value={inputValue}
           editable={!disableTyping}
           onFocus={() => setOpen(true)}
@@ -75,7 +80,7 @@ const CustomSelect = ({
         />
         <ChevronDown
           size={18}
-          color="#6B7280"
+          color={c.textSecondary}
           style={styles.icon}
         />
       </TouchableOpacity>
@@ -117,60 +122,61 @@ const CustomSelect = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-  },
-  input: {
-    width: "100%",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    paddingRight: 36, // space for icon
-    borderWidth: 1,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    borderColor: "#d1d5db", // gray-300
-    color: "#1f2937", // gray-800
-    fontSize: 16,
-  },
-  readOnly: {
-    color: "#1f2937",
-  },
-  icon: {
-    position: "absolute",
-    right: 12,
-    top: "35%",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dropdown: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  option: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  optionText: {
-    fontSize: 16,
-    color: "#374151", // gray-700
-  },
-  noMatch: {
-    fontSize: 14,
-    color: "#9CA3AF", // gray-400
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      width: "100%",
+    },
+    input: {
+      width: "100%",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      paddingRight: 36, // space for icon
+      borderWidth: 1,
+      borderRadius: 8,
+      backgroundColor: c.inputBg,
+      borderColor: c.inputBorder,
+      color: c.text,
+      fontSize: 16,
+    },
+    readOnly: {
+      color: c.text,
+    },
+    icon: {
+      position: "absolute",
+      right: 12,
+      top: "35%",
+    },
+    overlay: {
+      flex: 1,
+      backgroundColor: c.overlay,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    dropdown: {
+      width: "90%",
+      backgroundColor: c.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      shadowColor: "#000",
+      shadowOpacity: 0.15,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 6,
+      elevation: 5,
+    },
+    option: {
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    optionText: {
+      fontSize: 16,
+      color: c.text,
+    },
+    noMatch: {
+      fontSize: 14,
+      color: c.textMuted,
+    },
+  });
 
 export default CustomSelect;

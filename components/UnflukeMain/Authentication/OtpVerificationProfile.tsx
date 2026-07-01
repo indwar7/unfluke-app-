@@ -12,16 +12,20 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/constants/ThemeContext';
+import type { AppColors } from '@/constants/Colors';
 
 
-const OTPVerificationModal = ({ 
-  isOpen, 
-  toggle, 
-  onVerify, 
-  digits = 6, 
-  title = "Verify OTP" 
+const OTPVerificationModal = ({
+  isOpen,
+  toggle,
+  onVerify,
+  digits = 6,
+  title = "Verify OTP"
 }) => {
   const { width } = useWindowDimensions()
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const [otp, setOtp] = useState(Array(digits).fill(''));
   const [isVerifying, setIsVerifying] = useState(false);
@@ -148,7 +152,7 @@ const OTPVerificationModal = ({
             {/* Header Section */}
             <View style={styles.headerContainer}>
               <View style={styles.iconContainer}>
-                <Ionicons name="lock-closed" size={32} color="#0d6efd" />
+                <Ionicons name="lock-closed" size={32} color={c.gold} />
               </View>
               <Text style={styles.title}>{title}</Text>
               <Text style={styles.subtitle}>
@@ -197,7 +201,7 @@ const OTPVerificationModal = ({
             >
               {isVerifying ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={c.onGold} size="small" />
                   <Text style={styles.buttonText}>  Verifying...</Text>
                 </View>
               ) : (
@@ -222,16 +226,16 @@ const OTPVerificationModal = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: c.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContainer: {
     maxWidth: 400,
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {
@@ -252,7 +256,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 64,
     height: 64,
-    backgroundColor: '#e6f7ff',
+    backgroundColor: c.goldLight,
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
@@ -262,11 +266,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#000',
+    color: c.text,
   },
   subtitle: {
     fontSize: 14,
-    color: '#6c757d',
+    color: c.textSecondary,
     textAlign: 'center',
     marginTop: 8,
   },
@@ -280,33 +284,34 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderWidth: 1,
-    borderColor: '#ced4da',
+    borderColor: c.inputBorder,
     borderRadius: 4,
     textAlign: 'center',
     fontSize: 20,
     fontWeight: 'bold',
     marginHorizontal: 4,
-    backgroundColor: '#fff',
+    backgroundColor: c.inputBg,
+    color: c.text,
   },
   inputFilled: {
-    borderColor: '#0d6efd',
+    borderColor: c.gold,
     borderWidth: 2,
   },
   errorContainer: {
-    backgroundColor: '#f8d7da',
-    borderColor: '#f5c2c7',
+    backgroundColor: c.errorLight,
+    borderColor: c.error,
     borderWidth: 1,
     borderRadius: 4,
     padding: 12,
     marginBottom: 16,
   },
   errorText: {
-    color: '#842029',
+    color: c.error,
     textAlign: 'center',
     fontSize: 14,
   },
   verifyButton: {
-    backgroundColor: '#0d6efd',
+    backgroundColor: c.gold,
     paddingVertical: 14,
     borderRadius: 4,
     marginBottom: 16,
@@ -314,7 +319,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   verifyButtonDisabled: {
-    backgroundColor: '#6c757d',
+    backgroundColor: c.textMuted,
     opacity: 0.6,
   },
   loadingContainer: {
@@ -323,7 +328,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: c.onGold,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -332,7 +337,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resendButtonText: {
-    color: '#0d6efd',
+    color: c.gold,
     fontSize: 14,
     fontWeight: '500',
   },

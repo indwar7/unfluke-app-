@@ -2,6 +2,8 @@ import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 import BasicBacktester from '../components/BasicBacktester'
 import { ScreenWithHeader } from '../components/AppHeader'
+import { useTheme } from '@/constants/ThemeContext'
+import type { AppColors } from '@/constants/Colors'
 
 const BasicBacktesterPage = () => {
   return (
@@ -13,10 +15,10 @@ const BasicBacktesterPage = () => {
 
 export default BasicBacktesterPage
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 12,
-    backgroundColor: '#131722',
+    backgroundColor: c.background,
   }
 })

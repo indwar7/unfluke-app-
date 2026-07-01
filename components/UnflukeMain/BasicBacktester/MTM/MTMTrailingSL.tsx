@@ -4,11 +4,15 @@ import { useSelector, useDispatch } from "react-redux";
 import { updateMTMTrailing } from "../../../../redux/slices/basicBacktester/reducer";
 import InfoIconCustom from "../../InfoIcon/InfoIconCustom";
 import { backtesterTooltipTexts } from "../../Utils/common_vars";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const MTMTrailingSL = () => {
   const dispatch = useDispatch();
   const { MTMTrailing } = useSelector((store) => store.BasicBacktester);
   const [showYTooltip, setShowYTooltip] = useState(false);
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   function handleChange(name, value) {
     // remove non-numeric/non-dot & prevent multiple dots
@@ -60,6 +64,7 @@ const MTMTrailingSL = () => {
         <TextInput
           style={styles.input}
           placeholder="Trailing SL X"
+          placeholderTextColor={c.textMuted}
           value={String(MTMTrailing.values.x)}
           keyboardType="numeric"
           onChangeText={(val) => handleChange("values.x", val)}
@@ -68,6 +73,7 @@ const MTMTrailingSL = () => {
         <TextInput
           style={styles.input}
           placeholder="Trailing SL Y"
+          placeholderTextColor={c.textMuted}
           value={String(MTMTrailing.values.y)}
           keyboardType="numeric"
           onChangeText={(val) => handleChange("values.y", val)}
@@ -85,7 +91,7 @@ const MTMTrailingSL = () => {
 
 export default MTMTrailingSL;
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     width: "100%",
   },
@@ -98,7 +104,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginRight: 6,
-    color: "#000",
+    color: c.text,
   },
   row: {
     flexDirection: "row",
@@ -107,17 +113,17 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#d1d5db", // border-gray-200
-    backgroundColor: "#fff",
+    borderColor: c.inputBorder,
+    backgroundColor: c.inputBg,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 6,
     fontSize: 14,
-    color: "#000",
+    color: c.text,
   },
   tooltipText: {
     marginTop: 4,
-    color: "red",
+    color: c.error,
     fontSize: 12,
   },
 });

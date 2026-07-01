@@ -16,6 +16,8 @@ import {
   UserHistoricalDateTime,
   UserHistoricalWatchlist,
 } from '../../../redux/Unfluke_slices/thunks';
+import { useTheme } from '@/constants/ThemeContext';
+import type { AppColors } from '@/constants/Colors';
 
 const dateData = createSelector(
   (state) => state.Historical,
@@ -29,6 +31,8 @@ const auth = createSelector(
 
 const HistoricalDateTime = () => {
   const dispatch = useDispatch();
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const [lastDate, setLastDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
@@ -215,9 +219,9 @@ const HistoricalDateTime = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderRadius: 8,
     padding: 12,
   },
@@ -232,22 +236,22 @@ const styles = StyleSheet.create({
   pickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: c.surfaceElevated,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: c.border,
   },
   pickerLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#6b7280',
+    color: c.textSecondary,
     marginRight: 8,
   },
   pickerValue: {
     fontSize: 14,
-    color: '#111827',
+    color: c.text,
     flex: 1,
   },
   timeControls: {
@@ -262,20 +266,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   minusButton: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: c.lossBg,
   },
   plusButton: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: c.profitBg,
   },
   timeButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: c.text,
   },
   currentDateTime: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#111827',
+    color: c.text,
     textAlign: 'center',
   },
 });

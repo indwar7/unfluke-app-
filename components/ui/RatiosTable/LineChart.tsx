@@ -124,9 +124,14 @@ import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useWindowDimensions } from "react-native";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const LineChartComponent = ({ title, categories, data }) => {
-  const lineColor = '#4285F4';
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
+  const lineColor = c.gold;
+  const labelRgb = isDark ? "255, 255, 255" : "0, 0, 0";
 
   console.log("data is here", data, categories);
 
@@ -176,12 +181,12 @@ const LineChartComponent = ({ title, categories, data }) => {
   };
 
   const chartConfig = {
-    backgroundColor: '#ffffff',
-    backgroundGradientFrom: '#ffffff',
-    backgroundGradientTo: '#ffffff',
+    backgroundColor: c.card,
+    backgroundGradientFrom: c.card,
+    backgroundGradientTo: c.card,
     decimalPlaces: 2,
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    color: (opacity = 1) => `rgba(${labelRgb}, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(${labelRgb}, ${opacity})`,
     style: {
       borderRadius: 16
     },
@@ -195,7 +200,7 @@ const LineChartComponent = ({ title, categories, data }) => {
     propsForBackgroundLines: {
       strokeWidth: 0.5,
       strokeDasharray: '5,5',
-      stroke: '#e0e0e0'
+      stroke: c.border
     },
     propsForLabels: {
       fontSize: 9,
@@ -215,7 +220,7 @@ const LineChartComponent = ({ title, categories, data }) => {
         r: '4',
         strokeWidth: '2',
         stroke: lineColor,
-        fill: '#ffffff'
+        fill: c.card
       };
     }
     // Hide dot by making it transparent and very small
@@ -252,14 +257,14 @@ const LineChartComponent = ({ title, categories, data }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     marginBottom: 10,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderColor: c.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -276,7 +281,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: c.text,
     textAlign: 'center'
   }
 });

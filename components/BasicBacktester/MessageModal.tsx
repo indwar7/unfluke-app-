@@ -8,8 +8,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useTheme } from '@/constants/ThemeContext';
 
 const MessageModal = ({ message, setResultsMessage }) => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   // Function to strip HTML tags for basic text display
   const stripHtml = (html) => {
@@ -56,8 +59,8 @@ const MessageModal = ({ message, setResultsMessage }) => {
                             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                             font-size: 16px;
                             line-height: 1.5;
-                            color: #D1D4DC;
-                            background-color: #1E222D;
+                            color: ${c.text};
+                            background-color: ${c.card};
                             margin: 0;
                             padding: 16px;
                           }
@@ -94,16 +97,16 @@ const MessageModal = ({ message, setResultsMessage }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c, isDark) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: c.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     borderRadius: 12,
     width: '90%',
     maxWidth: 500,
@@ -121,14 +124,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#D1D4DC',
+    color: c.text,
     textAlign: 'center',
   },
   body: {
@@ -143,17 +146,18 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#787B86',
+    color: c.textSecondary,
   },
   webView: {
     flex: 1,
     minHeight: 150,
+    backgroundColor: c.card,
   },
   footer: {
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: c.border,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
     flexDirection: 'row',
@@ -167,10 +171,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipButton: {
-    backgroundColor: '#363A45',
+    backgroundColor: c.surfaceElevated,
   },
   buttonText: {
-    color: '#D1D4DC',
+    color: c.text,
     fontSize: 16,
     fontWeight: '500',
   },

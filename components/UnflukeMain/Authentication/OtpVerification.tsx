@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Svg, { Path } from 'react-native-svg';
+import { useTheme } from '@/constants/ThemeContext';
+import type { AppColors } from '@/constants/Colors';
 
 interface OTPVerificationModalProps {
     isOpen: boolean;
@@ -26,6 +28,8 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
     digits = 6, 
     title = "Verify OTP" 
 }) => {
+    const { colors: c, isDark } = useTheme();
+    const styles = makeStyles(c, isDark);
     const [otp, setOtp] = useState<string[]>(Array(digits).fill(''));
     const [isVerifying, setIsVerifying] = useState(false);
     const [error, setError] = useState('');
@@ -115,7 +119,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
     };
 
     const LockIcon = () => (
-        <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="#0d6efd" strokeWidth={2}>
+        <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={c.gold} strokeWidth={2}>
             <Path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </Svg>
     );
@@ -176,7 +180,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                     >
                         {isVerifying ? (
                             <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color="white" style={styles.spinner} />
+                                <ActivityIndicator size="small" color={c.onGold} style={styles.spinner} />
                                 <Text style={styles.verifyButtonText}>Verifying...</Text>
                             </View>
                         ) : (
@@ -203,16 +207,16 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: c.overlay,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 15,
     },
     modalContainer: {
-        backgroundColor: 'white',
+        backgroundColor: c.card,
         borderRadius: 12,
         padding: 24,
         width: '100%',
@@ -233,7 +237,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 64,
         height: 64,
-        backgroundColor: '#e6f7ff',
+        backgroundColor: c.goldLight,
         borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
@@ -244,10 +248,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 8,
         textAlign: 'center',
-        color: '#333',
+        color: c.text,
     },
     subtitle: {
-        color: '#6c757d',
+        color: c.textSecondary,
         marginBottom: 20,
         textAlign: 'center',
         fontSize: 16,
@@ -262,17 +266,18 @@ const styles = StyleSheet.create({
         width: 40,
         height: 48,
         borderWidth: 2,
-        borderColor: '#ced4da',
+        borderColor: c.inputBorder,
         borderRadius: 8,
         fontSize: 18,
         fontWeight: 'bold',
-        backgroundColor: 'white',
+        backgroundColor: c.inputBg,
+        color: c.text,
         textAlign: 'center',
         flex: 1,
         marginHorizontal: 3,
     },
     inputError: {
-        borderColor: '#dc3545',
+        borderColor: c.error,
     },
     pasteButton: {
         alignSelf: 'center',
@@ -281,35 +286,35 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     pasteButtonText: {
-        color: '#0d6efd',
+        color: c.gold,
         fontSize: 14,
         fontWeight: '500',
     },
     errorContainer: {
-        backgroundColor: '#f8d7da',
-        borderColor: '#f5c6cb',
+        backgroundColor: c.errorLight,
+        borderColor: c.error,
         borderWidth: 1,
         borderRadius: 4,
         padding: 12,
         marginBottom: 16,
     },
     errorText: {
-        color: '#721c24',
+        color: c.error,
         textAlign: 'center',
         fontSize: 14,
     },
     verifyButton: {
-        backgroundColor: '#0d6efd',
+        backgroundColor: c.gold,
         borderRadius: 8,
         paddingVertical: 15,
         alignItems: 'center',
         marginBottom: 16,
     },
     verifyButtonDisabled: {
-        backgroundColor: '#6c757d',
+        backgroundColor: c.textMuted,
     },
     verifyButtonText: {
-        color: 'white',
+        color: c.onGold,
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -328,7 +333,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     resendButtonText: {
-        color: '#0d6efd',
+        color: c.gold,
         fontSize: 14,
         fontWeight: '500',
         textAlign: 'center',
@@ -339,7 +344,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     closeButtonText: {
-        color: '#6c757d',
+        color: c.textSecondary,
         fontSize: 16,
         fontWeight: '500',
     },

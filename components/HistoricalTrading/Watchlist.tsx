@@ -40,9 +40,12 @@ import {
 } from "../../redux/Unfluke_slices/thunks";
 import { setHistoricalWatchlist } from "../../redux/Unfluke_slices/historicalTrading/reducer";
 import { setSelectedStock } from "../../redux/Unfluke_slices/globalStock/reducer";
+import { useTheme } from "@/constants/ThemeContext";
 
 const Watchlist = () => {
   const dispatch = useDispatch();
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const [activeCardIndex, setActiveCardIndex] = useState(null);
   const [search, setSearch] = useState("");
@@ -478,13 +481,13 @@ const Watchlist = () => {
       {selectMarket !== "Option" && (
         <View style={styles.searchContainer}>
           <View style={styles.searchBarWrapper}>
-            <Search size={16} color="#787B86" style={{ marginLeft: 12 }} />
+            <Search size={16} color={c.textSecondary} style={{ marginLeft: 12 }} />
             <TextInput
               style={styles.searchInput}
               value={search}
               placeholder="Search e.g. Nifty, Reliance, TCS"
               onChangeText={getSearchResults}
-              placeholderTextColor="#4C525E"
+              placeholderTextColor={c.textMuted}
               autoCorrect={false}
               autoCapitalize="none"
             />
@@ -497,7 +500,7 @@ const Watchlist = () => {
                 }}
                 style={styles.clearBtn}
               >
-                <X size={16} color="#787B86" />
+                <X size={16} color={c.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -507,7 +510,7 @@ const Watchlist = () => {
             <View style={styles.searchDropdown}>
               {searchLoading ? (
                 <View style={styles.searchLoading}>
-                  <ActivityIndicator size="small" color="#2962FF" />
+                  <ActivityIndicator size="small" color={c.gold} />
                   <Text style={styles.searchLoadingText}>Searching...</Text>
                 </View>
               ) : marketList.length === 0 ? (
@@ -567,7 +570,7 @@ const Watchlist = () => {
 
       {loader && (
         <View style={styles.loaderRow}>
-          <ActivityIndicator size="small" color="#2962FF" />
+          <ActivityIndicator size="small" color={c.gold} />
         </View>
       )}
 
@@ -603,7 +606,7 @@ const Watchlist = () => {
                     disabled={isDisabled}
                     onPress={() => handleChartPress(tradeWatchItem)}
                   >
-                    <TrendingUp size={14} color="#2962FF" />
+                    <TrendingUp size={14} color={c.gold} />
                     <Text style={styles.actionBtnText}>Chart</Text>
                   </TouchableOpacity>
 
@@ -612,7 +615,7 @@ const Watchlist = () => {
                     disabled={loader}
                     onPress={() => handleDeletePress(tradeWatchItem.instrument_token)}
                   >
-                    <Trash2 size={14} color="#F23645" />
+                    <Trash2 size={14} color={c.loss} />
                     <Text style={styles.actionBtnDeleteText}>Remove</Text>
                   </TouchableOpacity>
                 </View>
@@ -625,10 +628,10 @@ const Watchlist = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c, isDark) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
   },
   topSection: {
     padding: 12,
@@ -642,9 +645,9 @@ const styles = StyleSheet.create({
   searchBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#363A45',
+    backgroundColor: c.inputBg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.inputBorder,
     borderRadius: 8,
     height: 42,
   },
@@ -653,7 +656,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 0,
     fontSize: 14,
-    color: '#D1D4DC',
+    color: c.text,
     height: 42,
   },
   clearBtn: {
@@ -661,9 +664,9 @@ const styles = StyleSheet.create({
   },
   searchDropdown: {
     marginTop: 4,
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -681,7 +684,7 @@ const styles = StyleSheet.create({
   },
   searchLoadingText: {
     fontSize: 13,
-    color: '#787B86',
+    color: c.textSecondary,
   },
   searchResultsList: {
     maxHeight: 200,
@@ -693,23 +696,23 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
   },
   searchResultDisabled: {
     opacity: 0.5,
   },
   searchResultText: {
     fontSize: 14,
-    color: '#D1D4DC',
+    color: c.text,
     fontWeight: '500',
     flex: 1,
   },
   searchResultTextDisabled: {
-    color: '#4C525E',
+    color: c.textMuted,
   },
   searchResultAdd: {
     fontSize: 13,
-    color: '#2962FF',
+    color: c.gold,
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -724,7 +727,7 @@ const styles = StyleSheet.create({
   selectLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#787B86',
+    color: c.textSecondary,
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -740,17 +743,17 @@ const styles = StyleSheet.create({
   watchlistContainer: {
     flex: 1,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: c.border,
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#D1D4DC',
+    color: c.text,
     marginBottom: 14,
   },
   emptyText: {
     fontSize: 13,
-    color: '#4C525E',
+    color: c.textMuted,
     textAlign: 'center',
     paddingVertical: 20,
     paddingHorizontal: 16,
@@ -759,10 +762,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
   },
   watchItemActive: {
-    backgroundColor: '#2A2E39',
+    backgroundColor: c.surfaceElevated,
   },
   watchItemRow: {
     flexDirection: 'row',
@@ -772,13 +775,13 @@ const styles = StyleSheet.create({
   watchItemName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#D1D4DC',
+    color: c.text,
     flex: 1,
   },
   watchItemPrice: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#D1D4DC',
+    color: c.text,
     marginLeft: 8,
   },
   watchItemActions: {
@@ -787,7 +790,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: c.border,
   },
   actionBtnChart: {
     flexDirection: 'row',
@@ -796,13 +799,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: 'rgba(41,98,255,0.15)',
+    backgroundColor: c.goldLight,
     borderWidth: 1,
-    borderColor: 'rgba(41,98,255,0.3)',
+    borderColor: c.gold,
   },
   actionBtnText: {
     fontSize: 12,
-    color: '#2962FF',
+    color: c.gold,
     fontWeight: '600',
   },
   actionBtnDelete: {
@@ -812,13 +815,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: 'rgba(242,54,69,0.15)',
+    backgroundColor: c.lossBg,
     borderWidth: 1,
-    borderColor: 'rgba(242,54,69,0.3)',
+    borderColor: c.loss,
   },
   actionBtnDeleteText: {
     fontSize: 12,
-    color: '#F23645',
+    color: c.loss,
     fontWeight: '600',
   },
 });

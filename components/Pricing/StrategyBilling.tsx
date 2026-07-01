@@ -13,10 +13,14 @@ import Toast from 'react-native-toast-message';
 import { postBuyBasicStrategy, postCheckCoupon } from '../../Unfluke_helpers/backend_helper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWindowDimensions } from "react-native";
+import { useTheme } from '@/constants/ThemeContext';
+import type { AppColors } from '@/constants/Colors';
 
 
 function Billing({ price, fileName, strategyName, isAdvance, isOpenModal, toggleModal }) {
     const{width,height} = useWindowDimensions()
+    const { colors: c, isDark } = useTheme();
+    const styles = makeStyles(c, isDark);
     const [user, setUser] = useState(null);
     const strategyCost = parseFloat(price);
     const [message, setMessage] = useState({ status: 0, message: "" });
@@ -306,20 +310,20 @@ function Billing({ price, fileName, strategyName, isAdvance, isOpenModal, toggle
     );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: c.overlay,
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContainer: {
-        backgroundColor: '#fff',
+        backgroundColor: c.card,
         borderRadius: 10,
         overflow: 'hidden',
     },
     header: {
-        backgroundColor: '#d667cd',
+        backgroundColor: c.gold,
         padding: 20,
         position: 'relative',
     },
@@ -331,13 +335,13 @@ const styles = StyleSheet.create({
     },
     closeButtonText: {
         fontSize: 30,
-        color: '#fff',
+        color: c.onGold,
         fontWeight: 'bold',
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#251f57',
+        color: c.onGold,
         textAlign: 'center',
         marginTop: 10,
     },
@@ -345,7 +349,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     benefitsCard: {
-        backgroundColor: '#fff',
+        backgroundColor: c.surface,
         padding: 20,
         borderRadius: 10,
         marginBottom: 20,
@@ -367,19 +371,19 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     checkmark: {
-        color: '#22c55e',
+        color: c.success,
         fontSize: 16,
         fontWeight: 'bold',
         marginRight: 8,
     },
     benefitText: {
         fontSize: 14,
-        color: '#333',
+        color: c.text,
         flex: 1,
         lineHeight: 20,
     },
     billingCard: {
-        backgroundColor: '#fff',
+        backgroundColor: c.surface,
         padding: 20,
         borderRadius: 10,
         shadowColor: '#000',
@@ -396,11 +400,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
-        color: '#4a5568',
+        color: c.text,
     },
     dashedLine: {
         borderBottomWidth: 2,
-        borderBottomColor: '#aaa',
+        borderBottomColor: c.border,
         borderStyle: 'dashed',
         marginVertical: 15,
     },
@@ -416,12 +420,12 @@ const styles = StyleSheet.create({
     walletLabel: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#4a5568',
+        color: c.textSecondary,
     },
     walletAmount: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#4a5568',
+        color: c.text,
     },
     inputGroup: {
         flexDirection: 'row',
@@ -431,18 +435,19 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 12,
         borderWidth: 1,
-        borderColor: '#d1d5db',
+        borderColor: c.inputBorder,
         borderRadius: 5,
         marginRight: 10,
         fontSize: 16,
-        backgroundColor: '#fff',
+        backgroundColor: c.inputBg,
+        color: c.text,
     },
     disabledInput: {
-        backgroundColor: '#f3f4f6',
-        color: '#9ca3af',
+        backgroundColor: c.surfaceElevated,
+        color: c.textMuted,
     },
     applyButton: {
-        backgroundColor: '#6c757d',
+        backgroundColor: c.textMuted,
         paddingHorizontal: 15,
         paddingVertical: 12,
         borderRadius: 5,
@@ -451,7 +456,7 @@ const styles = StyleSheet.create({
         minWidth: 120,
     },
     applyButtonPrimary: {
-        backgroundColor: '#007bff',
+        backgroundColor: c.gold,
         paddingHorizontal: 15,
         paddingVertical: 12,
         borderRadius: 5,
@@ -460,11 +465,11 @@ const styles = StyleSheet.create({
         minWidth: 120,
     },
     disabledButton: {
-        backgroundColor: '#9ca3af',
+        backgroundColor: c.textMuted,
         opacity: 0.6,
     },
     applyButtonText: {
-        color: '#fff',
+        color: c.onGold,
         fontWeight: 'bold',
         fontSize: 14,
     },
@@ -475,16 +480,16 @@ const styles = StyleSheet.create({
         marginTop: 10,
         marginBottom: 10,
         padding: 10,
-        backgroundColor: '#d1f2eb',
+        backgroundColor: c.successLight,
         borderRadius: 5,
     },
     couponAppliedText: {
         fontSize: 14,
-        color: '#22c55e',
+        color: c.success,
         fontWeight: '600',
     },
     removeText: {
-        color: '#dc3545',
+        color: c.error,
         fontSize: 14,
         fontWeight: 'bold',
     },
@@ -499,29 +504,29 @@ const styles = StyleSheet.create({
     },
     billLabel: {
         fontSize: 16,
-        color: '#333',
+        color: c.textSecondary,
     },
     billLabelBold: {
         fontSize: 16,
-        color: '#333',
+        color: c.text,
         fontWeight: 'bold',
     },
     billAmount: {
         fontSize: 16,
-        color: '#333',
+        color: c.text,
     },
     billAmountBold: {
         fontSize: 16,
-        color: '#333',
+        color: c.text,
         fontWeight: 'bold',
     },
     separator: {
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: c.border,
         marginVertical: 10,
     },
     payButton: {
-        backgroundColor: '#28a745',
+        backgroundColor: c.success,
         padding: 15,
         borderRadius: 5,
         alignItems: 'center',

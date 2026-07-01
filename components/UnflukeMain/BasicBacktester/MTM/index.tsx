@@ -4,8 +4,12 @@ import { updateMTMStopLoss, updateMTMTarget, updateMTMTrailing } from "../../../
 import MTMTarget from "./MTMTarget";
 import MTMStopLoss from "./MTMStopLoss";
 import MTMTrailingSL from "./MTMTrailingSL";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const MTM = () => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   return (
     <View style={styles.card}>
       {/* Header */}
@@ -25,24 +29,22 @@ const MTM = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#d1d5db", // gray-300
+    borderColor: c.border,
     marginTop: 0,
     paddingBottom: 10,
     paddingTop:7
-    // Dark mode fallback (if you handle dark theme manually)
-    // You can also use a theme provider if you have one
   },
   header: {
     fontSize: 18,
     fontWeight: "600",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    color: "#111827", // gray-900
+    color: c.text,
   },
   body: {
     paddingHorizontal: 16,

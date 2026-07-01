@@ -3,10 +3,13 @@ import { Modal, View, Text, TouchableOpacity, Animated, Dimensions, StyleSheet, 
 import { X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Watchlist from "./Watchlist";
+import { useTheme } from "@/constants/ThemeContext";
 
 
 const SidebarModal = ({ sidebarOpen, setSidebarOpen }) => {
 
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const { width,height } = useWindowDimensions()
   const insets = useSafeAreaInsets();
 
@@ -50,7 +53,7 @@ const SidebarModal = ({ sidebarOpen, setSidebarOpen }) => {
               onPress={() => setSidebarOpen(false)}
               style={styles.closeButton}
             >
-              <X size={24} color="#787B86" />
+              <X size={24} color={c.textSecondary} />
             </TouchableOpacity>
           </View>
           <View style={[styles.mobileSidebarContent,{    maxHeight: height * 0.8,
@@ -70,10 +73,10 @@ const SidebarModal = ({ sidebarOpen, setSidebarOpen }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c, isDark) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: c.overlay,
     flexDirection: "row",
   },
 
@@ -82,7 +85,7 @@ const styles = StyleSheet.create({
   },
 
   mobileSidebar: {
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     shadowColor: '#000',
     shadowOffset: {
       width: 2,
@@ -98,13 +101,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: '#2A2E39',
+    borderBottomColor: c.border,
+    backgroundColor: c.surfaceElevated,
   },
   sidebarTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#D1D4DC',
+    color: c.text,
   },
   closeButton: {
     padding: 4,

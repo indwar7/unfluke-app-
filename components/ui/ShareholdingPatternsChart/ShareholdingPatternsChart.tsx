@@ -164,12 +164,16 @@ import {
 } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import { getShareholdingData } from "../../../constants/Unfluke_helpers/backend_helper";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 
 const ShareholdingPattern = ({ company }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 const { width, height } = useWindowDimensions()
+const { colors: c, isDark } = useTheme();
+const styles = makeStyles(c, isDark);
 
   useEffect(() => {
     async function fetchData() {
@@ -193,7 +197,7 @@ const { width, height } = useWindowDimensions()
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color={c.gold} />
       </View>
     );
   }
@@ -228,7 +232,7 @@ const { width, height } = useWindowDimensions()
     name: item.name,
     population: item.value,
     color: item.color,
-    legendFontColor: "#333",
+    legendFontColor: c.text,
     legendFontSize: 13,
   }));
 
@@ -246,9 +250,9 @@ const { width, height } = useWindowDimensions()
           height={240}
           chartConfig={{
             backgroundColor: "transparent",
-            backgroundGradientFrom: "#ffffff",
-            backgroundGradientTo: "#ffffff",
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            backgroundGradientFrom: c.card,
+            backgroundGradientTo: c.card,
+            color: (opacity = 1) => `rgba(${isDark ? "255, 255, 255" : "0, 0, 0"}, ${opacity})`,
           }}
           accessor={"population"}
           backgroundColor={"transparent"}
@@ -306,7 +310,7 @@ const { width, height } = useWindowDimensions()
 
 export default ShareholdingPattern;
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 1,
@@ -321,10 +325,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     fontSize: 16,
-    color: "#555",
+    color: c.textSecondary,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 10,
     padding: 16,
     marginBottom: 16,
@@ -338,10 +342,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: c.border,
     paddingBottom: 8,
     marginBottom: 12,
-    color: "#111",
+    color: c.text,
   },
   legendContainer: {
     marginTop: 12,
@@ -363,28 +367,28 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 13,
-    color: "#333",
+    color: c.textSecondary,
   },
   tableHeader: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: c.border,
     paddingBottom: 6,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: c.borderLight,
     paddingVertical: 6,
   },
   cell: {
     flex: 1, // ✅ Ensures equal width for all columns
     fontSize: 14,
-    color: "#333",
+    color: c.textSecondary,
     textAlign: "center", // ✅ Centers text horizontally
   },
   headerCell: {
     fontWeight: "bold",
-    color: "#555",
+    color: c.text,
   },
 });

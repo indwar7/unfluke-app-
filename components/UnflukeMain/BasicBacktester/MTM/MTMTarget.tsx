@@ -4,10 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateMTMTarget } from "../../../../redux/slices/basicBacktester/reducer";
 import InfoIconCustom from "../../InfoIcon/InfoIconCustom";
 import { backtesterTooltipTexts } from "../../Utils/common_vars";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const MTMTarget = () => {
   const dispatch = useDispatch();
   const { MTMTarget } = useSelector((store) => store.BasicBacktester);
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   function handleChange(value) {
     // sanitize input (allow only numbers and one dot)
@@ -44,6 +48,7 @@ const MTMTarget = () => {
         <TextInput
           style={styles.input}
           placeholder="Target"
+          placeholderTextColor={c.textMuted}
           keyboardType="numeric"
           value={MTMTarget.value?.toString() ?? ""}
           onChangeText={handleChange}
@@ -53,7 +58,7 @@ const MTMTarget = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     width: "100%",
   },
@@ -66,11 +71,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
     marginRight: 4,
-    color: "#111827", // gray-900
+    color: c.text,
   },
   inputGroup: {
     borderWidth: 1,
-    borderColor: "#d1d5db", // gray-300
+    borderColor: c.inputBorder,
     borderRadius: 6,
     overflow: "hidden",
   },
@@ -78,8 +83,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     fontSize: 14,
-    color: "#111827",
-    backgroundColor: "#fff",
+    color: c.text,
+    backgroundColor: c.inputBg,
   },
 });
 
