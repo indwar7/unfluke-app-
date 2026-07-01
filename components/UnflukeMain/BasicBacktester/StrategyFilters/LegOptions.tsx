@@ -40,7 +40,7 @@ import * as Crypto from "expo-crypto";
 
 const LegOptions = () => {
   const colorScheme = useColorScheme();
-  const isDark = false;
+  const isDark = colorScheme === "dark";
 
   const styles = createStyles(isDark);
   const [reEntryDisabled, setreEntryDisabled] = useState(false);

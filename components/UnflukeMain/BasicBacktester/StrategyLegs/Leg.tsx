@@ -31,7 +31,7 @@ import {
 const Leg = (props) => {
   //////////////////// VARIABLES ////////////////////
   const colorScheme = useColorScheme();
-  const isDark = false;
+  const isDark = colorScheme === "dark";
   const index = props.index;
 
   const { legs, legOptions } = useSelector(

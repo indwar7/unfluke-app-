@@ -26,7 +26,7 @@ import { StyleSheet } from "react-native";
 
 const StrategyFilters = (props) => {
   const colorScheme = useColorScheme();
-  const isDark = false;
+  const isDark = colorScheme === "dark";
   const styles = getStyles(isDark);
 
   const { name, handleNameChange } = props;
