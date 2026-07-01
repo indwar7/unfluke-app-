@@ -408,7 +408,7 @@ const Watchlist = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Watchlist</Text>
+      {/* Title is shown by the parent modal header — avoid duplicate "Watchlist" text */}
       {/* Market selector */}
       <View style={styles.topSection}>
         <CustomSelect

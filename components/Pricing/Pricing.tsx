@@ -803,11 +803,13 @@ const Pricing = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Pricing Cards */}
+        {/* Pricing Cards — hide the ₹999 plan (belongs to a different product) */}
         <View style={[s.cardsContainer, { flexDirection: isTablet ? "row" : "column" }]}>
-          {(tiers || []).map((tierInfo, tierIndex) =>
-            renderPricingCard(tierInfo, tierIndex)
-          )}
+          {(tiers || [])
+            .filter((tierInfo) => Number(tierInfo?.cost) !== 999)
+            .map((tierInfo, tierIndex) =>
+              renderPricingCard(tierInfo, tierIndex)
+            )}
         </View>
       </ScrollView>
 

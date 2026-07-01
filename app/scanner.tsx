@@ -737,7 +737,16 @@ const Scanner = ({ shared }) => {
             if (Array.isArray(data.results) && data.results.length > 0) {
               setLink(data.link);
               setScannerResults(data.results);
-              setResultsMessage(data.message);
+              // Backend may send an HTML message (e.g. email-not-verified with
+              // an <a> tag). Strip tags/entities so it renders as clean text
+              // in the warning card instead of showing raw HTML.
+              setResultsMessage(
+                (data.message || "")
+                  .replace(/<[^>]*>/g, "")
+                  .replace(/&nbsp;/g, " ")
+                  .replace(/\s+/g, " ")
+                  .trim()
+              );
               if (data.headers) setHeaders(data.headers);
             } else {
               Alert.alert("Info", data.message || "No results");

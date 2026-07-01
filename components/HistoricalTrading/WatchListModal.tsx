@@ -1,12 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { Modal, View, Text, TouchableOpacity, Animated, Dimensions, StyleSheet, useWindowDimensions } from "react-native";
 import { X } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Watchlist from "./Watchlist";
 
 
 const SidebarModal = ({ sidebarOpen, setSidebarOpen }) => {
 
   const { width,height } = useWindowDimensions()
+  const insets = useSafeAreaInsets();
 
   const slideAnim = useRef(new Animated.Value(-width)).current; // Start hidden on the left
 
@@ -42,7 +44,7 @@ const SidebarModal = ({ sidebarOpen, setSidebarOpen }) => {
 }
           ]}
         >
-          <View style={styles.mobileSidebarHeader}>
+          <View style={[styles.mobileSidebarHeader, { paddingTop: insets.top + 14 }]}>
             <Text style={styles.sidebarTitle}>Watchlist</Text>
             <TouchableOpacity
               onPress={() => setSidebarOpen(false)}

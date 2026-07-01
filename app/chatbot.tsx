@@ -26,11 +26,12 @@ const ChatbotPage = () => {
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScreenWithHeader>
+    <ScreenWithHeader>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
         <Chatbot
           defaultInput={defaultInput}
           botType={botType}
@@ -40,8 +41,8 @@ const ChatbotPage = () => {
           onTabChange={handleTabChange}
           showQuickQuestions={true}
         />
-      </ScreenWithHeader>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ScreenWithHeader>
   );
 };
 
