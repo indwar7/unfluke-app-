@@ -933,6 +933,8 @@ import { useSelector } from "react-redux";
 import { getOptionChain } from "../../Unfluke_helpers/backend_helper";
 import { layoutModeTypes } from "../../components/UnflukeMain/constants/layout";
 import { createSelector } from "reselect";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 // Import all SVG files
 import LongCall from "../../assets/images/svg/payoff-chart-svg/LongCall.svg";
@@ -990,15 +992,8 @@ const PreBuildStrategies = ({
   
 const { width } = useWindowDimensions();
 
-  const selectDashboardData = createSelector(
-    (state) => state.Layout,
-    (state) => ({
-      layoutMode: state.layoutModeType,
-    }),
-  );
-  
-  const { layoutMode } = useSelector(selectDashboardData);
-  const isDarkMode = layoutMode === layoutModeTypes["DARKMODE"];
+  const { colors: c, isDark: isDarkMode } = useTheme();
+  const styles = makeStyles(c, isDarkMode);
 
   useEffect(() => {
     async function getOptionChainData(){
@@ -1538,7 +1533,7 @@ const { width } = useWindowDimensions();
                                   key={strike}
                                   label={strike.toString()}
                                   value={strike}
-                                  color={"#D1D4DC"}
+                                  color={c.text}
                                   style={{fontSize:14}}
                                 />
                               ))}
@@ -1573,7 +1568,7 @@ const { width } = useWindowDimensions();
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -1583,12 +1578,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   containerLight: {
-    backgroundColor: "#1E222D",
-    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.card,
+    borderColor: c.border,
   },
   containerDark: {
-    backgroundColor: "#1E222D",
-    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.card,
+    borderColor: c.border,
   },
   gridContainer: {
     paddingVertical: 10,
@@ -1613,12 +1608,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   strategyCardLight: {
-    backgroundColor: "#2A2E39",
-    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.surface,
+    borderColor: c.border,
   },
   strategyCardDark: {
-    backgroundColor: "#2A2E39",
-    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: c.surfaceElevated,
+    borderColor: c.border,
   },
   strategyImage: {
     width: 70,
@@ -1633,10 +1628,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   strategyNameLight: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   strategyNameDark: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   tabContainer: {
     marginBottom: 20,
@@ -1647,10 +1642,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabelLight: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   sectionLabelDark: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   tabBar: {
     flexDirection: "row",
@@ -1658,10 +1653,10 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   tabBarLight: {
-    backgroundColor: "#2A2E39",
+    backgroundColor: c.surface,
   },
   tabBarDark: {
-    backgroundColor: "#2A2E39",
+    backgroundColor: c.surfaceElevated,
   },
   tab: {
     flex: 1,
@@ -1672,30 +1667,30 @@ const styles = StyleSheet.create({
     justifyContent:"center"
   },
   activeTabLight: {
-    backgroundColor: "#1E222D",
+    backgroundColor: c.card,
   },
   activeTabDark: {
-    backgroundColor: "#1E222D",
+    backgroundColor: c.card,
   },
   tabText: {
     fontSize: 12,
     fontWeight: "600",
   },
   activeTabTextLight: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   activeTabTextDark: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   inactiveTabTextLight: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   inactiveTabTextDark: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: c.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1706,10 +1701,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   modalContainerLight: {
-    backgroundColor: "#1E222D",
+    backgroundColor: c.card,
   },
   modalContainerDark: {
-    backgroundColor: "#1E222D",
+    backgroundColor: c.card,
   },
   modalHeader: {
     flexDirection: "row",
@@ -1718,29 +1713,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:13,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    borderBottomColor: c.border,
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: "bold",
   },
   modalTitleLight: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   modalTitleDark: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   closeButton: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#2A2E39",
+    backgroundColor: c.surfaceElevated,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonText: {
     fontSize: 20,
-    color: "#787B86",
+    color: c.textSecondary,
     fontWeight: "bold",
   },
   modalBody: {
@@ -1753,17 +1748,17 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   noPositionsTextLight: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   noPositionsTextDark: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   positionContainer: {
     marginBottom: 20,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: c.border,
   },
   positionHeader: {
     flexDirection: "row",
@@ -1777,20 +1772,20 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   positionQuantityLight: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   positionQuantityDark: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   positionType: {
     fontSize: 15,
     fontWeight: "600",
   },
   positionTypeLight: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   positionTypeDark: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   strikePickerContainer: {
     marginTop: 8,
@@ -1801,48 +1796,48 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   strikeLabelLight: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   strikeLabelDark: {
-    color: "#787B86",
+    color: c.textSecondary,
   },
   pickerWrapper: {
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: c.inputBorder,
   },
   pickerWrapperLight: {
-    backgroundColor: "#363A45",
+    backgroundColor: c.inputBg,
   },
   pickerWrapperDark: {
-    backgroundColor: "#363A45",
+    backgroundColor: c.inputBg,
   },
   picker: {
     height: 50,
   },
   pickerLight: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   pickerDark: {
-    color: "#D1D4DC",
+    color: c.text,
   },
   modalFooter: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.06)",
+    borderTopColor: c.border,
   },
   addButton: {
-    backgroundColor: "#2962FF",
+    backgroundColor: c.gold,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 6,
     alignItems: "center",
   },
   addButtonDisabled: {
-    backgroundColor: "#4C525E",
+    backgroundColor: c.surfaceElevated,
   },
   addButtonText: {
-    color: "#FFFFFF",
+    color: c.onGold,
     fontSize: 14,
     fontWeight: "600",
   },

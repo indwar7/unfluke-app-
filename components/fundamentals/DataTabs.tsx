@@ -19,14 +19,43 @@ import {
     EmptyState, ErrorState, PaginationControls,
     SkeletonLoader, TableSkeleton,
 } from "./SharedComponents";
-import {
-    ACCENT, ACCENT_LIGHT, GREEN, RED,
-    TEXT_PRIMARY, TEXT_SECONDARY, TEXT_MUTED,
-    BORDER_COLOR, ZEBRA_LIGHT, CARD_BG,
-    CHART_COLORS, SHAREHOLDING_COLORS, EVENT_BADGE_COLORS,
-    fmt, valueColor,
-} from "./constants";
+import { fmt } from "./constants";
 import { getSectionDataForPeriod, getPeriodKeys } from "../../hooks/useFundamentalData";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
+
+// Theme-aware value color: green for positive, red for negative, primary text otherwise.
+const themedValueColor = (c: AppColors, val: any): string => {
+    if (val === undefined || val === null) return c.text;
+    const num = typeof val === "number" ? val : parseFloat(val);
+    if (isNaN(num)) return c.text;
+    if (num > 0) return c.profit;
+    if (num < 0) return c.loss;
+    return c.text;
+};
+
+// Theme-aware shareholding pie palette (keyed to labels the API returns).
+const shColors = (c: AppColors): Record<string, string> => ({
+    "Promoters": c.gold, "FII": c.warning,
+    "DII": c.success, "Public & Others": c.loss, "Others": c.textMuted,
+});
+
+// Theme-aware event badge palette.
+const eventBadgeColors = (c: AppColors): Record<string, { bg: string; text: string }> => ({
+    Dividends: { bg: c.successLight, text: c.success },
+    Bonus: { bg: c.warningLight, text: c.warning },
+    StockSplit: { bg: c.goldLight, text: c.gold },
+    InsiderTrading: { bg: c.errorLight, text: c.loss },
+    default: { bg: c.surfaceElevated, text: c.textSecondary },
+});
+
+// Theme-aware document category badge palette (keyed by DOC_CATEGORY_CONFIG key).
+const docColors = (c: AppColors): Record<string, { bg: string; text: string }> => ({
+    AnnualReport: { bg: c.goldLight, text: c.gold },
+    ConferenceCalls: { bg: c.goldLight, text: c.gold },
+    CreditRating: { bg: c.warningLight, text: c.warning },
+    Other: { bg: c.surfaceElevated, text: c.textSecondary },
+});
 
 /* ─────────────────────────────────────────────────────────
    API HELPERS
@@ -248,7 +277,7 @@ export function SvgLineChart({
     data,
     width: w = CW,
     height: h = CH,
-    color = CHART_COLORS.primary,
+    color,
     areaColor = "rgba(99,102,241,0.08)",
     showLabels = true,
 }: {
@@ -257,6 +286,8 @@ export function SvgLineChart({
     color?: string; areaColor?: string;
     showLabels?: boolean;
 }) {
+    const { colors: c } = useTheme();
+    const lineColor = color ?? c.gold;
     if (!data.length) return null;
 
     const padL = 60, padR = 16, padT = 16, padB = 40;
@@ -294,31 +325,31 @@ export function SvgLineChart({
                     return (
                         <G key={`grid-${i}`}>
                             <Line x1={padL} y1={py} x2={w - padR} y2={py}
-                                stroke="#F0F1F3" strokeWidth={1} strokeDasharray="4,4" />
-                            <SvgText x={padL - 6} y={py + 3} fontSize={9} fill={TEXT_MUTED} textAnchor="end">
+                                stroke={c.border} strokeWidth={1} strokeDasharray="4,4" />
+                            <SvgText x={padL - 6} y={py + 3} fontSize={9} fill={c.textMuted} textAnchor="end">
                                 {fmtAxis(yVal)}
                             </SvgText>
                         </G>
                     );
                 })}
                 <Path d={areaPath} fill={areaColor} />
-                <Path d={linePath} fill="none" stroke={color} strokeWidth={2.5}
+                <Path d={linePath} fill="none" stroke={lineColor} strokeWidth={2.5}
                     strokeLinecap="round" strokeLinejoin="round" />
                 {data.length <= 20 && data.map((d, i) => (
                     <Circle key={`dot-${i}`} cx={toX(i)} cy={toY(d.y)} r={3}
-                        fill="#fff" stroke={color} strokeWidth={2} />
+                        fill={c.card} stroke={lineColor} strokeWidth={2} />
                 ))}
                 {showLabels && data.map((d, i) => {
                     if (i % xTickStep !== 0 && i !== data.length - 1) return null;
                     return (
                         <SvgText key={`xl-${i}`} x={toX(i)} y={h - 8} fontSize={9}
-                            fill={TEXT_MUTED} textAnchor="middle">
+                            fill={c.textMuted} textAnchor="middle">
                             {d.x.length > 4 ? d.x.slice(-4) : d.x}
                         </SvgText>
                     );
                 })}
-                <Line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke={BORDER_COLOR} strokeWidth={1} />
-                <Line x1={padL} y1={padT + plotH} x2={w - padR} y2={padT + plotH} stroke={BORDER_COLOR} strokeWidth={1} />
+                <Line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke={c.border} strokeWidth={1} />
+                <Line x1={padL} y1={padT + plotH} x2={w - padR} y2={padT + plotH} stroke={c.border} strokeWidth={1} />
             </Svg>
         </View>
     );
@@ -331,6 +362,7 @@ function SvgPieChart({ slices, size = 220, innerRadius = 55 }: {
     slices: { label: string; value: number; color: string }[];
     size?: number; innerRadius?: number;
 }) {
+    const { colors: c } = useTheme();
     const total = slices.reduce((a, s) => a + s.value, 0);
     if (total <= 0) return null;
     const cx = size / 2, cy = size / 2, r = (size / 2) - 10;
@@ -361,7 +393,7 @@ function SvgPieChart({ slices, size = 220, innerRadius = 55 }: {
             <Svg width={size} height={size}>
                 {arcPaths.map((arc, i) => (
                     <G key={i}>
-                        <Path d={arc.d} fill={arc.color} stroke="#fff" strokeWidth={2} />
+                        <Path d={arc.d} fill={arc.color} stroke={c.card} strokeWidth={2} />
                         {parseFloat(arc.pct) > 5 && (
                             <SvgText x={arc.lx} y={arc.ly + 4} fontSize={11}
                                 fill="#fff" fontWeight="bold" textAnchor="middle">
@@ -395,6 +427,8 @@ const RATIO_METRICS = [
 export function ChartsTab({ capcode, companyName, stockType }: {
     capcode: string; companyName: string; stockType: "C" | "S";
 }) {
+    const { colors: c, isDark } = useTheme();
+    const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
     const [plData, setPlData] = useState<any>(null);
     const [bsData, setBsData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -457,13 +491,13 @@ export function ChartsTab({ capcode, companyName, stockType }: {
                 <Text style={s.chartLabel}>{metric.label}</Text>
                 <View style={s.chartMeta}>
                     <Text style={s.chartVal}>{fmtV(latest)}</Text>
-                    <View style={[s.chgBadge, { backgroundColor: up ? "#DCFCE7" : "#FEE2E2" }]}>
-                        <Text style={[s.chgText, { color: up ? GREEN : RED }]}>
+                    <View style={[s.chgBadge, { backgroundColor: up ? c.profitBg : c.lossBg }]}>
+                        <Text style={[s.chgText, { color: up ? c.profit : c.loss }]}>
                             {up ? "▲" : "▼"} {Math.abs(chg).toFixed(1)}%
                         </Text>
                     </View>
                 </View>
-                <SvgLineChart data={pts} color={up ? GREEN : RED}
+                <SvgLineChart data={pts} color={up ? c.profit : c.loss}
                     areaColor={up ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)"} />
             </View>
         );
@@ -508,6 +542,8 @@ export function ChartsTab({ capcode, companyName, stockType }: {
    ✅ AbortController for cleanup
 ═══════════════════════════════════════════════════════════ */
 export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: string; stockType?: "C" | "S" }) {
+    const { colors: c, isDark } = useTheme();
+    const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
     const [dtype, setDtype] = useState<"Bulk" | "Block">("Bulk");
     const [data, setData] = useState<any[]>([]);
     const [page, setPage] = useState(1);
@@ -574,8 +610,8 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
     useEffect(() => { load(dtype, page); return () => abortRef.current?.abort(); }, [dtype, page, load]);
 
     const badge = dtype === "Bulk"
-        ? { bg: "#F1F5F9", text: "#1A1A2E" }
-        : { bg: "#FEF3C7", text: "#92400E" };
+        ? { bg: c.goldLight, text: c.gold }
+        : { bg: c.warningLight, text: c.warning };
 
     const HIDDEN_HEADERS = ["Company Name", "Capitaline Code", "_id", "Serial No", "__v"];
 
@@ -596,7 +632,7 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
                     <View style={[s.evBadge, { backgroundColor: badge.bg }]}>
                         <Text style={[s.evBadgeText, { color: badge.text }]}>{dtype} Deal</Text>
                     </View>
-                    <Ionicons name={exp ? "chevron-up" : "chevron-down"} size={16} color={TEXT_MUTED} />
+                    <Ionicons name={exp ? "chevron-up" : "chevron-down"} size={16} color={c.textMuted} />
                 </View>
                 {(exp ? rows : rows.slice(0, 3)).map(([k, v]) => {
                     const colL = k.toLowerCase();
@@ -609,11 +645,11 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
                         <View key={k} style={s.kvRow}>
                             <Text style={s.kvLabel}>{k}</Text>
                             {isTx && (isBuy || isSell) ? (
-                                <View style={[s.bsBadge, { backgroundColor: isBuy ? "#DCFCE7" : "#FEE2E2" }]}>
-                                    <Text style={[s.bsText, { color: isBuy ? GREEN : RED }]}>{displayVal}</Text>
+                                <View style={[s.bsBadge, { backgroundColor: isBuy ? c.profitBg : c.lossBg }]}>
+                                    <Text style={[s.bsText, { color: isBuy ? c.profit : c.loss }]}>{displayVal}</Text>
                                 </View>
                             ) : (
-                                <Text style={[s.kvVal, { color: valueColor(v) }]}>{displayVal}</Text>
+                                <Text style={[s.kvVal, { color: themedValueColor(c, v) }]}>{displayVal}</Text>
                             )}
                         </View>
                     );
@@ -631,7 +667,7 @@ export function BulkBlockDealsTab({ capcode, stockType = "C" }: { capcode: strin
                         onPress={() => { setDtype(t); setPage(1); setExpanded(null); }}
                         activeOpacity={0.7}>
                         <Ionicons name={t === "Bulk" ? "layers-outline" : "cube-outline"} size={15}
-                            color={dtype === t ? ACCENT : TEXT_MUTED} style={{ marginRight: 6 }} />
+                            color={dtype === t ? c.gold : c.textMuted} style={{ marginRight: 6 }} />
                         <Text style={[s.toggleText, dtype === t && s.toggleTextOn]}>{t} Deals</Text>
                     </TouchableOpacity>
                 ))}
@@ -666,6 +702,9 @@ const EV_LABEL: Record<EvT, string> = {
 };
 
 export function CorporateEventsTab({ capcode }: { capcode: string }) {
+    const { colors: c, isDark } = useTheme();
+    const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
+    const EVENT_BADGE_COLORS = useMemo(() => eventBadgeColors(c), [c]);
     const [evType, setEvType] = useState<EvT>("Dividends");
     const [data, setData] = useState<any[]>([]);
     const [page, setPage] = useState(1);
@@ -702,12 +741,12 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
 
     useEffect(() => { load(evType, page); return () => abortRef.current?.abort(); }, [evType, page, load]);
 
-    const badge = (EVENT_BADGE_COLORS as any)?.[evType] || { bg: "#F1F5F9", text: "#1A1A2E" };
+    const badge = (EVENT_BADGE_COLORS as any)?.[evType] || EVENT_BADGE_COLORS.default;
 
     const renderKV = (label: string, value: any, opts?: { isDate?: boolean; isPrice?: boolean }) => (
         <View key={label} style={s.kvRow}>
             <Text style={s.kvLabel}>{label}</Text>
-            <Text style={[s.kvVal, opts?.isPrice ? { color: GREEN } : { color: valueColor(value) }]}>
+            <Text style={[s.kvVal, opts?.isPrice ? { color: c.profit } : { color: themedValueColor(c, value) }]}>
                 {value === "-" ? "-" : opts?.isPrice ? `₹${fmt(value)}` : opts?.isDate ? formatDate(value) : fmt(value)}
             </Text>
         </View>
@@ -718,8 +757,8 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
         return (
             <View key={label} style={s.kvRow}>
                 <Text style={s.kvLabel}>{label}</Text>
-                <View style={[s.bsBadge, { backgroundColor: isBuy ? "#DCFCE7" : "#FEE2E2" }]}>
-                    <Text style={[s.bsText, { color: isBuy ? GREEN : RED }]}>{value || "-"}</Text>
+                <View style={[s.bsBadge, { backgroundColor: isBuy ? c.profitBg : c.lossBg }]}>
+                    <Text style={[s.bsText, { color: isBuy ? c.profit : c.loss }]}>{value || "-"}</Text>
                 </View>
             </View>
         );
@@ -809,10 +848,10 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
                     </View>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                         {headerText && headerText !== "-" && (
-                            <Text style={{ fontSize: 11, color: TEXT_MUTED }}>{headerText}</Text>
+                            <Text style={{ fontSize: 11, color: c.textMuted }}>{headerText}</Text>
                         )}
                         {isExpandable && (
-                            <Ionicons name={exp ? "chevron-up" : "chevron-down"} size={16} color={TEXT_MUTED} />
+                            <Ionicons name={exp ? "chevron-up" : "chevron-down"} size={16} color={c.textMuted} />
                         )}
                     </View>
                 </View>
@@ -858,12 +897,10 @@ export function CorporateEventsTab({ capcode }: { capcode: string }) {
 /* ═══════════════════════════════════════════════════════════
    SHAREHOLDING PATTERNS TAB
 ═══════════════════════════════════════════════════════════ */
-const SH_COLORS: Record<string, string> = {
-    "Promoters": "#1A1A2E", "FII": "#F59E0B",
-    "DII": "#10B981", "Public & Others": "#DC2626", "Others": "#94A3B8",
-};
-
 export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
+    const { colors: c, isDark } = useTheme();
+    const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
+    const SH_COLORS = useMemo(() => shColors(c), [c]);
     const [rawData, setRawData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -899,7 +936,7 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
     const pledging = rawData?.["Promoter Pledging %"] || {};
     const slices = Object.entries(pattern)
         .filter(([_, v]) => typeof v === "number" && (v as number) > 0)
-        .map(([label, value]) => ({ label, value: value as number, color: SH_COLORS[label] || "#94A3B8" }));
+        .map(([label, value]) => ({ label, value: value as number, color: SH_COLORS[label] || c.textMuted }));
 
     if (!slices.length) return <EmptyState message="No shareholding data available." icon="pie-chart-outline" />;
 
@@ -937,7 +974,7 @@ export function ShareholdingPatternsTab({ capcode }: { capcode: string }) {
                                 <Text style={[s.tdCell, { flex: 1 }]}>
                                     {pledgePromoter[i] != null ? pledgePromoter[i].toFixed(2) : "-"}
                                 </Text>
-                                <Text style={[s.tdCell, { flex: 1, color: pledgePct[i] > 0 ? RED : GREEN }]}>
+                                <Text style={[s.tdCell, { flex: 1, color: pledgePct[i] > 0 ? c.loss : c.profit }]}>
                                     {pledgePct[i] != null ? pledgePct[i].toFixed(2) : "-"}
                                 </Text>
                             </View>
@@ -1023,6 +1060,9 @@ const DOC_CATEGORY_CONFIG: Record<string, {
 export function DocumentsTab({ capcode, companyName }: {
     capcode: string; companyName?: string;
 }) {
+    const { colors: c, isDark } = useTheme();
+    const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
+    const DOC_CLR = useMemo(() => docColors(c), [c]);
     const [grouped, setGrouped] = useState<Record<string, { title: string; url: string; date: string }[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -1095,7 +1135,7 @@ export function DocumentsTab({ capcode, companyName }: {
             <Text style={s.sectionTitle}>Company Documents</Text>
             {Object.entries(grouped).map(([key, items]) => {
                 const config = DOC_CATEGORY_CONFIG[key];
-                const clr = config?.color || DOC_CLR["Other"];
+                const clr = DOC_CLR[key] || DOC_CLR["Other"];
                 const label = config?.label || key;
 
                 return (
@@ -1128,7 +1168,7 @@ export function DocumentsTab({ capcode, companyName }: {
                                     </View>
                                 </View>
                                 {!!doc.url && (
-                                    <Ionicons name="chevron-forward" size={18} color={ACCENT} />
+                                    <Ionicons name="chevron-forward" size={18} color={c.gold} />
                                 )}
                             </TouchableOpacity>
                         ))}
@@ -1142,97 +1182,97 @@ export function DocumentsTab({ capcode, companyName }: {
 /* ═══════════════════════════════════════════════════════════
    STYLES
 ═══════════════════════════════════════════════════════════ */
-const s = StyleSheet.create({
-    sectionTitle: { fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 14 },
+const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
+    sectionTitle: { fontSize: 16, fontWeight: "700", color: c.text, marginBottom: 14 },
     toggleRow: { flexDirection: "row", gap: 10, marginBottom: 16 },
     toggleBtn: {
         flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10,
-        borderRadius: 10, backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: BORDER_COLOR
+        borderRadius: 10, backgroundColor: c.surfaceElevated, borderWidth: 1, borderColor: c.border
     },
-    toggleBtnOn: { backgroundColor: ACCENT_LIGHT, borderColor: ACCENT },
-    toggleText: { fontSize: 14, fontWeight: "600", color: TEXT_MUTED },
-    toggleTextOn: { color: ACCENT },
+    toggleBtnOn: { backgroundColor: c.goldLight, borderColor: c.gold },
+    toggleText: { fontSize: 14, fontWeight: "600", color: c.textMuted },
+    toggleTextOn: { color: c.gold },
     filterRow: { flexDirection: "row", gap: 8, marginBottom: 14, paddingRight: 16 },
     filterBtn: {
         paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-        backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: BORDER_COLOR
+        backgroundColor: c.surfaceElevated, borderWidth: 1, borderColor: c.border
     },
-    filterBtnOn: { backgroundColor: ACCENT, borderColor: ACCENT },
-    filterBtnText: { fontSize: 12, fontWeight: "600", color: TEXT_MUTED },
-    filterBtnTextOn: { color: "#fff" },
+    filterBtnOn: { backgroundColor: c.gold, borderColor: c.gold },
+    filterBtnText: { fontSize: 12, fontWeight: "600", color: c.textMuted },
+    filterBtnTextOn: { color: c.onGold },
     tableCard: {
-        backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
+        backgroundColor: c.card, borderRadius: 12, overflow: "hidden",
         elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06, shadowRadius: 4, borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 8
+        shadowOpacity: isDark ? 0.35 : 0.06, shadowRadius: 4, borderWidth: 1, borderColor: c.border, marginBottom: 8
     },
-    tHead: { flexDirection: "row", backgroundColor: ACCENT, paddingVertical: 11, paddingHorizontal: 12 },
-    thCell: { fontSize: 11, fontWeight: "700", color: "#fff", textAlign: "center", textTransform: "uppercase" },
+    tHead: { flexDirection: "row", backgroundColor: c.gold, paddingVertical: 11, paddingHorizontal: 12 },
+    thCell: { fontSize: 11, fontWeight: "700", color: c.onGold, textAlign: "center", textTransform: "uppercase" },
     tRow: {
-        flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#F0F1F3",
+        flexDirection: "row", borderBottomWidth: 1, borderBottomColor: c.borderLight,
         paddingVertical: 10, paddingHorizontal: 12
     },
-    tdCell: { fontSize: 12, color: TEXT_SECONDARY, textAlign: "center" },
-    zebra: { backgroundColor: ZEBRA_LIGHT },
-    highlight: { backgroundColor: ACCENT_LIGHT },
+    tdCell: { fontSize: 12, color: c.textSecondary, textAlign: "center" },
+    zebra: { backgroundColor: c.surfaceElevated },
+    highlight: { backgroundColor: c.goldLight },
     bsBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, alignSelf: "flex-start", marginTop: 2 },
     bsText: { fontSize: 12, fontWeight: "700" },
     evCard: {
-        backgroundColor: CARD_BG, borderRadius: 12, padding: 16, marginBottom: 10,
-        borderWidth: 1, borderColor: BORDER_COLOR,
+        backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 10,
+        borderWidth: 1, borderColor: c.border,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04, shadowRadius: 3
+        shadowOpacity: isDark ? 0.3 : 0.04, shadowRadius: 3
     },
-    evCardOpen: { borderColor: ACCENT, borderWidth: 1.5 },
+    evCardOpen: { borderColor: c.gold, borderWidth: 1.5 },
     evHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
     evBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
     evBadgeText: { fontSize: 11, fontWeight: "700" },
     kvRow: {
         flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-        paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: "#F4F5F7"
+        paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: c.borderLight
     },
-    kvLabel: { fontSize: 12, color: TEXT_MUTED, flex: 1, fontWeight: "500" },
-    kvVal: { fontSize: 12, color: TEXT_PRIMARY, fontWeight: "600", textAlign: "right", flex: 1 },
+    kvLabel: { fontSize: 12, color: c.textMuted, flex: 1, fontWeight: "500" },
+    kvVal: { fontSize: 12, color: c.text, fontWeight: "600", textAlign: "right", flex: 1 },
     chartGroup: {
-        backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
-        borderWidth: 1, borderColor: BORDER_COLOR, marginBottom: 16,
+        backgroundColor: c.card, borderRadius: 12, overflow: "hidden",
+        borderWidth: 1, borderColor: c.border, marginBottom: 16,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05, shadowRadius: 3
+        shadowOpacity: isDark ? 0.35 : 0.05, shadowRadius: 3
     },
-    chartTabs: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
+    chartTabs: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: c.border },
     cTab: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: "transparent" },
-    cTabOn: { borderBottomColor: ACCENT },
-    cTabText: { fontSize: 12, fontWeight: "600", color: TEXT_MUTED },
-    cTabTextOn: { color: ACCENT },
+    cTabOn: { borderBottomColor: c.gold },
+    cTabText: { fontSize: 12, fontWeight: "600", color: c.textMuted },
+    cTabTextOn: { color: c.gold },
     chartPanel: { padding: 16 },
-    chartLabel: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 8 },
+    chartLabel: { fontSize: 14, fontWeight: "700", color: c.text, marginBottom: 8 },
     chartMeta: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
-    chartVal: { fontSize: 22, fontWeight: "800", color: TEXT_PRIMARY },
+    chartVal: { fontSize: 22, fontWeight: "800", color: c.text },
     chgBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
     chgText: { fontSize: 11, fontWeight: "700" },
     shCard: {
-        backgroundColor: CARD_BG, borderRadius: 14, padding: 20, marginBottom: 20,
+        backgroundColor: c.card, borderRadius: 14, padding: 20, marginBottom: 20,
         elevation: 2, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06, shadowRadius: 4, borderWidth: 1, borderColor: BORDER_COLOR
+        shadowOpacity: isDark ? 0.35 : 0.06, shadowRadius: 4, borderWidth: 1, borderColor: c.border
     },
     pieLeg: { gap: 12, marginTop: 16 },
     pieLegRow: { flexDirection: "row", alignItems: "center" },
     pieDot: { width: 14, height: 14, borderRadius: 7, marginRight: 10 },
-    pieLegLabel: { fontSize: 14, color: TEXT_SECONDARY, flex: 1, fontWeight: "500" },
-    pieLegVal: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
-    shSubTitle: { fontSize: 14, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 10, marginTop: 4 },
+    pieLegLabel: { fontSize: 14, color: c.textSecondary, flex: 1, fontWeight: "500" },
+    pieLegVal: { fontSize: 15, fontWeight: "700", color: c.text },
+    shSubTitle: { fontSize: 14, fontWeight: "700", color: c.text, marginBottom: 10, marginTop: 4 },
     docGroup: { marginBottom: 22 },
     docGroupHdr: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
     docGroupTitle: { fontSize: 15, fontWeight: "700", flex: 1 },
     docCountBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
     docCountText: { fontSize: 11, fontWeight: "700" },
     docCard: {
-        backgroundColor: CARD_BG, borderRadius: 10, padding: 14, marginBottom: 6,
-        borderWidth: 1, borderColor: BORDER_COLOR, flexDirection: "row", alignItems: "center"
+        backgroundColor: c.card, borderRadius: 10, padding: 14, marginBottom: 6,
+        borderWidth: 1, borderColor: c.border, flexDirection: "row", alignItems: "center"
     },
     docIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", marginRight: 12 },
     docBody: { flex: 1 },
-    docTitle: { fontSize: 13, fontWeight: "600", color: TEXT_PRIMARY, marginBottom: 3 },
-    docMeta: { fontSize: 11, color: TEXT_MUTED, marginBottom: 4 },
+    docTitle: { fontSize: 13, fontWeight: "600", color: c.text, marginBottom: 3 },
+    docMeta: { fontSize: 11, color: c.textMuted, marginBottom: 4 },
     docPill: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
     docPillText: { fontSize: 10, fontWeight: "600" },
 });

@@ -106,25 +106,25 @@
 
 
 import React, { useEffect, useState } from "react";
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  StyleSheet, 
-  useColorScheme,
-  ActivityIndicator 
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator
 } from "react-native";
 import { postTickerPrice } from "../../../Unfluke_helpers/backend_helper";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const ProfitAndLoss = ({ instrument, positions, minute, updateTotalPnlData }) => {
   const [positionList, setPositionList] = useState(positions);
   const [totalPnl, setTotalPnl] = useState("0.00");
   const [loading, setLoading] = useState(false);
-  
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
-  const styles = getStyles(isDark);
+
+  const { colors: c, isDark } = useTheme();
+
+  const styles = getStyles(c, isDark);
 
   useEffect(() => {
     const fetchDataAndCalculatePnL = async () => {
@@ -241,7 +241,7 @@ const ProfitAndLoss = ({ instrument, positions, minute, updateTotalPnlData }) =>
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={'#2962FF'} />
+        <ActivityIndicator size="large" color={c.gold} />
         <Text style={styles.loadingText}>Calculating P&L...</Text>
       </View>
     );
@@ -265,7 +265,7 @@ const ProfitAndLoss = ({ instrument, positions, minute, updateTotalPnlData }) =>
   );
 };
 
-const getStyles = (isDark) => StyleSheet.create({
+const getStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     marginTop: 16,
@@ -279,28 +279,28 @@ const getStyles = (isDark) => StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#787B86',
+    color: c.textSecondary,
   },
   tableContainer: {
     minWidth: 800,
-    backgroundColor: '#1E222D',
+    backgroundColor: c.card,
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: c.border,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#2A2E39',
+    backgroundColor: c.surfaceElevated,
     borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
     paddingVertical: 14,
     paddingHorizontal: 12,
   },
   headerCell: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#D1D4DC',
+    color: c.text,
     textAlign: 'center',
   },
   positionHeader: {
@@ -321,24 +321,24 @@ const getStyles = (isDark) => StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: c.border,
     minHeight: 52,
     alignItems: 'center',
   },
   evenRow: {
-    backgroundColor: '#1E222D',
+    backgroundColor: c.surface,
   },
   oddRow: {
-    backgroundColor: '#131722',
+    backgroundColor: c.card,
   },
   totalRow: {
-    backgroundColor: '#2A2E39',
+    backgroundColor: c.surfaceElevated,
     borderTopWidth: 2,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: c.border,
   },
   tableCell: {
     fontSize: 13,
-    color: '#D1D4DC',
+    color: c.text,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
@@ -361,17 +361,17 @@ const getStyles = (isDark) => StyleSheet.create({
   totalLabel: {
     fontWeight: '700',
     fontSize: 14,
-    color: '#D1D4DC',
+    color: c.text,
   },
   totalValue: {
     fontWeight: '700',
     fontSize: 14,
   },
   profitText: {
-    color: '#089981',
+    color: c.profit,
   },
   lossText: {
-    color: '#F23645',
+    color: c.loss,
   },
 });
 

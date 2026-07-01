@@ -5,8 +5,12 @@ import {
   StyleSheet,
 } from "react-native";
 import HistoricalDateTime from "../../components/UnflukeMain/Common/HistoricalDateTime";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const ChartControls = () => {
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   //const [selectedDate, setSelectedDate] = useState(null);
 
   // const formatDateTime = (date) => {
@@ -51,38 +55,39 @@ const ChartControls = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: '#1E222D',
-    borderRadius: 12,
-    marginHorizontal: 'auto',
-  },
-  contentWrapper: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  contentContainer: {
-    gap: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#D1D4DC',
-  },
-  currentTime: {
-    fontSize: 20,
-    color: '#D1D4DC',
-    fontWeight: '600',
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      width: '100%',
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      marginHorizontal: 'auto',
+    },
+    contentWrapper: {
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderRadius: 12,
+    },
+    contentContainer: {
+      gap: 16,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: c.text,
+    },
+    currentTime: {
+      fontSize: 20,
+      color: c.text,
+      fontWeight: '600',
+    },
+  });
 
 export default ChartControls;

@@ -147,7 +147,7 @@ const ForgetPasswordPage = () => {
               style={s.backBtn}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <ArrowLeft size={22} color="rgba(255,255,255,0.85)" />
+              <ArrowLeft size={22} color={isDark ? c.onGold : "rgba(255,255,255,0.85)"} />
             </TouchableOpacity>
             <Image
               source={logoLight}

@@ -5,9 +5,10 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  useColorScheme,
 } from "react-native";
 import { Checkbox } from "expo-checkbox";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 //import PayoffChart from "./chart";
 import PayoffChart from "./chartTest";
@@ -27,10 +28,9 @@ const StrategyPositions = ({
   deletePosition,
   editPosition,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { colors: c, isDark } = useTheme();
    console.log(instrument)
-  const styles = getStyles(isDark);
+  const styles = getStyles(c, isDark);
   const [activeTab, setActiveTab] = useState("chart");
 
   const [positionalGreeks, setPositionalGreeks] = useState({
@@ -302,7 +302,7 @@ console.log("position",positionalPnlData)
   );
 };
 
-const getStyles = (isDark) =>
+const getStyles = (c: AppColors, isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -314,8 +314,8 @@ const getStyles = (isDark) =>
       padding: 16,
       borderWidth: 1,
       borderRadius: 12,
-      borderColor: "rgba(255,255,255,0.06)",
-      backgroundColor: "#1E222D",
+      borderColor: c.border,
+      backgroundColor: c.card,
       marginBottom: 16,
     },
     headerContainer: {
@@ -329,7 +329,7 @@ const getStyles = (isDark) =>
     title: {
       fontSize: 24,
       fontWeight: "bold",
-      color: "#D1D4DC",
+      color: c.text,
     },
     buttonGroup: {
       flexDirection: "row",
@@ -339,31 +339,31 @@ const getStyles = (isDark) =>
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderWidth: 1,
-      borderColor: "#F23645",
+      borderColor: c.loss,
       borderRadius: 8,
-      backgroundColor: "#1E222D",
+      backgroundColor: c.card,
     },
     resetButtonText: {
-      color: "#F23645",
+      color: c.loss,
     },
     selectAllContainer: {
       flexDirection: "row",
       alignItems: "center",
       paddingVertical: 8,
       borderBottomWidth: 1,
-      borderBottomColor: "rgba(255,255,255,0.06)",
+      borderBottomColor: c.border,
       marginBottom: 8,
     },
     checkbox: {
       marginRight: 8,
     },
     selectAllText: {
-      color: "#D1D4DC",
+      color: c.text,
     },
     summaryContainer: {
       paddingTop: 12,
       borderTopWidth: 1,
-      borderTopColor: "rgba(255,255,255,0.06)",
+      borderTopColor: c.border,
       gap: 8,
     },
     summaryRow: {
@@ -372,27 +372,27 @@ const getStyles = (isDark) =>
     },
     summaryLabel: {
       fontSize: 14,
-      color: "#787B86",
+      color: c.textSecondary,
     },
     summaryValue: {
       fontSize: 14,
-      color: "#D1D4DC",
+      color: c.text,
     },
     profitText: {
-      color: "#089981",
+      color: c.profit,
     },
     lossText: {
-      color: "#F23645",
+      color: c.loss,
     },
     totalPnlRow: {
       borderTopWidth: 1,
-      borderTopColor: "rgba(255,255,255,0.06)",
+      borderTopColor: c.border,
       paddingTop: 8,
     },
     totalPnlLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: "#D1D4DC",
+      color: c.text,
     },
     totalPnlValue: {
       fontSize: 14,
@@ -401,8 +401,8 @@ const getStyles = (isDark) =>
     chartContainer: {
       padding: 16,
       borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.06)",
-      backgroundColor: "#1E222D",
+      borderColor: c.border,
+      backgroundColor: c.card,
       borderRadius: 12,
     },
     tabButtonsContainer: {
@@ -417,10 +417,10 @@ const getStyles = (isDark) =>
       paddingVertical: 8,
     },
     activeTabButton: {
-      backgroundColor: "#2962FF",
+      backgroundColor: c.gold,
     },
     inactiveTabButton: {
-      backgroundColor: "#2A2E39",
+      backgroundColor: c.surfaceElevated,
     },
     tabButtonText: {
       fontSize: 14,
@@ -428,19 +428,19 @@ const getStyles = (isDark) =>
       textTransform: "capitalize",
     },
     activeTabButtonText: {
-      color: "#FFFFFF",
+      color: c.onGold,
     },
     inactiveTabButtonText: {
-      color: "#787B86",
+      color: c.textSecondary,
     },
     tabContent: {
       marginBottom: 8,
     },
     greeksSummaryContainer: {
-      backgroundColor: "#1E222D",
+      backgroundColor: c.card,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.06)",
+      borderColor: c.border,
       paddingHorizontal: 16,
       paddingTop:16,
       paddingBottom:6
@@ -459,27 +459,27 @@ const getStyles = (isDark) =>
       borderRadius: 8,
     },
     deltaCard: {
-      backgroundColor: "#2A2E39",
+      backgroundColor: c.surfaceElevated,
     },
     thetaCard: {
-      backgroundColor: "rgba(242,54,69,0.15)",
+      backgroundColor: c.lossBg,
     },
     gammaCard: {
-      backgroundColor: "rgba(41,98,255,0.15)",
+      backgroundColor: c.goldLight,
     },
     vegaCard: {
-      backgroundColor: "rgba(8,153,129,0.15)",
+      backgroundColor: c.profitBg,
     },
     greekLabel: {
       fontSize: 14,
       fontWeight: "500",
-      color: "#787B86",
+      color: c.textSecondary,
       // marginBottom: 4,
     },
     greekValue: {
       fontSize: 16,
       fontWeight: "600",
-      color: "#D1D4DC",
+      color: c.text,
     },
   });
 

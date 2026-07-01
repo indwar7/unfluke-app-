@@ -15,6 +15,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createSelector } from "reselect";
 import Watchlist from "./Watchlist";
 import SidebarModal from "./WatchListModal";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const BASE = "https://api.unfluke.in";
 const DEFAULT_SYMBOL = "NSE:NIFTY 50";
@@ -31,7 +33,7 @@ function buildHistoricalChartHTML(): string {
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;background:#fff;}
+html,body{width:100%;height:100%;overflow:hidden;background:#FFFFFF;}
 #tv_chart_container{width:100%;height:100%;}
 </style>
 </head><body>
@@ -40,6 +42,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#fff;}
 <script>
 var AUTH = { token: '', userId: '', mrkt: '' };
 var HIST_STATE = { currentDateTime: '', symbol: '${DEFAULT_SYMBOL}' };
+var IS_DARK = false;
 var tvWidget = null;
 var chartCreated = false;
 var fullName = undefined;
@@ -250,7 +253,7 @@ function createChart() {
     autosize: true,
     studies_overrides: {},
     timezone: 'Asia/Kolkata',
-    theme: 'Light',
+    theme: IS_DARK ? 'Dark' : 'Light',
     debug: false,
   });
 
@@ -268,6 +271,8 @@ function handleMsg(raw) {
       AUTH.userId = msg.userId || '';
       AUTH.mrkt = msg.mrkt || '';
       HIST_STATE.symbol = msg.symbol || '${DEFAULT_SYMBOL}';
+      IS_DARK = !!msg.isDark;
+      try { document.body.style.background = IS_DARK ? '#0A0B0E' : '#FFFFFF'; } catch(e) {}
       createChart();
     } else if (msg.type === 'API_RESPONSE') {
       handleApiResponse(msg.id, msg.data, msg.error);
@@ -316,6 +321,8 @@ const authSelector = createSelector(
 
 const Trading = () => {
   const insets = useSafeAreaInsets();
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   // @ts-ignore
   const selectedStock = useSelector((state) => state?.GlobalStock?.selectedStock);
   const user = useSelector(authSelector);
@@ -386,11 +393,12 @@ const Trading = () => {
         userId: userId,
         mrkt: mrktRef.current || "",
         symbol: DEFAULT_SYMBOL,
+        isDark: isDark,
       });
     } catch (e: any) {
       initSentRef.current = false;
     }
-  }, [user?._id]);
+  }, [user?._id, isDark]);
 
   // When selected stock changes from watchlist, update chart
   useEffect(() => {
@@ -431,13 +439,13 @@ const Trading = () => {
             }}
             style={styles.refreshBtn}
           >
-            <Ionicons name="refresh" size={18} color="#2962FF" />
+            <Ionicons name="refresh" size={18} color={c.gold} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setSidebarOpen(true)}
             style={styles.refreshBtn}
           >
-            <Ionicons name="list" size={18} color="#2962FF" />
+            <Ionicons name="list" size={18} color={c.gold} />
           </TouchableOpacity>
         </View>
       </View>
@@ -446,7 +454,7 @@ const Trading = () => {
       <View style={styles.chartContainer}>
         {!chartReady && (
           <View style={styles.chartLoader}>
-            <ActivityIndicator color="#2962FF" size="large" />
+            <ActivityIndicator color={c.gold} size="large" />
             <Text style={styles.chartLoaderText}>Loading TradingView...</Text>
           </View>
         )}
@@ -503,60 +511,61 @@ const Trading = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#131722",
-  },
-  headerBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#1E222D",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#D1D4DC" },
-  headerSub: { fontSize: 12, color: "#787B86", marginTop: 2 },
-  refreshBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#2A2E39",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chartContainer: {
-    flex: 1,
-    backgroundColor: "#131722",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
-    overflow: "hidden",
-  },
-  chartLoader: {
-    ...StyleSheet.absoluteFillObject as any,
-    backgroundColor: "#131722",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    gap: 8,
-  },
-  chartLoaderText: { fontSize: 13, color: "#787B86", marginTop: 4 },
-  card: {
-    backgroundColor: "#1E222D",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    headerBar: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: c.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    headerTitle: { fontSize: 18, fontWeight: "700", color: c.text },
+    headerSub: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    refreshBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: c.surfaceElevated,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    chartContainer: {
+      flex: 1,
+      backgroundColor: c.background,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      overflow: "hidden",
+    },
+    chartLoader: {
+      ...(StyleSheet.absoluteFillObject as any),
+      backgroundColor: c.background,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+      gap: 8,
+    },
+    chartLoaderText: { fontSize: 13, color: c.textSecondary, marginTop: 4 },
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 14,
+      elevation: 1,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+  });
 
 export default Trading;

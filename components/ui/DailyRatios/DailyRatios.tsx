@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Activ
 import { LineChart } from "react-native-chart-kit";
 import { useColorScheme } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const DailyRatios = ({ data, loading }) => {
   const [leftTab, setLeftTab] = useState("ev");
   const [rightTab, setRightTab] = useState("pe");
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const {width:screenWidth} = useWindowDimensions()
 
@@ -96,7 +99,7 @@ const DailyRatios = ({ data, loading }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color={c.gold} />
       </View>
     );
   }
@@ -146,17 +149,30 @@ const DailyRatios = ({ data, loading }) => {
     },
   };
 
-  const mainColor = "#44558B";
-  const gradientFromColor = "#44558B";
-  const gradientToColor = "#90CAF9";
+  const mainColor = c.gold;
+  const gradientFromColor = c.gold;
+  const gradientToColor = c.goldMuted;
+
+  // Parse a hex color into an rgba() string generator for react-native-chart-kit.
+  const hexToRgba = (hex, opacity = 1) => {
+    const clean = hex.replace("#", "");
+    const full =
+      clean.length === 3
+        ? clean.split("").map((ch) => ch + ch).join("")
+        : clean;
+    const r = parseInt(full.substring(0, 2), 16);
+    const g = parseInt(full.substring(2, 4), 16);
+    const b = parseInt(full.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   const getChartConfig = () => ({
-    backgroundColor: isDark ? "#111827" : "#ffffff",
-    backgroundGradientFrom: isDark ? "#111827" : "#ffffff",
-    backgroundGradientTo: isDark ? "#111827" : "#ffffff",
+    backgroundColor: c.card,
+    backgroundGradientFrom: c.card,
+    backgroundGradientTo: c.card,
     decimalPlaces: 2,
-    color: (opacity = 1) => `rgba(68, 85, 139, ${opacity})`,
-    labelColor: (opacity = 1) => isDark ? `rgba(229, 231, 235, ${opacity})` : `rgba(55, 65, 81, ${opacity})`,
+    color: (opacity = 1) => hexToRgba(mainColor, opacity),
+    labelColor: (opacity = 1) => hexToRgba(c.textSecondary, opacity),
     style: {
       borderRadius: 16,
     },
@@ -170,7 +186,7 @@ const DailyRatios = ({ data, loading }) => {
     fillShadowGradientToOpacity: 0.1,
     propsForBackgroundLines: {
       strokeWidth: 1,
-      stroke: isDark ? "#374151" : "#E5E7EB",
+      stroke: c.border,
       strokeDasharray: "0",
     },
     propsForLabels: {
@@ -263,10 +279,10 @@ const DailyRatios = ({ data, loading }) => {
           ))}
         </ScrollView>
         <View style={styles.scrollIndicator}>
-          <Ionicons 
-            name="chevron-forward" 
-            size={16} 
-            color={isDark ? "#9CA3AF" : "#6B7280"} 
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={c.textSecondary}
           />
         </View>
       </View>
@@ -303,137 +319,138 @@ const DailyRatios = ({ data, loading }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: 256,
-  },
-  noDataContainer: {
-    padding: 16,
-    alignItems: "center",
-  },
-  noDataText: {
-    textAlign: "center",
-    color: "#374151",
-  },
-  noDataTextDark: {
-    color: "#D1D5DB",
-  },
-  chartSection: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  sectionTitleDark: {
-    color: "#F9FAFB",
-  },
-  tabOuterContainer: {
-    marginBottom: 12,
-  },
-  tabScrollContainer: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  tabScrollContent: {
-    paddingRight: 32,
-    gap: 8,
-  },
-  scrollIndicator: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-  },
-  tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#F3F4F6",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  tabButtonActive: {
-    backgroundColor: "#3B82F6",
-    borderColor: "#3B82F6",
-  },
-  tabButtonActiveDark: {
-    backgroundColor: "#2563EB",
-    borderColor: "#2563EB",
-  },
-  tabButtonInactiveDark: {
-    backgroundColor: "#374151",
-    borderColor: "#4B5563",
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  tabTextActive: {
-    color: "#FFFFFF",
-  },
-  cardContainer: {
-    backgroundColor: "#ffffff",
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardContainerDark: {
-    backgroundColor: "#111827",
-    borderColor: "#374151",
-  },
-  chartContainer: {
-    paddingTop: 0,
-  },
-  chartTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 16,
-    color: "#111827",
-  },
-  chartTitleDark: {
-    color: "#F9FAFB",
-  },
-  chartScrollView: {
-    width: "100%",
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
-  },
-  emptyChart: {
-    height: 300,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyChartText: {
-    color: "#6B7280",
-    fontSize: 14,
-  },
-  emptyChartTextDark: {
-    color: "#9CA3AF",
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: 256,
+    },
+    noDataContainer: {
+      padding: 16,
+      alignItems: "center",
+    },
+    noDataText: {
+      textAlign: "center",
+      color: c.textSecondary,
+    },
+    noDataTextDark: {
+      color: c.textSecondary,
+    },
+    chartSection: {
+      marginBottom: 12,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: c.text,
+      marginBottom: 12,
+    },
+    sectionTitleDark: {
+      color: c.text,
+    },
+    tabOuterContainer: {
+      marginBottom: 12,
+    },
+    tabScrollContainer: {
+      position: "relative",
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    tabScrollContent: {
+      paddingRight: 32,
+      gap: 8,
+    },
+    scrollIndicator: {
+      position: "absolute",
+      right: 0,
+      top: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 8,
+      backgroundColor: isDark ? "rgba(10,11,14,0.9)" : "rgba(255,255,255,0.9)",
+    },
+    tabButton: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 20,
+      backgroundColor: c.surfaceElevated,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    tabButtonActive: {
+      backgroundColor: c.gold,
+      borderColor: c.gold,
+    },
+    tabButtonActiveDark: {
+      backgroundColor: c.gold,
+      borderColor: c.gold,
+    },
+    tabButtonInactiveDark: {
+      backgroundColor: c.surfaceElevated,
+      borderColor: c.border,
+    },
+    tabText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: c.textSecondary,
+    },
+    tabTextActive: {
+      color: c.onGold,
+    },
+    cardContainer: {
+      backgroundColor: c.card,
+      borderRadius: 25,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    cardContainerDark: {
+      backgroundColor: c.card,
+      borderColor: c.border,
+    },
+    chartContainer: {
+      paddingTop: 0,
+    },
+    chartTitle: {
+      fontSize: 15,
+      fontWeight: "600",
+      marginBottom: 16,
+      color: c.text,
+    },
+    chartTitleDark: {
+      color: c.text,
+    },
+    chartScrollView: {
+      width: "100%",
+    },
+    chart: {
+      marginVertical: 8,
+      borderRadius: 16,
+    },
+    emptyChart: {
+      height: 300,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyChartText: {
+      color: c.textSecondary,
+      fontSize: 14,
+    },
+    emptyChartTextDark: {
+      color: c.textSecondary,
+    },
+  });
 
 export default DailyRatios;

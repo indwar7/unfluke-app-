@@ -15,11 +15,15 @@ import {
   getBankingData,
 } from "../../../Unfluke_helpers/backend_helper";
 import BankRatioCollapse from "./BankRatioCollapse";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const thickBorderRows = ["Operating Profit", "Profit Before Tax", "Net Profit"];
 
 const BankRatio = ({ isConsolidated, company, onDataCheck }) => {
   const route = useRoute();
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const [headings, setHeadings] = useState([]);
   const [results, setResults] = useState({});
   const [years, setYears] = useState([]);
@@ -77,7 +81,7 @@ const BankRatio = ({ isConsolidated, company, onDataCheck }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={c.gold} />
       </View>
     );
   }
@@ -105,7 +109,7 @@ const BankRatio = ({ isConsolidated, company, onDataCheck }) => {
           Icon={() => {
             return (
               <View style={{ marginTop: 6 }}>
-                <Icon name="arrow-drop-down" size={24} color="#6b7280" />
+                <Icon name="arrow-drop-down" size={24} color={c.textSecondary} />
               </View>
             );
           }}
@@ -127,67 +131,68 @@ const BankRatio = ({ isConsolidated, company, onDataCheck }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 2,
-    borderRadius: 8,
-  },
-  headerText: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 16,
-  },
-  pickerContainer: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    overflow: "hidden",
-  },
-  inputIOS: {
-    fontSize: 13,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-    color: "#111827",
-    paddingRight: 30,
-  },
-  inputAndroid: {
-    fontSize: 13,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-    color: "#111827",
-    paddingRight: 30,
-  },
-  placeholder: {
-    color: "#9ca3af",
-    fontSize: 13,
-  },
-  tableContainer: {
-    backgroundColor: "white",
-    borderRadius: 8,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    height: 200,
-  },
-  noDataContainer: {
-    padding: 16,
-    alignItems: "center",
-  },
-  noDataText: {
-    color: "#6b7280",
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingTop: 2,
+      borderRadius: 8,
+    },
+    headerText: {
+      fontSize: 13,
+      fontWeight: "bold",
+      color: c.text,
+      marginBottom: 16,
+    },
+    pickerContainer: {
+      backgroundColor: c.card,
+      borderRadius: 8,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+    },
+    inputIOS: {
+      fontSize: 13,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 8,
+      color: c.text,
+      paddingRight: 30,
+    },
+    inputAndroid: {
+      fontSize: 13,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 8,
+      color: c.text,
+      paddingRight: 30,
+    },
+    placeholder: {
+      color: c.textMuted,
+      fontSize: 13,
+    },
+    tableContainer: {
+      backgroundColor: c.card,
+      borderRadius: 8,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      height: 200,
+    },
+    noDataContainer: {
+      padding: 16,
+      alignItems: "center",
+    },
+    noDataText: {
+      color: c.textSecondary,
+    },
+  });
 
 export default BankRatio;

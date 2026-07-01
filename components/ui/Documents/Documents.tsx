@@ -394,13 +394,16 @@ import {
   getCompanyCode,
   getDocumentsData,
 } from "../../../Unfluke_helpers/backend_helper";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 
 const Documents = ({ companyName }) => {
   const route = useRoute();
   const params = route.params || {};
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const [loading, setLoading] = useState(true);
   const [companyCode, setCompanyCode] = useState(null);
   const [ASCR, setASCR] = useState([]);
@@ -819,7 +822,7 @@ const Documents = ({ companyName }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" color={c.gold} />
       </View>
     );
   }
@@ -832,230 +835,231 @@ const Documents = ({ companyName }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  containerDark: {
-    backgroundColor: "#111827",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: 128,
-    backgroundColor: "transparent",
-  },
-  // Dropdown styles
-  dropdownContainer: {
-    paddingBottom: 8,
-  },
-  dropdownButton: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderRadius: 12,
-    padding: 10,
-    backgroundColor: "#ffffff",
-  },
-  dropdownButtonLight: {
-    borderColor: "#e5e7eb",
-    backgroundColor: "#ffffff",
-  },
-  dropdownButtonDark: {
-    borderColor: "#374151",
-    backgroundColor: "#1f2937",
-  },
-  dropdownButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  dropdownIcon: {
-    fontSize: 18,
-  },
-  dropdownButtonText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  dropdownMenu: {
-    width: "90%",
-    maxWidth: 400,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  dropdownMenuLight: {
-    backgroundColor: "#ffffff",
-    borderColor: "#e5e7eb",
-  },
-  dropdownMenuDark: {
-    backgroundColor: "#1f2937",
-    borderColor: "#374151",
-  },
-  dropdownItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
-  },
-  dropdownItemSelected: {
-    backgroundColor: "#eff6ff",
-  },
-  dropdownItemSelectedDark: {
-    backgroundColor: "#1e3a5f",
-  },
-  dropdownItemIcon: {
-    fontSize: 20,
-  },
-  dropdownItemText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#111827",
-  },
-  dropdownItemTextSelected: {
-    fontWeight: "600",
-    color: "#2563eb",
-  },
-  // Content styles
-  contentScrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    // padding: 16,
-    paddingTop: 8,
-  },
-  reportCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  borderLight: {
-    borderColor: "#e5e7eb",
-    backgroundColor: "#ffffff",
-  },
-  borderDark: {
-    borderColor: "#374151",
-    backgroundColor: "#1f2937",
-  },
-  reportTitle: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#111827",
-    marginBottom: 8,
-  },
-  tagContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  tagBlue: {
-    backgroundColor: "#2563eb",
-  },
-  tagLight: {
-    backgroundColor: "#f3f4f6",
-  },
-  tagDark: {
-    backgroundColor: "#1f2937",
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  tagTextWhite: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  tagTextLight: {
-    color: "#374151",
-  },
-  tagTextDark: {
-    color: "#d1d5db",
-  },
-  ratingCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  ratingTitle: {
-    color: "#1d4ed8",
-    fontWeight: "bold",
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  ratingDate: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 8,
-  },
-  conferenceCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  conferenceTitle: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#111827",
-    marginBottom: 8,
-  },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  conferenceDate: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-  calendarIcon: {
-    fontSize: 16,
-  },
-  emptyText: {
-    color: "#6b7280",
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 40,
-  },
-  textWhite: {
-    color: "#ffffff",
-  },
-  textGray: {
-    color: "#9ca3af",
-  },
-  textBlue: {
-    color: "#60a5fa",
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    containerDark: {
+      backgroundColor: c.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: 128,
+      backgroundColor: "transparent",
+    },
+    // Dropdown styles
+    dropdownContainer: {
+      paddingBottom: 8,
+    },
+    dropdownButton: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderWidth: 1.5,
+      borderRadius: 12,
+      padding: 10,
+      backgroundColor: c.card,
+    },
+    dropdownButtonLight: {
+      borderColor: c.border,
+      backgroundColor: c.card,
+    },
+    dropdownButtonDark: {
+      borderColor: c.border,
+      backgroundColor: c.card,
+    },
+    dropdownButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    dropdownIcon: {
+      fontSize: 18,
+    },
+    dropdownButtonText: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: c.text,
+    },
+    dropdownArrow: {
+      fontSize: 12,
+      color: c.textSecondary,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: c.overlay,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    dropdownMenu: {
+      width: "90%",
+      maxWidth: 400,
+      borderRadius: 12,
+      borderWidth: 1,
+      overflow: "hidden",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.5 : 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    dropdownMenuLight: {
+      backgroundColor: c.card,
+      borderColor: c.border,
+    },
+    dropdownMenuDark: {
+      backgroundColor: c.card,
+      borderColor: c.border,
+    },
+    dropdownItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 16,
+      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    dropdownItemSelected: {
+      backgroundColor: c.goldLight,
+    },
+    dropdownItemSelectedDark: {
+      backgroundColor: c.goldLight,
+    },
+    dropdownItemIcon: {
+      fontSize: 20,
+    },
+    dropdownItemText: {
+      fontSize: 15,
+      fontWeight: "500",
+      color: c.text,
+    },
+    dropdownItemTextSelected: {
+      fontWeight: "600",
+      color: c.gold,
+    },
+    // Content styles
+    contentScrollView: {
+      flex: 1,
+    },
+    contentContainer: {
+      // padding: 16,
+      paddingTop: 8,
+    },
+    reportCard: {
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    borderLight: {
+      borderColor: c.border,
+      backgroundColor: c.card,
+    },
+    borderDark: {
+      borderColor: c.border,
+      backgroundColor: c.card,
+    },
+    reportTitle: {
+      fontWeight: "bold",
+      fontSize: 16,
+      color: c.text,
+      marginBottom: 8,
+    },
+    tagContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    tag: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    tagBlue: {
+      backgroundColor: c.gold,
+    },
+    tagLight: {
+      backgroundColor: c.surfaceElevated,
+    },
+    tagDark: {
+      backgroundColor: c.surfaceElevated,
+    },
+    tagText: {
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    tagTextWhite: {
+      color: c.onGold,
+      fontSize: 12,
+      fontWeight: "500",
+    },
+    tagTextLight: {
+      color: c.textSecondary,
+    },
+    tagTextDark: {
+      color: c.textSecondary,
+    },
+    ratingCard: {
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    ratingTitle: {
+      color: c.gold,
+      fontWeight: "bold",
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    ratingDate: {
+      fontSize: 12,
+      color: c.textSecondary,
+      marginTop: 8,
+    },
+    conferenceCard: {
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    conferenceTitle: {
+      fontWeight: "bold",
+      fontSize: 16,
+      color: c.text,
+      marginBottom: 8,
+    },
+    dateContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    conferenceDate: {
+      fontSize: 14,
+      color: c.textSecondary,
+    },
+    calendarIcon: {
+      fontSize: 16,
+    },
+    emptyText: {
+      color: c.textSecondary,
+      fontSize: 14,
+      textAlign: "center",
+      paddingVertical: 40,
+    },
+    textWhite: {
+      color: c.text,
+    },
+    textGray: {
+      color: c.textSecondary,
+    },
+    textBlue: {
+      color: c.gold,
+    },
+  });
 
 export default Documents;

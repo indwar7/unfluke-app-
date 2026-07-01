@@ -516,10 +516,14 @@ import {
   postCheckCoupon,
 } from "../../Unfluke_helpers/backend_helper";
 import { Config } from "../../helpers/config";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 function Billing({ tier, email, name, user, isOpenModal, toggleModal }) {
   // All hooks must run unconditionally (Rules of Hooks) — the early bail-out
   // for missing tier/user happens AFTER every hook below.
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
   const [message, setMessage] = useState({ status: 0, message: "" });
   const [values, setValues] = useState({
     amount: 0,
@@ -672,7 +676,7 @@ const {  height } = useWindowDimensions()
         <View style={[styles.modalContainer,{    height:height*0.8 ,
 }]}>
           <LinearGradient
-            colors={["#d667cd", "#6b97f5"]}
+            colors={[c.goldBright, c.gold, c.goldDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientBackground}
@@ -865,7 +869,7 @@ const {  height } = useWindowDimensions()
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={c.onGold} />
                   ) : (
                     <Text style={styles.payButtonText}>
                       Pay ₹ {amountToBePaid}
@@ -881,10 +885,11 @@ const {  height } = useWindowDimensions()
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: c.overlay,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -915,13 +920,13 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 18,
-    color: "#fff",
+    color: c.onGold,
     fontWeight: "600",
   },
   headerTitle: {
     fontSize: 19,
     fontWeight: "700",
-    color: "#251f57",
+    color: c.onGold,
     textAlign: "center",
     lineHeight: 28,
     marginTop:8
@@ -934,20 +939,20 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 10,
     padding: 20,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: isDark ? 0.5 : 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
   cardTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#4a5568",
+    color: c.text,
     textAlign: "center",
     marginBottom: 16,
   },
@@ -960,26 +965,26 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   checkIcon: {
-    color: "#22c55e",
+    color: c.success,
     fontSize: 13,
     fontWeight: "700",
     marginRight: 6,
   },
   featureText: {
     fontSize: 15,
-    color: "#333",
+    color: c.text,
     flex: 1,
   },
   featureDetail: {
     fontSize: 13,
-    color: "#e27498",
+    color: c.textSecondary,
     fontWeight: "500",
     paddingLeft: 24,
     marginTop: 2,
   },
   dashedDivider: {
     borderBottomWidth: 2,
-    borderBottomColor: "#aaa",
+    borderBottomColor: c.border,
     borderStyle: "dashed",
     marginVertical: 16,
   },
@@ -996,17 +1001,17 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#4a5568",
+    color: c.text,
   },
   infoLabelHighlight: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#9f7aea",
+    color: c.gold,
   },
   infoValue: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#4a5568",
+    color: c.text,
   },
   inputSection: {
     marginBottom: 8,
@@ -1018,14 +1023,15 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: c.inputBorder,
     borderRadius: 6,
     padding: 12,
     fontSize: 15,
-    backgroundColor: "#f9fafb",
+    color: c.text,
+    backgroundColor: c.inputBg,
   },
   applyButton: {
-    backgroundColor: "#6b7280",
+    backgroundColor: c.gold,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 6,
@@ -1034,10 +1040,10 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   applyPointsButton: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.goldDeep,
   },
   applyButtonText: {
-    color: "#fff",
+    color: c.onGold,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -1048,16 +1054,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.borderLight,
   },
   couponAppliedText: {
     fontSize: 14,
-    color: "#22c55e",
+    color: c.success,
     fontWeight: "500",
   },
   removeText: {
     fontSize: 14,
-    color: "#ef4444",
+    color: c.error,
     fontWeight: "600",
   },
   billSummary: {
@@ -1070,43 +1076,43 @@ const styles = StyleSheet.create({
   },
   billLabel: {
     fontSize: 15,
-    color: "#333",
+    color: c.text,
   },
   billValue: {
     fontSize: 15,
-    color: "#333",
+    color: c.text,
     fontWeight: "500",
   },
   totalRow: {
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 2,
-    borderTopColor: "#333",
+    borderTopColor: c.border,
   },
   totalLabel: {
     fontSize: 16,
-    color: "#333",
+    color: c.text,
     fontWeight: "600",
   },
   totalValue: {
     fontSize: 16,
-    color: "#333",
+    color: c.text,
     fontWeight: "700",
   },
   payButton: {
-    backgroundColor: "#0AB39C",
+    backgroundColor: c.success,
     paddingVertical:11,
     borderRadius: 4,
     alignItems: "center",
     marginTop: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: isDark ? 0.4 : 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
   payButtonDisabled: {
-    backgroundColor: "#9ca3af",
+    backgroundColor: c.textMuted,
   },
   payButtonText: {
     color: "#fff",

@@ -200,6 +200,8 @@ import {
   useColorScheme,
 } from "react-native";
 import SubExpression from "./SubExpression";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const ScannerExpression = ({
   expression,
@@ -208,9 +210,8 @@ const ScannerExpression = ({
   onRemoveAt,
   onEditAt,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const dynamicStyles = styles(isDark);
+  const { colors: c, isDark } = useTheme();
+  const dynamicStyles = styles(c, isDark);
 
   // Flatten 2D expression to 1D for cursor tracking
   const flattenExpression = () => {
@@ -318,10 +319,10 @@ const ScannerExpression = ({
   );
 };
 
-const styles = (isDark) =>
+const styles = (c: AppColors, isDark: boolean) =>
   StyleSheet.create({
     container: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: c.card,
       borderRadius: 12,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 1 },
@@ -331,7 +332,7 @@ const styles = (isDark) =>
       flex: 1,
     },
     header: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: c.card,
       borderTopLeftRadius: 12,
       borderTopRightRadius: 12,
       paddingVertical: 8,
@@ -340,14 +341,14 @@ const styles = (isDark) =>
     headerTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: c.text,
       marginBottom: 8,
     },
     body: {
       borderWidth: 2,
       borderStyle: "dashed",
-      borderColor: isDark ? "#374151" : "#E5E7EB",
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      borderColor: c.border,
+      backgroundColor: c.surface,
       borderRadius: 16,
       marginHorizontal: 16,
       marginBottom: 16,
@@ -368,14 +369,14 @@ const styles = (isDark) =>
       minHeight: 40,
     },
     emptyText: {
-      color: isDark ? "#9CA3AF" : "#6B7280",
+      color: c.textSecondary,
       textAlign: "center",
       fontSize: 14,
     },
     cursorIndicator: {
       width: 2,
       height: 24,
-      backgroundColor: "#3B82F6",
+      backgroundColor: isDark ? c.goldBright : c.gold,
       marginRight: 4,
       // Blinking animation would need Animated API
     },
@@ -388,7 +389,7 @@ const styles = (isDark) =>
     },
     helperText: {
       fontSize: 12,
-      color: isDark ? "#9CA3AF" : "#6B7280",
+      color: c.textSecondary,
       textAlign: "center",
       paddingHorizontal: 16,
       paddingBottom: 12,

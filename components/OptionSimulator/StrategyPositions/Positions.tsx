@@ -1,19 +1,19 @@
 import React from "react";
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  useColorScheme 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
 } from "react-native";
 import { Checkbox } from 'expo-checkbox';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const PositionItem = ({ position, onToggle, onDelete, onEdit }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
-  const styles = getStyles(isDark);
+  const { colors: c, isDark } = useTheme();
+
+  const styles = getStyles(c, isDark);
   console.log("position is this",position)
   return (
     <View style={styles.container}>
@@ -23,7 +23,7 @@ const PositionItem = ({ position, onToggle, onDelete, onEdit }) => {
           value={position.isActive}
           onValueChange={() => onToggle(position.id)}
           style={styles.checkbox}
-          color={position.isActive ? '#2962FF' : undefined}
+          color={position.isActive ? c.gold : undefined}
         />
       </View>
 
@@ -58,10 +58,10 @@ const PositionItem = ({ position, onToggle, onDelete, onEdit }) => {
           onPress={() => onDelete(position.id)}
           activeOpacity={0.7}
         >
-          <Ionicons 
-            name="trash" 
-            size={16} 
-            color={'#787B86'}
+          <Ionicons
+            name="trash"
+            size={16}
+            color={c.textMuted}
           />
         </TouchableOpacity>
       </View>
@@ -69,7 +69,7 @@ const PositionItem = ({ position, onToggle, onDelete, onEdit }) => {
   );
 };
 
-const getStyles = (isDark) => StyleSheet.create({
+const getStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -77,7 +77,7 @@ const getStyles = (isDark) => StyleSheet.create({
     paddingVertical: 12,
     marginHorizontal: 4,
     marginBottom: 8,
-    backgroundColor: '#2A2E39',
+    backgroundColor: c.surface,
     borderRadius: 12,
     minHeight: 60,
   },
@@ -101,10 +101,10 @@ const getStyles = (isDark) => StyleSheet.create({
     justifyContent: 'center',
   },
   buyIndicator: {
-    backgroundColor: '#089981',
+    backgroundColor: c.profit,
   },
   sellIndicator: {
-    backgroundColor: '#F23645',
+    backgroundColor: c.loss,
   },
   indicatorText: {
     color: '#ffffff',
@@ -118,7 +118,7 @@ const getStyles = (isDark) => StyleSheet.create({
   positionText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#D1D4DC',
+    color: c.text,
     lineHeight: 18,
     fontVariant: ['tabular-nums'],
   },

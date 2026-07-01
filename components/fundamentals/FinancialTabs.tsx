@@ -2,10 +2,9 @@ import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from "react-native";
 import { EmptyState } from "./SharedComponents";
 import { SvgLineChart } from "./DataTabs";
-import {
-    fmt, valueColor, ACCENT, ACCENT_LIGHT, TEXT_PRIMARY, TEXT_SECONDARY,
-    TEXT_MUTED, BORDER_COLOR, ZEBRA_LIGHT, CARD_BG, GREEN, RED,
-} from "./constants";
+import { fmt } from "./constants";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 import {
     getSectionDataForPeriod,
     getHeadings,
@@ -22,10 +21,22 @@ const LABEL_W = Math.min(140, CONTENT_W * 0.38);
 const DATA_COL_W = 90;
 const ROW_H = 42;
 
+// Theme-aware value color: green for positive, red for negative, primary text otherwise.
+const themedValueColor = (c: AppColors, val: any): string => {
+    if (val === undefined || val === null) return c.text;
+    const num = typeof val === "number" ? val : parseFloat(val);
+    if (isNaN(num)) return c.text;
+    if (num > 0) return c.profit;
+    if (num < 0) return c.loss;
+    return c.text;
+};
+
 /* ═══════════════════════════════════════════════════════════
    HORIZONTAL SCROLLABLE TABLE
 ═══════════════════════════════════════════════════════════ */
 function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessage?: string }) {
+    const { colors: c, isDark } = useTheme();
+    const tbl = useMemo(() => makeTblStyles(c, isDark), [c, isDark]);
     const periodKeys = useMemo(() => response?.results ? getPeriodKeys(response) : [], [response]);
     const headings = useMemo(() => {
         if (!response?.results) return [];
@@ -108,7 +119,7 @@ function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessa
                                     const val = allData[pk]?.[row.label];
                                     return (
                                         <View key={pk} style={tbl.dataCell}>
-                                            <Text style={[tbl.dataTxt, { color: valueColor(val) }, row.isBold && tbl.boldTxt]}
+                                            <Text style={[tbl.dataTxt, { color: themedValueColor(c, val) }, row.isBold && tbl.boldTxt]}
                                                 numberOfLines={1}>
                                                 {fmt(val)}
                                             </Text>
@@ -130,6 +141,8 @@ function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessa
 function ExpandableList({ response, period, emptyMessage }: {
     response: any; period: string; emptyMessage?: string;
 }) {
+    const { colors: c, isDark } = useTheme();
+    const el = useMemo(() => makeElStyles(c, isDark), [c, isDark]);
     const periodKeys = useMemo(() => response?.results ? getPeriodKeys(response) : [], [response]);
     const headings = useMemo(() => {
         if (!response?.results) return [];
@@ -219,19 +232,16 @@ const RATIO_CHART_CONFIGS = [
         label: "ROCE (%)",
         // Matches: "ROCE (%)", "ROCE", "Return on Capital Employed", etc.
         matchKeywords: ["roce"],
-        color: "#1A1A2E",
     },
     {
         label: "ROE (%)",
         // Matches: "ROE(%)", "ROE", "Return on Equity", "Return on Equity / Networth", etc.
         matchKeywords: ["roe", "return on equity", "return on networth"],
-        color: "#1A1A2E",
     },
     {
         label: "PBIDT/Sales (%)",
         // Matches: "PBIDTM (%)", "PBIDT/Sales(%)", "PBIDT", etc.
         matchKeywords: ["pbidt", "pbidtm"],
-        color: "#1A1A2E",
     },
 ] as const;
 
@@ -249,6 +259,8 @@ function findRatioKey(dataKeys: string[], matchKeywords: readonly string[]): str
 }
 
 export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<string, any> | undefined; period: string; banking?: any }) {
+    const { colors: c, isDark } = useTheme();
+    const kr = useMemo(() => makeKrStyles(c, isDark), [c, isDark]);
     const allPeriods = useMemo(() => {
         if (!ratios) return [];
         try { return getRatioPeriodKeys(ratios) || []; } catch { return []; }
@@ -440,11 +452,11 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
                                 <Text style={kr.chartLabel}>{config.label}</Text>
                                 {hasData && (
                                     <View style={kr.chartMeta}>
-                                        <Text style={[kr.chartVal, { color: up ? GREEN : RED }]}>
+                                        <Text style={[kr.chartVal, { color: up ? c.profit : c.loss }]}>
                                             {latest.toFixed(2)}
                                         </Text>
-                                        <View style={[kr.chgBadge, { backgroundColor: up ? "#DCFCE7" : "#FEE2E2" }]}>
-                                            <Text style={[kr.chgText, { color: up ? GREEN : RED }]}>
+                                        <View style={[kr.chgBadge, { backgroundColor: up ? c.profitBg : c.lossBg }]}>
+                                            <Text style={[kr.chgText, { color: up ? c.profit : c.loss }]}>
                                                 {up ? "▲" : "▼"} {Math.abs(chg).toFixed(1)}%
                                             </Text>
                                         </View>
@@ -454,7 +466,7 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
                             {hasData ? (
                                 <SvgLineChart
                                     data={pts}
-                                    color={up ? GREEN : RED}
+                                    color={up ? c.profit : c.loss}
                                     areaColor={up ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)"}
                                     height={160}
                                 />
@@ -498,7 +510,7 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
                                 {group.items.map((item, i) => (
                                     <View key={i} style={[kr.ratioRow, i % 2 === 0 && kr.ratioRowAlt]}>
                                         <Text style={kr.ratioLabel} numberOfLines={2}>{item}</Text>
-                                        <Text style={[kr.ratioValue, { color: valueColor(data?.[item] ?? bankingData?.[item]) }]}>
+                                        <Text style={[kr.ratioValue, { color: themedValueColor(c, data?.[item] ?? bankingData?.[item]) }]}>
                                             {getVal(item)}
                                         </Text>
                                     </View>
@@ -515,108 +527,108 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
 /* ═══════════════════════════════════════════════════════════
    TABLE STYLES
 ═══════════════════════════════════════════════════════════ */
-const tbl = StyleSheet.create({
+const makeTblStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     container: {
         borderRadius: 12, overflow: "hidden",
-        borderWidth: 1, borderColor: BORDER_COLOR, backgroundColor: CARD_BG,
+        borderWidth: 1, borderColor: c.border, backgroundColor: c.card,
         shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+        shadowOpacity: isDark ? 0.35 : 0.05, shadowRadius: 3, elevation: 2,
     },
     tableWrap: { flexDirection: "row" },
-    stickyCol: { width: LABEL_W, borderRightWidth: 1, borderRightColor: BORDER_COLOR, zIndex: 10, backgroundColor: CARD_BG },
-    stickyHeader: { width: LABEL_W, height: ROW_H, justifyContent: "center", paddingHorizontal: 10, backgroundColor: ACCENT },
-    stickyCell: { width: LABEL_W, height: ROW_H, justifyContent: "center", paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E2E8F0" },
-    stickyTxt: { fontSize: 11, color: TEXT_SECONDARY, lineHeight: 15 },
+    stickyCol: { width: LABEL_W, borderRightWidth: 1, borderRightColor: c.border, zIndex: 10, backgroundColor: c.card },
+    stickyHeader: { width: LABEL_W, height: ROW_H, justifyContent: "center", paddingHorizontal: 10, backgroundColor: c.gold },
+    stickyCell: { width: LABEL_W, height: ROW_H, justifyContent: "center", paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
+    stickyTxt: { fontSize: 11, color: c.textSecondary, lineHeight: 15 },
     dataHeaderRow: { flexDirection: "row" },
-    dataHeaderCell: { width: DATA_COL_W, height: ROW_H, justifyContent: "center", alignItems: "center", backgroundColor: ACCENT },
-    headerTxt: { fontSize: 11, fontWeight: "700", color: "#fff", textAlign: "center" },
+    dataHeaderCell: { width: DATA_COL_W, height: ROW_H, justifyContent: "center", alignItems: "center", backgroundColor: c.gold },
+    headerTxt: { fontSize: 11, fontWeight: "700", color: c.onGold, textAlign: "center" },
     dataRow: { flexDirection: "row" },
-    dataCell: { width: DATA_COL_W, height: ROW_H, justifyContent: "center", alignItems: "flex-end", paddingHorizontal: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E2E8F0" },
+    dataCell: { width: DATA_COL_W, height: ROW_H, justifyContent: "center", alignItems: "flex-end", paddingHorizontal: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
     dataTxt: { fontSize: 11, fontWeight: "500", textAlign: "right" },
-    zebraOdd: { backgroundColor: ZEBRA_LIGHT },
-    boldRow: { backgroundColor: ACCENT_LIGHT },
-    boldTxt: { fontWeight: "700", color: TEXT_PRIMARY, fontSize: 11 },
-    childTxt: { color: TEXT_MUTED, fontSize: 10, paddingLeft: 6 },
+    zebraOdd: { backgroundColor: c.surfaceElevated },
+    boldRow: { backgroundColor: c.surfaceElevated },
+    boldTxt: { fontWeight: "700", color: c.text, fontSize: 11 },
+    childTxt: { color: c.textMuted, fontSize: 10, paddingLeft: 6 },
 });
 
-const el = StyleSheet.create({
+const makeElStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     rowWrap: { marginBottom: 8 },
     rowHeader: {
         flexDirection: "row", justifyContent: "space-between", alignItems: "center",
         paddingVertical: 12, paddingHorizontal: 12,
-        backgroundColor: CARD_BG, borderRadius: 8, borderWidth: 1, borderColor: BORDER_COLOR,
+        backgroundColor: c.card, borderRadius: 8, borderWidth: 1, borderColor: c.border,
     },
     rowLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
-    plusIcon: { fontSize: 16, fontWeight: "bold", color: ACCENT, marginRight: 8, width: 16 },
-    rowTitle: { fontSize: 13, fontWeight: "600", color: TEXT_PRIMARY, flex: 1 },
+    plusIcon: { fontSize: 16, fontWeight: "bold", color: c.gold, marginRight: 8, width: 16 },
+    rowTitle: { fontSize: 13, fontWeight: "600", color: c.text, flex: 1 },
     rowRight: { flexDirection: "row", alignItems: "center" },
-    rowValue: { fontSize: 13, fontWeight: "700", color: TEXT_PRIMARY, marginRight: 8 },
-    chevron: { fontSize: 18, color: TEXT_MUTED, transform: [{ rotate: "90deg" }], marginLeft: 8 },
+    rowValue: { fontSize: 13, fontWeight: "700", color: c.text, marginRight: 8 },
+    chevron: { fontSize: 18, color: c.textMuted, transform: [{ rotate: "90deg" }], marginLeft: 8 },
     chevronOpen: { transform: [{ rotate: "-90deg" }] },
     childrenWrap: {
-        backgroundColor: "#F8FAFC", borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
-        borderWidth: 1, borderColor: BORDER_COLOR, borderTopWidth: 0, marginTop: -4, paddingTop: 8, paddingBottom: 8,
+        backgroundColor: c.surfaceElevated, borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
+        borderWidth: 1, borderColor: c.border, borderTopWidth: 0, marginTop: -4, paddingTop: 8, paddingBottom: 8,
     },
     childRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, paddingHorizontal: 16, paddingLeft: 36 },
-    childLabel: { fontSize: 12, color: TEXT_SECONDARY, flex: 1 },
-    childValue: { fontSize: 12, fontWeight: "500", color: TEXT_PRIMARY },
+    childLabel: { fontSize: 12, color: c.textSecondary, flex: 1 },
+    childValue: { fontSize: 12, fontWeight: "500", color: c.text },
 });
 
 /* ═══════════════════════════════════════════════════════════
    KEY RATIOS STYLES
 ═══════════════════════════════════════════════════════════ */
-const kr = StyleSheet.create({
+const makeKrStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     // Charts
-    chartsTitle: { fontSize: 16, fontWeight: "700", color: TEXT_PRIMARY, marginBottom: 12 },
+    chartsTitle: { fontSize: 16, fontWeight: "700", color: c.text, marginBottom: 12 },
     chartsContainer: { gap: 14, marginBottom: 20 },
     chartCard: {
-        backgroundColor: CARD_BG, borderRadius: 12, overflow: "hidden",
-        borderWidth: 1, borderColor: BORDER_COLOR,
+        backgroundColor: c.card, borderRadius: 12, overflow: "hidden",
+        borderWidth: 1, borderColor: c.border,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05, shadowRadius: 3, padding: 16,
+        shadowOpacity: isDark ? 0.35 : 0.05, shadowRadius: 3, padding: 16,
     },
     chartHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-    chartLabel: { fontSize: 15, fontWeight: "700", color: TEXT_PRIMARY },
+    chartLabel: { fontSize: 15, fontWeight: "700", color: c.text },
     chartMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
     chartVal: { fontSize: 18, fontWeight: "800" },
     chgBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
     chgText: { fontSize: 11, fontWeight: "700" },
     noDataBox: { height: 80, justifyContent: "center", alignItems: "center" },
-    noDataText: { fontSize: 13, color: TEXT_MUTED },
+    noDataText: { fontSize: 13, color: c.textMuted },
     // Period badge
     periodBadgeRow: {
         flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 8,
     },
-    periodBadgeLabel: { fontSize: 12, color: TEXT_MUTED },
+    periodBadgeLabel: { fontSize: 12, color: c.textMuted },
     periodBadge: {
-        backgroundColor: ACCENT, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
+        backgroundColor: c.gold, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6,
     },
-    periodBadgeTxt: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
+    periodBadgeTxt: { fontSize: 12, fontWeight: "700", color: c.onGold },
     sectionAccent: {
         width: 4, height: 18, borderRadius: 2,
-        backgroundColor: ACCENT, marginRight: 10,
+        backgroundColor: c.gold, marginRight: 10,
     },
     // Collapsible group boxes
     collapseGroupWrap: {
         marginBottom: 14,
         borderRadius: 10, overflow: "hidden",
-        borderWidth: 1, borderColor: BORDER_COLOR,
-        backgroundColor: CARD_BG,
+        borderWidth: 1, borderColor: c.border,
+        backgroundColor: c.card,
         elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04, shadowRadius: 2,
+        shadowOpacity: isDark ? 0.3 : 0.04, shadowRadius: 2,
     },
     collapseGroupHeader: {
         flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        backgroundColor: "#F1F5F9", paddingVertical: 14, paddingHorizontal: 14,
+        backgroundColor: c.surfaceElevated, paddingVertical: 14, paddingHorizontal: 14,
     },
     collapseGroupLeft: {
         flexDirection: "row", alignItems: "center", flex: 1,
     },
     collapseGroupTitle: {
-        fontSize: 15, fontWeight: "700", color: "#0F172A",
+        fontSize: 15, fontWeight: "700", color: c.text,
     },
     collapseChevron: {
-        fontSize: 22, color: TEXT_MUTED, fontWeight: "600",
+        fontSize: 22, color: c.textMuted, fontWeight: "600",
         transform: [{ rotate: "0deg" }],
     },
     collapseChevronOpen: {
@@ -628,9 +640,9 @@ const kr = StyleSheet.create({
     ratioRow: {
         flexDirection: "row", justifyContent: "space-between", alignItems: "center",
         paddingVertical: 11, paddingHorizontal: 16,
-        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#F1F5F9",
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderLight,
     },
-    ratioRowAlt: { backgroundColor: "#F8FAFC" },
-    ratioLabel: { flex: 1, fontSize: 13, color: TEXT_SECONDARY, fontWeight: "500", paddingRight: 8 },
+    ratioRowAlt: { backgroundColor: c.surfaceElevated },
+    ratioLabel: { flex: 1, fontSize: 13, color: c.textSecondary, fontWeight: "500", paddingRight: 8 },
     ratioValue: { fontSize: 13, fontWeight: "700", textAlign: "right" },
 });

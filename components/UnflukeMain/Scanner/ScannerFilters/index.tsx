@@ -679,11 +679,12 @@ import {
   getOptionsStocks,
 } from "../../Utils/general_api_functions";
 import OptionsAdvanced from "./OptionsAdvanced";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const dynamicStyles = styles(isDark);
+  const { colors: c, isDark } = useTheme();
+  const dynamicStyles = styles(c, isDark);
 
   const [segment1aList, setSegment1aList] = useState([]);
   const [equityStocks, setEquityStocks] = useState([]);
@@ -906,14 +907,14 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
                     onValueChange={(value) => resetSegment1a2a(value)}
                     enabled={!isDisabled}
                     style={dynamicStyles.picker}
-                    dropdownIconColor={isDark ? "#9CA3AF" : "#6B7280"}
+                    dropdownIconColor={c.textMuted}
                   >
                     {segments.map((option) => (
                       <Picker.Item
                         key={option.value}
                         label={option.name}
                         value={option.value}
-                        color={isDark ? "#FFFFFF" : "#111827"}
+                        color={c.text}
                         style={{ fontSize: 14 }}
                       />
                     ))}
@@ -966,14 +967,14 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
                     }}
                     enabled={!isDisabled}
                     style={dynamicStyles.picker}
-                    dropdownIconColor={isDark ? "#9CA3AF" : "#6B7280"}
+                    dropdownIconColor={c.textMuted}
                   >
                     {segment1aList.map((option, index) => (
                       <Picker.Item
                         key={index}
                         label={option}
                         value={option}
-                        color={isDark ? "#FFFFFF" : "#111827"}
+                        color={c.text}
                         style={{ fontSize: 14 }}
                       />
                     ))}
@@ -995,14 +996,14 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
                     onValueChange={(value) => setSegment2a([value])}
                     enabled={!isDisabled}
                     style={dynamicStyles.picker}
-                    dropdownIconColor={isDark ? "#9CA3AF" : "#6B7280"}
+                    dropdownIconColor={c.textMuted}
                   >
                     {equitySegment2a.map((option, index) => (
                       <Picker.Item
                         key={index}
                         label={option}
                         value={option}
-                        color={isDark ? "#FFFFFF" : "#111827"}
+                        color={c.text}
                         style={{ fontSize: 14 }}
                       />
                     ))}
@@ -1019,14 +1020,14 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
                     onValueChange={(value) => setSegment2a([value])}
                     enabled={!isDisabled}
                     style={dynamicStyles.picker}
-                    dropdownIconColor={isDark ? "#9CA3AF" : "#6B7280"}
+                    dropdownIconColor={c.textMuted}
                   >
                     {indexSegment2a.map((option, index) => (
                       <Picker.Item
                         key={index}
                         label={option}
                         value={option}
-                        color={isDark ? "#FFFFFF" : "#111827"}
+                        color={c.text}
                         style={{ fontSize: 14 }}
                       />
                     ))}
@@ -1052,14 +1053,14 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
                     onValueChange={(value) => setSegment2a([value])}
                     enabled={!isDisabled}
                     style={dynamicStyles.picker}
-                    dropdownIconColor={isDark ? "#9CA3AF" : "#6B7280"}
+                    dropdownIconColor={c.textMuted}
                   >
                     {futureSegment2a.map((option, index) => (
                       <Picker.Item
                         key={index}
                         label={option}
                         value={option}
-                        color={isDark ? "#FFFFFF" : "#111827"}
+                        color={c.text}
                         style={{ fontSize: 14 }}
                       />
                     ))}
@@ -1164,14 +1165,14 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
                       })
                     }
                     style={dynamicStyles.picker}
-                    dropdownIconColor={isDark ? "#9CA3AF" : "#6B7280"}
+                    dropdownIconColor={c.textMuted}
                   >
                     {scannerGlobalTimeframes.map((option, index) => (
                       <Picker.Item
                         key={index}
                         label={option}
                         value={option}
-                        color={isDark ? "#FFFFFF" : "#111827"}
+                        color={c.text}
                         style={{ fontSize: 14 }}
                       />
                     ))}
@@ -1241,7 +1242,10 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
                       target: { name: "showLatestRes", checked: value },
                     })
                   }
-                  trackColor={{ false: "#D1D5DB", true: "#3B82F6" }}
+                  trackColor={{
+                    false: isDark ? "#4B5563" : "#D1D5DB",
+                    true: isDark ? c.goldBright : c.gold,
+                  }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -1253,10 +1257,10 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
   );
 }; 
 
-const styles = (isDark) =>
+const styles = (c: AppColors, isDark: boolean) =>
   StyleSheet.create({
     container: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: c.card,
       borderRadius: 12,
       padding: 16,
       shadowColor: "#000",
@@ -1269,7 +1273,7 @@ const styles = (isDark) =>
     title: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: c.text,
       marginBottom: 16,
     },
     scrollView: {
@@ -1292,7 +1296,7 @@ const styles = (isDark) =>
     label: {
       fontSize: 14,
       fontWeight: "500",
-      color: isDark ? "#D1D5DB" : "#374151",
+      color: c.textSecondary,
       marginBottom: 8,
     },
     labelWithIcon: {
@@ -1304,7 +1308,7 @@ const styles = (isDark) =>
       width: 16,
       height: 16,
       borderRadius: 8,
-      backgroundColor: "#9CA3AF",
+      backgroundColor: isDark ? c.goldMuted : c.primaryMuted,
       justifyContent: "center",
       alignItems: "center",
       marginLeft: 6,
@@ -1316,21 +1320,21 @@ const styles = (isDark) =>
     },
     pickerContainer: {
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
+      borderColor: c.inputBorder,
       borderRadius: 8,
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: c.inputBg,
       overflow: "hidden",
     },
     picker: {
       paddingVertical: -6,
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: c.text,
     },
     timeButton: {
       height: 48,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
+      borderColor: c.inputBorder,
       borderRadius: 8,
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: c.inputBg,
       justifyContent: "center",
       paddingHorizontal: 12,
     },
@@ -1341,7 +1345,7 @@ const styles = (isDark) =>
     },
     timeButtonText: {
       fontSize: 14,
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: c.text,
       fontWeight: "500",
     },
     timeButtonIcon: {
@@ -1360,23 +1364,23 @@ const styles = (isDark) =>
       height: 20,
       borderRadius: 10,
       borderWidth: 2,
-      borderColor: isDark ? "#6B7280" : "#D1D5DB",
+      borderColor: c.border,
       justifyContent: "center",
       alignItems: "center",
       marginRight: 8,
     },
     radioCircleSelected: {
-      borderColor: "#3B82F6",
+      borderColor: isDark ? c.goldBright : c.gold,
     },
     radioDot: {
       width: 10,
       height: 10,
       borderRadius: 5,
-      backgroundColor: "#3B82F6",
+      backgroundColor: isDark ? c.goldBright : c.gold,
     },
     radioLabel: {
       fontSize: 14,
-      color: isDark ? "#D1D5DB" : "#4B5563",
+      color: c.textSecondary,
     },
     toggleRow: {
       flexDirection: "row",

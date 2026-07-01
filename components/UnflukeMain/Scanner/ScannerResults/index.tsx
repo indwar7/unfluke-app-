@@ -262,11 +262,12 @@ import * as Sharing from "expo-sharing";
 import { useDispatch } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import { setSelectedStock } from "../../../../redux/Unfluke_slices/globalStock/reducer";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const ScannerResults = ({ results, downloadUrl, type, headers }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const dynamicStyles = styles(isDark);
+  const { colors: c, isDark } = useTheme();
+  const dynamicStyles = styles(c, isDark);
 
   // Navigation Logic
   const navigation = useNavigation();
@@ -709,10 +710,10 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
   );
 };
 
-const styles = (isDark) =>
+const styles = (c: AppColors, isDark: boolean) =>
   StyleSheet.create({
     container: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: c.card,
       borderRadius: 12,
       marginVertical: 16,
       shadowColor: "#000",
@@ -727,14 +728,14 @@ const styles = (isDark) =>
       alignItems: "center",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#E5E7EB",
+      borderBottomColor: c.border,
       flexWrap: "wrap",
       gap: 8,
     },
     cardTitle: {
       fontSize: 18,
       fontWeight: "600",
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: c.text,
     },
     headerActions: {
       flexDirection: "row",
@@ -743,7 +744,7 @@ const styles = (isDark) =>
     },
     viewToggle: {
       flexDirection: "row",
-      backgroundColor: isDark ? "#374151" : "#F3F4F6",
+      backgroundColor: c.surfaceElevated,
       borderRadius: 8,
       padding: 2,
     },
@@ -753,20 +754,20 @@ const styles = (isDark) =>
       borderRadius: 6,
     },
     toggleButtonActive: {
-      backgroundColor: "#3B82F6",
+      backgroundColor: isDark ? c.goldBright : c.gold,
     },
     toggleButtonText: {
       fontSize: 13,
       fontWeight: "500",
-      color: isDark ? "#D1D5DB" : "#6B7280",
+      color: c.textSecondary,
     },
     toggleButtonTextActive: {
-      color: "#FFFFFF",
+      color: c.onGold,
     },
     downloadButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#10B981",
+      backgroundColor: c.success,
       paddingVertical: 8,
       paddingHorizontal: 12,
       borderRadius: 8,
@@ -788,9 +789,9 @@ const styles = (isDark) =>
     },
     tableHeader: {
       flexDirection: "row",
-      backgroundColor: isDark ? "#374151" : "#F9FAFB",
+      backgroundColor: c.surfaceElevated,
       borderBottomWidth: 2,
-      borderBottomColor: isDark ? "#4B5563" : "#E5E7EB",
+      borderBottomColor: c.border,
     },
     headerCell: {
       width: 120,
@@ -800,7 +801,7 @@ const styles = (isDark) =>
       alignItems: "center",
       justifyContent: "space-between",
       borderRightWidth: 1,
-      borderRightColor: isDark ? "#4B5563" : "#E5E7EB",
+      borderRightColor: c.border,
     },
     firstCell: {
       width: 60,
@@ -808,16 +809,16 @@ const styles = (isDark) =>
     headerText: {
       fontSize: 14,
       fontWeight: "600",
-      color: isDark ? "#F3F4F6" : "#374151",
+      color: c.text,
       flex: 1,
     },
     sortIcon: {
       fontSize: 12,
-      color: isDark ? "#6B7280" : "#9CA3AF",
+      color: c.textMuted,
       marginLeft: 4,
     },
     sortIconActive: {
-      color: isDark ? "#60A5FA" : "#3B82F6",
+      color: isDark ? c.goldBright : c.gold,
     },
     tableBody: {
       maxHeight: 450,
@@ -825,10 +826,10 @@ const styles = (isDark) =>
     tableRow: {
       flexDirection: "row",
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#F3F4F6",
+      borderBottomColor: c.border,
     },
     tableRowEven: {
-      backgroundColor: isDark ? "#1F2937" : "#F9FAFB",
+      backgroundColor: c.surface,
     },
     cell: {
       width: 120,
@@ -836,11 +837,11 @@ const styles = (isDark) =>
       paddingHorizontal: 12,
       justifyContent: "center",
       borderRightWidth: 1,
-      borderRightColor: isDark ? "#374151" : "#E5E7EB",
+      borderRightColor: c.border,
     },
     cellText: {
       fontSize: 14,
-      color: isDark ? "#D1D5DB" : "#4B5563",
+      color: c.textSecondary,
     },
 
     // Card Styles
@@ -849,19 +850,19 @@ const styles = (isDark) =>
       gap: 12,
     },
     card: {
-      backgroundColor: isDark ? "#111827" : "#F9FAFB",
+      backgroundColor: c.surface,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#E5E7EB",
+      borderColor: c.border,
       flexDirection: "row",
     },
     cardNumber: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "#3B82F6",
+      backgroundColor: isDark ? c.goldBright : c.gold,
       justifyContent: "center",
       alignItems: "center",
       marginRight: 12,
@@ -869,7 +870,7 @@ const styles = (isDark) =>
     cardNumberText: {
       fontSize: 16,
       fontWeight: "700",
-      color: "#FFFFFF",
+      color: c.onGold,
     },
     cardContent: {
       flex: 1,
@@ -877,7 +878,7 @@ const styles = (isDark) =>
     cardItemTitle: {
       fontSize: 18,
       fontWeight: "700",
-      color: isDark ? "#FFFFFF" : "#111827",
+      color: c.text,
       marginBottom: 12,
     },
     cardGrid: {
@@ -895,44 +896,44 @@ const styles = (isDark) =>
     cardLabel: {
       fontSize: 13,
       fontWeight: "500",
-      color: isDark ? "#9CA3AF" : "#6B7280",
+      color: c.textSecondary,
       marginRight: 6,
     },
     cardValue: {
       fontSize: 14,
       fontWeight: "600",
-      color: isDark ? "#F3F4F6" : "#111827",
+      color: c.text,
     },
     cardFooter: {
       marginTop: 8,
       paddingTop: 8,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#E5E7EB",
+      borderTopColor: c.border,
     },
     cardDate: {
       fontSize: 12,
-      color: isDark ? "#9CA3AF" : "#6B7280",
+      color: c.textSecondary,
     },
     cardIndicators: {
       marginTop: 12,
       paddingTop: 12,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#E5E7EB",
+      borderTopColor: c.border,
     },
 
     // Footer
     footer: {
       padding: 12,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#E5E7EB",
-      backgroundColor: isDark ? "#111827" : "#F9FAFB",
+      borderTopColor: c.border,
+      backgroundColor: c.surface,
       borderBottomLeftRadius: 12,
       borderBottomRightRadius: 12,
     },
     footerText: {
       fontSize: 14,
       fontWeight: "500",
-      color: isDark ? "#9CA3AF" : "#6B7280",
+      color: c.textSecondary,
       textAlign: "center",
     },
   });

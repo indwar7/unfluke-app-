@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { ChevronDown, Plus } from 'react-native-feather';
+import { useTheme } from '@/constants/ThemeContext';
+import type { AppColors } from '@/constants/Colors';
 
 const BankRatioCollapse = ({ item, getValue, yr, thickBorderRows }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { colors: c, isDark } = useTheme();
+  const styles = makeStyles(c, isDark);
 
   const toggleCollapse = () => {
     if (item?.children?.length > 0) {
@@ -26,10 +30,10 @@ const BankRatioCollapse = ({ item, getValue, yr, thickBorderRows }) => {
           <View style={styles.parentHeaderContent}>
             <Text style={styles.parentHeaderText}>{item?.title}</Text>
             <View style={styles.buttonCont}>
-            <ChevronDown 
-              width={16} 
-              height={16} 
-              color="#6b7280"
+            <ChevronDown
+              width={16}
+              height={16}
+              color={c.textSecondary}
               style={[
                 styles.chevron,
                 isOpen && styles.chevronOpen
@@ -106,11 +110,11 @@ const BankRatioCollapse = ({ item, getValue, yr, thickBorderRows }) => {
       >
         <View style={styles.headerContent}>
           <View style={styles.titleContainer}>
-            <Plus 
-              width={13} 
-              height={13} 
-              color="blue"
-              style={styles.plusIcon} 
+            <Plus
+              width={13}
+              height={13}
+              color={c.gold}
+              style={styles.plusIcon}
             />
             <Text style={[
               styles.titleText,
@@ -128,10 +132,10 @@ const BankRatioCollapse = ({ item, getValue, yr, thickBorderRows }) => {
               {getValue(yr, item?.title)}
             </Text>
             {(item?.children?.length > 0 || isThickBorder) && (
-              <ChevronDown 
-                width={16} 
-                height={16} 
-                color="#6b7280"
+              <ChevronDown
+                width={16}
+                height={16}
+                color={c.textSecondary}
                 style={[
                   styles.chevron,
                   isOpen && styles.chevronOpen
@@ -181,178 +185,179 @@ const BankRatioCollapse = ({ item, getValue, yr, thickBorderRows }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 13,
-  },
-  parentSectionContainer: {
-    marginBottom: 7,
-  },
-  parentHeader: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    backgroundColor: '#fafafa',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    marginBottom: 8,
-  },
-  parentHeaderContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    position:"relative"
-  },
-  parentHeaderText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#111827',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    paddingRight:24
-  },
-  buttonCont:{
-    position:"absolute", 
-    right:0
-  },
-  // Table styles similar to CashFlowTable
-  tableContainer: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    backgroundColor: '#f3f4f6',
-  },
-  tableHeaderText: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 13,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  lastTableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 13,
-    paddingHorizontal: 10,
-  },
-  evenRow: {
-    backgroundColor: 'white',
-  },
-  oddRow: {
-    backgroundColor: '#f9fafb',
-  },
-  tableRowTitle: {
-    color: '#111827',
-    flex: 1,
-    fontSize: 12,
-  },
-  tableRowValue: {
-    color: '#6b7280',
-    textAlign: 'right',
-    fontSize: 12,
-    marginLeft:5
-  },
-  childRowContainer: {
-    marginBottom: 8,
-  },
-  header: {
-    paddingTop: 10,
-    paddingBottom: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#d9d9d9',
-    backgroundColor: '#fcfcfc'
-  },
-  thickBorderHeader: {
-    borderTopWidth: 4,
-    borderTopColor: '#3b82f6',
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  plusIcon: {
-    marginLeft: 12,
-  },
-  titleText: {
-    fontSize: 12,
-    color: '#515050',
-    marginLeft: 8,
-  },
-  childTitleText: {
-    fontSize: 12,
-    color: '#515050',
-    marginLeft: 8,
-    paddingLeft: 16, // Indent for child items
-  },
-  thickBorderText: {
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    color: '#111827',
-  },
-  valueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginRight: 12,
-  },
-  valueText: {
-    fontSize: 12,
-    color: '#000000',
-  },
-  chevron: {
-    transform: [{ rotate: '0deg' }],
-  },
-  chevronOpen: {
-    transform: [{ rotate: '180deg' }],
-  },
-  childrenContainer: {
-    marginTop: -7,
-    marginBottom: -4,
-    borderBottomWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#d9d9d9',
-    paddingBottom: 8,
-    paddingTop: 16,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-  },
-  childItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    marginTop: -2,
-    paddingHorizontal: 24,
-  },
-  childText: {
-    fontSize: 12,
-    color: '#000000',
-  },
-  childValue: {
-    fontSize: 12,
-    color: '#000000',
-  },
-});
+const makeStyles = (c: AppColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      marginBottom: 13,
+    },
+    parentSectionContainer: {
+      marginBottom: 7,
+    },
+    parentHeader: {
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+      backgroundColor: c.surfaceElevated,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      marginBottom: 8,
+    },
+    parentHeaderContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      position: "relative"
+    },
+    parentHeaderText: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: c.text,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      paddingRight: 24
+    },
+    buttonCont: {
+      position: "absolute",
+      right: 0
+    },
+    // Table styles similar to CashFlowTable
+    tableContainer: {
+      backgroundColor: c.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: 'hidden',
+      marginBottom: 8,
+    },
+    tableHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 15,
+      paddingHorizontal: 10,
+      backgroundColor: c.surfaceElevated,
+    },
+    tableHeaderText: {
+      fontWeight: 'bold',
+      fontSize: 12,
+      color: c.textSecondary,
+    },
+    tableRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 13,
+      paddingHorizontal: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    lastTableRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 13,
+      paddingHorizontal: 10,
+    },
+    evenRow: {
+      backgroundColor: c.card,
+    },
+    oddRow: {
+      backgroundColor: c.surfaceElevated,
+    },
+    tableRowTitle: {
+      color: c.text,
+      flex: 1,
+      fontSize: 12,
+    },
+    tableRowValue: {
+      color: c.textSecondary,
+      textAlign: 'right',
+      fontSize: 12,
+      marginLeft: 5
+    },
+    childRowContainer: {
+      marginBottom: 8,
+    },
+    header: {
+      paddingTop: 10,
+      paddingBottom: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.card
+    },
+    thickBorderHeader: {
+      borderTopWidth: 4,
+      borderTopColor: c.gold,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    titleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    plusIcon: {
+      marginLeft: 12,
+    },
+    titleText: {
+      fontSize: 12,
+      color: c.textSecondary,
+      marginLeft: 8,
+    },
+    childTitleText: {
+      fontSize: 12,
+      color: c.textSecondary,
+      marginLeft: 8,
+      paddingLeft: 16, // Indent for child items
+    },
+    thickBorderText: {
+      fontWeight: 'bold',
+      textTransform: 'uppercase',
+      color: c.text,
+    },
+    valueContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginRight: 12,
+    },
+    valueText: {
+      fontSize: 12,
+      color: c.text,
+    },
+    chevron: {
+      transform: [{ rotate: '0deg' }],
+    },
+    chevronOpen: {
+      transform: [{ rotate: '180deg' }],
+    },
+    childrenContainer: {
+      marginTop: -7,
+      marginBottom: -4,
+      borderBottomWidth: 1,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderColor: c.border,
+      paddingBottom: 8,
+      paddingTop: 16,
+      borderBottomLeftRadius: 8,
+      borderBottomRightRadius: 8,
+    },
+    childItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 6,
+      marginTop: -2,
+      paddingHorizontal: 24,
+    },
+    childText: {
+      fontSize: 12,
+      color: c.text,
+    },
+    childValue: {
+      fontSize: 12,
+      color: c.text,
+    },
+  });
 
 export default BankRatioCollapse;
