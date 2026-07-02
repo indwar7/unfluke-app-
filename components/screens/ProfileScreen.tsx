@@ -27,7 +27,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { MembershipPlansList } from "../../redux/Unfluke_slices/thunks";
 import {
   postChangePassword,
@@ -109,6 +109,11 @@ const Settings = () => {
   const [email, setEmail] = useState(user?.email);
   const [isEmailVerified, setIsEmailVerified] = useState(!!user?.emailVerified);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+
+  // When arriving here from the Scanner "Click here to verify" link
+  // (navigate("profile", { verifyEmail: "1" })), auto-start verification.
+  const params = useLocalSearchParams();
+  const autoVerifyTriggered = React.useRef(false);
 
 
   // Handle email OTP verification
@@ -340,6 +345,15 @@ const Settings = () => {
       setIsSendingOtp(false);
     }
   };
+
+  // Auto-start email verification when redirected from the Scanner link.
+  useEffect(() => {
+    if (autoVerifyTriggered.current) return;
+    if (params?.verifyEmail !== "1") return;
+    if (!user || !email || isEmailVerified || isSendingOtp) return;
+    autoVerifyTriggered.current = true;
+    handleSendOtp();
+  }, [params?.verifyEmail, user, email, isEmailVerified]);
 
   useEffect(() => {
     if (!user) return;
