@@ -438,8 +438,8 @@ const StrategyFilters = (props) => {
 const getStyles = (isDark) =>
   StyleSheet.create({
     container: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#ffffff",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderWidth: 1,
       borderRadius: 12,
       marginBottom: 16,
@@ -487,8 +487,8 @@ const getStyles = (isDark) =>
       width: "100%",
       paddingHorizontal: 12,
       paddingVertical: 10,
-      backgroundColor: isDark ? "#111827" : "#f4f8fd",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#f4f8fd",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderWidth: 1,
       borderRadius: 6,
       marginTop: 2,
@@ -499,8 +499,8 @@ const getStyles = (isDark) =>
       width: "100%",
       paddingHorizontal: 12,
       paddingVertical: 12,
-      backgroundColor: isDark ? "#111827" : "#f4f8fd",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#f4f8fd",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderWidth: 1,
       borderRadius: 6,
       marginTop: 2,
@@ -557,8 +557,8 @@ const getStyles = (isDark) =>
       borderColor: "#2563eb",
     },
     weekdayUnselected: {
-      backgroundColor: isDark ? "#111827" : "#ffffff",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#ffffff",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
     },
     weekdayTextSelected: {
       color: "#ffffff",

@@ -360,10 +360,10 @@ const LegOptions = () => {
 const createStyles = (isDark) =>
   StyleSheet.create({
     container: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: isDark ? "#14161B" : "#ffffff",
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       paddingHorizontal: 16,
       paddingTop: 16,
       paddingBottom: 7
@@ -428,9 +428,9 @@ const createStyles = (isDark) =>
     pickerContainer: {
       marginTop: 6,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderRadius: 8,
-      backgroundColor: isDark ? "#111827" : "#f4f8fd",
+      backgroundColor: isDark ? "#14161B" : "#f4f8fd",
       fontSize: 12,
       paddingVertical: 1
     },
@@ -441,8 +441,8 @@ const createStyles = (isDark) =>
     //   width: '100%',
     //   paddingHorizontal: 12,
     //   paddingVertical: 10,
-    //   backgroundColor: isDark ? '#111827' : '#f4f8fd',
-    //   borderColor: isDark ? '#374151' : '#d1d5db',
+    //   backgroundColor: isDark ? '#14161B' : '#f4f8fd',
+    //   borderColor: isDark ? '#262A33' : '#d1d5db',
     //   borderWidth: 1,
     //   borderRadius: 6,
     //   marginTop:2,
@@ -460,9 +460,9 @@ const createStyles = (isDark) =>
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderRadius: 8,
-      backgroundColor: isDark ? "#111827" : "#f4f8fd",
+      backgroundColor: isDark ? "#14161B" : "#f4f8fd",
       justifyContent: "center",
     },
     timePickerButtonText: {
@@ -474,9 +474,9 @@ const createStyles = (isDark) =>
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderRadius: 8,
-      backgroundColor: isDark ? "#111827" : "#f4f8fd",
+      backgroundColor: isDark ? "#14161B" : "#f4f8fd",
       opacity: 0.5,
       justifyContent: "center",
     },

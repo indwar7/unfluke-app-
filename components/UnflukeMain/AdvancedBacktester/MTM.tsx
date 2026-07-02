@@ -132,10 +132,10 @@ const AdvancedMTM = ({ handleChange }) => {
 const styles = (isDark) =>
   StyleSheet.create({
     card: {
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       marginBottom: 24,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
@@ -144,13 +144,13 @@ const styles = (isDark) =>
       elevation: 3,
     },
     cardHeader: {
-      backgroundColor: isDark ? '#1F2937' : '#F9FAFB',
+      backgroundColor: isDark ? '#14161B' : '#F9FAFB',
       paddingVertical: 14,
       paddingHorizontal: 16,
       borderTopLeftRadius: 12,
       borderTopRightRadius: 12,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? '#374151' : '#E5E7EB',
+      borderBottomColor: isDark ? '#262A33' : '#E5E7EB',
     },
     headerTitle: {
       fontSize: 16,
@@ -175,12 +175,12 @@ const styles = (isDark) =>
     },
     input: {
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       borderRadius: 8,
       padding: 12,
       fontSize: 14,
       color: isDark ? '#FFFFFF' : '#111827',
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
     },
     trailingContainer: {
       flexDirection: 'row',

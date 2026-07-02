@@ -508,7 +508,7 @@
 // const styles = (isDark) =>
 //   StyleSheet.create({
 //     container: {
-//       backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+//       backgroundColor: isDark ? "#14161B" : "#FFFFFF",
 //       borderRadius: 12,
 //       padding: 16,
 //       shadowColor: "#000",
@@ -778,7 +778,7 @@ const IndicatorList = ({ indicators = [], onIndicatorTap, type }) => {
 const styles = (isDark) =>
   StyleSheet.create({
     container: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
       borderRadius: 12,
       padding: 16,
       shadowColor: "#000",

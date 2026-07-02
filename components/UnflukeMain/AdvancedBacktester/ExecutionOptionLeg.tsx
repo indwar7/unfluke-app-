@@ -375,8 +375,8 @@ const styles = (isDark) =>
       borderColor: '#3B82F6',
     },
     peButton: {
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-      borderColor: isDark ? '#374151' : '#D1D5DB',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
+      borderColor: isDark ? '#262A33' : '#D1D5DB',
     },
     buyButton: {
       backgroundColor: '#10B981',
@@ -398,9 +398,9 @@ const styles = (isDark) =>
     pickerWrapper: {
       flex: 1,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       borderRadius: 8,
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
       overflow: 'hidden',
     },
     picker: {
@@ -410,21 +410,21 @@ const styles = (isDark) =>
     inputGroupInput: {
       flex: 1,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       borderRadius: 8,
       padding: 12,
       fontSize: 14,
       color: isDark ? '#FFFFFF' : '#111827',
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
     },
     input: {
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       borderRadius: 8,
       padding: 12,
       fontSize: 14,
       color: isDark ? '#FFFFFF' : '#111827',
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
     },
   });
 

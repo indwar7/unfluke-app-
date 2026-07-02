@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { ChevronDown, Plus } from "react-native-feather";
+import { useTheme } from "@/constants/ThemeContext";
+import type { AppColors } from "@/constants/Colors";
 
 const QuaterlyResultsCollapse = ({ item, getValue, yr }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { title, children, isThick } = item;
+  const { colors: c } = useTheme();
+  const styles = makeStyles(c);
 
 
   const toggleCollapse = () => {
@@ -22,7 +26,7 @@ const QuaterlyResultsCollapse = ({ item, getValue, yr }) => {
       >
         <View style={styles.headerContent}>
           <View style={styles.titleContainer}>
-            <Plus width={13} height={13} color="blue" style={styles.plusIcon} />
+            <Plus width={13} height={13} color={c.info} style={styles.plusIcon} />
             <Text style={[styles.titleText, isThick && styles.boldText]}>
               {title}
             </Text>
@@ -36,7 +40,7 @@ const QuaterlyResultsCollapse = ({ item, getValue, yr }) => {
               <ChevronDown
                 width={16}
                 height={16}
-                color="#6b7280"
+                color={c.textMuted}
                 style={[styles.chevron, isOpen && styles.chevronOpen]}
               />
             )}
@@ -60,7 +64,7 @@ const QuaterlyResultsCollapse = ({ item, getValue, yr }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: AppColors) => StyleSheet.create({
   container: {
     marginBottom: 13,
   },
@@ -69,8 +73,8 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#d9d9d9',
-    backgroundColor: '#fcfcfc'
+    borderColor: c.border,
+    backgroundColor: c.card,
   },
   headerContent: {
     flexDirection: 'row',
@@ -86,7 +90,7 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontSize: 12,
-    color: '#515050',
+    color: c.textSecondary,
     marginLeft: 8,
   },
   valueContainer: {
@@ -97,7 +101,7 @@ const styles = StyleSheet.create({
   },
   valueText: {
     fontSize: 12,
-    color: '#000000',
+    color: c.text,
   },
   chevron: {
     transform: [{ rotate: '0deg' }],
@@ -111,7 +115,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: '#d9d9d9',
+    borderColor: c.border,
     paddingBottom: 8,
     paddingTop: 16,
     borderBottomLeftRadius: 8,
@@ -126,19 +130,19 @@ const styles = StyleSheet.create({
   },
   childText: {
     fontSize: 12,
-    color: '#000000',
+    color: c.text,
   },
   childValue: {
     fontSize: 12,
-    color: '#000000',
+    color: c.text,
   },
 
-  
+
   boldText: {
     fontWeight: "bold",
-    color: "#111827",
+    color: c.text,
   },
-  
+
 });
 
 export default QuaterlyResultsCollapse;

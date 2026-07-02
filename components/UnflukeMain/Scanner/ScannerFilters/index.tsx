@@ -274,7 +274,7 @@
 
 //   const styles = StyleSheet.create({
 //     container: {
-//       backgroundColor: isDark ? '#1f2937' : '#ffffff',
+//       backgroundColor: isDark ? '#14161B' : '#ffffff',
 //       borderRadius: 8,
 //       padding: 16,
 //       shadowColor: '#000',
@@ -313,9 +313,9 @@
 //     },
 //     pickerContainer: {
 //       borderWidth: 1,
-//       borderColor: isDark ? '#4b5563' : '#d1d5db',
+//       borderColor: isDark ? '#262A33' : '#d1d5db',
 //       borderRadius: 6,
-//       backgroundColor: isDark ? '#1f2937' : '#ffffff',
+//       backgroundColor: isDark ? '#14161B' : '#ffffff',
 //     },
 //     picker: {
 //       color: isDark ? '#ffffff' : '#111827',
@@ -323,9 +323,9 @@
 //     timeButton: {
 //       height: 48,
 //       borderWidth: 1,
-//       borderColor: isDark ? '#4b5563' : '#d1d5db',
+//       borderColor: isDark ? '#262A33' : '#d1d5db',
 //       borderRadius: 6,
-//       backgroundColor: isDark ? '#1f2937' : '#ffffff',
+//       backgroundColor: isDark ? '#14161B' : '#ffffff',
 //       paddingHorizontal: 12,
 //       justifyContent: 'center',
 //     },
@@ -335,7 +335,7 @@
 //     },
 //     timeButtonDisabled: {
 //       backgroundColor: isDark ? '#374151' : '#f3f4f6',
-//       borderColor: isDark ? '#4b5563' : '#e5e7eb',
+//       borderColor: isDark ? '#262A33' : '#e5e7eb',
 //     },
 //     radioContainer: {
 //       marginTop: 8,

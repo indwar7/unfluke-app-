@@ -386,8 +386,8 @@ const Leg = (props) => {
       marginBottom: 16,
     },
     card: {
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#ffffff",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderWidth: 1,
       borderRadius: 12,
       overflow: "hidden",
@@ -401,7 +401,7 @@ const Leg = (props) => {
       justifyContent: "space-between",
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: isDark ? "#1f2937" : "#ffffff",
+      backgroundColor: isDark ? "#14161B" : "#ffffff",
     },
     headerLeft: {
       flexDirection: "row",
@@ -466,17 +466,17 @@ const Leg = (props) => {
     pickerContainer: {
       marginTop: 2,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderRadius: 8,
-      backgroundColor: isDark ? "#111827" : "#f4f8fd",
+      backgroundColor: isDark ? "#14161B" : "#f4f8fd",
       fontSize: 12,
     },
     picker: {
       color: isDark ? "#ffffff" : "#000000",
     },
     input: {
-      backgroundColor: isDark ? "#111827" : "#f4f8fd",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#f4f8fd",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
       borderWidth: 1,
       borderRadius: 6,
       paddingHorizontal: 12,
@@ -505,28 +505,28 @@ const Leg = (props) => {
       borderColor: "#2563eb",
     },
     ceButtonInactive: {
-      backgroundColor: isDark ? "#111827" : "#ffffff",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#ffffff",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
     },
     peButton: {
       backgroundColor: "#2563eb",
       borderColor: "#2563eb",
     },
     peButtonInactive: {
-      backgroundColor: isDark ? "#111827" : "#ffffff",
-      borderColor: isDark ? "#374151" : "#d1d5db",
+      backgroundColor: isDark ? "#14161B" : "#ffffff",
+      borderColor: isDark ? "#262A33" : "#d1d5db",
     },
     buyButton: {
       backgroundColor: "#16a34a",
     },
     buyButtonInactive: {
-      backgroundColor: isDark ? "#111827" : "#f3f4f6",
+      backgroundColor: isDark ? "#14161B" : "#f3f4f6",
     },
     sellButton: {
       backgroundColor: "#dc2626",
     },
     sellButtonInactive: {
-      backgroundColor: isDark ? "#111827" : "#f3f4f6",
+      backgroundColor: isDark ? "#14161B" : "#f3f4f6",
     },
     buttonText: {
       fontSize: 14,

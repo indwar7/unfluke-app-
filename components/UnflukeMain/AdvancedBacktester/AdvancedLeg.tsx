@@ -803,9 +803,9 @@ const styles = (isDark) =>
     pickerWrapper: {
       flex: 1,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       borderRadius: 8,
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
       overflow: 'hidden',
     },
     picker: {
@@ -816,18 +816,18 @@ const styles = (isDark) =>
     inputGroupInput: {
       flex: 1/2,
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       borderRadius: 8,
       padding: 12,
       fontSize: 14,
       color: isDark ? '#FFFFFF' : '#111827',
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
     },
     pickerContainer: {
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#E5E7EB',
+      borderColor: isDark ? '#262A33' : '#E5E7EB',
       borderRadius: 8,
-      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+      backgroundColor: isDark ? '#14161B' : '#FFFFFF',
       overflow: 'hidden',
     },
   });

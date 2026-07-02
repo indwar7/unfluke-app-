@@ -318,7 +318,7 @@ const styles = (isDark, bottomInset = 0) =>
       paddingBottom: bottomInset,
     },
     modalContainer: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       maxHeight: "80%",
@@ -329,7 +329,7 @@ const styles = (isDark, bottomInset = 0) =>
       alignItems: "center",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#E5E7EB",
+      borderBottomColor: isDark ? "#262A33" : "#E5E7EB",
     },
     title: {
       fontSize: 20,
@@ -348,10 +348,10 @@ const styles = (isDark, bottomInset = 0) =>
       justifyContent: "space-between",
       alignItems: "center",
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
+      borderColor: isDark ? "#262A33" : "#D1D5DB",
       borderRadius: 8,
       padding: 14,
-      backgroundColor: isDark ? "#111827" : "#FFFFFF",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
       marginBottom: 16,
     },
     selectButtonText: {
@@ -366,10 +366,10 @@ const styles = (isDark, bottomInset = 0) =>
     candleScroll: {
       maxHeight: 300,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
+      borderColor: isDark ? "#262A33" : "#D1D5DB",
       borderRadius: 8,
       marginBottom: 16,
-      backgroundColor: isDark ? "#111827" : "#FFFFFF",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
     },
     section: {
       paddingVertical: 8,
@@ -380,7 +380,7 @@ const styles = (isDark, bottomInset = 0) =>
       color: isDark ? "#9CA3AF" : "#6B7280",
       paddingHorizontal: 16,
       paddingVertical: 8,
-      backgroundColor: isDark ? "#1F2937" : "#F3F4F6",
+      backgroundColor: isDark ? "#14161B" : "#F3F4F6",
     },
     option: {
       flexDirection: "row",
@@ -389,7 +389,7 @@ const styles = (isDark, bottomInset = 0) =>
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#F3F4F6",
+      borderBottomColor: isDark ? "#262A33" : "#F3F4F6",
     },
     optionSelected: {
       backgroundColor: isDark ? "#1E40AF" : "#DBEAFE",
@@ -426,8 +426,8 @@ const styles = (isDark, bottomInset = 0) =>
       paddingHorizontal: 16,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
-      backgroundColor: isDark ? "#111827" : "#FFFFFF",
+      borderColor: isDark ? "#262A33" : "#D1D5DB",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
     },
     sourceButtonSelected: {
       backgroundColor: "#3B82F6",
@@ -447,7 +447,7 @@ const styles = (isDark, bottomInset = 0) =>
       gap: 12,
       padding: 16,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#E5E7EB",
+      borderTopColor: isDark ? "#262A33" : "#E5E7EB",
     },
     button: {
       paddingVertical: 12,
@@ -481,7 +481,7 @@ const styles = (isDark, bottomInset = 0) =>
     },
     promptContainer: {
       width: "80%",
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
       borderRadius: 12,
       padding: 20,
       elevation: 5,
@@ -499,13 +499,13 @@ const styles = (isDark, bottomInset = 0) =>
     },
     promptInput: {
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
+      borderColor: isDark ? "#262A33" : "#D1D5DB",
       borderRadius: 8,
       padding: 10,
       marginBottom: 20,
       fontSize: 16,
       color: isDark ? "#FFFFFF" : "#111827",
-      backgroundColor: isDark ? "#111827" : "#F9FAFB",
+      backgroundColor: isDark ? "#14161B" : "#F9FAFB",
     },
     promptActions: {
       flexDirection: "row",

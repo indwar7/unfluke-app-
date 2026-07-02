@@ -178,7 +178,7 @@ const styles = (isDark) =>
       alignItems: "center",
     },
     modalContainer: {
-      backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
       borderRadius: 12,
       width: "85%",
       maxWidth: 400,
@@ -189,7 +189,7 @@ const styles = (isDark) =>
       alignItems: "center",
       padding: 16,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#374151" : "#E5E7EB",
+      borderBottomColor: isDark ? "#262A33" : "#E5E7EB",
     },
     title: {
       fontSize: 18,
@@ -214,9 +214,9 @@ const styles = (isDark) =>
     },
     pickerContainer: {
       borderWidth: 1,
-      borderColor: isDark ? "#374151" : "#D1D5DB",
+      borderColor: isDark ? "#262A33" : "#D1D5DB",
       borderRadius: 8,
-      backgroundColor: isDark ? "#111827" : "#FFFFFF",
+      backgroundColor: isDark ? "#14161B" : "#FFFFFF",
       overflow: "hidden",
     },
     picker: {
@@ -229,7 +229,7 @@ const styles = (isDark) =>
       gap: 12,
       padding: 16,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "#374151" : "#E5E7EB",
+      borderTopColor: isDark ? "#262A33" : "#E5E7EB",
     },
     button: {
       paddingVertical: 12,
