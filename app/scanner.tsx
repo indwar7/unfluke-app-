@@ -1022,9 +1022,21 @@ const Scanner = ({ shared }) => {
                 {resultsMessage ? (
                   <View style={dynamicStyles.warningCard}>
                     <AlertTriangle size={16} color={c.loss} strokeWidth={2.2} />
-                    <Text style={dynamicStyles.warningText}>
-                      {resultsMessage}
-                    </Text>
+                    {/email is not verified|verify to receive|click here to verify/i.test(resultsMessage) ? (
+                      <Text style={dynamicStyles.warningText}>
+                        Your email is not verified. Please verify to receive results on your email.{" "}
+                        <Text
+                          style={dynamicStyles.warningLink}
+                          onPress={() => navigation.navigate("profile")}
+                        >
+                          Click here to verify
+                        </Text>
+                      </Text>
+                    ) : (
+                      <Text style={dynamicStyles.warningText}>
+                        {resultsMessage}
+                      </Text>
+                    )}
                   </View>
                 ) : null}
 
@@ -1264,6 +1276,11 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
       fontSize: 14,
       lineHeight: 20,
       color: c.loss,
+    },
+    warningLink: {
+      color: c.info,
+      fontWeight: "700",
+      textDecorationLine: "underline",
     },
     resultsInfo: {
       fontSize: 13,

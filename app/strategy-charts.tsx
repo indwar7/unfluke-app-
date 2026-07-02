@@ -2,15 +2,17 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, TextInput, Modal, FlatList, Dimensions,
-  Alert,
+  Alert, Animated, useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScreenWithHeader } from "@/components/AppHeader";
 import { WebView } from "react-native-webview";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   X, Check, Search, ChevronDown, RefreshCw, AlertCircle, LineChart,
+  SlidersHorizontal,
 } from "lucide-react-native";
 import { useBottomGutter } from "@/utils/bottomGutter";
 import { useTheme } from "@/constants/ThemeContext";
@@ -408,6 +410,9 @@ export default function StrategyChartsScreen() {
   const { colors: c, isDark } = useTheme();
   const s = makeStyles(c, isDark);
   const screenBottomGutter = useBottomGutter();
+  const insets = useSafeAreaInsets();
+  const { width: winWidth } = useWindowDimensions();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [mrkt, setMrkt] = useState<string | null>(null);
@@ -447,6 +452,17 @@ export default function StrategyChartsScreen() {
 
   const webRef = useRef<WebView>(null);
   const autoSubmittedRef = useRef(false);
+
+  // Sidebar slide-in animation (matches Historical Charts pattern)
+  const sidebarWidth = Math.min(400, winWidth * 0.9);
+  const slideAnim = useRef(new Animated.Value(sidebarWidth)).current; // hidden off-screen (right)
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: sidebarOpen ? 0 : sidebarWidth,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [sidebarOpen, sidebarWidth, slideAnim]);
 
   // @ts-ignore
   const globalSelectedStock = useSelector((s) => s.GlobalStock?.selectedStock);
@@ -696,6 +712,8 @@ export default function StrategyChartsScreen() {
             webRef.current.injectJavaScript(`handleMsg(${setMsg}); true;`);
           }
           setError(null);
+          // Close the config sidebar so the user sees the chart
+          if (!silent) setSidebarOpen(false);
         }
       }
     } catch (e: any) {
@@ -849,9 +867,14 @@ export default function StrategyChartsScreen() {
             <Text style={s.headerSub}>{selectedInstrument} · {chartType}</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => setRefreshKey((k) => k + 1)} style={s.refreshBtn} activeOpacity={0.7}>
-          <RefreshCw size={17} color={c.gold} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity onPress={() => setRefreshKey((k) => k + 1)} style={s.refreshBtn} activeOpacity={0.7}>
+            <RefreshCw size={17} color={c.gold} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setSidebarOpen(true)} style={s.configBtn} activeOpacity={0.7}>
+            <SlidersHorizontal size={17} color={c.onGold} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* TradingView Chart */}
@@ -888,16 +911,53 @@ export default function StrategyChartsScreen() {
           onLoadEnd={handleWebViewLoadEnd}
           onError={handleWebViewError}
         />
+
+        {/* Error toast — shown over the chart when the sidebar is closed */}
+        {!!error && !sidebarOpen && (
+          <TouchableOpacity
+            style={s.chartErrorToast}
+            activeOpacity={0.85}
+            onPress={() => setSidebarOpen(true)}
+          >
+            <AlertCircle size={16} color={c.loss} />
+            <Text style={s.chartErrorToastText} numberOfLines={2}>{error}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Form */}
-      <ScrollView
-        style={{ flex: 1, backgroundColor: c.background }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 60 + screenBottomGutter }}
-        keyboardShouldPersistTaps="handled"
+      {/* Configure Strategy — slide-in sidebar (like Historical Charts) */}
+      <Modal
+        visible={sidebarOpen}
+        transparent
+        animationType="none"
+        onRequestClose={() => setSidebarOpen(false)}
       >
-        <View style={s.card}>
-          <Text style={s.sectionTitle}>Configure Strategy</Text>
+        <View style={s.sidebarOverlay}>
+          {/* Backdrop (tap to close) */}
+          <TouchableOpacity
+            style={s.sidebarBackdrop}
+            activeOpacity={1}
+            onPress={() => setSidebarOpen(false)}
+          />
+          {/* Sidebar panel */}
+          <Animated.View
+            style={[
+              s.sidebar,
+              { width: sidebarWidth, transform: [{ translateX: slideAnim }] },
+            ]}
+          >
+            <View style={[s.sidebarHeader, { paddingTop: insets.top + 14 }]}>
+              <Text style={s.sidebarHeaderTitle}>Configure Strategy</Text>
+              <TouchableOpacity onPress={() => setSidebarOpen(false)} style={s.modalClose} activeOpacity={0.7}>
+                <X size={22} color={c.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              style={{ flex: 1, backgroundColor: c.card }}
+              contentContainerStyle={{ padding: 16, paddingBottom: 40 + screenBottomGutter }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={s.card}>
 
           <FormField
             label="Chart Type"
@@ -1037,14 +1097,17 @@ export default function StrategyChartsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Error banner */}
-        {!!error && (
-          <View style={s.errorCard}>
-            <AlertCircle size={18} color={c.loss} />
-            <Text style={s.errorText}>{error}</Text>
-          </View>
-        )}
-      </ScrollView>
+              {/* Error banner */}
+              {!!error && (
+                <View style={s.errorCard}>
+                  <AlertCircle size={18} color={c.loss} />
+                  <Text style={s.errorText}>{error}</Text>
+                </View>
+              )}
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </Modal>
 
       {/* Modals */}
       <PickerModal
@@ -1090,9 +1153,41 @@ const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: c.border,
   },
+  configBtn: {
+    width: 38, height: 38, borderRadius: 12, backgroundColor: c.gold,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: c.gold,
+  },
+
+  // Slide-in sidebar (Configure Strategy)
+  sidebarOverlay: {
+    flex: 1,
+    backgroundColor: c.overlay,
+    flexDirection: "row",
+  },
+  sidebarBackdrop: { flex: 1 },
+  sidebar: {
+    backgroundColor: c.card,
+    shadowColor: "#000",
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  sidebarHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+    backgroundColor: c.surfaceElevated,
+  },
+  sidebarHeaderTitle: { fontSize: 18, fontWeight: "800", color: c.text, letterSpacing: -0.2 },
 
   chartContainer: {
-    height: 420,
+    flex: 1,
     backgroundColor: c.surface,
     borderBottomWidth: 1,
     borderBottomColor: c.border,
@@ -1126,6 +1221,13 @@ const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     borderColor: c.border,
   },
   chartLoadingToastText: { color: c.text, fontSize: 14, fontWeight: "700" },
+  chartErrorToast: {
+    position: "absolute", left: 16, right: 16, bottom: 16, zIndex: 30,
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: c.lossBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+    borderWidth: 1, borderColor: c.loss,
+  },
+  chartErrorToastText: { color: c.loss, fontWeight: "700", fontSize: 13, flex: 1 },
 
   card: {
     backgroundColor: c.card, borderRadius: 18, padding: 18, marginBottom: 14,
