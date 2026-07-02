@@ -10,7 +10,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
   ActivityIndicator, Dimensions, StyleSheet, Modal, FlatList,
-  KeyboardAvoidingView, Platform, Keyboard,
+  Keyboard,
 } from "react-native";
 import {
   Search, X, ChevronDown, ChevronRight, Check,
@@ -342,12 +342,8 @@ export default function FundamentalScreen() {
 
   return (
     <ScreenWithHeader>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={90}
-      >
-        <View style={s.root}>
+      {/* Keyboard avoidance handled globally by ScreenWithHeader. */}
+      <View style={s.root}>
 
           {/* ── Title ── */}
           <View style={s.titleBar}>
@@ -499,8 +495,7 @@ export default function FundamentalScreen() {
               {renderTab()}
             </ScrollView>
           )}
-        </View>
-      </KeyboardAvoidingView>
+      </View>
     </ScreenWithHeader>
   );
 }

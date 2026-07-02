@@ -1,4 +1,3 @@
-import { View, Platform, KeyboardAvoidingView } from "react-native";
 import React, { useState, useCallback } from "react";
 import Chatbot from "../components/Chatbot";
 import { question_tab_mapping } from "../components/UnflukeMain/Utils/common_vars";
@@ -27,21 +26,16 @@ const ChatbotPage = () => {
 
   return (
     <ScreenWithHeader>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-      >
-        <Chatbot
-          defaultInput={defaultInput}
-          botType={botType}
-          setBotType={setBotType}
-          typeAndAsk={typeAndAsk}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          showQuickQuestions={true}
-        />
-      </KeyboardAvoidingView>
+      {/* Keyboard avoidance is handled globally by ScreenWithHeader. */}
+      <Chatbot
+        defaultInput={defaultInput}
+        botType={botType}
+        setBotType={setBotType}
+        typeAndAsk={typeAndAsk}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        showQuickQuestions={true}
+      />
     </ScreenWithHeader>
   );
 };

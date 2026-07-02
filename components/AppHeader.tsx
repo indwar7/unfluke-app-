@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, Image, TouchableOpacity, StyleSheet,
-  Pressable, Modal, ScrollView,
+  Pressable, Modal, ScrollView, KeyboardAvoidingView, Platform,
 } from "react-native";
 import { Bell, X, Menu, LogOut, User as UserIcon, Crown, Gem, Wallet } from "lucide-react-native";
 import { router } from "expo-router";
@@ -488,8 +488,21 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
   return (
     <View style={[s.screen, style]}>
       <AppHeader />
-      <View style={s.screenContent}>{children}</View>
-      <BottomNav />
+      {/*
+        Global keyboard avoidance. Edge-to-edge (edgeToEdgeEnabled) breaks
+        Android's native windowSoftInputMode="adjustResize", so inputs get
+        hidden behind the keyboard. Wrapping the content + bottom nav in a
+        KeyboardAvoidingView with behavior="padding" lifts them above the
+        keyboard on every screen. The header stays fixed above it.
+      */}
+      <KeyboardAvoidingView
+        style={s.screenContent}
+        behavior="padding"
+        keyboardVerticalOffset={0}
+      >
+        <View style={s.screenContent}>{children}</View>
+        <BottomNav />
+      </KeyboardAvoidingView>
     </View>
   );
 };

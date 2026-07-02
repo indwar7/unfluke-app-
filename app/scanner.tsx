@@ -6,7 +6,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -814,14 +813,12 @@ const Scanner = ({ shared }) => {
   /***** RENDER *****/
   return (
     <ScreenWithHeader>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={dynamicStyles.keyboardView}
+      {/* Keyboard avoidance handled globally by ScreenWithHeader. */}
+      <ScrollView
+        style={dynamicStyles.container}
+        contentContainerStyle={dynamicStyles.contentContainer}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          style={dynamicStyles.container}
-          contentContainerStyle={dynamicStyles.contentContainer}
-        >
           <View style={dynamicStyles.mainContent}>
             {/* Header */}
             {!shared && (
@@ -1027,7 +1024,7 @@ const Scanner = ({ shared }) => {
                         Your email is not verified. Please verify to receive results on your email.{" "}
                         <Text
                           style={dynamicStyles.warningLink}
-                          onPress={() => navigation.navigate("profile")}
+                          onPress={() => navigation.navigate("profile", { verifyEmail: "1" })}
                         >
                           Click here to verify
                         </Text>
@@ -1078,8 +1075,7 @@ const Scanner = ({ shared }) => {
           )}
 
           {/* Toast Container */}
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </ScreenWithHeader>
   );
 };
