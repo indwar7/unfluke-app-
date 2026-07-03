@@ -16,8 +16,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   Animated,
+  ScrollView,
 } from "react-native";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 import Markdown from "react-native-markdown-display";
@@ -1213,15 +1213,12 @@ const AIChatbot = ({
       )}
 
       {/* Chat Messages */}
-      <KeyboardAwareScrollView
+      <ScrollView
         ref={scrollViewRef}
         style={s.chatArea}
         contentContainerStyle={s.chatContent}
         onContentSizeChange={scrollToBottom}
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
-        keyboardOpeningTime={250}
-        extraScrollHeight={60}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {messages.length > 0 ? (
@@ -1236,7 +1233,7 @@ const AIChatbot = ({
             <Text style={s.explanationText}>{botExplanation}</Text>
           </View>
         )}
-      </KeyboardAwareScrollView>
+      </ScrollView>
 
       {/* Quick Questions */}
       {showQuickQuestions &&

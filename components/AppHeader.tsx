@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, Image, TouchableOpacity, StyleSheet,
-  Pressable, Modal, ScrollView, KeyboardAvoidingView, Platform,
+  Pressable, Modal, ScrollView, KeyboardAvoidingView, Platform, Keyboard,
 } from "react-native";
 import { Bell, X, Menu, LogOut, User as UserIcon, Crown, Gem, Wallet } from "lucide-react-native";
 import { router } from "expo-router";
@@ -481,6 +481,17 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
     }
   }, [user, isUserLogout]);
 
+  // Hide the bottom nav while the keyboard is open so it doesn't ride up
+  // into the middle of the screen (edge-to-edge breaks native adjustResize).
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  useEffect(() => {
+    const showEvt = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvt = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvt, () => setKeyboardOpen(true));
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardOpen(false));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
+
   if (!user?._id) {
     return <View style={[s.screen, style]} />;
   }
@@ -491,9 +502,9 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
       {/*
         Global keyboard avoidance. Edge-to-edge (edgeToEdgeEnabled) breaks
         Android's native windowSoftInputMode="adjustResize", so inputs get
-        hidden behind the keyboard. Wrapping the content + bottom nav in a
-        KeyboardAvoidingView with behavior="padding" lifts them above the
-        keyboard on every screen. The header stays fixed above it.
+        hidden behind the keyboard. The KeyboardAvoidingView lifts ONLY the
+        screen content; the BottomNav sits outside it and is hidden while the
+        keyboard is open so it never rides up into the middle of the screen.
       */}
       <KeyboardAvoidingView
         style={s.screenContent}
@@ -501,8 +512,8 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
         keyboardVerticalOffset={0}
       >
         <View style={s.screenContent}>{children}</View>
-        <BottomNav />
       </KeyboardAvoidingView>
+      {!keyboardOpen && <BottomNav />}
     </View>
   );
 };
