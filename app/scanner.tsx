@@ -546,7 +546,7 @@ const Scanner = ({ shared }) => {
       );
 
       if (res?.sharingCode) {
-        const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${res.sharingCode}&alert=false&type=${type}&market=in`;
+        const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${res.sharingCode}&alert=false&type=${type}&market=${subUrl || "in"}`;
 
         await Clipboard.setStringAsync(link);
         Toast.show({

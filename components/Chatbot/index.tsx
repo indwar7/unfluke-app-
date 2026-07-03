@@ -172,10 +172,15 @@ const AIChatbot = ({
     (state) => state.Layout,
     (state) => ({
       layoutMode: state.layoutModeType,
+      appType: state.appType,
     })
   );
 
-  const { layoutMode } = useSelector(selectDashboardData);
+  const { layoutMode, appType } = useSelector(selectDashboardData);
+  // Current market ("in" | "crypto"). Falls back to "in" so behaviour is
+  // unchanged for the Indian market. Used to send the correct `market` field
+  // in chatbot scanner/backtest forms so crypto mode returns crypto results.
+  const market = appType || "in";
   // Use navigation hook - adjust based on your navigation library
   // const navigation = useNavigation();
   const [isProgressing, setIsProgressing] = useState(false);
@@ -351,6 +356,7 @@ const AIChatbot = ({
           chat_history: chatHistory,
           scanner_form: scannerForm,
           bot_type: selectedBot,
+          market: market,
         });
       } catch (e) {
         console.error(e);
@@ -385,6 +391,7 @@ const AIChatbot = ({
           chat_history: chatHistory,
           scanner_form: scannerForm,
           bot_type: selectedBot,
+          market: market,
         });
       } catch (e) {
         console.error(e);
@@ -417,6 +424,7 @@ const AIChatbot = ({
           message: input,
           api_key: Config.REACT_APP_CHATBOT_TOKEN,
           chat_history: chatHistory,
+          market: market,
         });
       } catch (e) {
         console.error(e);
@@ -451,6 +459,7 @@ const AIChatbot = ({
           chat_history: chatHistory,
           backtest_form: basicBacktestForm,
           bot_type: selectedBot,
+          market: market,
         });
       } catch (e) {
         console.error(e);
@@ -536,8 +545,8 @@ const AIChatbot = ({
           alert: "false",
           alerts: alerts,
           fnoLotSize: "",
-          market: "in",
-          segment1a: "Nifty 50",
+          market: market,
+          segment1a: market === "crypto" ? "BTCUSDT" : "Nifty 50",
         };
         console.log("Final Form", finalForm);
         const res = await axios.get(

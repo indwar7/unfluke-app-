@@ -246,13 +246,26 @@ export const AppHeader = () => {
   // Market toggle (India <-> Crypto), mirrors the website's WebAppsDropdown.
   // Reads the selected market from the Layout slice; switching dispatches
   // changeAppType which persists "mkt" so every API call returns that market's
-  // data. Screens that read appType (scanner, etc.) refetch automatically.
+  // data.
+  //
+  // CRITICAL — how the website makes ALL screens reflect the new market:
+  // the web app (WebAppsDropdown.js) navigates to `/{appType}/dashboard` on
+  // every switch, which remounts the whole app so every screen refetches with
+  // the new `mrkt` header. Screens that only fetch once on mount (dashboard,
+  // historical, backtester, strategy-charts, simulator) do NOT listen for the
+  // change on their own, so without this navigation they keep showing the old
+  // market's data. We replicate the website: after switching, go to /dashboard
+  // so the app reloads under the new market. (Scanner/fundamental already
+  // refetch on their own, which is why they changed even before this fix.)
   const appType = useSelector((state: any) => state?.Layout?.appType ?? appTypes.IND);
   const isCrypto = appType === appTypes.CRYPTO;
-  const switchMarket = (nextIsCrypto: boolean) => {
+  const switchMarket = async (nextIsCrypto: boolean) => {
     const next = nextIsCrypto ? appTypes.CRYPTO : appTypes.IND;
     if (next === appType) return;
-    dispatch(changeAppType(next) as any);
+    // Persist "mkt" + update redux BEFORE navigating so the dashboard's mount
+    // fetch already carries the new market header.
+    await (dispatch(changeAppType(next) as any) as unknown as Promise<void>);
+    try { router.replace("/dashboard" as any); } catch { }
   };
 
   const socketRef = useRef<any>(null);

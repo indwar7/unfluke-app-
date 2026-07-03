@@ -130,7 +130,7 @@ const ScannerHomePage = ({ }) => {
 
         if (res && res.data?.sharingCode) {
           const type = alerts ? "alert" : "scanner";
-          const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${res.data.sharingCode}&alert=false&type=${type}&market=in`;
+          const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${res.data.sharingCode}&alert=false&type=${type}&market=${subUrl || "in"}`;
 
           await Clipboard.setStringAsync(link);
           Alert.alert("Success", "Link copied to clipboard");
