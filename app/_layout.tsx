@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { store } from "../redux/store";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { ThemeProvider, useTheme } from "../constants/ThemeContext";
 import { StatusBar } from "expo-status-bar";
@@ -62,13 +63,15 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <Provider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider>
-              <ThemedStack />
-            </ThemeProvider>
-          </QueryClientProvider>
-        </Provider>
+        <KeyboardProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider>
+                <ThemedStack />
+              </ThemeProvider>
+            </QueryClientProvider>
+          </Provider>
+        </KeyboardProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );
