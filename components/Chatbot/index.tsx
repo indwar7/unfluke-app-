@@ -14,10 +14,9 @@ import {
   Alert,
   useWindowDimensions,
   Platform,
-  KeyboardAvoidingView,
   Animated,
-  ScrollView,
 } from "react-native";
+import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
 import Markdown from "react-native-markdown-display";
@@ -1213,13 +1212,14 @@ const AIChatbot = ({
       )}
 
       {/* Chat Messages */}
-      <ScrollView
+      <KeyboardAwareScrollView
         ref={scrollViewRef}
         style={s.chatArea}
         contentContainerStyle={s.chatContent}
         onContentSizeChange={scrollToBottom}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        bottomOffset={80}
       >
         {messages.length > 0 ? (
           messages
@@ -1233,7 +1233,7 @@ const AIChatbot = ({
             <Text style={s.explanationText}>{botExplanation}</Text>
           </View>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Quick Questions */}
       {showQuickQuestions &&
@@ -1259,36 +1259,38 @@ const AIChatbot = ({
           </View>
         )}
 
-      {/* Input Area */}
-      <View style={s.inputContainer}>
-        <View style={s.inputGroup}>
-          <TextInput
-            style={s.textInput}
-            placeholder="Ask anything about the markets…"
-            placeholderTextColor={c.textMuted}
-            value={input}
-            onChangeText={handleInputChange}
-            onSubmitEditing={handleKeyDown}
-            multiline
-            maxLength={1000}
-          />
-          <TouchableOpacity
-            style={[s.sendButton, loading && s.disabledButton]}
-            onPress={handleMessage}
-            disabled={loading}
-            activeOpacity={0.85}
-          >
-            <LinearGradient
-              colors={[c.goldBright, c.gold, c.goldDeep]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={s.sendButtonGradient}
+      {/* Input Area — KeyboardStickyView pins it directly above the keyboard */}
+      <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
+        <View style={s.inputContainer}>
+          <View style={s.inputGroup}>
+            <TextInput
+              style={s.textInput}
+              placeholder="Ask anything about the markets…"
+              placeholderTextColor={c.textMuted}
+              value={input}
+              onChangeText={handleInputChange}
+              onSubmitEditing={handleKeyDown}
+              multiline
+              maxLength={1000}
+            />
+            <TouchableOpacity
+              style={[s.sendButton, loading && s.disabledButton]}
+              onPress={handleMessage}
+              disabled={loading}
+              activeOpacity={0.85}
             >
-              <ArrowUp size={20} color={c.onGold} strokeWidth={2.5} />
-            </LinearGradient>
-          </TouchableOpacity>
+              <LinearGradient
+                colors={[c.goldBright, c.gold, c.goldDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.sendButtonGradient}
+              >
+                <ArrowUp size={20} color={c.onGold} strokeWidth={2.5} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </KeyboardStickyView>
     </View>
   );
 };

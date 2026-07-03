@@ -3,7 +3,6 @@ import {
   View, Text, Image, TouchableOpacity, StyleSheet,
   Pressable, Modal, ScrollView, Platform, Keyboard,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { Bell, X, Menu, LogOut, User as UserIcon, Crown, Gem, Wallet } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSelector, useDispatch } from "react-redux";
@@ -537,21 +536,13 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
     <View style={[s.screen, style]}>
       <AppHeader />
       {/*
-        Global keyboard avoidance. Edge-to-edge (edgeToEdgeEnabled) breaks
-        Android's native windowSoftInputMode="adjustResize" and the built-in
-        RN KeyboardAvoidingView, so inputs get hidden behind the keyboard. We
-        use react-native-keyboard-controller's KeyboardAvoidingView (works
-        reliably on edge-to-edge). It lifts ONLY the screen content; the
-        BottomNav sits outside it and is hidden while the keyboard is open so
-        it never rides up over the typing box.
+        Keyboard handling is done per-screen with react-native-keyboard-
+        controller's KeyboardAwareScrollView / KeyboardStickyView (works on
+        edge-to-edge, where the native adjustResize and RN's KeyboardAvoidingView
+        fail). Here we only need to hide the BottomNav while the keyboard is open
+        so it never covers the typing box (e.g. AI Bot, Fundamentals).
       */}
-      <KeyboardAvoidingView
-        style={s.screenContent}
-        behavior="padding"
-        keyboardVerticalOffset={0}
-      >
-        <View style={s.screenContent}>{children}</View>
-      </KeyboardAvoidingView>
+      <View style={s.screenContent}>{children}</View>
       {!keyboardOpen && <BottomNav />}
     </View>
   );
