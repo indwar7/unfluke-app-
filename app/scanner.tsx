@@ -635,7 +635,9 @@ const Scanner = ({ shared }) => {
 
   const handleSharedPress = () => {
     if (shared) {
-      if (auth && auth.user._id) {
+      // Guard against null user (guest viewing a shared/public scanner, or
+      // logged-out): reading auth.user._id on a null user crashes.
+      if (auth?.user?._id) {
         Alert.alert(
           "Edit Scanner",
           "To edit, you'll be redirected to the scanner page...",

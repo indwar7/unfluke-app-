@@ -576,7 +576,7 @@ const AIChatbot = ({
         stratId,
         auth?.user?._id,
         isProgressing,
-        "in"
+        market
       );
       if (strategyAdded) {
         setIsProgressing(true);
@@ -691,7 +691,7 @@ const AIChatbot = ({
         if (data) {
           if (data.user == auth?.user?._id && data.stratid == stratId) {
             const link = `${Config.PUBLIC_URL
-              }/${"in"}/basic-backtester-view?filename=${data.filename.replace(
+              }/${market}/basic-backtester-view?filename=${(data.filename || "").replace(
                 ".csv",
                 ""
               )}`;

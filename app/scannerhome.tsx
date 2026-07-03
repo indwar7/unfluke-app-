@@ -202,7 +202,7 @@ const ScannerHomePage = ({ }) => {
       setFilteredScanners(scanners);
     } else {
       const filtered = scanners.filter((scanner) =>
-        scanner.name.toLowerCase().includes(text.toLowerCase())
+        (scanner.name || "").toLowerCase().includes(text.toLowerCase())
       );
       setFilteredScanners(filtered);
     }
