@@ -161,13 +161,14 @@ export function useCryptoOverview(symbol: string | undefined) {
           safe(getCryptoBtcTxnVolume(), "txVolume"),
         ]);
       return {
-        coinInfo: coinInfo || coinInfoAlt,
-        global,
-        fearGreed,
-        priceHistory,
-        hashRate,
-        minersRevenue,
-        txVolume,
+        // API returns [{...}] arrays — unwrap the first element.
+        coinInfo: first(coinInfo) || first(coinInfoAlt),
+        global: first(global),
+        fearGreed: first(fearGreed),
+        priceHistory: first(priceHistory),
+        hashRate: first(hashRate),
+        minersRevenue: first(minersRevenue),
+        txVolume: first(txVolume),
       };
     },
   });
@@ -253,7 +254,17 @@ export function useCryptoDetails(symbol: string | undefined) {
             networkActivities: null, lightnings: null,
           };
 
-      return { coinInfo, onChain, derivatives, lightning, priceHistory, etherscan, series };
+      return {
+        // API returns [{...}] arrays — unwrap the first element for the
+        // objects; the bitcoin `series` payloads are handled by toSeries().
+        coinInfo: first(coinInfo),
+        onChain: first(onChain),
+        derivatives: first(derivatives),
+        lightning: first(lightning),
+        priceHistory: first(priceHistory),
+        etherscan: first(etherscan),
+        series,
+      };
     },
   });
 }
@@ -261,16 +272,61 @@ export function useCryptoDetails(symbol: string | undefined) {
 /* ── Small shape helpers the UI can lean on ─────────────────── */
 
 /**
- * Normalise any of the assorted series payloads into a {x,y}[] for SvgLineChart.
- * Handles arrays of {date,value}, {timestamp,value}, {t,v}, [ts, val] pairs, or
- * { data: [...] } wrappers. Returns [] when nothing usable is found.
+ * Unwrap the common `[{...}]` API envelope — the crypto backend returns most
+ * fundamentals as a one-element array. Returns the object (or the value itself
+ * if it isn't an array, or null).
  */
-export function toSeries(raw: any, opts?: { xKey?: string; yKey?: string; limit?: number }): { x: string; y: number }[] {
-  const arr =
-    Array.isArray(raw) ? raw :
-    Array.isArray(raw?.data) ? raw.data :
-    Array.isArray(raw?.prices) ? raw.prices :
-    Array.isArray(raw?.values) ? raw.values : [];
+export function first(raw: any): any {
+  if (Array.isArray(raw)) return raw.length ? raw[0] : null;
+  return raw ?? null;
+}
+
+/**
+ * Normalise any of the assorted series payloads into a {x,y}[] for SvgLineChart.
+ *
+ * Real API shapes (confirmed against api.unfluke.in):
+ *   priceHistory[0].prices          → [{timestamp, date, price}]
+ *   fearGreed[0].data               → [{timestamp, date, value}]
+ *   onChain[0].transaction_count    → [{date, value}]
+ *   lightning[0].historical_stats   → [{date, capacity_btc, channel_count}]
+ *   derivatives[0].funding_rate_history → [{timestamp, funding_rate}]
+ *
+ * `raw` may be the already-unwrapped object, the [{...}] envelope, or a bare
+ * array. `seriesKey` names the nested array to read; `yKey` its value field.
+ * Everything is optional and guarded — unknown shapes return [].
+ */
+export function toSeries(
+  raw: any,
+  opts?: { seriesKey?: string; xKey?: string; yKey?: string; limit?: number }
+): { x: string; y: number }[] {
+  const obj = first(raw);
+  // Find the array to iterate: explicit seriesKey, else common wrappers, else
+  // auto-detect the first array-valued property (the bitcoin series endpoints
+  // wrap their data under a field-specific key like hash_rate_th_s /
+  // miners_revenue_usd / difficulty / etc.), else the value itself.
+  const autoArrayKey =
+    obj && typeof obj === "object" && !Array.isArray(obj)
+      ? Object.keys(obj).find(
+          (k) => Array.isArray(obj[k]) && obj[k].length > 0 && typeof obj[k][0] === "object"
+        )
+      : undefined;
+  // NOTE on ordering: the API wraps most series in a one-element array whose
+  // object holds the real data under a named key (e.g. [{_id, hash_rate_th_s:
+  // [...]}]). So `obj` (the unwrapped first element) and its nested key must be
+  // checked BEFORE falling back to treating `raw` itself as the data array —
+  // otherwise we'd iterate the [{_id,...}] wrapper and find nothing.
+  const arr: any[] =
+    opts?.seriesKey && Array.isArray(obj?.[opts.seriesKey]) ? obj[opts.seriesKey] :
+    Array.isArray(obj?.data) ? obj.data :
+    Array.isArray(obj?.prices) ? obj.prices :
+    Array.isArray(obj?.historical_stats) ? obj.historical_stats :
+    Array.isArray(obj?.transaction_count) ? obj.transaction_count :
+    Array.isArray(obj?.funding_rate_history) ? obj.funding_rate_history :
+    Array.isArray(obj?.values) ? obj.values :
+    autoArrayKey ? obj[autoArrayKey] :
+    Array.isArray(raw) && !opts?.seriesKey ? raw :
+    Array.isArray(obj) ? obj : [];
+
   const xKey = opts?.xKey;
   const yKey = opts?.yKey;
   const out: { x: string; y: number }[] = [];
@@ -279,11 +335,17 @@ export function toSeries(raw: any, opts?: { xKey?: string; yKey?: string; limit?
     if (Array.isArray(row)) { x = row[0]; y = row[1]; }
     else if (row && typeof row === "object") {
       x = xKey ? row[xKey] : (row.date ?? row.timestamp ?? row.time ?? row.t ?? row.x);
-      y = yKey ? row[yKey] : (row.value ?? row.v ?? row.y ?? row.close ?? row.price);
+      y = yKey ? row[yKey]
+        : (row.value ?? row.price ?? row.funding_rate ?? row.capacity_btc ?? row.v ?? row.y ?? row.close);
     }
     const ny = Number(y);
     if (Number.isFinite(ny)) {
-      const dx = typeof x === "number" ? new Date(x > 1e12 ? x : x * 1000).toISOString().slice(0, 10) : String(x ?? "");
+      const dx =
+        typeof x === "number"
+          ? new Date(x > 1e12 ? x : x * 1000).toISOString().slice(0, 10)
+          : typeof x === "string" && x.length > 10
+          ? x.slice(0, 10)
+          : String(x ?? "");
       out.push({ x: dx, y: ny });
     }
   }

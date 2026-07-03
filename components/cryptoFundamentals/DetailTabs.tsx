@@ -80,18 +80,21 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
   const ser = data.series;
 
   switch (tab) {
-    case "On-Chain":
+    case "On-Chain": {
+      // Real getOnChainData shape: { transaction_count:[{date,value}], ... }
+      const txSeries = toSeries(data.onChain, { seriesKey: "transaction_count", limit: 30 });
+      const lastTx = txSeries.length ? txSeries[txSeries.length - 1].y : null;
       return (
         <View>
-          <Section title="Transaction Volume">{chart(toSeries(ser.txVolume, { limit: 30 }))}</Section>
-          <Section title="Active / UTXO Count">{chart(toSeries(ser.utxoCount, { limit: 30 }), true)}</Section>
+          <Section title="Transaction Count (30d)">{chart(txSeries)}</Section>
           <Section title="On-Chain Metrics">
-            <Row k="Total Fees" v={fmtNum(pick(data.onChain, ["totalFees", "total_fees"]))} />
-            <Row k="Tx Count (24h)" v={fmtNum(pick(data.onChain, ["txCount", "n_transactions"]))} />
-            <Row k="UTXO Count" v={fmtNum(pick(data.onChain, ["utxoCount", "utxo_count"]))} />
+            <Row k="Latest Tx Count" v={fmtNum(lastTx, 0)} />
+            <Row k="Data Points" v={fmtNum(pick(data.onChain, ["days", "data_points"]), 0)} />
+            <Row k="Source" v={pick(data.onChain, ["source"], "—")} />
           </Section>
         </View>
       );
+    }
 
     case "Mining":
       return (
@@ -117,13 +120,13 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
     case "Price History":
       return (
         <View>
-          <Section title="Price (30d)">{chart(toSeries(data.priceHistory, { limit: 30 }))}</Section>
-          <Section title="Market Cap (30d)">{chart(toSeries(ser.marketCap, { limit: 30 }))}</Section>
+          <Section title="Price (30d)">{chart(toSeries(data.priceHistory, { seriesKey: "prices", yKey: "price", limit: 30 }))}</Section>
           <Section title="Price Details">
             <Row k="ATH" v={fmtNum(pick(info, ["ath", "allTimeHigh"]))} />
+            <Row k="ATH Date" v={String(pick(info, ["ath_date"], "—")).slice(0, 10)} />
             <Row k="ATL" v={fmtNum(pick(info, ["atl", "allTimeLow"]))} />
-            <Row k="24h High" v={fmtNum(pick(info, ["high_24h", "high24h"]))} />
-            <Row k="24h Low" v={fmtNum(pick(info, ["low_24h", "low24h"]))} />
+            <Row k="ATL Date" v={String(pick(info, ["atl_date"], "—")).slice(0, 10)} />
+            <Row k="Current Price" v={fmtNum(pick(info, ["current_price_usd", "current_price"]))} />
           </Section>
         </View>
       );
@@ -131,49 +134,62 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
     case "Supply":
       return (
         <View>
-          <Section title="Total Supply (30d)">{chart(toSeries(ser.totalBitcoins, { limit: 30 }))}</Section>
           <Section title="Supply Metrics">
             <Row k="Circulating" v={fmtNum(pick(info, ["circulating_supply", "circulatingSupply"]), 0)} />
             <Row k="Total Supply" v={fmtNum(pick(info, ["total_supply", "totalSupply"]), 0)} />
             <Row k="Max Supply" v={fmtNum(pick(info, ["max_supply", "maxSupply"]), 0)} />
-            <Row k="Market Cap" v={fmtNum(pick(info, ["market_cap", "marketCap"]))} />
+            <Row k="Market Cap" v={fmtNum(pick(info, ["market_cap_usd", "market_cap"]))} />
+            <Row k="Fully Diluted" v={fmtNum(pick(info, ["fully_diluted_valuation_usd", "fully_diluted_valuation"]))} />
           </Section>
         </View>
       );
 
-    case "Lightning":
+    case "Lightning": {
+      // Real getLightningNetwork shape:
+      // historical_stats:[{date, capacity_btc, channel_count, node_count}].
+      const capSeries = toSeries(data.lightning, { seriesKey: "historical_stats", yKey: "capacity_btc", limit: 30 });
+      const latest = (() => {
+        const hs = data.lightning?.historical_stats;
+        return Array.isArray(hs) && hs.length ? hs[0] : {};
+      })();
       return (
         <View>
-          <Section title="Lightning Capacity (30d)">{chart(toSeries(ser.lightnings, { limit: 30 }))}</Section>
+          <Section title="Lightning Capacity BTC (30d)">{chart(capSeries)}</Section>
           <Section title="Lightning Network">
-            <Row k="Capacity" v={fmtNum(pick(data.lightning, ["capacity", "total_capacity"]))} />
-            <Row k="Channels" v={fmtNum(pick(data.lightning, ["channels", "num_channels"]), 0)} />
-            <Row k="Nodes" v={fmtNum(pick(data.lightning, ["nodes", "num_nodes"]), 0)} />
+            <Row k="Capacity (BTC)" v={fmtNum(pick(latest, ["capacity_btc"]))} />
+            <Row k="Channels" v={fmtNum(pick(latest, ["channel_count"]), 0)} />
+            <Row k="Nodes" v={fmtNum(pick(latest, ["node_count"]), 0)} />
+            <Row k="Source" v={pick(data.lightning, ["source"], "—")} />
           </Section>
         </View>
       );
+    }
 
-    case "Derivatives":
+    case "Derivatives": {
+      // Real getDerivativesData shape: open_interest, current_funding_rate,
+      // funding_rate_history:[{timestamp, funding_rate}].
+      const fundSeries = toSeries(data.derivatives, { seriesKey: "funding_rate_history", yKey: "funding_rate", limit: 30 });
       return (
         <View>
           <Section title="Derivatives">
-            <Row k="Funding Rate" v={(() => { const f = pick(data.derivatives, ["fundingRate", "funding_rate"]); return f != null ? `${(Number(f) * 100).toFixed(4)}%` : "—"; })()} />
-            <Row k="Open Interest" v={fmtNum(pick(data.derivatives, ["openInterest", "open_interest"]))} />
-            <Row k="Long/Short Ratio" v={fmtNum(pick(data.derivatives, ["longShortRatio", "long_short_ratio"]), 3)} />
-            <Row k="24h Volume" v={fmtNum(pick(data.derivatives, ["volume24h", "volume"]))} />
+            <Row k="Funding Rate" v={(() => { const f = pick(data.derivatives, ["current_funding_rate", "funding_rate"]); return f != null ? `${(Number(f) * 100).toFixed(4)}%` : "—"; })()} />
+            <Row k="Open Interest" v={fmtNum(pick(data.derivatives, ["open_interest", "openInterest"]))} />
+            <Row k="Futures Symbol" v={pick(data.derivatives, ["futures_symbol"], "—")} />
+            <Row k="Source" v={pick(data.derivatives, ["source"], "—")} />
           </Section>
-          <Section title="Funding History">{chart(toSeries(pick(data.derivatives, ["fundingHistory", "funding_history"]), { limit: 30 }))}</Section>
+          <Section title="Funding Rate History (30d)">{chart(fundSeries)}</Section>
         </View>
       );
+    }
 
     case "Indicators":
       return (
         <View>
           <Section title="Market Indicators">
-            <Row k="Price" v={fmtNum(pick(info, ["current_price", "price"]))} />
-            <Row k="24h Change" v={(() => { const p = pick(info, ["price_change_percentage_24h", "change24h"]); return p != null ? `${Number(p).toFixed(2)}%` : "—"; })()} />
+            <Row k="Price" v={fmtNum(pick(info, ["current_price_usd", "current_price"]))} />
+            <Row k="24h Volume" v={fmtNum(pick(info, ["total_volume_24h", "total_volume"]))} />
             <Row k="Market Cap Rank" v={pick(info, ["market_cap_rank", "rank"], "—")} />
-            <Row k="Volume / MCap" v={fmtNum(pick(info, ["volume_to_market_cap"]), 3)} />
+            <Row k="ATH Change" v={(() => { const p = pick(info, ["ath_change_percentage"]); return p != null ? `${Number(p).toFixed(2)}%` : "—"; })()} />
             <Row k="Sentiment (Up)" v={(() => { const p = pick(info, ["sentiment_votes_up_percentage"]); return p != null ? `${Number(p).toFixed(0)}%` : "—"; })()} />
           </Section>
         </View>

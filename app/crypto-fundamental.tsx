@@ -98,24 +98,31 @@ export default function CryptoFundamentalScreen() {
     setShowDrop(false);
   }, []);
 
-  /* ── derive KPI values (defensive across possible field names) ── */
+  /* ── derive KPI values ──
+   * Field names confirmed against the real /api/crypto/getCoinInfo response:
+   *   current_price_usd, market_cap_usd, total_volume_24h, ath, atl,
+   *   ath_change_percentage, circulating_supply, max_supply, total_supply.
+   * CoinGecko live price (simple/price) uses usd / usd_24h_change / etc.
+   * We prefer CoinGecko live (fresher) then fall back to backend coinInfo. */
   const info = overview?.coinInfo ?? {};
+  const liveObj = live?.[Object.keys(live || {})[0] as any];
   const livePrice =
-    pick(live?.[Object.keys(live || {})[0] as any], ["usd"]) ??
-    pick(info, ["current_price", "price", "currentPrice", "usd"]);
+    pick(liveObj, ["usd"]) ??
+    pick(info, ["current_price_usd", "current_price", "price"]);
   const change24 =
-    pick(live?.[Object.keys(live || {})[0] as any], ["usd_24h_change"]) ??
-    pick(info, ["price_change_percentage_24h", "change24h", "priceChange24h"]);
+    pick(liveObj, ["usd_24h_change"]) ??
+    pick(info, ["price_change_percentage_24h", "ath_change_percentage", "change24h"]);
   const marketCap =
-    pick(live?.[Object.keys(live || {})[0] as any], ["usd_market_cap"]) ??
-    pick(info, ["market_cap", "marketCap"]);
+    pick(liveObj, ["usd_market_cap"]) ??
+    pick(info, ["market_cap_usd", "market_cap"]);
   const vol24 =
-    pick(live?.[Object.keys(live || {})[0] as any], ["usd_24h_vol"]) ??
-    pick(info, ["total_volume", "volume24h", "volume"]);
-  const ath = pick(info, ["ath", "allTimeHigh", "high_24h"]);
-  const atl = pick(info, ["atl", "allTimeLow", "low_24h"]);
+    pick(liveObj, ["usd_24h_vol"]) ??
+    pick(info, ["total_volume_24h", "total_volume", "volume"]);
+  const ath = pick(info, ["ath", "allTimeHigh"]);
+  const atl = pick(info, ["atl", "allTimeLow"]);
   const circSupply = pick(info, ["circulating_supply", "circulatingSupply"]);
   const maxSupply = pick(info, ["max_supply", "maxSupply", "total_supply"]);
+  const rank = pick(info, ["market_cap_rank", "rank"]);
 
   const kpis = [
     { label: "Price", value: fmtUsd(livePrice, livePrice < 1 ? 4 : 2), change: change24 },
@@ -126,15 +133,17 @@ export default function CryptoFundamentalScreen() {
     { label: "Circulating", value: circSupply ? fmtCompact(circSupply) : "—" },
   ];
 
-  /* ── overview charts ── */
+  /* ── overview charts ──
+   * Real nested shapes: priceHistory.prices[{timestamp,price}],
+   * fearGreed.data[{timestamp,value}]. BTC series endpoints return {date,value}
+   * arrays (toSeries picks .value by default). */
   const charts = useMemo(() => {
-    const fng = toSeries(overview?.fearGreed, { limit: 15 });
     return [
-      { key: "price", label: "Price Trend (15d)", series: toSeries(overview?.priceHistory, { limit: 15 }), money: true },
+      { key: "price", label: "Price Trend (15d)", series: toSeries(overview?.priceHistory, { seriesKey: "prices", yKey: "price", limit: 15 }) },
       { key: "txvol", label: "Transaction Volume (30d)", series: toSeries(overview?.txVolume, { limit: 30 }) },
-      { key: "miners", label: "Miners Revenue (30d)", series: toSeries(overview?.minersRevenue, { limit: 30 }), money: true },
+      { key: "miners", label: "Miners Revenue (30d)", series: toSeries(overview?.minersRevenue, { limit: 30 }) },
       { key: "hash", label: "Hash Rate (30d)", series: toSeries(overview?.hashRate, { limit: 30 }) },
-      { key: "fng", label: "Fear & Greed (15d)", series: fng },
+      { key: "fng", label: "Fear & Greed (15d)", series: toSeries(overview?.fearGreed, { seriesKey: "data", yKey: "value", limit: 15 }) },
     ];
   }, [overview]);
 
@@ -275,9 +284,12 @@ export default function CryptoFundamentalScreen() {
                 <ObsRow c={c} s={s} label="Fear & Greed"
                   ok
                   text={(() => {
-                    const fng = toSeries(overview?.fearGreed, { limit: 1 });
+                    const fng = toSeries(overview?.fearGreed, { seriesKey: "data", yKey: "value", limit: 1 });
                     return fng.length ? `Index at ${Math.round(fng[fng.length - 1].y)}` : "Index unavailable";
                   })()} />
+                {rank != null && (
+                  <ObsRow c={c} s={s} label="Market Rank" ok text={`Ranked #${rank} by market cap`} />
+                )}
               </View>
             </>
           ) : (
