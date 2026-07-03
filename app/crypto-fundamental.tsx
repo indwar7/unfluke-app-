@@ -46,6 +46,18 @@ const fmtPct = (v: any) => {
   const n = Number(v);
   return Number.isFinite(n) ? `${n >= 0 ? "+" : ""}${n.toFixed(2)}%` : "—";
 };
+// Compact number WITHOUT Intl `notation:"compact"` — Hermes (this app's JS
+// engine) doesn't fully support it and can misbehave/crash. Pure-JS instead.
+const fmtCompact = (v: any) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "—";
+  const abs = Math.abs(n);
+  if (abs >= 1e12) return `${(n / 1e12).toFixed(2)}T`;
+  if (abs >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `${(n / 1e3).toFixed(2)}K`;
+  return n.toFixed(0);
+};
 
 export default function CryptoFundamentalScreen() {
   const { colors: c, isDark } = useTheme();
@@ -111,7 +123,7 @@ export default function CryptoFundamentalScreen() {
     { label: "24h Volume", value: fmtUsd(vol24, 2) },
     { label: "All-Time High", value: fmtUsd(ath, 2) },
     { label: "All-Time Low", value: fmtUsd(atl, atl < 1 ? 4 : 2) },
-    { label: "Circulating", value: circSupply ? Number(circSupply).toLocaleString(undefined, { notation: "compact" as any }) : "—" },
+    { label: "Circulating", value: circSupply ? fmtCompact(circSupply) : "—" },
   ];
 
   /* ── overview charts ── */
