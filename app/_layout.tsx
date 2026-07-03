@@ -37,6 +37,7 @@ function ThemedStack() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="fundamental" />
+        <Stack.Screen name="crypto-fundamental" />
         <Stack.Screen name="dashboard" />
         <Stack.Screen name="strategy-charts" />
         <Stack.Screen name="chatbot" />

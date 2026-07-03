@@ -31,8 +31,17 @@ import {
     ChevronRight,
 } from "lucide-react-native";
 import { router } from "expo-router";
+import { useSelector } from "react-redux";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+
+// Per-market route overrides. When the market is crypto, the "Fundamental" menu
+// item opens the dedicated crypto fundamentals screen instead of the Indian one
+// (mirrors the website, which routes fundamentals to /crypto/crypto-fundamentals).
+// Every other route stays exactly the same for both markets.
+const CRYPTO_ROUTE_OVERRIDES: Record<string, string> = {
+  "/fundamental": "/crypto-fundamental",
+};
 
 interface SidebarMenuProps {
     visible: boolean;
@@ -65,6 +74,11 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
     const { colors: c, isDark } = useTheme();
     const styles = makeStyles(c);
     const sidebarWidth = Math.min(300, width * 0.78);
+    // Current market ("in" | "crypto"). Used to remap market-specific routes.
+    const appType = useSelector((state: any) => state?.Layout?.appType ?? "in");
+    const isCrypto = appType === "crypto";
+    const resolveRoute = (route: string) =>
+        isCrypto ? (CRYPTO_ROUTE_OVERRIDES[route] ?? route) : route;
     const slideAnim = useRef(new Animated.Value(-sidebarWidth)).current;
 
     useEffect(() => {
@@ -149,7 +163,7 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
                             <TouchableOpacity
                                 key={index}
                                 style={styles.menuItem}
-                                onPress={() => handleNavigation(item.route)}
+                                onPress={() => handleNavigation(resolveRoute(item.route))}
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.menuIconWrap}>
@@ -168,7 +182,7 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
                             <TouchableOpacity
                                 key={`bottom-${index}`}
                                 style={styles.menuItem}
-                                onPress={() => handleNavigation(item.route)}
+                                onPress={() => handleNavigation(resolveRoute(item.route))}
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.menuIconWrap}>

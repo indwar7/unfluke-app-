@@ -382,3 +382,49 @@ export const GET_APPLICATION_LIST = "/application-list";
 
 //JOB APPLICATION
 export const GET_API_KEY = "/api-key";
+
+// ─────────────────────────────────────────────────────────────
+// CRYPTO FUNDAMENTALS (mirrors website's /api/crypto/* endpoints)
+// All GET. Base is Config.BACKEND_URL (https://api.unfluke.in).
+// The axios interceptor auto-attaches the `mrkt` header, so these
+// return crypto-scoped data when the market is "crypto".
+// ─────────────────────────────────────────────────────────────
+// Registry / search
+export const GET_CRYPTO_ALL_COINS = "/api/crypto/getAllCoins";
+export const GET_CRYPTO_SEARCH_COINS = "/api/crypto/searchCoins";
+export const GET_CRYPTO_ALL_EQUITIES = "/api/crypto/getAllEquities";
+export const GET_CRYPTO_ALL_FUTURES = "/api/crypto/getAllFutures";
+export const GET_CRYPTO_ALL_OPTIONS = "/api/crypto/getAllOptions";
+// Coin fundamentals
+export const GET_CRYPTO_COIN_INFO = "/api/crypto/getCoinInfo";
+export const GET_CRYPTO_COIN_INFO_ALT = "/api/crypto/getCryptoCoinInfo";
+export const GET_CRYPTO_DERIVATIVES = "/api/crypto/getDerivativesData";
+export const GET_CRYPTO_DERIVATIVES_ALT = "/api/crypto/getCryptoDerivativesData";
+export const GET_CRYPTO_LIGHTNING = "/api/crypto/getLightningNetwork";
+export const GET_CRYPTO_ONCHAIN = "/api/crypto/getOnChainData";
+export const GET_CRYPTO_PRICE_HISTORY = "/api/crypto/getPriceHistory";
+export const GET_CRYPTO_ETHERSCAN_ONCHAIN = "/api/crypto/getCryptoEtherScanOnChains";
+// Bitcoin on-chain time series (no params)
+export const GET_CRYPTO_BTC_LIGHTNINGS = "/api/crypto/getCryptoBitcoinLightings";
+export const GET_CRYPTO_BTC_NETWORK_ACTIVITIES = "/api/crypto/getCryptoBitcoinNetworkActivities";
+export const GET_CRYPTO_BTC_TXN_COUNT = "/api/crypto/getCryptoBitcoinChainsTransactionCount";
+export const GET_CRYPTO_BTC_TXN_VOLUME = "/api/crypto/getCryptoBitcoinChainsTransactionVolume";
+export const GET_CRYPTO_BTC_UTXO_COUNT = "/api/crypto/getCryptoBitcoinChainsUtxoCount";
+export const GET_CRYPTO_BTC_TOTAL_BITCOINS = "/api/crypto/getCryptoBitcoinChainsTotalBitcoins";
+export const GET_CRYPTO_BTC_TOTAL_FEES = "/api/crypto/getCryptoBitcoinChainsTotalFees";
+export const GET_CRYPTO_BTC_HASH_RATE = "/api/crypto/getCryptoBitcoinChainsHashRate";
+export const GET_CRYPTO_BTC_DIFFICULTY = "/api/crypto/getCryptoBitcoinChainsDifficulty";
+export const GET_CRYPTO_BTC_MINERS_REVENUE = "/api/crypto/getCryptoBitcoinChainsMinersRevenue";
+export const GET_CRYPTO_BTC_MEMPOOL_SIZE = "/api/crypto/getCryptoBitcoinChainsMempoolSizeBytes";
+export const GET_CRYPTO_BTC_AVG_BLOCK_SIZE = "/api/crypto/getCryptoBitcoinChainsAvgBlockSize";
+export const GET_CRYPTO_BTC_BLOCKCHAIN_SIZE = "/api/crypto/getCryptoBitcoinChainsBlockchainSize";
+export const GET_CRYPTO_BTC_MARKET_CAP = "/api/crypto/getCryptoBitcoinChainsMarketCap";
+// Price-history projections (?symbol=)
+export const GET_CRYPTO_PH_DATAPOINTS = "/api/crypto/getCryptoPriceHistoryDataPoints";
+export const GET_CRYPTO_PH_PRICES = "/api/crypto/getCryptoPriceHistoryPrices";
+export const GET_CRYPTO_PH_MARKET_CAPS = "/api/crypto/getCryptoPriceHistoryMarketCaps";
+export const GET_CRYPTO_PH_VOLUMES = "/api/crypto/getCryptoPriceHistoryVolumes";
+export const GET_CRYPTO_PH_OHLC = "/api/crypto/getCryptoPriceHistoryOhlc";
+// Market-wide
+export const GET_CRYPTO_FEAR_GREED = "/api/crypto/getCryptoFearGreedIndexes";
+export const GET_CRYPTO_GLOBAL_MARKET = "/api/crypto/getCryptoGlobalMarketDatas";

@@ -651,3 +651,43 @@ export const getJobApplicationList = () => api.get(url.GET_APPLICATION_LIST);
 
 //API Key
 export const getAPIKey = () => api.get(url.GET_API_KEY);
+
+// ─────────────────────────────────────────────────────────────
+// CRYPTO FUNDAMENTALS getters (mirrors website /api/crypto/*)
+// Each goes through api.get() so the axios interceptor attaches the
+// `mrkt` header + auth automatically. `params` is an object like
+// { symbol: "BTC" } and the APIClient serialises it to a querystring.
+// ─────────────────────────────────────────────────────────────
+export const getCryptoAllCoins = () => api.get(url.GET_CRYPTO_ALL_COINS);
+export const getCryptoSearchCoins = (params) => api.get(url.GET_CRYPTO_SEARCH_COINS, params);
+export const getCryptoCoinInfo = (params) => api.get(url.GET_CRYPTO_COIN_INFO, params);
+export const getCryptoCoinInfoAlt = (params) => api.get(url.GET_CRYPTO_COIN_INFO_ALT, params);
+export const getCryptoDerivatives = (params) => api.get(url.GET_CRYPTO_DERIVATIVES, params);
+export const getCryptoLightning = (params) => api.get(url.GET_CRYPTO_LIGHTNING, params);
+export const getCryptoOnChain = (params) => api.get(url.GET_CRYPTO_ONCHAIN, params);
+export const getCryptoPriceHistory = (params) => api.get(url.GET_CRYPTO_PRICE_HISTORY, params);
+export const getCryptoEtherScanOnChain = (params) => api.get(url.GET_CRYPTO_ETHERSCAN_ONCHAIN, params);
+// Bitcoin on-chain series (no params)
+export const getCryptoBtcLightnings = () => api.get(url.GET_CRYPTO_BTC_LIGHTNINGS);
+export const getCryptoBtcNetworkActivities = () => api.get(url.GET_CRYPTO_BTC_NETWORK_ACTIVITIES);
+export const getCryptoBtcTxnCount = () => api.get(url.GET_CRYPTO_BTC_TXN_COUNT);
+export const getCryptoBtcTxnVolume = () => api.get(url.GET_CRYPTO_BTC_TXN_VOLUME);
+export const getCryptoBtcUtxoCount = () => api.get(url.GET_CRYPTO_BTC_UTXO_COUNT);
+export const getCryptoBtcTotalBitcoins = () => api.get(url.GET_CRYPTO_BTC_TOTAL_BITCOINS);
+export const getCryptoBtcTotalFees = () => api.get(url.GET_CRYPTO_BTC_TOTAL_FEES);
+export const getCryptoBtcHashRate = () => api.get(url.GET_CRYPTO_BTC_HASH_RATE);
+export const getCryptoBtcDifficulty = () => api.get(url.GET_CRYPTO_BTC_DIFFICULTY);
+export const getCryptoBtcMinersRevenue = () => api.get(url.GET_CRYPTO_BTC_MINERS_REVENUE);
+export const getCryptoBtcMempoolSize = () => api.get(url.GET_CRYPTO_BTC_MEMPOOL_SIZE);
+export const getCryptoBtcAvgBlockSize = () => api.get(url.GET_CRYPTO_BTC_AVG_BLOCK_SIZE);
+export const getCryptoBtcBlockchainSize = () => api.get(url.GET_CRYPTO_BTC_BLOCKCHAIN_SIZE);
+export const getCryptoBtcMarketCap = () => api.get(url.GET_CRYPTO_BTC_MARKET_CAP);
+// Price-history projections (?symbol=)
+export const getCryptoPhDataPoints = (params) => api.get(url.GET_CRYPTO_PH_DATAPOINTS, params);
+export const getCryptoPhPrices = (params) => api.get(url.GET_CRYPTO_PH_PRICES, params);
+export const getCryptoPhMarketCaps = (params) => api.get(url.GET_CRYPTO_PH_MARKET_CAPS, params);
+export const getCryptoPhVolumes = (params) => api.get(url.GET_CRYPTO_PH_VOLUMES, params);
+export const getCryptoPhOhlc = (params) => api.get(url.GET_CRYPTO_PH_OHLC, params);
+// Market-wide
+export const getCryptoFearGreed = () => api.get(url.GET_CRYPTO_FEAR_GREED);
+export const getCryptoGlobalMarket = () => api.get(url.GET_CRYPTO_GLOBAL_MARKET);
