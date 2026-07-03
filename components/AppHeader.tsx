@@ -8,6 +8,8 @@ import { Bell, X, Menu, LogOut, User as UserIcon, Crown, Gem, Wallet } from "luc
 import { router } from "expo-router";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../redux/Unfluke_slices/thunks";
+import { changeAppType } from "../redux/Unfluke_slices/layouts/thunk";
+import { appTypes } from "./UnflukeMain/constants/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SidebarMenu from "./SidebarMenu";
 import { io } from "socket.io-client";
@@ -242,6 +244,18 @@ export const AppHeader = () => {
   const isUserLogout = useSelector((state: any) => state?.Login?.isUserLogout ?? false);
   const unread = notifications.filter(n => !n.is_read).length;
 
+  // Market toggle (India <-> Crypto), mirrors the website's WebAppsDropdown.
+  // Reads the selected market from the Layout slice; switching dispatches
+  // changeAppType which persists "mkt" so every API call returns that market's
+  // data. Screens that read appType (scanner, etc.) refetch automatically.
+  const appType = useSelector((state: any) => state?.Layout?.appType ?? appTypes.IND);
+  const isCrypto = appType === appTypes.CRYPTO;
+  const switchMarket = (nextIsCrypto: boolean) => {
+    const next = nextIsCrypto ? appTypes.CRYPTO : appTypes.IND;
+    if (next === appType) return;
+    dispatch(changeAppType(next) as any);
+  };
+
   const socketRef = useRef<any>(null);
   const mountedRef = useRef(true);
 
@@ -408,6 +422,28 @@ export const AppHeader = () => {
 
           {/* Right icons */}
           <View style={s.rightIcons}>
+            {/* Market toggle: India <-> Crypto (same functioning as website) */}
+            <View style={s.marketToggle}>
+              <TouchableOpacity
+                style={[s.marketSeg, !isCrypto && s.marketSegActive]}
+                onPress={() => switchMarket(false)}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Switch to India market"
+              >
+                <Text style={[s.marketSegText, !isCrypto && s.marketSegTextActive]}>IND</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.marketSeg, isCrypto && s.marketSegActive]}
+                onPress={() => switchMarket(true)}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Switch to Crypto market"
+              >
+                <Text style={[s.marketSegText, isCrypto && s.marketSegTextActive]}>₿</Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Bell */}
             <TouchableOpacity
               style={s.iconBtn}
@@ -539,6 +575,37 @@ const makeStyles = (c: AppColors) => StyleSheet.create({
   logo: { width: 104, height: 30 },
   rightIcons: { flexDirection: "row", alignItems: "center", marginLeft: "auto", gap: 6 },
   iconBtn: { padding: 8, position: "relative" },
+
+  // Market toggle (IND | ₿) — segmented pill
+  marketToggle: {
+    flexDirection: "row",
+    backgroundColor: c.inputBg,
+    borderRadius: 999,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: c.border,
+    marginRight: 2,
+  },
+  marketSeg: {
+    minWidth: 30,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  marketSegActive: {
+    backgroundColor: c.gold,
+  },
+  marketSegText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: c.textMuted,
+    letterSpacing: 0.3,
+  },
+  marketSegTextActive: {
+    color: c.onGold,
+  },
   badge: {
     position: "absolute", top: 4, right: 4,
     backgroundColor: c.loss, borderRadius: 8,

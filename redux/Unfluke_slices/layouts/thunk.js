@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { changeHTMLAttribute } from './utils';
 import {
     changeAppAction,
@@ -36,10 +37,20 @@ export const changeLayout = (layout) => async (dispatch) => {
 };
 
 /**
- * Changes the App Type
+ * Changes the App Type (market).
+ *
+ * Mirrors the website's WebAppsDropdown behavior: the web app persists the
+ * selected market to localStorage under "mkt", and the axios request
+ * interceptor reads that key and sends it as the `mrkt` header so the backend
+ * returns market-specific data (e.g. crypto). In React Native there is no
+ * localStorage, so we persist to AsyncStorage under the same "mkt" key that
+ * Unfluke_helpers/api_helper.js reads on every request.
  */
 export const changeAppType = (appType) => async (dispatch) => {
     try {
+        // Persist the market header FIRST so any request fired immediately
+        // after the switch already carries the new `mrkt` value.
+        await AsyncStorage.setItem('mkt', appType);
         dispatch(changeAppAction(appType));
     } catch (error) { }
 

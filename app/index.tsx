@@ -24,6 +24,32 @@ export default function IndexScreen() {
     const checkAndRedirect = async () => {
       try {
         setIsNavigating(true);
+
+        // Ensure the market header key ("mkt") always exists so the axios
+        // interceptor sends a `mrkt` header from the very first request. The
+        // selected market (appType) is persisted in redux (Layout slice), but
+        // the interceptor reads AsyncStorage, so keep the two in sync: if the
+        // persisted Layout has a market, mirror it into "mkt"; otherwise default
+        // to India ("in", = appTypes.IND). Switching later via changeAppType()
+        // updates "mkt" itself.
+        try {
+          const existingMkt = await AsyncStorage.getItem("mkt");
+          if (!existingMkt) {
+            let persistedMkt: string | null = null;
+            const persistedRoot = await AsyncStorage.getItem("persist:root");
+            if (persistedRoot) {
+              const root = JSON.parse(persistedRoot);
+              if (root?.Layout) {
+                const layout = JSON.parse(root.Layout);
+                if (layout?.appType) persistedMkt = layout.appType;
+              }
+            }
+            await AsyncStorage.setItem("mkt", persistedMkt || "in");
+          }
+        } catch (mktErr) {
+          console.error("Failed to hydrate market header:", mktErr);
+        }
+
         const accessToken = await AsyncStorage.getItem("access");
         const authUser = await AsyncStorage.getItem("authUser");
 
