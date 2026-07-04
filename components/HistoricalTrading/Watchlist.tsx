@@ -284,7 +284,7 @@ const Watchlist = () => {
     if (prevDateTime.current == "")
       prevDateTime.current = new Date(currentDateTime);
     var time = new Date(currentDateTime);
-    if (time.getFullYear() < parseInt(user.charts_fno)) {
+    if (time.getFullYear() < parseInt(user?.charts_fno)) {
       Alert.alert("Error", "Please subscribe to a plan to access more historical data");
       return;
     }

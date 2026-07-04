@@ -217,7 +217,7 @@ const ScannerList = () => {
             currentPage * itemsPerPage
           )}
           renderItem={renderScannerItem}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item, index) => item?._id ?? String(index)}
           contentContainerStyle={s.listContent}
           ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}

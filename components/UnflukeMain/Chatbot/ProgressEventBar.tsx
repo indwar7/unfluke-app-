@@ -8,7 +8,7 @@ const ProgressEventBar = ({ auth, setIsProgressing, stratId }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        if (auth.user._id !== undefined) {
+        if (auth?.user?._id !== undefined && auth?.user?._id !== null) {
             const socket = io(Constants?.expoConfig?.extra?.BACKEND_URL, {
                 transports: ["websocket"],
                 query: { userID: auth.user._id },

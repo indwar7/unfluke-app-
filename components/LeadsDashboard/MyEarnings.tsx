@@ -73,8 +73,8 @@ const MyEarnings = ({ user }) => {
 
   const filteredData = useMemo(
     () =>
-      data.filter((item) =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (data || []).filter((item) =>
+        (item?.name || "").toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [data, searchTerm]
   );

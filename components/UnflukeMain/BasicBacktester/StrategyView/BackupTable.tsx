@@ -76,7 +76,7 @@ const BackupTable = ({ backupTable }) => {
 
                   {/* Monthly Data Cells */}
                   {months.map((month, monthIdx) => {
-                    const monthData = data.yearlyData.find(x => x.month === month);
+                    const monthData = (data.yearlyData || []).find(x => x.month === month);
                     const pnl = monthData ? parseInt(monthData.totalPnl) : 0;
 
                     return (

@@ -340,9 +340,14 @@ export function toSeries(
     }
     const ny = Number(y);
     if (Number.isFinite(ny)) {
+      // Guard against "Invalid time value": new Date(bad).toISOString() throws.
+      const safeDate = (ms: number): string => {
+        const d = new Date(ms);
+        return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+      };
       const dx =
         typeof x === "number"
-          ? new Date(x > 1e12 ? x : x * 1000).toISOString().slice(0, 10)
+          ? safeDate(x > 1e12 ? x : x * 1000)
           : typeof x === "string" && x.length > 10
           ? x.slice(0, 10)
           : String(x ?? "");

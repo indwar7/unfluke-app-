@@ -180,7 +180,7 @@ const ScannerFundamental = () => {
               <ScannerCard
                 key={category}
                 title={category}
-                items={defaultScanners[category]}
+                items={defaultScanners[category] || []}
               />
             ))}
           </ScrollView>

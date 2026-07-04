@@ -143,7 +143,6 @@ const StrategyFilters = (props) => {
   function timeToDate(timeObj) {
     let hour = 9,
       minute = 15; // Default values
-    console.log(timeObj.hour, "asfsfas");
     if (timeObj) {
       // Handle if it's an object with hour/minute properties
       if (typeof timeObj === "object" && timeObj !== null) {

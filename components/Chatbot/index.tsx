@@ -766,7 +766,7 @@ const AIChatbot = ({
               sender: "bot",
               text: data.message,
               mode: selectedBot,
-              docs: data.message.indexOf("<<IKNOW>>") !== -1 ? docs : {},
+              docs: (data.message || "").indexOf("<<IKNOW>>") !== -1 ? docs : {},
             },
           ]);
           if (

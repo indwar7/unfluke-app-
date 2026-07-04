@@ -292,7 +292,9 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
     }
   };
 
-  const [sortedResults, setSortedResults] = useState(results);
+  // Default to [] so a socket/undefined `results` can't crash the .map/.length
+  // below (the CSV path passes an array, but the socket path can pass undefined).
+  const [sortedResults, setSortedResults] = useState(results || []);
 
   const [sortedState, setSortedState] = useState({
     by: "",
@@ -522,7 +524,7 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
                 ScrollView here previously clipped the body to ~10 visible rows
                 and swallowed scroll gestures, so the rest were unreachable. */}
             <View style={dynamicStyles.tableBody}>
-              {sortedResults.map((row, rowIndex) => (
+              {(sortedResults || []).map((row, rowIndex) => (
                 <TouchableOpacity
                   key={rowIndex}
                   onPress={() => handleRowPress(row)}
@@ -642,7 +644,7 @@ const ScannerResults = ({ results, downloadUrl, type, headers }) => {
         renderTableView()
       ) : (
         <View style={dynamicStyles.cardList}>
-          {sortedResults.map((item, index) => (
+          {(sortedResults || []).map((item, index) => (
             <TouchableOpacity key={index} style={dynamicStyles.card} onPress={() => handleRowPress(item)}>
               <View style={dynamicStyles.cardNumber}>
                 <Text style={dynamicStyles.cardNumberText}>{index + 1}</Text>

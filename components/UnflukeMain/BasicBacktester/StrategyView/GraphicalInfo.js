@@ -8,6 +8,10 @@ const GraphicalInfo = (props) => {
   const { colors: c, isDark } = useTheme();
   const styles = makeStyles(c, isDark);
 
+  // Default every numeric metric to 0 so a missing/partial analysis block can't
+  // crash the View-Strategy screen via `undefined.toLocaleString()`. The `?? 0`
+  // preserves real values (including 0) and only substitutes null/undefined.
+  const n = (v) => (typeof v === "number" && Number.isFinite(v) ? v : Number(v) || 0);
   const {
     numberOfTrades,
     totalPNL,
@@ -17,24 +21,24 @@ const GraphicalInfo = (props) => {
     losser,
     winStreak,
     lossStreak,
-    overallProfit,
-    averageProfit,
-    avgDailyProfit,
-    maxDailyProfit,
-    maxDailyLoss,
-    winPercentage,
-    lossPercentage,
+    overallProfit = 0,
+    averageProfit = 0,
+    avgDailyProfit = 0,
+    maxDailyProfit = 0,
+    maxDailyLoss = 0,
+    winPercentage = 0,
+    lossPercentage = 0,
     maxWinStreak,
     maxLossStreak,
-    maxDDdays,
-    DDdays,
-    avgProfitOnWinDays,
-    avgProfitOnLossDays,
+    maxDDdays = 0,
+    DDdays = 0,
+    avgProfitOnWinDays = 0,
+    avgProfitOnLossDays = 0,
     expectancy,
     profitFactor,
     returnToMDD,
-    winTotal,
-    lossTotal,
+    winTotal = 0,
+    lossTotal = 0,
   } = props;
 
   const cardData = [
@@ -44,50 +48,50 @@ const GraphicalInfo = (props) => {
     },
     {
       title: "Overall Profit",
-      value: `₹ ${overallProfit.toLocaleString("en-US")}`,
-      isPositive: overallProfit >= 0,
+      value: `₹ ${n(overallProfit).toLocaleString("en-US")}`,
+      isPositive: n(overallProfit) >= 0,
     },
     {
       title: "Average Profit/Trade",
-      value: `₹ ${averageProfit.toLocaleString("en-US")}`,
-      isPositive: averageProfit >= 0,
+      value: `₹ ${n(averageProfit).toLocaleString("en-US")}`,
+      isPositive: n(averageProfit) >= 0,
     },
     {
       title: "Avg Daily Profit",
-      value: `₹ ${avgDailyProfit.toLocaleString("en-US")}`,
-      isPositive: avgDailyProfit >= 0,
+      value: `₹ ${n(avgDailyProfit).toLocaleString("en-US")}`,
+      isPositive: n(avgDailyProfit) >= 0,
     },
     {
       title: "Max Profit in Single Day",
-      value: `₹ ${maxDailyProfit.toLocaleString("en-US")}`,
-      isPositive: maxDailyProfit >= 0,
+      value: `₹ ${n(maxDailyProfit).toLocaleString("en-US")}`,
+      isPositive: n(maxDailyProfit) >= 0,
     },
     {
       title: "Max Loss in Single Day",
-      value: `₹ ${maxDailyLoss.toLocaleString("en-US")}`,
-      isPositive: maxDailyLoss >= 0,
+      value: `₹ ${n(maxDailyLoss).toLocaleString("en-US")}`,
+      isPositive: n(maxDailyLoss) >= 0,
     },
     {
       title: "Win % (Days)",
-      value: `${winPercentage.toLocaleString(
+      value: `${n(winPercentage).toLocaleString(
         "en-US"
-      )} (${winTotal.toLocaleString("en-US")})`,
+      )} (${n(winTotal).toLocaleString("en-US")})`,
     },
     {
       title: "Loss % (Days)",
-      value: `${lossPercentage.toLocaleString(
+      value: `${n(lossPercentage).toLocaleString(
         "en-US"
-      )} (${lossTotal.toLocaleString("en-US")})`,
+      )} (${n(lossTotal).toLocaleString("en-US")})`,
     },
     {
       title: "Avg Profit on Win Days",
-      value: `₹ ${avgProfitOnWinDays.toLocaleString("en-US")}`,
-      isPositive: avgProfitOnWinDays >= 0,
+      value: `₹ ${n(avgProfitOnWinDays).toLocaleString("en-US")}`,
+      isPositive: n(avgProfitOnWinDays) >= 0,
     },
     {
       title: "Avg Loss on Loss Days",
-      value: `₹ ${avgProfitOnLossDays.toLocaleString("en-US")}`,
-      isPositive: avgProfitOnLossDays >= 0,
+      value: `₹ ${n(avgProfitOnLossDays).toLocaleString("en-US")}`,
+      isPositive: n(avgProfitOnLossDays) >= 0,
     },
     {
       title: "Max Winning Streak Days",
@@ -101,10 +105,10 @@ const GraphicalInfo = (props) => {
     },
     {
       title: "Max Drawdown (Max DD Days)",
-      value: `₹ ${maxDDdays.toLocaleString("en-US")} (${DDdays.toLocaleString(
+      value: `₹ ${n(maxDDdays).toLocaleString("en-US")} (${n(DDdays).toLocaleString(
         "en-US"
       )})`,
-      isPositive: maxDDdays >= 0,
+      isPositive: n(maxDDdays) >= 0,
     },
     {
       title: "Return to MDD",

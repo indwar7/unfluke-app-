@@ -96,7 +96,7 @@ console.log(chatbotInfo[botType])
                 <View style={styles.questionsSection}>
                   <Text style={styles.sectionTitle}>Try asking:</Text>
                   
-                  {chatbotQuestions[botType].map((question, index) => (
+                  {(chatbotQuestions[botType] || []).map((question, index) => (
                     <TouchableOpacity
                       key={index}
                       style={styles.questionContainer}
