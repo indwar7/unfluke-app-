@@ -379,27 +379,26 @@ export const AppHeader = () => {
     };
   }, [user?._id]);
 
+  // NOTE: navigation to /login on logout is handled by ScreenWithHeader's
+  // user-guard effect (it stays mounted; AppHeader unmounts on logout). We do
+  // NOT navigate from here to avoid a duplicate/racing router.replace.
   useEffect(() => {
     if (isUserLogout && isLoggingOut) {
-      try { router.replace("/login"); } catch { }
       setIsLoggingOut(false);
     }
   }, [isUserLogout, isLoggingOut]);
 
   const handleLogout = () => {
-    // Navigate to /login FIRST, before clearing the user. Clearing the user
-    // makes ScreenWithHeader unmount AppHeader (and the current screen) in the
-    // same render, which races the logout navigation and the native teardown
-    // (socket disconnect + keyboard-controller view). Replacing the route first
-    // means the protected screen is already gone before the user goes null, so
-    // there's no half-torn-down screen to crash. dispatch runs after a tick.
+    // Close the popup, then clear the user. Navigation to /login is driven by
+    // the useEffect below (fires when isUserLogout flips true) — NOT here.
+    //
+    // Why not navigate first: /login redirects back to /dashboard while a user
+    // is still present, so navigating before the user is cleared bounces
+    // straight back and leaves a torn-down/black screen. Clearing first, then
+    // letting the effect navigate on isUserLogout, is the correct order.
     setProfileOpen(false);
     setIsLoggingOut(true);
-    try { router.replace("/login"); } catch { }
-    // Defer the state clear so navigation commits first.
-    setTimeout(() => {
-      try { dispatch(logoutUser() as any); } catch { }
-    }, 0);
+    dispatch(logoutUser() as any);
   };
 
   const handleBellPress = () => {
@@ -534,11 +533,17 @@ export const ScreenWithHeader: React.FC<{ children: React.ReactNode; style?: any
   const user = useSelector((state: any) => state?.Login?.user ?? null);
   const isUserLogout = useSelector((state: any) => state?.Login?.isUserLogout ?? false);
 
+  // Whenever there's no logged-in user on a protected screen — whether from an
+  // explicit logout (isUserLogout=true) or an expired/absent session — send the
+  // user to /login. This is the single reliable redirect point: ScreenWithHeader
+  // stays mounted through logout (AppHeader unmounts, so its own effect can't be
+  // relied on). Without covering the logout case here, logout left a black empty
+  // View with nothing navigating away.
   useEffect(() => {
-    if (!user?._id && !isUserLogout) {
+    if (!user?._id) {
       try { router.replace("/login"); } catch { }
     }
-  }, [user, isUserLogout]);
+  }, [user?._id]);
 
   // Hide the bottom nav while the keyboard is open so it doesn't ride up
   // into the middle of the screen (edge-to-edge breaks native adjustResize).
