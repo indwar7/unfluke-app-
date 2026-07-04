@@ -387,9 +387,19 @@ export const AppHeader = () => {
   }, [isUserLogout, isLoggingOut]);
 
   const handleLogout = () => {
-    setIsLoggingOut(true);
+    // Navigate to /login FIRST, before clearing the user. Clearing the user
+    // makes ScreenWithHeader unmount AppHeader (and the current screen) in the
+    // same render, which races the logout navigation and the native teardown
+    // (socket disconnect + keyboard-controller view). Replacing the route first
+    // means the protected screen is already gone before the user goes null, so
+    // there's no half-torn-down screen to crash. dispatch runs after a tick.
     setProfileOpen(false);
-    dispatch(logoutUser() as any);
+    setIsLoggingOut(true);
+    try { router.replace("/login"); } catch { }
+    // Defer the state clear so navigation commits first.
+    setTimeout(() => {
+      try { dispatch(logoutUser() as any); } catch { }
+    }, 0);
   };
 
   const handleBellPress = () => {

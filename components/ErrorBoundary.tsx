@@ -52,9 +52,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
               The app ran into an unexpected error. Don't worry — your data is
               safe.
             </Text>
-            {__DEV__ && this.state.error ? (
-              <Text style={styles.errorText} numberOfLines={6}>
-                {this.state.error.message || String(this.state.error)}
+            {this.state.error ? (
+              <Text style={styles.errorText} numberOfLines={12} selectable>
+                {(this.state.error.message || String(this.state.error)) +
+                  (this.state.error.stack ? "\n\n" + this.state.error.stack : "")}
               </Text>
             ) : null}
             <TouchableOpacity style={styles.primaryButton} onPress={this.handleReset}>
