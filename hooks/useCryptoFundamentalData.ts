@@ -59,14 +59,63 @@ const safe = <T,>(p: Promise<T> | undefined, label?: string): Promise<T | null> 
 
 /* ── Third-party (plain fetch, no auth/mrkt header) ─────────── */
 
-// CoinGecko symbol → id map (subset used on the web; extend as needed).
+// CoinGecko symbol → id map. Curated overrides first (a symbol like ATOM maps
+// to several CoinGecko ids; these pin the canonical one). Any coin NOT listed
+// here is resolved dynamically from CoinGecko's full coins list at runtime, so
+// every coin the backend returns (AAVE, ALGO, ARB, …) gets live data — not
+// just this handful. Without dynamic resolution, unlisted coins showed $0.
 export const COINGECKO_IDS: Record<string, string> = {
   BTC: "bitcoin", ETH: "ethereum", SOL: "solana", XRP: "ripple",
   ADA: "cardano", DOGE: "dogecoin", BNB: "binancecoin", TRX: "tron",
   DOT: "polkadot", MATIC: "matic-network", LTC: "litecoin", AVAX: "avalanche-2",
   LINK: "chainlink", ATOM: "cosmos", XLM: "stellar", UNI: "uniswap",
   BCH: "bitcoin-cash", ETC: "ethereum-classic", FIL: "filecoin", APT: "aptos",
+  AAVE: "aave", ALGO: "algorand", ARB: "arbitrum", AXS: "axie-infinity",
+  EGLD: "elrond-erd-2", FLOW: "flow", FTM: "fantom", GRT: "the-graph",
+  HBAR: "hedera-hashgraph", ICP: "internet-computer", IMX: "immutable-x",
+  INJ: "injective-protocol", KAVA: "kava", MANA: "decentraland", MKR: "maker",
+  NEAR: "near", NEO: "neo", OP: "optimism", RNDR: "render-token",
+  SAND: "the-sandbox", SEI: "sei-network", SHIB: "shiba-inu", SUI: "sui",
+  THETA: "theta-token", TON: "the-open-network", USDC: "usd-coin",
+  USDT: "tether", VET: "vechain",
 };
+
+// Symbol → id resolved at runtime from CoinGecko's coins list, for any symbol
+// not in COINGECKO_IDS. Module-level cache so we fetch the ~15k-entry list at
+// most once per app session.
+let cgCoinsListCache: Record<string, string> | null = null;
+let cgCoinsListPromise: Promise<Record<string, string>> | null = null;
+
+async function loadCgSymbolMap(): Promise<Record<string, string>> {
+  if (cgCoinsListCache) return cgCoinsListCache;
+  if (!cgCoinsListPromise) {
+    cgCoinsListPromise = (async () => {
+      const list = await fetchJson("https://api.coingecko.com/api/v3/coins/list", "cg-coins-list");
+      const map: Record<string, string> = {};
+      if (Array.isArray(list)) {
+        // First id wins per symbol; curated overrides still take precedence at
+        // lookup time. Good enough for the top coins the backend serves.
+        for (const c of list) {
+          const sym = String(c?.symbol || "").toUpperCase();
+          if (sym && c?.id && !map[sym]) map[sym] = c.id;
+        }
+      }
+      cgCoinsListCache = map;
+      return map;
+    })().catch(() => ({} as Record<string, string>));
+  }
+  return cgCoinsListPromise;
+}
+
+// Resolve a coin symbol to its CoinGecko id: curated map first, then the live
+// coins list. Returns undefined only if the coin is unknown to CoinGecko.
+async function resolveCgId(symbol: string | undefined): Promise<string | undefined> {
+  if (!symbol) return undefined;
+  const up = symbol.toUpperCase();
+  if (COINGECKO_IDS[up]) return COINGECKO_IDS[up];
+  const dyn = await loadCgSymbolMap();
+  return dyn[up];
+}
 
 async function fetchJson(url: string, label?: string): Promise<any | null> {
   try {
@@ -117,29 +166,70 @@ async function liveFearGreed(limit = 30): Promise<any | null> {
 }
 
 /** Live 15d price history via CoinGecko market_chart ({prices:[[ts,usd]]},
- *  a shape toSeries handles). Null for coins not in COINGECKO_IDS. */
-function livePriceHistory(symbol: string | undefined, days = 15): Promise<any | null> {
-  const id = symbol ? COINGECKO_IDS[symbol.toUpperCase()] : undefined;
-  if (!id) return Promise.resolve(null);
+ *  a shape toSeries handles). Resolves the CoinGecko id dynamically so any
+ *  coin works, not just the curated set. Null only if truly unknown. */
+async function livePriceHistory(symbol: string | undefined, days = 15): Promise<any | null> {
+  const id = await resolveCgId(symbol);
+  if (!id) return null;
   return fetchJson(
     `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`,
     "cg-market-chart"
   );
 }
 
-/** Live price + 24h change via CoinGecko simple/price (60s refetch). */
+/** Live coin fundamentals via CoinGecko /coins/{id} → flattened to the same
+ *  field names the UI reads from the backend coinInfo (current_price_usd,
+ *  market_cap_usd, ath, circulating_supply, …). Works for any coin, so the
+ *  KPI cards fill even when the backend has null data (e.g. AAVE). */
+async function liveCoinInfo(symbol: string | undefined): Promise<any | null> {
+  const id = await resolveCgId(symbol);
+  if (!id) return null;
+  const raw = await fetchJson(
+    `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`,
+    "cg-coin-info"
+  );
+  const m = raw?.market_data;
+  if (!m) return null;
+  return {
+    symbol: String(raw?.symbol || symbol || "").toUpperCase(),
+    name: raw?.name ?? null,
+    coingecko_id: id,
+    current_price_usd: m.current_price?.usd ?? null,
+    market_cap_usd: m.market_cap?.usd ?? null,
+    market_cap_rank: m.market_cap_rank ?? null,
+    total_volume_24h: m.total_volume?.usd ?? null,
+    price_change_percentage_24h: m.price_change_percentage_24h ?? null,
+    circulating_supply: m.circulating_supply ?? null,
+    total_supply: m.total_supply ?? null,
+    max_supply: m.max_supply ?? null,
+    ath: m.ath?.usd ?? null,
+    ath_change_percentage: m.ath_change_percentage?.usd ?? null,
+    atl: m.atl?.usd ?? null,
+    high_24h: m.high_24h?.usd ?? null,
+    low_24h: m.low_24h?.usd ?? null,
+  };
+}
+
+/** Live price + 24h change via CoinGecko simple/price (60s refetch).
+ *  Id resolved dynamically inside queryFn so every coin gets live KPIs. */
 export function useCoinLivePrice(symbol: string | undefined) {
-  const id = symbol ? COINGECKO_IDS[symbol.toUpperCase()] : undefined;
   return useQuery({
-    queryKey: ["cg-price", id ?? ""],
-    enabled: !!id,
+    queryKey: ["cg-price", symbol?.toUpperCase() ?? ""],
+    enabled: !!symbol,
     refetchInterval: 60 * 1000,
     staleTime: 55 * 1000,
-    queryFn: () =>
-      fetchJson(
+    queryFn: async () => {
+      const id = await resolveCgId(symbol);
+      if (!id) return null;
+      const raw = await fetchJson(
         `https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`,
         "coingecko-price"
-      ),
+      );
+      // simple/price keys by id; the card reads the first key, so re-key by a
+      // stable name isn't needed — but return null (not {}) if the id was
+      // rejected so the card falls back cleanly instead of rendering $0.
+      return raw && raw[id] ? raw : null;
+    },
   });
 }
 
@@ -199,7 +289,7 @@ export function useCryptoOverview(symbol: string | undefined) {
       const p = { symbol };
       const [
         coinInfo, coinInfoAlt, global, fearGreed, priceHistory, hashRate, minersRevenue, txVolume,
-        fngLive, pricesLive, hashLive, minersLive, txVolLive,
+        fngLive, pricesLive, hashLive, minersLive, txVolLive, coinInfoLive,
       ] = await Promise.all([
         safe(getCryptoCoinInfo(p), "coinInfo"),
         safe(getCryptoCoinInfoAlt(p), "coinInfoAlt"),
@@ -210,15 +300,24 @@ export function useCryptoOverview(symbol: string | undefined) {
         safe(getCryptoBtcMinersRevenue(), "minersRevenue"),
         safe(getCryptoBtcTxnVolume(), "txVolume"),
         // Live sources (preferred — the backend collector can lag).
+        // liveCoinInfo added below in the same Promise.all.
         liveFearGreed(30),
         livePriceHistory(symbol),
         blockchainChart("hash-rate"),
         blockchainChart("miners-revenue"),
         blockchainChart("estimated-transaction-volume-usd"),
+        liveCoinInfo(symbol),
       ]);
+      // Merge live coin fundamentals over the backend payload: live values win
+      // where present, backend fills any gaps (and vice-versa for BTC where the
+      // backend is rich). This makes KPIs populate for every coin, not just the
+      // handful the backend collected.
+      const backendInfo = first(coinInfo) || first(coinInfoAlt) || {};
+      const mergedInfo = coinInfoLive
+        ? { ...backendInfo, ...Object.fromEntries(Object.entries(coinInfoLive).filter(([, v]) => v != null)) }
+        : backendInfo;
       return {
-        // Live first, backend `[{...}]` payload (unwrapped) as fallback.
-        coinInfo: first(coinInfo) || first(coinInfoAlt),
+        coinInfo: mergedInfo,
         global: first(global),
         fearGreed: fngLive ?? first(fearGreed),
         priceHistory: pricesLive ?? first(priceHistory),
