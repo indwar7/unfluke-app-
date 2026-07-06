@@ -451,13 +451,32 @@ const AIChatbot = ({
         ]);
         setLoading(true);
         setInput("");
+        // In crypto mode, rewrite the seeded leg instrument (baseBacktestForm
+        // defaults to NIFTY) to a crypto pair — same idea as the scanner form's
+        // `segment1a: crypto ? "BTCUSDT" : ...` rewrite below. The backend
+        // regenerates the strategy from the NL prompt, but we must not seed it
+        // with an NSE symbol when the market is crypto.
+        const backtestFormForMarket =
+          market === "crypto"
+            ? {
+                ...basicBacktestForm,
+                positions: {
+                  ...basicBacktestForm?.positions,
+                  legs: (basicBacktestForm?.positions?.legs || []).map((leg: any) => ({
+                    ...leg,
+                    instrument: { ...(leg?.instrument || {}), option: "BTCUSDT", multiple: 1 },
+                  })),
+                },
+              }
+            : basicBacktestForm;
+
         chatbotSocket.emit("backtest_chat", {
           userid: auth?.user?._id,
           uniquetoken: uniqueUserIdRef.current,
           message: input,
           api_key: Config.REACT_APP_CHATBOT_TOKEN,
           chat_history: chatHistory,
-          backtest_form: basicBacktestForm,
+          backtest_form: backtestFormForMarket,
           bot_type: selectedBot,
           market: market,
         });
