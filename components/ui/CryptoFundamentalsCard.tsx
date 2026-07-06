@@ -69,7 +69,12 @@ const CryptoFundamentalsCard: React.FC = () => {
   const vol24 =
     pick(liveObj, ["usd_24h_vol"]) ?? pick(info, ["total_volume_24h", "total_volume", "volume"]);
   const ath = pick(info, ["ath"]);
-  const fearGreedValue = pick(overview?.fearGreed?.data?.[0] ?? overview?.fearGreed, ["value"]);
+  // F&G data is chronological (oldest → newest) — latest is the last entry.
+  const fngArr = overview?.fearGreed?.data;
+  const fearGreedValue = pick(
+    (Array.isArray(fngArr) && fngArr.length ? fngArr[fngArr.length - 1] : null) ?? overview?.fearGreed,
+    ["value"]
+  );
 
   const snapshot = useMemo<Tile[]>(() => {
     const fng = Number(fearGreedValue);

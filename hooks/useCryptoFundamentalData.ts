@@ -79,6 +79,54 @@ async function fetchJson(url: string, label?: string): Promise<any | null> {
   }
 }
 
+/* ── Live real-time sources, preferred over the backend collector ──
+ * The backend's crypto collector can lag (observed months stale). Every
+ * series below is fetched live first; the backend payload is the fallback,
+ * so a rate-limited/blocked third-party host degrades gracefully. */
+
+/** blockchain.info charts API — live BTC on-chain series, {values:[{x,y}]}
+ *  (toSeries already understands that envelope). */
+const blockchainChart = (name: string, timespan = "30days") =>
+  fetchJson(
+    `https://api.blockchain.info/charts/${name}?timespan=${timespan}&format=json&cors=true`,
+    `bc:${name}`
+  );
+
+/** Live Fear & Greed from alternative.me, normalised to the backend's
+ *  {data:[{timestamp,date,value}]} shape (their values come as strings). */
+async function liveFearGreed(limit = 30): Promise<any | null> {
+  const raw = await fetchJson(`https://api.alternative.me/fng/?limit=${limit}`, "fng-live");
+  if (!Array.isArray(raw?.data) || !raw.data.length) return null;
+  const data = raw.data
+    .map((d: any) => {
+      const ts = Number(d?.timestamp);
+      const value = Number(d?.value);
+      if (!Number.isFinite(ts) || !Number.isFinite(value)) return null;
+      return {
+        timestamp: ts,
+        date: new Date(ts * 1000).toISOString().slice(0, 10),
+        value,
+        classification: d?.value_classification,
+      };
+    })
+    .filter(Boolean)
+    // alternative.me sends newest-first; emit chronological so charts read
+    // left-to-right and `toSeries(..., {limit:1})` picks the LATEST value.
+    .sort((a: any, b: any) => a.timestamp - b.timestamp);
+  return data.length ? { source: "alternative.me(live)", data } : null;
+}
+
+/** Live 15d price history via CoinGecko market_chart ({prices:[[ts,usd]]},
+ *  a shape toSeries handles). Null for coins not in COINGECKO_IDS. */
+function livePriceHistory(symbol: string | undefined, days = 15): Promise<any | null> {
+  const id = symbol ? COINGECKO_IDS[symbol.toUpperCase()] : undefined;
+  if (!id) return Promise.resolve(null);
+  return fetchJson(
+    `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}`,
+    "cg-market-chart"
+  );
+}
+
 /** Live price + 24h change via CoinGecko simple/price (60s refetch). */
 export function useCoinLivePrice(symbol: string | undefined) {
   const id = symbol ? COINGECKO_IDS[symbol.toUpperCase()] : undefined;
@@ -149,26 +197,34 @@ export function useCryptoOverview(symbol: string | undefined) {
     retry: 1,
     queryFn: async (): Promise<CryptoOverview> => {
       const p = { symbol };
-      const [coinInfo, coinInfoAlt, global, fearGreed, priceHistory, hashRate, minersRevenue, txVolume] =
-        await Promise.all([
-          safe(getCryptoCoinInfo(p), "coinInfo"),
-          safe(getCryptoCoinInfoAlt(p), "coinInfoAlt"),
-          safe(getCryptoGlobalMarket(), "global"),
-          safe(getCryptoFearGreed(), "fearGreed"),
-          safe(getCryptoPriceHistory(p), "priceHistory"),
-          safe(getCryptoBtcHashRate(), "hashRate"),
-          safe(getCryptoBtcMinersRevenue(), "minersRevenue"),
-          safe(getCryptoBtcTxnVolume(), "txVolume"),
-        ]);
+      const [
+        coinInfo, coinInfoAlt, global, fearGreed, priceHistory, hashRate, minersRevenue, txVolume,
+        fngLive, pricesLive, hashLive, minersLive, txVolLive,
+      ] = await Promise.all([
+        safe(getCryptoCoinInfo(p), "coinInfo"),
+        safe(getCryptoCoinInfoAlt(p), "coinInfoAlt"),
+        safe(getCryptoGlobalMarket(), "global"),
+        safe(getCryptoFearGreed(), "fearGreed"),
+        safe(getCryptoPriceHistory(p), "priceHistory"),
+        safe(getCryptoBtcHashRate(), "hashRate"),
+        safe(getCryptoBtcMinersRevenue(), "minersRevenue"),
+        safe(getCryptoBtcTxnVolume(), "txVolume"),
+        // Live sources (preferred — the backend collector can lag).
+        liveFearGreed(30),
+        livePriceHistory(symbol),
+        blockchainChart("hash-rate"),
+        blockchainChart("miners-revenue"),
+        blockchainChart("estimated-transaction-volume-usd"),
+      ]);
       return {
-        // API returns [{...}] arrays — unwrap the first element.
+        // Live first, backend `[{...}]` payload (unwrapped) as fallback.
         coinInfo: first(coinInfo) || first(coinInfoAlt),
         global: first(global),
-        fearGreed: first(fearGreed),
-        priceHistory: first(priceHistory),
-        hashRate: first(hashRate),
-        minersRevenue: first(minersRevenue),
-        txVolume: first(txVolume),
+        fearGreed: fngLive ?? first(fearGreed),
+        priceHistory: pricesLive ?? first(priceHistory),
+        hashRate: hashLive ?? first(hashRate),
+        minersRevenue: minersLive ?? first(minersRevenue),
+        txVolume: txVolLive ?? first(txVolume),
       };
     },
   });
@@ -208,7 +264,7 @@ export function useCryptoDetails(symbol: string | undefined) {
     retry: 1,
     queryFn: async (): Promise<CryptoDetails> => {
       const p = { symbol };
-      const [coinInfo, onChain, derivatives, lightning, priceHistory, etherscan] =
+      const [coinInfo, onChain, derivatives, lightning, priceHistory, etherscan, pricesLive] =
         await Promise.all([
           safe(getCryptoCoinInfo(p), "coinInfo"),
           safe(getCryptoOnChain(p), "onChain"),
@@ -216,15 +272,19 @@ export function useCryptoDetails(symbol: string | undefined) {
           safe(getCryptoLightning(p), "lightning"),
           safe(getCryptoPriceHistory(p), "priceHistory"),
           safe(getCryptoEtherScanOnChain(p), "etherscan"),
+          livePriceHistory(symbol, 30),
         ]);
 
       // Bitcoin-only rich on-chain series (skip for non-BTC to save calls).
+      // Each series: live blockchain.info first, backend collector fallback.
       const series = isBtc
         ? await (async () => {
             const [
               hashRate, difficulty, minersRevenue, totalFees, txVolume, txCount,
               utxoCount, totalBitcoins, avgBlockSize, blockchainSize, mempoolSize,
               marketCap, networkActivities, lightnings,
+              bcHash, bcDiff, bcMiners, bcFees, bcTxVol, bcTxCount,
+              bcUtxo, bcTotal, bcAvgBlock, bcChainSize, bcMempool, bcMcap,
             ] = await Promise.all([
               safe(getCryptoBtcHashRate(), "hashRate"),
               safe(getCryptoBtcDifficulty(), "difficulty"),
@@ -240,11 +300,34 @@ export function useCryptoDetails(symbol: string | undefined) {
               safe(getCryptoBtcMarketCap(), "marketCap"),
               safe(getCryptoBtcNetworkActivities(), "networkActivities"),
               safe(getCryptoBtcLightnings(), "lightnings"),
+              blockchainChart("hash-rate"),
+              blockchainChart("difficulty"),
+              blockchainChart("miners-revenue"),
+              blockchainChart("transaction-fees-usd"),
+              blockchainChart("estimated-transaction-volume-usd"),
+              blockchainChart("n-transactions"),
+              blockchainChart("utxo-count"),
+              blockchainChart("total-bitcoins"),
+              blockchainChart("avg-block-size"),
+              blockchainChart("blocks-size"),
+              blockchainChart("mempool-size"),
+              blockchainChart("market-cap"),
             ]);
             return {
-              hashRate, difficulty, minersRevenue, totalFees, txVolume, txCount,
-              utxoCount, totalBitcoins, avgBlockSize, blockchainSize, mempoolSize,
-              marketCap, networkActivities, lightnings,
+              hashRate: bcHash ?? hashRate,
+              difficulty: bcDiff ?? difficulty,
+              minersRevenue: bcMiners ?? minersRevenue,
+              totalFees: bcFees ?? totalFees,
+              txVolume: bcTxVol ?? txVolume,
+              txCount: bcTxCount ?? txCount,
+              utxoCount: bcUtxo ?? utxoCount,
+              totalBitcoins: bcTotal ?? totalBitcoins,
+              avgBlockSize: bcAvgBlock ?? avgBlockSize,
+              blockchainSize: bcChainSize ?? blockchainSize,
+              mempoolSize: bcMempool ?? mempoolSize,
+              marketCap: bcMcap ?? marketCap,
+              // No public live equivalent — backend only.
+              networkActivities, lightnings,
             };
           })()
         : {
@@ -261,7 +344,7 @@ export function useCryptoDetails(symbol: string | undefined) {
         onChain: first(onChain),
         derivatives: first(derivatives),
         lightning: first(lightning),
-        priceHistory: first(priceHistory),
+        priceHistory: pricesLive ?? first(priceHistory),
         etherscan: first(etherscan),
         series,
       };
