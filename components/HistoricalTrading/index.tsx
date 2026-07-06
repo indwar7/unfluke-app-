@@ -20,6 +20,7 @@ import type { AppColors } from "@/constants/Colors";
 
 const BASE = "https://api.unfluke.in";
 const DEFAULT_SYMBOL = "NSE:NIFTY 50";
+const CRYPTO_DEFAULT_SYMBOL = "CRYPTO:BTCUSDT";
 
 function sendToWebView(webRef: React.RefObject<WebView>, msgObj: any) {
   const json = JSON.stringify(JSON.stringify(msgObj));
@@ -101,17 +102,27 @@ var Datafeed = {
   },
   searchSymbols: function(input, exchange, type, cb) { cb([]); },
   resolveSymbol: function(symbolName, onResolve, onError) {
+    // Crypto instruments live under the CRYPTO: exchange prefix (verified:
+    // getInstrument?instrument=CRYPTO:BTCUSDT resolves; a bare/NSE-prefixed
+    // crypto symbol returns "Instrument Not Found").
+    var isCrypto = AUTH.mrkt === 'crypto';
+    var defExch = isCrypto ? 'CRYPTO' : 'NSE';
     var lookupName = symbolName;
     if (lookupName.indexOf(':') === -1) {
-      lookupName = 'NSE:' + lookupName;
+      lookupName = defExch + ':' + lookupName;
     }
-    apiFetch('${BASE}/api/historicData/getInstrument?instrument=' + encodeURIComponent(lookupName))
+    apiFetch('${BASE}/api/historicData/getInstrument?instrument=' + encodeURIComponent(lookupName) + '&market=' + (AUTH.mrkt || 'in'))
     .then(function(item) {
       if (!item || item.Error) {
         onError('No symbol found'); return;
       }
       var name, ticker, type, exchange;
-      if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; }
+      if (isCrypto) {
+        // Crypto payload: a single pair symbol; exchange is always CRYPTO.
+        name = item.crypto || item.symbol || item.instrument || item.future || item.equity || (lookupName);
+        type = 'crypto'; exchange = 'CRYPTO'; ticker = name;
+      }
+      else if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; }
       else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; }
       else if (item.type === 'OPT') { name=item.option; type='option'; exchange='NFO'; ticker=item.option; }
       else if (item.type === 'FUT') { name=item.future; type='future'; exchange='NFO'; ticker=item.future; }
@@ -127,8 +138,9 @@ var Datafeed = {
         full_name: name,
         description: ticker,
         type: type,
-        session: '0915-1530',
-        timezone: 'Asia/Kolkata',
+        // Crypto trades 24x7 in UTC; NSE is 0915-1530 IST.
+        session: isCrypto ? '24x7' : '0915-1530',
+        timezone: isCrypto ? 'Etc/UTC' : 'Asia/Kolkata',
         instrument_token: item.instrument_token,
         ticker: ticker,
         exchange: exchange,
@@ -327,6 +339,11 @@ const Trading = () => {
   // @ts-ignore
   const selectedStock = useSelector((state) => state?.GlobalStock?.selectedStock);
   const user = useSelector(authSelector);
+  // Current market ("in" | "crypto") — drives the chart's default symbol and
+  // the exchange prefix the datafeed resolves against.
+  const appType = useSelector((state: any) => state?.Layout?.appType ?? "in");
+  const isCrypto = appType === "crypto";
+  const marketDefaultSymbol = isCrypto ? CRYPTO_DEFAULT_SYMBOL : DEFAULT_SYMBOL;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chartReady, setChartReady] = useState(false);
@@ -335,16 +352,18 @@ const Trading = () => {
   const tokenRef = useRef<string | null>(null);
   const mrktRef = useRef<string | null>(null);
   const initSentRef = useRef(false);
-  const lastSymbolSentRef = useRef(DEFAULT_SYMBOL);
+  const lastSymbolSentRef = useRef(marketDefaultSymbol);
 
-  const [displaySymbol, setDisplaySymbol] = useState("NIFTY 50");
+  const [displaySymbol, setDisplaySymbol] = useState(isCrypto ? "BTCUSDT" : "NIFTY 50");
 
   useEffect(() => {
     (async () => {
       tokenRef.current = await AsyncStorage.getItem("access");
-      mrktRef.current = await AsyncStorage.getItem("mkt");
+      // Keep the market in sync with redux (source of truth), not only the
+      // possibly-stale AsyncStorage snapshot.
+      mrktRef.current = appType || (await AsyncStorage.getItem("mkt"));
     })();
-  }, []);
+  }, [appType]);
 
   const handleApiRequest = useCallback(async (id: number, url: string) => {
     try {
@@ -385,30 +404,44 @@ const Trading = () => {
 
     try {
       if (!tokenRef.current) tokenRef.current = await AsyncStorage.getItem("access");
-      if (!mrktRef.current) mrktRef.current = await AsyncStorage.getItem("mkt");
+      // Redux market wins; fall back to stored value.
+      mrktRef.current = appType || mrktRef.current || (await AsyncStorage.getItem("mkt"));
 
       initSentRef.current = true;
+      lastSymbolSentRef.current = marketDefaultSymbol;
       sendToWebView(webRef, {
         type: "INIT",
         token: tokenRef.current || "",
         userId: userId,
         mrkt: mrktRef.current || "",
-        symbol: DEFAULT_SYMBOL,
+        symbol: marketDefaultSymbol,
         isDark: isDark,
       });
     } catch (e: any) {
       initSentRef.current = false;
     }
-  }, [user?._id, isDark]);
+  }, [user?._id, isDark, appType, marketDefaultSymbol]);
+
+  // On market toggle, force the chart to re-initialise under the new market so
+  // it loads the crypto (or stock) default symbol instead of keeping the old
+  // one. Guarded so it only fires after the first INIT has gone out.
+  const didMountMarketRef = useRef(false);
+  useEffect(() => {
+    if (!didMountMarketRef.current) { didMountMarketRef.current = true; return; }
+    initSentRef.current = false;
+    mrktRef.current = appType;
+    sendInit();
+  }, [appType]);
 
   // When selected stock changes from watchlist, update chart
   useEffect(() => {
     if (!initSentRef.current || !webRef.current || !selectedStock?.symbol) return;
     const raw = selectedStock.symbol;
-    const sym = raw.includes(":") ? raw : `NSE:${raw}`;
+    // Preserve any explicit exchange; otherwise prefix by market.
+    const sym = raw.includes(":") ? raw : `${isCrypto ? "CRYPTO" : "NSE"}:${raw}`;
     if (sym === lastSymbolSentRef.current) return;
     lastSymbolSentRef.current = sym;
-    setDisplaySymbol(sym.replace(/^NSE:/, "").replace(/^BSE:/, ""));
+    setDisplaySymbol(sym.replace(/^NSE:/, "").replace(/^BSE:/, "").replace(/^CRYPTO:/, ""));
     sendToWebView(webRef, { type: "SET_SYMBOL", symbol: sym });
   }, [selectedStock?.symbol]);
 

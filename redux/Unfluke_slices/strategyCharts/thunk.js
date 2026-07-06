@@ -1,9 +1,11 @@
 import { setChartForm, setInstrumentNames, setLoading,setOptionForm,setSelectedSymbol,setStradleForm } from "./reducer";
-import { getOptionNames } from "../../../Unfluke_helpers/backend_helper";
+import { getInstrumentNames } from "../../../Unfluke_helpers/backend_helper";
 
-export const StrategyChartInstruments = (id)=>async(dispatch)=>{
+// `market` ("in" | "crypto") comes from Layout.appType. In crypto mode the
+// dropdown must list crypto pairs, not NSE option names.
+export const StrategyChartInstruments = (market)=>async(dispatch)=>{
     try {
-        let list = await getOptionNames()
+        let list = await getInstrumentNames(market)
         dispatch(setInstrumentNames(list))
     } catch (error) {
         dispatch(setInstrumentNames([]))

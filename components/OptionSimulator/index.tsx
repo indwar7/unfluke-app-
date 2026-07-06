@@ -52,8 +52,12 @@ const OptionSimulator = () => {
   const { width } = useWindowDimensions();
   const dispatch = useDispatch();
 
+  // Current market ("in" | "crypto"). Drives instrument list + default symbol.
+  const appType = useSelector((state: any) => state?.Layout?.appType ?? 'in');
+  const isCrypto = appType === 'crypto';
+
   const [selectedInstrument, setSelectedInstrument] = useState({
-    name: 'NIFTY',
+    name: isCrypto ? 'BTCUSDT' : 'NIFTY',
     spotPrice: '-',
     futurePrice: '-',
     lotSize: '-',
@@ -182,11 +186,18 @@ const OptionSimulator = () => {
     return new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   };
 
+  // Fetch the instrument list for the CURRENT market, and re-fetch whenever
+  // the market toggles so crypto mode never keeps the NSE list.
   useEffect(() => {
-    if (!instrumentList || instrumentList.length === 0) {
-      dispatch(StrategyChartInstruments());
-    }
-  }, [dispatch]);
+    dispatch(StrategyChartInstruments(appType));
+    // Reset the selected instrument to the market's default so the header
+    // cards don't keep showing the previous market's symbol.
+    setSelectedInstrument((prev) => ({
+      ...prev,
+      name: isCrypto ? 'BTCUSDT' : 'NIFTY',
+      spotPrice: '-', futurePrice: '-', lotSize: '-', multiple: '-',
+    }));
+  }, [dispatch, appType]);
 
   useEffect(() => {
     if (isTimeChanged && displayName && tableData.length > 0) {

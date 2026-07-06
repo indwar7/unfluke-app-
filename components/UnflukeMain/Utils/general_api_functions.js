@@ -1,12 +1,15 @@
 import { Config } from "../../../helpers/config";
 
 
-const getEquityStocks = async (axios, type) => {
+// `market` ("in" | "crypto") is sent as a query param exactly like the
+// website (getAllEquities/getAllFutures ?scanner=&market=). In crypto mode the
+// backend returns crypto pairs, and we drop the hardcoded NSE index prefixes.
+const getEquityStocks = async (axios, type, market = "in") => {
     const results = await axios.get(`${Config.BACKEND_URL}/api/getAllEquities`, {
-        params: { scanner: type === "scanner" },
+        params: { scanner: type === "scanner", market },
     })
-   
-    if (type === "scanner") {
+
+    if (type === "scanner" && market !== "crypto") {
         return [
             "Nifty 50",
             "Nifty 100",
@@ -18,7 +21,10 @@ const getEquityStocks = async (axios, type) => {
     }
 }
 
-const getIndexStocks = () => {
+const getIndexStocks = (market = "in") => {
+    // Crypto has no index-spot equivalents; keep the picker empty there so a
+    // crypto scanner never offers "Nifty Spot".
+    if (market === "crypto") return [];
     return [
         "Nifty Spot",
         "Banknifty Spot",
@@ -27,12 +33,12 @@ const getIndexStocks = () => {
     ];
 }
 
-const getFutureStocks = async (axios, type) => {
+const getFutureStocks = async (axios, type, market = "in") => {
     const results = await axios.get(`${Config.BACKEND_URL}/api/getAllFutures`, {
-        params: { scanner: type === "scanner" },
+        params: { scanner: type === "scanner", market },
     })
-   
-    if (type === "scanner") {
+
+    if (type === "scanner" && market !== "crypto") {
         return [
             "Nifty 50",
             "Nifty 100",
@@ -44,11 +50,11 @@ const getFutureStocks = async (axios, type) => {
     }
 }
 
-const getOptionsStocks = async (axios, type) => {
+const getOptionsStocks = async (axios, type, market = "in") => {
     const results = await axios.get(`${Config.BACKEND_URL}/api/getAllOptions`, {
-        params: { scanner: type === "scanner" },
+        params: { scanner: type === "scanner", market },
     })
-   
+
     return [
         ...results,
     ]

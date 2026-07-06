@@ -465,7 +465,10 @@ export default function StrategyChartsScreen() {
   }, [sidebarOpen, sidebarWidth, slideAnim]);
 
   // @ts-ignore
-  const globalSelectedStock = useSelector((s) => s.GlobalStock?.selectedStock);
+  const globalSelectedStock = useSelector((s: any) => s.GlobalStock?.selectedStock);
+  // Current market ("in" | "crypto") — instrument list must follow it.
+  const appType = useSelector((s: any) => s?.Layout?.appType ?? "in");
+  const isCrypto = appType === "crypto";
 
   // Load token/userId
   useEffect(() => {
@@ -517,31 +520,44 @@ export default function StrategyChartsScreen() {
     }
   }, [token, sendInit]);
 
-  // Load instruments
+  // Load instruments for the current market. getOptionNames returns NSE names
+  // for both markets, so in crypto mode pull the futures-pair list instead
+  // (getAllFutures?market=crypto), mirroring the Option Simulator.
   useEffect(() => {
     if (!token || !userId) return;
     (async () => {
       setLoading(true);
       try {
         const uid = userId;
-        const data = await safeFetch(`${BASE}/api/historicalChart/getOptionNames?id=${uid}`, token);
+        const url = isCrypto
+          ? `${BASE}/api/getAllFutures?scanner=false&market=crypto`
+          : `${BASE}/api/historicalChart/getOptionNames?id=${uid}`;
+        const data = await safeFetch(url, token);
         let names: string[] = [];
         if (Array.isArray(data)) names = data;
         else if (data?.optionNames && Array.isArray(data.optionNames)) names = data.optionNames;
 
-        const FALLBACK = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY", "TATASTEEL", "WIPRO"];
+        const FALLBACK = isCrypto
+          ? ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
+          : ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY", "TATASTEEL", "WIPRO"];
         if (names.length === 0) names = FALLBACK;
         setOptionNames(names);
 
-        const defaultSelect = names.includes("NIFTY") ? "NIFTY" : (names[0] || "NIFTY");
+        const preferred = isCrypto ? "BTCUSDT" : "NIFTY";
+        const defaultSelect = names.includes(preferred) ? preferred : (names[0] || preferred);
         setSelectedInstrument(defaultSelect);
       } catch {
-        setOptionNames(["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS"]);
-        setSelectedInstrument("NIFTY");
+        if (isCrypto) {
+          setOptionNames(["BTCUSDT", "ETHUSDT", "SOLUSDT"]);
+          setSelectedInstrument("BTCUSDT");
+        } else {
+          setOptionNames(["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS"]);
+          setSelectedInstrument("NIFTY");
+        }
       }
       setLoading(false);
     })();
-  }, [token, userId, refreshKey]);
+  }, [token, userId, refreshKey, isCrypto]);
 
   const fetchStrikes = async (exp: string, type: string, instrument: string) => {
     const uid = userId || "";

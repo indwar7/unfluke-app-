@@ -654,6 +654,7 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
+import { useSelector } from "react-redux";
 import React, { useEffect, useState } from "react";
 import {
   Platform,
@@ -685,6 +686,9 @@ import type { AppColors } from "@/constants/Colors";
 const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
   const { colors: c, isDark } = useTheme();
   const dynamicStyles = styles(c, isDark);
+
+  // Current market ("in" | "crypto") — instrument lists must follow it.
+  const appType = useSelector((store: any) => store?.Layout?.appType ?? "in");
 
   const [segment1aList, setSegment1aList] = useState([]);
   const [equityStocks, setEquityStocks] = useState([]);
@@ -809,34 +813,26 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
     }
   };
 
-  // Fetch stocks on mount
+  // Fetch instrument lists for the current market, and re-fetch whenever the
+  // market toggles so a crypto scan/backtest never keeps the NSE lists.
   useEffect(() => {
+    const scanType = type ? type : "scanner";
     const getStocks = async () => {
-      const equityStocks = await getEquityStocks(
-        axios,
-        type ? type : "scanner"
-      );
-
+      const equityStocks = await getEquityStocks(axios, scanType, appType);
       setEquityStocks(equityStocks);
 
-      const indexStocks = getIndexStocks();
+      const indexStocks = getIndexStocks(appType);
       setIndexStocks(indexStocks);
 
-      const optionStocks = await getOptionsStocks(
-        axios,
-        type ? type : "scanner"
-      );
+      const optionStocks = await getOptionsStocks(axios, scanType, appType);
       setOptionStocks(optionStocks);
 
-      const futureStocks = await getFutureStocks(
-        axios,
-        type ? type : "scanner"
-      );
+      const futureStocks = await getFutureStocks(axios, scanType, appType);
       setFutureStocks(futureStocks);
     };
 
     getStocks();
-  }, []);
+  }, [appType]);
 
   // Update segment1aList based on segment
 
