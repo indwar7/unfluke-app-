@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ChevronRight, Eye, Plus, ScanLine } from "lucide-react-native";
 import { ScreenWithHeader } from "@/components/AppHeader";
 import { useTheme } from "@/constants/ThemeContext";
@@ -27,8 +28,12 @@ const ScannerMain = () => {
     const fetchScanners = async () => {
       try {
         setLoading(true);
+        // Market-scoped via ?market= query param — this endpoint ignores the
+        // mrkt header; the website (verified against its live bundle) passes
+        // the market as a param and the API returns a crypto-specific list.
+        const mkt = (await AsyncStorage.getItem("mkt")) || "in";
         const response = await fetch(
-          "https://api.unfluke.in/api/scanner/getAdminScanners?type=technical"
+          `https://api.unfluke.in/api/scanner/getAdminScanners?type=technical&market=${mkt}`
         );
 
         if (!response.ok) {

@@ -18,6 +18,7 @@ import {
   ActivityIndicator, Dimensions, StyleSheet, FlatList,
 } from "react-native";
 import { Search, X, TrendingUp, TrendingDown } from "lucide-react-native";
+import { useLocalSearchParams } from "expo-router";
 import { ScreenWithHeader } from "../components/AppHeader";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
@@ -63,7 +64,13 @@ export default function CryptoFundamentalScreen() {
   const { colors: c, isDark } = useTheme();
   const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
 
-  const [coin, setCoin] = useState<Coin>(DEFAULT_COIN);
+  // Home-screen CryptoFundamentalsCard passes its selection via route params.
+  const params = useLocalSearchParams<{ symbol?: string; name?: string }>();
+  const [coin, setCoin] = useState<Coin>(
+    params.symbol
+      ? { symbol: String(params.symbol).toUpperCase(), name: String(params.name || params.symbol) }
+      : DEFAULT_COIN
+  );
   const [query, setQuery] = useState("");
   const [showDrop, setShowDrop] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("Overview");
@@ -85,6 +92,12 @@ export default function CryptoFundamentalScreen() {
     const arr = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
     return arr
       .map((r: any) => {
+        // Live API returns plain symbol strings: ["SOL"]. Objects kept as a
+        // fallback in case the shape changes.
+        if (typeof r === "string") {
+          const sym = r.replace(/USDT$/i, "").toUpperCase();
+          return sym ? { symbol: sym, name: sym } : null;
+        }
         const sym = pick(r, ["symbol", "coin", "base", "name", "instrument_token"]);
         const nm = pick(r, ["name", "coinName", "fullName", "symbol"]);
         return sym ? { symbol: String(sym).replace(/USDT$/i, "").toUpperCase(), name: String(nm ?? sym) } : null;

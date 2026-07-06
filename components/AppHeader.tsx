@@ -265,6 +265,9 @@ export const AppHeader = () => {
     // Persist "mkt" + update redux BEFORE navigating so the dashboard's mount
     // fetch already carries the new market header.
     await (dispatch(changeAppType(next) as any) as unknown as Promise<void>);
+    // Pop everything first: screens left in the back stack fetched under the
+    // OLD market and would show stale data if the user navigated back to them.
+    try { if (router.canDismiss()) router.dismissAll(); } catch { }
     try { router.replace("/dashboard" as any); } catch { }
   };
 

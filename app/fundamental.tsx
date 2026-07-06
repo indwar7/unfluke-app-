@@ -16,6 +16,8 @@ import {
   Search, X, ChevronDown, ChevronRight, Check,
   AlertCircle, TrendingUp, TrendingDown,
 } from "lucide-react-native";
+import { router } from "expo-router";
+import { appTypes } from "../components/UnflukeMain/constants/layout";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedStock } from "../redux/Unfluke_slices/globalStock/reducer";
@@ -142,6 +144,14 @@ export default function FundamentalScreen() {
   const abortRef = useRef<AbortController | null>(null);
 
   const redux = useSelector((s: any) => s.GlobalStock?.selectedStock);
+
+  // This screen is stock-only (Capitaline data). In crypto mode, hand off to
+  // the crypto fundamentals screen so no equity data ever shows.
+  const appType = useSelector((st: any) => st?.Layout?.appType ?? appTypes.IND);
+  const isCrypto = appType === appTypes.CRYPTO;
+  useEffect(() => {
+    if (isCrypto) router.replace("/crypto-fundamental" as any);
+  }, [isCrypto]);
 
   useEffect(() => {
     dispatch(setSelectedStock(DEFAULT_STOCK));

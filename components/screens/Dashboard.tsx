@@ -14,7 +14,9 @@ import { ChevronRight, Crown, Sparkles } from "lucide-react-native";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
 import FundamentalsCard from "@/components/ui/FundamentalsCard";
+import CryptoFundamentalsCard from "@/components/ui/CryptoFundamentalsCard";
 import Reveal from "@/components/ui/Reveal";
+import { appTypes } from "@/components/UnflukeMain/constants/layout";
 
 /* Real feature images (old DashboardImages assets) */
 import aiBot from "../../assets/images/DashboardImages/AIBot_new.png";
@@ -64,6 +66,8 @@ const UnDashboard = () => {
   const { colors: c, isDark } = useTheme();
   const s = makeStyles(c, isDark);
   const user = useSelector(authSelector);
+  const appType = useSelector((state: any) => state?.Layout?.appType ?? appTypes.IND);
+  const isCrypto = appType === appTypes.CRYPTO;
   const firstName = user?.name?.split(" ")[0] || "Trader";
   const plan = planName(user?.tier);
   const isPaid = Number(user?.tier) > 0;
@@ -75,6 +79,11 @@ const UnDashboard = () => {
   const handleNavigation = (nav: string) => {
     if (nav === "strategy-charts") {
       router.push("/strategy-charts?strategyId=123" as any);
+      return;
+    }
+    // Same remap the sidebar does: fundamentals has a dedicated crypto screen.
+    if (nav === "fundamental" && isCrypto) {
+      router.push("/crypto-fundamental" as any);
       return;
     }
     router.push(`/${nav}` as any);
@@ -127,9 +136,10 @@ const UnDashboard = () => {
         </View>
       </Reveal>
 
-      {/* Fundamentals snapshot + search (real data) */}
+      {/* Fundamentals snapshot + search (real data). The card follows the
+          IND/₿ market toggle in the header. */}
       <Reveal index={1}>
-        <FundamentalsCard />
+        {isCrypto ? <CryptoFundamentalsCard /> : <FundamentalsCard />}
       </Reveal>
 
       {/* Upgrade banner — free users */}
