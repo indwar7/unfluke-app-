@@ -116,17 +116,25 @@ var Datafeed = {
       if (!item || item.Error) {
         onError('No symbol found'); return;
       }
-      var name, ticker, type, exchange;
+      var name, ticker, type, exchange, tokenForBars;
       if (isCrypto) {
-        // Crypto payload: a single pair symbol; exchange is always CRYPTO.
-        name = item.crypto || item.symbol || item.instrument || item.future || item.equity || (lookupName);
-        type = 'crypto'; exchange = 'CRYPTO'; ticker = name;
+        // Crypto payload (verified live): { _id, index:"CRYPTO:BTCUSDT",
+        // instrument_token:"BTCUSDT", type:"CRYPTO" }. The website's datafeed
+        // sends the Mongo _id (NOT the instrument_token) as the bars 'e'
+        // param for crypto, keeps type as-is, and uses the pair as the name.
+        var idx = item.index || lookupName;            // "CRYPTO:BTCUSDT"
+        name = (idx.split(':')[1]) || item.instrument_token || idx;
+        type = item.type || 'CRYPTO';                  // "CRYPTO"
+        exchange = 'CRYPTO';
+        ticker = name;
+        tokenForBars = item._id || item.instrument_token;
       }
-      else if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; }
-      else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; }
-      else if (item.type === 'OPT') { name=item.option; type='option'; exchange='NFO'; ticker=item.option; }
-      else if (item.type === 'FUT') { name=item.future; type='future'; exchange='NFO'; ticker=item.future; }
+      else if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; tokenForBars=item.instrument_token; }
+      else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; tokenForBars=item.instrument_token; }
+      else if (item.type === 'OPT') { name=item.option; type='option'; exchange='NFO'; ticker=item.option; tokenForBars=item.instrument_token; }
+      else if (item.type === 'FUT') { name=item.future; type='future'; exchange='NFO'; ticker=item.future; tokenForBars=item.instrument_token; }
       else {
+        tokenForBars=item.instrument_token;
         if (item.equity) { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; }
         else if (item.index) { name=item.index; type='index'; exchange='NSE'; ticker=item.index; }
         else if (item.option) { name=item.option; type='option'; exchange='NFO'; ticker=item.option; }
@@ -141,7 +149,7 @@ var Datafeed = {
         // Crypto trades 24x7 in UTC; NSE is 0915-1530 IST.
         session: isCrypto ? '24x7' : '0915-1530',
         timezone: isCrypto ? 'Etc/UTC' : 'Asia/Kolkata',
-        instrument_token: item.instrument_token,
+        instrument_token: tokenForBars,
         ticker: ticker,
         exchange: exchange,
         minmov: 1,

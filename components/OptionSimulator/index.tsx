@@ -186,17 +186,26 @@ const OptionSimulator = () => {
     return new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   };
 
-  // Fetch the instrument list for the CURRENT market, and re-fetch whenever
-  // the market toggles so crypto mode never keeps the NSE list.
+  // Fetch the instrument list for the CURRENT market. Mirrors the original
+  // (only fetch when empty) so stock behaviour is unchanged; re-fetch on an
+  // actual market change so crypto never keeps the NSE list.
+  const prevAppTypeRef = useRef(appType);
   useEffect(() => {
-    dispatch(StrategyChartInstruments(appType));
-    // Reset the selected instrument to the market's default so the header
-    // cards don't keep showing the previous market's symbol.
-    setSelectedInstrument((prev) => ({
-      ...prev,
-      name: isCrypto ? 'BTCUSDT' : 'NIFTY',
-      spotPrice: '-', futurePrice: '-', lotSize: '-', multiple: '-',
-    }));
+    const marketChanged = prevAppTypeRef.current !== appType;
+    if (marketChanged || !instrumentList || instrumentList.length === 0) {
+      dispatch(StrategyChartInstruments(appType));
+    }
+    // Only reset the selected instrument when the market actually CHANGES —
+    // never on first mount (that would wipe the default before expiries load
+    // and break "Get Option Chain" in stock mode too).
+    if (marketChanged) {
+      setSelectedInstrument((prev) => ({
+        ...prev,
+        name: isCrypto ? 'BTCUSDT' : 'NIFTY',
+        spotPrice: '-', futurePrice: '-', lotSize: '-', multiple: '-',
+      }));
+    }
+    prevAppTypeRef.current = appType;
   }, [dispatch, appType]);
 
   useEffect(() => {
