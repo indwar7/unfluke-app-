@@ -57,7 +57,7 @@ const OptionSimulator = () => {
   const isCrypto = appType === 'crypto';
 
   const [selectedInstrument, setSelectedInstrument] = useState({
-    name: isCrypto ? 'BTCUSDT' : 'NIFTY',
+    name: isCrypto ? 'BTC' : 'NIFTY',
     spotPrice: '-',
     futurePrice: '-',
     lotSize: '-',
@@ -201,7 +201,7 @@ const OptionSimulator = () => {
     if (marketChanged) {
       setSelectedInstrument((prev) => ({
         ...prev,
-        name: isCrypto ? 'BTCUSDT' : 'NIFTY',
+        name: isCrypto ? 'BTC' : 'NIFTY',
         spotPrice: '-', futurePrice: '-', lotSize: '-', multiple: '-',
       }));
     }
@@ -239,8 +239,14 @@ const OptionSimulator = () => {
       if (!user || !selectedInstrument.name) return;
       setExpiriesError(false);
       try {
+        // APIClient.get serialises params by iterating Object.keys(obj), so it
+        // must be a FLAT object — a { params: {...} } axios-style wrapper would
+        // go out as "?params=[object Object]" and drop optionName/id entirely
+        // (broke the simulator in BOTH markets).
         const res = await getSimulatorExpiries({
-          params: { optionName: selectedInstrument.name, optionType: 'CE - Call', id: user._id },
+          optionName: selectedInstrument.name,
+          optionType: 'CE - Call',
+          id: user._id,
         });
         // The option-simulator endpoint returns { expiry_date: ["DD-Mon-YY", ...] }.
         // The simulator's date logic needs objects shaped { to_expiry, from_expiry }

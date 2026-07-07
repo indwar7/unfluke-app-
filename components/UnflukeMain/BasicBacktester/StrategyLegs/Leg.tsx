@@ -27,7 +27,7 @@ import {
   updateLeg,
   setLegSummary,
 } from "../../../../redux/slices/basicBacktester/reducer";
-import { getInstrumentNames } from "../../../../Unfluke_helpers/backend_helper";
+import { getFuturesInstrumentNames } from "../../../../Unfluke_helpers/backend_helper";
 
 const Leg = (props) => {
   //////////////////// VARIABLES ////////////////////
@@ -64,7 +64,7 @@ const Leg = (props) => {
     if (isCrypto) {
       (async () => {
         try {
-          const list = await getInstrumentNames("crypto");
+          const list = await getFuturesInstrumentNames("crypto");
           if (alive && Array.isArray(list) && list.length) {
             // Crypto perps trade in units of 1; lot size isn't index-style.
             setInstrumentOptions(list.map((sym) => ({ option: sym, multiple: 1 })));

@@ -51,6 +51,10 @@ const LegOptions = () => {
   const { legs, legOptions, reEntrySlTargetExit, reEntry, noReentryAfter } =
     useSelector((store) => store.BasicBacktester.positions);
 
+  // Current market — a new leg must not be seeded with NIFTY in crypto mode.
+  const appType = useSelector((store: any) => store?.Layout?.appType ?? "in");
+  const isCrypto = appType === "crypto";
+
   const [positions, setPositions] = useState({
     ...initialLegPositions,
     legOptions: { ...legOptions },
@@ -113,6 +117,13 @@ const LegOptions = () => {
       // Create a deep copy and assign a unique ID
       let leg = deepCopy(positions);
       leg = { id: Crypto.randomUUID(), ...leg }; // ✅ Works in Expo (SDK 49+)
+
+      // initialLegPositions defaults instrument to NIFTY; in crypto mode the
+      // submitted leg must carry a crypto pair, or the backtest runs on the
+      // wrong instrument (backend gets market=crypto but a NIFTY leg).
+      if (isCrypto) {
+        leg.instrument = { option: "BTCUSDT", multiple: 1 };
+      }
 
       // Validation check
       if (leg.strike === "based_on_premium" && leg.strikeDetails === "ATM_0") {

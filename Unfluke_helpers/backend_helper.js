@@ -150,12 +150,21 @@ export const getWatchlistOptionsResults = (data) =>
 // Strategy Charts
 export const getOptionNames = (data) => api.get(url.GET_OPTIONS_NAMES, data);
 
-// Market-aware instrument names for Option Simulator / Backtester dropdowns.
-// getOptionNames (NSE option chain names) does NOT switch to crypto — so in
-// crypto mode we pull the futures pair list instead, exactly like the website
-// (getAllFutures?market=crypto → ["BTCUSDT","ETHUSDT",...]). In stock mode we
-// keep the existing getOptionNames behaviour so nothing regresses.
+// Market-aware instrument names for the OPTION SIMULATOR dropdown.
+// getOptionNames (NSE option chain names) does NOT switch to crypto. The
+// website's crypto simulator lists the OPTION underlyings (getAllOptions?
+// market=crypto → ["BTC","ETH"]), NOT the futures pairs — because option
+// chains/expiries are keyed by "BTC"/"ETH", not "BTCUSDT". Stock mode keeps
+// the original getOptionNames behaviour so nothing regresses.
 export const getInstrumentNames = (market) =>
+  market === "crypto"
+    ? api.get("/api/getAllOptions", { scanner: false, market: "crypto" })
+    : api.get(url.GET_OPTIONS_NAMES);
+
+// Market-aware FUTURES-pair list for Backtester legs and the chart instrument
+// search (crypto → ["BTCUSDT","ETHUSDT",...]). Distinct from the simulator:
+// backtests/scanners key on the USDT pair, options on the bare coin.
+export const getFuturesInstrumentNames = (market) =>
   market === "crypto"
     ? api.get("/api/getAllFutures", { scanner: false, market: "crypto" })
     : api.get(url.GET_OPTIONS_NAMES);

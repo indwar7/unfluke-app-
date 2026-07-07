@@ -323,7 +323,7 @@ function createChart() {
   }
   chartCreated = true;
   tvWidget = new TradingView.widget({
-    symbol: 'NSE:NIFTY 50',
+    symbol: AUTH.mrkt === 'crypto' ? 'CRYPTO:BTCUSDT' : 'NSE:NIFTY 50',
     datafeed: Datafeed,
     interval: '1',
     container: 'tv_chart_container',
@@ -380,31 +380,37 @@ function handleMsg(raw) {
       prevLots = '';
       if (tvWidget && tvWidget.activeChart) {
         try {
-          var sym = msg.symbol || 'NSE:NIFTY 50';
-          var parts = sym.split(':');
-          var exchange = parts.length > 1 ? parts[0] : 'NFO';
-          var shortName = parts.length > 1 ? parts[1] : sym;
-          var symType = 'option';
-          if (exchange === 'NSE') symType = shortName.indexOf('NIFTY') >= 0 ? 'index' : 'equity';
-          symbolCache[sym] = {
-            name: shortName,
-            full_name: sym,
-            description: shortName,
-            type: symType,
-            session: '0915-1530',
-            timezone: 'Asia/Kolkata',
-            ticker: sym,
-            exchange: exchange,
-            minmov: 1,
-            pricescale: 100,
-            has_intraday: true,
-            has_daily: false,
-            intraday_multipliers: ['1','60'],
-            has_no_volume: true,
-            supported_resolutions: ['1','3','5','15','30','60','120','240'],
-            data_status: 'endofday',
-          };
-          dbg('SET_SYMBOL: cached info for ' + sym + ' type=' + symType);
+          var sym = msg.symbol || (AUTH.mrkt === 'crypto' ? 'CRYPTO:BTCUSDT' : 'NSE:NIFTY 50');
+          // For crypto, do NOT pre-seed the cache stub: it would guess an
+          // NFO/option/IST shape with no instrument_token and short-circuit
+          // resolveSymbol's live getInstrument path (which correctly returns
+          // the _id, CRYPTO exchange and 24x7/UTC). Let resolveSymbol run.
+          if (AUTH.mrkt !== 'crypto') {
+            var parts = sym.split(':');
+            var exchange = parts.length > 1 ? parts[0] : 'NFO';
+            var shortName = parts.length > 1 ? parts[1] : sym;
+            var symType = 'option';
+            if (exchange === 'NSE') symType = shortName.indexOf('NIFTY') >= 0 ? 'index' : 'equity';
+            symbolCache[sym] = {
+              name: shortName,
+              full_name: sym,
+              description: shortName,
+              type: symType,
+              session: '0915-1530',
+              timezone: 'Asia/Kolkata',
+              ticker: sym,
+              exchange: exchange,
+              minmov: 1,
+              pricescale: 100,
+              has_intraday: true,
+              has_daily: false,
+              intraday_multipliers: ['1','60'],
+              has_no_volume: true,
+              supported_resolutions: ['1','3','5','15','30','60','120','240'],
+              data_status: 'endofday',
+            };
+          }
+          dbg('SET_SYMBOL: ' + sym + ' (mrkt=' + AUTH.mrkt + ')');
           tvWidget.activeChart().setSymbol(sym, function() {
             tvWidget.activeChart().setChartType(2);
           });
@@ -541,8 +547,10 @@ export default function StrategyChartsScreen() {
   }, [token, sendInit]);
 
   // Load instruments for the current market. getOptionNames returns NSE names
-  // for both markets, so in crypto mode pull the futures-pair list instead
-  // (getAllFutures?market=crypto), mirroring the Option Simulator.
+  // for both markets, so in crypto mode pull the OPTION underlyings
+  // (getAllOptions?market=crypto → ["BTC","ETH"]) — strategy charts build
+  // option strategies, so they key on the bare coin like the Option Simulator,
+  // NOT the USDT futures pair.
   useEffect(() => {
     if (!token || !userId) return;
     (async () => {
@@ -550,7 +558,7 @@ export default function StrategyChartsScreen() {
       try {
         const uid = userId;
         const url = isCrypto
-          ? `${BASE}/api/getAllFutures?scanner=false&market=crypto`
+          ? `${BASE}/api/getAllOptions?scanner=false&market=crypto`
           : `${BASE}/api/historicalChart/getOptionNames?id=${uid}`;
         const data = await safeFetch(url, token);
         let names: string[] = [];
@@ -558,18 +566,18 @@ export default function StrategyChartsScreen() {
         else if (data?.optionNames && Array.isArray(data.optionNames)) names = data.optionNames;
 
         const FALLBACK = isCrypto
-          ? ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"]
+          ? ["BTC", "ETH"]
           : ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "RELIANCE", "TCS", "HDFCBANK", "INFY", "TATASTEEL", "WIPRO"];
         if (names.length === 0) names = FALLBACK;
         setOptionNames(names);
 
-        const preferred = isCrypto ? "BTCUSDT" : "NIFTY";
+        const preferred = isCrypto ? "BTC" : "NIFTY";
         const defaultSelect = names.includes(preferred) ? preferred : (names[0] || preferred);
         setSelectedInstrument(defaultSelect);
       } catch {
         if (isCrypto) {
-          setOptionNames(["BTCUSDT", "ETHUSDT", "SOLUSDT"]);
-          setSelectedInstrument("BTCUSDT");
+          setOptionNames(["BTC", "ETH"]);
+          setSelectedInstrument("BTC");
         } else {
           setOptionNames(["NIFTY", "BANKNIFTY", "FINNIFTY", "RELIANCE", "TCS"]);
           setSelectedInstrument("NIFTY");
