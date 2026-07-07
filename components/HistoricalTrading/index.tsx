@@ -160,7 +160,10 @@ var Datafeed = {
         pricescale: 100,
         has_intraday: true,
         has_daily: false,
-        intraday_multipliers: ['1','60'],
+        // Crypto backend always returns 1-minute bars regardless of the
+        // resolution param (verified live), so let TradingView aggregate
+        // locally — same as the website's crypto config.
+        intraday_multipliers: isCrypto ? ['1'] : ['1','60'],
         has_no_volume: true,
         supported_resolutions: ['1','3','5','15','30','60','120','240','1440'],
         data_status: 'endofday',
@@ -270,15 +273,23 @@ function handleMsg(raw) {
       HIST_STATE.symbol = msg.symbol || '${DEFAULT_SYMBOL}';
       IS_DARK = !!msg.isDark;
       try { document.body.style.background = IS_DARK ? '#0A0B0E' : '#FFFFFF'; } catch(e) {}
-      createChart();
+      if (chartCreated) {
+        // Re-INIT (market toggle): the widget already exists, so switch it to
+        // the new market's symbol — createChart() alone would be a no-op and
+        // the chart would keep requesting the old market's symbol with the
+        // new market's headers (guaranteed empty response).
+        barsCursor = {};
+        if (tvWidget && tvWidget.activeChart) {
+          try { tvWidget.activeChart().setSymbol(HIST_STATE.symbol, function() {}); } catch(e) {}
+        }
+      } else {
+        createChart();
+      }
     } else if (msg.type === 'API_RESPONSE') {
       handleApiResponse(msg.id, msg.data, msg.error);
     } else if (msg.type === 'SET_SYMBOL') {
       HIST_STATE.symbol = msg.symbol || '${DEFAULT_SYMBOL}';
-      data = false;
-      fullName = undefined;
-      data2 = undefined;
-      prevDateTime = '';
+      barsCursor = {};
       if (tvWidget && tvWidget.activeChart) {
         try {
           tvWidget.activeChart().setSymbol(msg.symbol, function() {
@@ -288,11 +299,7 @@ function handleMsg(raw) {
       }
     } else if (msg.type === 'RESET_DATA') {
       // Invalidate cached datafeed state so the next getBars goes to the API.
-      data = false;
-      fullName = undefined;
-      data2 = undefined;
-      cachedBars = [];
-      prevDateTime = '';
+      barsCursor = {};
       // Ask the chart to drop its bars and re-request from the datafeed.
       if (tvWidget) {
         try { tvWidget.activeChart && tvWidget.activeChart().resetData(); } catch(e) {}
@@ -416,6 +423,7 @@ const Trading = () => {
     if (!didMountMarketRef.current) { didMountMarketRef.current = true; return; }
     initSentRef.current = false;
     mrktRef.current = appType;
+    setDisplaySymbol(appType === "crypto" ? "BTCUSDT" : "NIFTY 50");
     sendInit();
   }, [appType]);
 
