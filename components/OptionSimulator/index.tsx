@@ -150,7 +150,13 @@ const OptionSimulator = () => {
     } else {
       newDateTime = minutes === 1 ? currentMoment.add(1, 'day') : currentMoment.add(minutes, 'minutes');
     }
-    const safeDateTime = getSafeDateBeforeExpiry(newDateTime.format('DD MMM YYYY hh:mm A'), expiry.to_expiry);
+    let safeDateTime = getSafeDateBeforeExpiry(newDateTime.format('DD MMM YYYY hh:mm A'), expiry.to_expiry);
+    // Crypto: cap at 5:30 PM IST on expiry day, exactly like the website
+    // ("Cannot go beyond 5:30 PM IST on expiry day").
+    if (isCrypto) {
+      const cap = moment(expiry.to_expiry, 'DDMMMYY').set({ hour: 17, minute: 30, second: 0 });
+      if (safeDateTime.isAfter(cap)) safeDateTime = cap;
+    }
     const newDateTimeString = safeDateTime.format('DD MMM YYYY hh:mm A');
     setCurrentDateTime(newDateTimeString);
     setTimeout(() => handleGetOptionChain(newDateTimeString), 100);
