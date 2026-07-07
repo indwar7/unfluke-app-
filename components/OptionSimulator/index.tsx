@@ -318,8 +318,20 @@ const OptionSimulator = () => {
       if (!tempDateTimeRef.current) {
         const cur = moment(currentDateTime, 'DD MMM YYYY hh:mm A');
         const exp = moment(expiry.to_expiry, 'DDMMMYY');
-        tempDateTimeRef.current = cur.isAfter(exp) ? exp.clone().subtract(1, 'day') : cur.clone();
-        while (tempDateTimeRef.current.day() === 0 || tempDateTimeRef.current.day() === 6) tempDateTimeRef.current.subtract(1, 'day');
+        // When "now" is past the expiry, start AT the expiry date. NSE steps
+        // one day back (its expiry-day settlement differs); crypto has data on
+        // the expiry date itself (verified: 03-Jul gives the live ~61370),
+        // so start there, not a day before.
+        tempDateTimeRef.current = cur.isAfter(exp)
+          ? (isCrypto ? exp.clone() : exp.clone().subtract(1, 'day'))
+          : cur.clone();
+        // Crypto trades 24x7 — no weekend skip. Weekend-skipping walked the
+        // date back to a day the crypto series didn't have, so spot/future
+        // showed a stale price (43968) instead of the near-expiry value the
+        // website shows (~61370). Only skip weekends for NSE.
+        if (!isCrypto) {
+          while (tempDateTimeRef.current.day() === 0 || tempDateTimeRef.current.day() === 6) tempDateTimeRef.current.subtract(1, 'day');
+        }
         tempDateTimeRef.current.set({ hour: 9, minute: 20, second: 0 });
       }
       setIsSearchingData(true);
@@ -330,9 +342,12 @@ const OptionSimulator = () => {
         found = await fetchSpotFuture(tempDateTimeRef.current.format('DD MMM YYYY hh:mm A'));
         if (!found) {
           tempDateTimeRef.current.subtract(1, 'days');
-          const d = tempDateTimeRef.current.day();
-          if (d === 0) tempDateTimeRef.current.subtract(2, 'days');
-          else if (d === 6) tempDateTimeRef.current.subtract(1, 'days');
+          // NSE-only weekend skip; crypto steps back day-by-day.
+          if (!isCrypto) {
+            const d = tempDateTimeRef.current.day();
+            if (d === 0) tempDateTimeRef.current.subtract(2, 'days');
+            else if (d === 6) tempDateTimeRef.current.subtract(1, 'days');
+          }
           tempDateTimeRef.current.set({ hour: 9, minute: 20, second: 0 });
           if (tempDateTimeRef.current.isBefore(moment(expiry.from_expiry, 'DDMMMYY'))) break;
         }
