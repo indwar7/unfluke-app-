@@ -448,7 +448,8 @@ function handleMsg(raw) {
               pricescale: 100,
               has_intraday: true,
               has_daily: false,
-              intraday_multipliers: ['1','60'],
+              // Match resolveSymbol: strategy endpoints only serve 1-minute series.
+              intraday_multipliers: ['1'],
               has_no_volume: true,
               supported_resolutions: ['1','3','5','15','30','60','120','240'],
               data_status: 'endofday',
