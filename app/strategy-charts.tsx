@@ -31,17 +31,36 @@ const CHART_TYPES = [
   { label: "Straddle Combo", value: "Straddle Combo Chart" },
 ] as const;
 
+// Failures resolve to { Error } (never throw): callers reading a field
+// (expiry_date/strike_price/optionNames) fall through to their empty-state,
+// while handleSubmit surfaces the real backend message instead of a generic
+// "no data" — a 4xx/timeout used to be indistinguishable from empty data.
 const safeFetch = async (url: string, token?: string | null) => {
+  const controller = new AbortController();
+  // getStradleExpiryDate is known to hang server-side (Cloudflare 524 after
+  // ~100s); don't let the UI spin that long.
+  const timer = setTimeout(() => controller.abort(), 30000);
   try {
     const headers: any = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
     const mrkt = await AsyncStorage.getItem("mkt");
     // Backend scopes market by `appType` header; keep `mrkt` for compatibility.
     if (mrkt) { headers.appType = mrkt; headers.mrkt = mrkt; }
-    const r = await fetch(url, { headers });
-    if (!r.ok) return null;
+    const r = await fetch(url, { headers, signal: controller.signal });
+    if (!r.ok) {
+      let msg = `Server error (${r.status})`;
+      try {
+        const body = await r.json();
+        if (body?.Error) msg = `${body.Error} (${r.status})`;
+      } catch {}
+      return { Error: msg };
+    }
     return await r.json();
-  } catch { return null; }
+  } catch (e: any) {
+    return { Error: e?.name === "AbortError" ? "Request timed out" : (e?.message || "Network error") };
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 function formatNow(): string {
@@ -117,8 +136,6 @@ var CHART_STATE = { chartType: 'Options Chart', formData: null, symbolNames: '' 
 var IS_DARK = ${isDark ? "true" : "false"};
 var tvWidget = null;
 var chartCreated = false;
-var fullName = '';
-var prevLots = '1,1';
 var prevName = '';
 var cachedBars = [];
 var symbolCache = {};
@@ -178,25 +195,36 @@ var Datafeed = {
     apiFetch('${BASE}/api/historicData/getInstrument?instrument=' + encodeURIComponent(lookup) + '&market=' + (AUTH.mrkt || 'in'))
     .then(function(item) {
       if (!item || item.Error) { dbg('resolveSymbol error: ' + symbolName); onError('No symbol found'); return; }
-      var name, ticker, type, exchange, tokenForBars;
+      var name, ticker, type, exchange, tokenForBars, displayName;
       if (isCryptoMkt || item.type === 'CRYPTO') {
-        // Crypto (verified against website): e = instrument_token ("BTCUSDT"),
-        // type = "spot", appType header. NOT _id / CRYPTO.
-        var idx = item.index || lookup;
-        name = item.instrument_token || (idx.split(':')[1]) || idx;
-        type = 'spot'; exchange = 'CRYPTO'; ticker = name;
-        tokenForBars = item.instrument_token || name;
+        if (item.option || String(item.tablename || '').indexOf('op_') === 0) {
+          // Crypto OPTION (verified live): historicalChartMinute only returns
+          // bars when name keeps the FULL "CRYPTO:C-BTC-60000-030726" string —
+          // the bare symbol yields []. Must be typed 'option' so getBars uses
+          // the strategy endpoints, not the spot-candles one.
+          name = item.option;
+          type = 'option'; exchange = 'CRYPTO'; ticker = item.option;
+          tokenForBars = item.instrument_token || name;
+          displayName = name; // keep prefix — the bars request uses symbolInfo.name
+        } else {
+          // Crypto SPOT (verified): e = instrument_token ("BTCUSDT"), type = "spot".
+          var idx = item.index || lookup;
+          name = item.instrument_token || (idx.split(':')[1]) || idx;
+          type = 'spot'; exchange = 'CRYPTO'; ticker = name;
+          tokenForBars = item.instrument_token || name;
+        }
       }
       else if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; tokenForBars=item.instrument_token; }
       else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; tokenForBars=item.instrument_token; }
       else if (item.type === 'OPT') { name=item.option; type='option'; exchange='NFO'; ticker=item.option; tokenForBars=item.instrument_token; }
       else { name=item.future; type='future'; exchange='NFO'; ticker=item.future; tokenForBars=item.instrument_token; }
+      var isCryptoSym = exchange === 'CRYPTO';
       var stub = {
-        name: name.split(':')[1] || name,
+        name: displayName || name.split(':')[1] || name,
         full_name: name,
         description: ticker,
         type: type,
-        session: (isCryptoMkt || type === 'spot') ? '24x7' : '0915-1530',
+        session: (isCryptoSym || type === 'spot') ? '24x7' : '0915-1530',
         // Website uses IST for both markets; backend converts.
         timezone: 'Asia/Kolkata',
         instrument_token: tokenForBars,
@@ -206,7 +234,10 @@ var Datafeed = {
         pricescale: 100,
         has_intraday: true,
         has_daily: false,
-        intraday_multipliers: ['1','60'],
+        // Website's strategy datafeed declares only 1-minute data for every
+        // symbol (options/index/crypto) and lets TradingView aggregate; the
+        // strategy endpoints only serve 1-minute series.
+        intraday_multipliers: ['1'],
         has_no_volume: true,
         supported_resolutions: ['1','3','5','15','30','60','120','240'],
         data_status: 'endofday',
@@ -216,32 +247,30 @@ var Datafeed = {
     .catch(function(err) { onError(err.message || 'Resolve error'); });
   },
   getBars: function(symbolInfo, resolution, periodParams, onResult, onError) {
-    var from = periodParams.from, to = periodParams.to, first = periodParams.firstDataRequest;
+    var first = periodParams.firstDataRequest;
     var id = AUTH.userId;
     var chartType = CHART_STATE.chartType;
     var lots = getChartTypeLots();
 
-    if ((fullName === symbolInfo.full_name) && lots === prevLots && cachedBars.length > 0) {
+    // Website parity: strategy series are a single chunk — pagination requests
+    // (firstDataRequest=false) always end the series. Re-serving the cached
+    // bars for an older range fed TradingView overlapping bars and broke the
+    // chart with a time-order violation.
+    if (!first) {
+      onResult([], { noData: true });
+      return;
+    }
+    var cacheKey = symbolInfo.full_name + '|' + (CHART_STATE.formData ? (CHART_STATE.formData.symbolNames || '') : '') + '|' + lots + '|' + chartType;
+    if (cacheKey === prevName && cachedBars.length > 0) {
       onResult(cachedBars, { noData: false });
       return;
     }
 
     var url, params;
-    if (symbolInfo.exchange === 'CRYPTO' || symbolInfo.type === 'spot') {
-      // Crypto spot underlying (verified): histoTradingminute with
-      // e=instrument_token, type=spot, appType header.
-      url = '${BASE}/api/historicData/data/histoTradingminute';
-      params = 'i='+id+'&e='+encodeURIComponent(symbolInfo.instrument_token)
-        +'&currentDateTime='+encodeURIComponent(formatDate(new Date()))
-        +'&type=spot&name='+encodeURIComponent(symbolInfo.name)
-        +'&resolution='+resolution+'&nxt='+(prevName===symbolInfo.full_name);
-    } else if (symbolInfo.full_name === 'NSE:NIFTY 50' && symbolInfo.type === 'index') {
-      url = '${BASE}/api/historicData/data/historicalChartIndexMinute';
-      params = 'i='+id+'&e='+encodeURIComponent(symbolInfo.instrument_token)
-        +'&currentDateTime='+encodeURIComponent(formatDate(new Date()))
-        +'&type='+symbolInfo.type+'&name='+encodeURIComponent(symbolInfo.name)
-        +'&resolution='+resolution+'&nxt='+(prevName===symbolInfo.full_name);
-    } else if (symbolInfo.type === 'option' && CHART_STATE.formData) {
+    // Options must be checked BEFORE the CRYPTO/spot branch: crypto option
+    // symbols carry exchange CRYPTO too, but their bars come from the strategy
+    // endpoints — the spot-candles endpoint returns [] for them.
+    if (symbolInfo.type === 'option' && CHART_STATE.formData) {
       var fd = CHART_STATE.formData;
       var symNames = fd.symbolNames || symbolInfo.name;
       var commonP = 'i='+id+'&name='+encodeURIComponent(symNames)+'&resolution='+resolution+'&nxt=false';
@@ -278,6 +307,20 @@ var Datafeed = {
           onResult([], { noData: true }); return;
       }
       params = commonP;
+    } else if (symbolInfo.exchange === 'CRYPTO' || symbolInfo.type === 'spot') {
+      // Crypto spot underlying (verified): histoTradingminute with
+      // e=instrument_token, type=spot, appType header.
+      url = '${BASE}/api/historicData/data/histoTradingminute';
+      params = 'i='+id+'&e='+encodeURIComponent(symbolInfo.instrument_token)
+        +'&currentDateTime='+encodeURIComponent(formatDate(new Date()))
+        +'&type=spot&name='+encodeURIComponent(symbolInfo.name)
+        +'&resolution='+resolution+'&nxt=false';
+    } else if (symbolInfo.full_name === 'NSE:NIFTY 50' && symbolInfo.type === 'index') {
+      url = '${BASE}/api/historicData/data/historicalChartIndexMinute';
+      params = 'i='+id+'&e='+encodeURIComponent(symbolInfo.instrument_token)
+        +'&currentDateTime='+encodeURIComponent(formatDate(new Date()))
+        +'&type='+symbolInfo.type+'&name='+encodeURIComponent(symbolInfo.name)
+        +'&resolution='+resolution+'&nxt=false';
     } else {
       onResult([], { noData: true }); return;
     }
@@ -297,9 +340,7 @@ var Datafeed = {
           volume: Number(el.f),
         };
       });
-      fullName = symbolInfo.full_name;
-      prevLots = lots;
-      prevName = symbolInfo.full_name;
+      prevName = cacheKey;
       cachedBars = bars;
       onResult(bars, { noData: false });
     })
@@ -380,8 +421,7 @@ function handleMsg(raw) {
       CHART_STATE.chartType = msg.chartType || 'Options Chart';
       CHART_STATE.formData = msg.formData || null;
       cachedBars = [];
-      fullName = '';
-      prevLots = '';
+      prevName = '';
       if (tvWidget && tvWidget.activeChart) {
         try {
           var sym = msg.symbol || (AUTH.mrkt === 'crypto' ? 'CRYPTO:BTCUSDT' : 'NSE:NIFTY 50');

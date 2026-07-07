@@ -105,6 +105,17 @@ const Watchlist = () => {
   const currentDateTime = useSelector(dateTime);
   const watchlist = useSelector(watchlistData);
   const user = useSelector(auth);
+  // Market scope ("in" | "crypto") — crypto search uses market=spot and a
+  // {symbol, type:"spot"} result shape (website parity).
+  const appType = useSelector((state: any) => state?.Layout?.appType ?? "in");
+  const isCrypto = appType === "crypto";
+
+  // Keep the instrument-type selector valid for the active market.
+  useEffect(() => {
+    setSelectMarket(isCrypto ? "Spot" : "Equity");
+    setMarketList([]);
+    setSearch("");
+  }, [isCrypto]);
 
   // Fetch watchlist on mount so it shows by default
   useEffect(() => {
@@ -156,12 +167,14 @@ const Watchlist = () => {
 
   const market = [
     {
-      options: [
-        { label: "Equity", value: "Equity" },
-        { label: "Future", value: "Future" },
-        { label: "Option", value: "Option" },
-        { label: "Index", value: "Index" },
-      ],
+      options: isCrypto
+        ? [{ label: "Spot", value: "Spot" }]
+        : [
+            { label: "Equity", value: "Equity" },
+            { label: "Future", value: "Future" },
+            { label: "Option", value: "Option" },
+            { label: "Index", value: "Index" },
+          ],
     },
   ];
 
@@ -215,7 +228,11 @@ const Watchlist = () => {
 
   const addToWatchList = (marketListItem) => {
     let itemName, itemExch;
-    if (selectMarket == "Option") {
+    if (isCrypto) {
+      // Crypto search result shape: { symbol: "ETHUSDT", type: "spot", ... }
+      itemName = marketListItem.symbol;
+      itemExch = "CRYPTO";
+    } else if (selectMarket == "Option") {
       itemName = marketListItem.option?.split(":")[1];
       itemExch = marketListItem.option?.split(":")[0];
     } else {
@@ -236,15 +253,19 @@ const Watchlist = () => {
     setMarketList([]);
     Keyboard.dismiss();
 
+    // Crypto results carry no instrument_token — the backend keys crypto
+    // watchlist entries by symbol (website uses e.name for crypto rows).
+    const token = marketListItem.instrument_token ?? marketListItem.symbol;
+
     // Check if already in watchlist — if so, skip the API call
     const alreadyInWatchlist = tradeWatch?.some(
-      (trade) => trade.instrument_token === marketListItem.instrument_token,
+      (trade) => trade.instrument_token === token,
     );
     if (alreadyInWatchlist) return;
 
     const data = {
       userID: user._id,
-      instrument_token: marketListItem.instrument_token,
+      instrument_token: token,
       type: marketListItem.type,
       date: currentDateTime || new Date().toISOString(),
     };
@@ -485,7 +506,7 @@ const Watchlist = () => {
             <TextInput
               style={styles.searchInput}
               value={search}
-              placeholder="Search e.g. Nifty, Reliance, TCS"
+              placeholder={isCrypto ? "Search e.g. BTCUSDT, ETHUSDT" : "Search e.g. Nifty, Reliance, TCS"}
               onChangeText={getSearchResults}
               placeholderTextColor={c.textMuted}
               autoCorrect={false}
@@ -524,15 +545,18 @@ const Watchlist = () => {
                   nestedScrollEnabled
                 >
                   {marketList.map((marketListItem, index) => {
-                    const displayName = marketListItem[marketListItem.type]
-                      ?.split(":")[1]
-                      ?.toUpperCase();
+                    const displayName = (
+                      marketListItem.symbol ||
+                      marketListItem[marketListItem.type]?.split(":")[1]
+                    )?.toUpperCase();
                     const alreadyAdded = tradeWatch?.some(
-                      (t) => t.instrument_token === marketListItem.instrument_token,
+                      (t) =>
+                        t.instrument_token ===
+                        (marketListItem.instrument_token ?? marketListItem.symbol),
                     );
                     return (
                       <TouchableOpacity
-                        key={marketListItem[marketListItem.type] || index}
+                        key={marketListItem.symbol || marketListItem[marketListItem.type] || index}
                         style={styles.searchResultItem}
                         onPress={() => addToWatchList(marketListItem)}
                       >
