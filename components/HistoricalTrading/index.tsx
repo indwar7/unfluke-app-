@@ -119,15 +119,18 @@ var Datafeed = {
       var name, ticker, type, exchange, tokenForBars;
       if (isCrypto) {
         // Crypto payload (verified live): { _id, index:"CRYPTO:BTCUSDT",
-        // instrument_token:"BTCUSDT", type:"CRYPTO" }. The website's datafeed
-        // sends the Mongo _id (NOT the instrument_token) as the bars 'e'
-        // param for crypto, keeps type as-is, and uses the pair as the name.
+        // instrument_token:"BTCUSDT", type:"CRYPTO" }. VERIFIED against the
+        // website's working request: crypto candles need
+        //   e = instrument_token (e.g. "BTCUSDT")  — NOT _id
+        //   type = "spot"                          — NOT "CRYPTO"
+        //   header appType: crypto                 — NOT mrkt
+        // With those three, histoTradingminute returns 3000 bars.
         var idx = item.index || lookupName;            // "CRYPTO:BTCUSDT"
-        name = (idx.split(':')[1]) || item.instrument_token || idx;
-        type = item.type || 'CRYPTO';                  // "CRYPTO"
+        name = item.instrument_token || (idx.split(':')[1]) || idx;  // "BTCUSDT"
+        type = 'spot';                                 // bars param
         exchange = 'CRYPTO';
         ticker = name;
-        tokenForBars = item._id || item.instrument_token;
+        tokenForBars = item.instrument_token || name; // "BTCUSDT"
       }
       else if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; tokenForBars=item.instrument_token; }
       else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; tokenForBars=item.instrument_token; }
@@ -146,9 +149,11 @@ var Datafeed = {
         full_name: name,
         description: ticker,
         type: type,
-        // Crypto trades 24x7 in UTC; NSE is 0915-1530 IST.
+        // Website uses Asia/Kolkata IST for BOTH markets (its datafeed and the
+        // currentDateTime formatter are IST-only); the backend converts. Keep
+        // IST so crypto candles align exactly with the website.
         session: isCrypto ? '24x7' : '0915-1530',
-        timezone: isCrypto ? 'Etc/UTC' : 'Asia/Kolkata',
+        timezone: 'Asia/Kolkata',
         instrument_token: tokenForBars,
         ticker: ticker,
         exchange: exchange,
@@ -380,7 +385,9 @@ const Trading = () => {
 
       const headers: any = {};
       if (tokenRef.current) headers["Authorization"] = `Bearer ${tokenRef.current}`;
-      if (mrktRef.current) headers["mrkt"] = mrktRef.current;
+      // Backend scopes market by `appType` (verified: crypto candles come back
+      // only with this header). Keep `mrkt` too for older endpoints.
+      if (mrktRef.current) { headers["appType"] = mrktRef.current; headers["mrkt"] = mrktRef.current; }
 
       const resp = await fetch(url, { headers });
       const data = await resp.json();

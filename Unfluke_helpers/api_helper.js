@@ -27,8 +27,14 @@ axios.interceptors.request.use(async (config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // The backend scopes market by the `appType` header (verified against the
+    // website's own axios interceptor: `e.headers.appType = market`). We were
+    // only sending `mrkt`, which the backend ignores for crypto data (candles,
+    // option expiries came back empty). Send `appType` (primary) AND keep
+    // `mrkt` for any endpoint that still reads the old name.
     const mrkt = await AsyncStorage.getItem('mkt');
     if (mrkt) {
+      config.headers.appType = mrkt;
       config.headers.mrkt = mrkt;
     }
   } catch (error) {

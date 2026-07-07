@@ -36,7 +36,8 @@ const safeFetch = async (url: string, token?: string | null) => {
     const headers: any = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
     const mrkt = await AsyncStorage.getItem("mkt");
-    if (mrkt) headers.mrkt = mrkt;
+    // Backend scopes market by `appType` header; keep `mrkt` for compatibility.
+    if (mrkt) { headers.appType = mrkt; headers.mrkt = mrkt; }
     const r = await fetch(url, { headers });
     if (!r.ok) return null;
     return await r.json();
@@ -132,7 +133,8 @@ function formatDate(date) {
 function apiFetch(url) {
   var headers = {};
   if (AUTH.token) headers['Authorization'] = 'Bearer ' + AUTH.token;
-  if (AUTH.mrkt) headers['mrkt'] = AUTH.mrkt;
+  // Backend scopes market by appType header; keep mrkt for compatibility.
+  if (AUTH.mrkt) { headers['appType'] = AUTH.mrkt; headers['mrkt'] = AUTH.mrkt; }
   return fetch(url, { headers: headers })
     .then(function(r) { return r.json(); })
     .catch(function(err) {
@@ -178,11 +180,12 @@ var Datafeed = {
       if (!item || item.Error) { dbg('resolveSymbol error: ' + symbolName); onError('No symbol found'); return; }
       var name, ticker, type, exchange, tokenForBars;
       if (isCryptoMkt || item.type === 'CRYPTO') {
-        // Crypto: name from index pair, bars token is the Mongo _id.
+        // Crypto (verified against website): e = instrument_token ("BTCUSDT"),
+        // type = "spot", appType header. NOT _id / CRYPTO.
         var idx = item.index || lookup;
-        name = (idx.split(':')[1]) || item.instrument_token || idx;
-        type = item.type || 'CRYPTO'; exchange = 'CRYPTO'; ticker = name;
-        tokenForBars = item._id || item.instrument_token;
+        name = item.instrument_token || (idx.split(':')[1]) || idx;
+        type = 'spot'; exchange = 'CRYPTO'; ticker = name;
+        tokenForBars = item.instrument_token || name;
       }
       else if (item.type === 'EQ') { name=item.equity; type='equity'; exchange='NSE'; ticker=item.equity; tokenForBars=item.instrument_token; }
       else if (item.type === 'IN') { name=item.index; type='index'; exchange='NSE'; ticker=item.index; tokenForBars=item.instrument_token; }
@@ -193,8 +196,9 @@ var Datafeed = {
         full_name: name,
         description: ticker,
         type: type,
-        session: (isCryptoMkt || type === 'CRYPTO') ? '24x7' : '0915-1530',
-        timezone: (isCryptoMkt || type === 'CRYPTO') ? 'Etc/UTC' : 'Asia/Kolkata',
+        session: (isCryptoMkt || type === 'spot') ? '24x7' : '0915-1530',
+        // Website uses IST for both markets; backend converts.
+        timezone: 'Asia/Kolkata',
         instrument_token: tokenForBars,
         ticker: ticker,
         exchange: exchange,
@@ -223,13 +227,13 @@ var Datafeed = {
     }
 
     var url, params;
-    if (symbolInfo.exchange === 'CRYPTO' || symbolInfo.type === 'CRYPTO') {
-      // Crypto spot underlying: same minute-candle endpoint as Historical
-      // Charts, with the Mongo _id already stored in instrument_token.
+    if (symbolInfo.exchange === 'CRYPTO' || symbolInfo.type === 'spot') {
+      // Crypto spot underlying (verified): histoTradingminute with
+      // e=instrument_token, type=spot, appType header.
       url = '${BASE}/api/historicData/data/histoTradingminute';
       params = 'i='+id+'&e='+encodeURIComponent(symbolInfo.instrument_token)
         +'&currentDateTime='+encodeURIComponent(formatDate(new Date()))
-        +'&type='+symbolInfo.type+'&name='+encodeURIComponent(symbolInfo.name)
+        +'&type=spot&name='+encodeURIComponent(symbolInfo.name)
         +'&resolution='+resolution+'&nxt='+(prevName===symbolInfo.full_name);
     } else if (symbolInfo.full_name === 'NSE:NIFTY 50' && symbolInfo.type === 'index') {
       url = '${BASE}/api/historicData/data/historicalChartIndexMinute';
