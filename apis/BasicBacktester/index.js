@@ -106,21 +106,23 @@ export async function goToBasicStrategyPage(axios, navigate, user, id) {
     }
 }
 
-export const fetchDefaultStrategies = async (axios) => {
+export const fetchDefaultStrategies = async (axios, market) => {
     try {
-        const res = await axios.get(`${Config.BACKEND_URL}/api/strategy/getDefaultStrategies`)
+        const res = await axios.get(`${Config.BACKEND_URL}/api/strategy/getDefaultStrategies?market=${market || "in"}`)
         return res
     } catch (error) {
         //return thunkAPI.rejectWithValue(error.response.data.message);
-    }    
+    }
 }
 
-export const fetchAdvancedDefaultStrategies = async (axios) => {
-    const res = await axios.get(`${Config.BACKEND_URL}/api/stocks/getAdminStrategies`)
+export const fetchAdvancedDefaultStrategies = async (axios, market) => {
+    // Market-scoped via ?market= — the endpoint ignores the mrkt header and
+    // defaults to the NSE list when the param is missing.
+    const res = await axios.get(`${Config.BACKEND_URL}/api/stocks/getAdminStrategies?market=${market || "in"}`)
 
     if(res){
         return res
-    }      
+    }
 }
 
 export const toggleStrategyVisibility = async (axios, fileName, isAdvance) => {

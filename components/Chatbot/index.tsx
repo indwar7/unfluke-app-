@@ -26,15 +26,21 @@ import SourcesModal from "../../components/UnflukeMain/Chatbot/SourcesModal";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
-import { initialLegPositions } from "../../components/UnflukeMain/Utils/common_vars";
+import {
+  initialLegPositions,
+  question_tab_mapping,
+} from "../../components/UnflukeMain/Utils/common_vars";
 import { addStrategy } from "../../apis/BasicBacktester";
 import ProgressEventBar from "../../components/UnflukeMain/Chatbot/ProgressEventBar";
 import StreamingMessage from "../../components/UnflukeMain/Chatbot/StreamingMessage";
 import { backendSocket, chatbotSocket } from "../../socket/socket";
 import ChatbotGuide from "../../components/UnflukeMain/Chatbot/ChatbotGuide";
 import ScannerResultsModal from "../../components/UnflukeMain/Chatbot/ScannerResultsModal";
-import baseScanForm from "./baseScanForm";
-import baseBacktestForm from "./baseBacktestForm";
+import {
+  getBaseScanForm,
+  getBaseBacktestForm,
+  getBaseAdvancedForm,
+} from "./chatbotForms";
 import ShowResultsLink from "../../components/UnflukeMain/Chatbot/ShowResultsLink";
 import { createSelector } from "reselect";
 import { layoutModeTypes } from "../../components/UnflukeMain/constants/layout";
@@ -46,9 +52,11 @@ import {
   Filter,
   Search,
   LineChart,
+  Layers,
   ArrowUp,
   RefreshCw,
   Sparkles,
+  HelpCircle,
 } from "lucide-react-native";
 import { ScrollView as HScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -159,8 +167,15 @@ const AIChatbot = ({
     return () => clearTimeout(t);
   }, [loading, selectedBot]);
   const [chatHistory, addChatHistory] = useState([]);
-  const [scannerForm, setScannerForm] = useState(baseScanForm);
-  const [basicBacktestForm, setBasicBacktestForm] = useState(baseBacktestForm);
+  // Forms are (re)seeded with the market-correct base by the market effect
+  // below, mirroring the web app which remounts per market route.
+  const [scannerForm, setScannerForm] = useState(() => getBaseScanForm("in"));
+  const [basicBacktestForm, setBasicBacktestForm] = useState(() =>
+    getBaseBacktestForm("in")
+  );
+  const [advancedForm, setAdvancedForm] = useState(() =>
+    getBaseAdvancedForm("in")
+  );
   const [scannerResults, setScannerResults] = useState({});
   const [scannerResultsType, setScannerResultsType] = useState("fundamental");
   const { width } = useWindowDimensions()
@@ -181,6 +196,7 @@ const AIChatbot = ({
   // unchanged for the Indian market. Used to send the correct `market` field
   // in chatbot scanner/backtest forms so crypto mode returns crypto results.
   const market = appType || "in";
+  const marketKey = market === "crypto" ? "crypto" : "in";
   // Use navigation hook - adjust based on your navigation library
   // const navigation = useNavigation();
   const [isProgressing, setIsProgressing] = useState(false);
@@ -195,6 +211,9 @@ const AIChatbot = ({
 
   const dispatch = useDispatch();
   const uniqueUserIdRef = useRef(null);
+  // Set when the backend reclassifies the prompt to a different bot — the
+  // bot-change effect must not wipe the conversation in that case.
+  const preserveChatRef = useRef(false);
   const [stratId, setStratId] = useState(new Date().getMilliseconds());
 
   // Initialize the unique user ID only once
@@ -202,15 +221,21 @@ const AIChatbot = ({
     uniqueUserIdRef.current = new Date().getMilliseconds();
   }
 
-  // Memoize static data to prevent recreations
+  // Bot mode chips per market — mirrored from the unfluke.in web app's chat
+  // page ("Youtube Bot" is not a chip there either: pasting a YouTube link
+  // anywhere gets classified server-side via classify_prompt).
   const allBots = useMemo(
-    () => [
-      "Company Fundamentals",
-      "Fundamental Screener",
-      "Scanner",
-      "Basic Backtest",
-    ],
-    []
+    () =>
+      marketKey === "crypto"
+        ? ["Company Fundamentals", "Scanner", "Basic Backtest", "Advanced Backtest"]
+        : [
+            "Company Fundamentals",
+            "Fundamental Screener",
+            "Scanner",
+            "Basic Backtest",
+            "Advanced Backtest",
+          ],
+    [marketKey]
   );
 
   const bots = useMemo(() => allowedBots || allBots, [allowedBots, allBots]);
@@ -222,79 +247,143 @@ const AIChatbot = ({
       "Fundamental Screener": Filter,
       Scanner: Search,
       "Basic Backtest": LineChart,
+      "Advanced Backtest": Layers,
     }),
     []
   );
 
   // Short suggestion pills shown under the mode chips
   const botSuggestions = useMemo(
-    () => ({
-      "Company Fundamentals": [
-        "P/E vs sector",
-        "Debt trend",
-        "Promoter holding",
-        "ROE of Infosys",
-      ],
-      "Fundamental Screener": [
-        "P/E < 15",
-        "ROE > 20%",
-        "Debt/Equity < 0.5",
-        "Dividend yield > 3%",
-      ],
-      Scanner: [
-        "52-week high",
-        "Volume surge",
-        "RSI divergence",
-        "MACD crossover",
-      ],
-      "Basic Backtest": [
-        "SMA crossover",
-        "RSI strategy",
-        "Bollinger Bands",
-        "Mean reversion",
-      ],
-    }),
-    []
+    () =>
+      marketKey === "crypto"
+        ? {
+            "Company Fundamentals": [
+              "BTC market cap",
+              "ETH supply",
+              "Token overview",
+              "Compare BTC vs ETH",
+            ],
+            Scanner: [
+              "BTC daily EMA > SMA",
+              "Volume surge",
+              "RSI divergence",
+              "MACD crossover",
+            ],
+            "Basic Backtest": [
+              "SMA crossover",
+              "RSI strategy",
+              "Bollinger Bands",
+              "Mean reversion",
+            ],
+            "Advanced Backtest": [
+              "ETH MACDFIX cross",
+              "Multi-leg conditions",
+              "1-min chart strategy",
+              "Profit/stop-loss exits",
+            ],
+          }
+        : {
+            "Company Fundamentals": [
+              "P/E vs sector",
+              "Debt trend",
+              "Promoter holding",
+              "ROE of Infosys",
+            ],
+            "Fundamental Screener": [
+              "P/E < 15",
+              "ROE > 20%",
+              "Debt/Equity < 0.5",
+              "Dividend yield > 3%",
+            ],
+            Scanner: [
+              "52-week high",
+              "Volume surge",
+              "RSI divergence",
+              "MACD crossover",
+            ],
+            "Basic Backtest": [
+              "SMA crossover",
+              "RSI strategy",
+              "Bollinger Bands",
+              "Mean reversion",
+            ],
+            "Advanced Backtest": [
+              "SMA 50 with exits",
+              "Multi-leg conditions",
+              "MACD cross entry",
+              "Trailing stop exit",
+            ],
+          },
+    [marketKey]
   );
 
   // Add sample questions for each bot type
   const botQuestions = useMemo(
-    () => ({
-      "Company Fundamentals": [
-        "What is the P/E ratio of Reliance?",
-        "Show me debt-to-equity ratio of TCS",
-        "Compare revenue growth of HDFC Bank vs ICICI Bank",
-        "What is the ROE of Infosys?",
-        "What is the market cap of Tata Motors?",
-        "What is the EPS of HDFC Ltd?",
-      ],
-      "Fundamental Screener": [
-        "Create a screener for companies with P/E ratio less than 15",
-        "Find stocks with ROE greater than 20%",
-        "Screen for companies with debt-to-equity ratio below 0.5",
-        "Find companies with revenue growth above 10% in the last quarter",
-        "Create a screener for companies with market cap above 1 trillion",
-        "Screen for companies with dividend yield above 3%",
-        "Find companies with EPS growth above 15% in the last year",
-      ],
-      Scanner: [
-        "Scan for stocks breaking 52-week high",
-        "Find stocks with volume surge",
-        "Scan for bullish RSI divergence",
-        "Find stocks with MACD crossover",
-        "Scan for stocks with high volatility",
-        "Find stocks with significant price action",
-      ],
-      "Basic Backtest": [
-        "Backtest a simple moving average crossover strategy",
-        "Test RSI overbought/oversold strategy",
-        "Backtest momentum strategy with 20-day breakout",
-        "Test Bollinger Bands strategy",
-        "Backtest a mean reversion strategy",
-        "Test a trend-following strategy with 50-day moving average",
-      ],
-    }),
-    []
+    () =>
+      marketKey === "crypto"
+        ? {
+            "Company Fundamentals": [
+              "What is the market cap of Bitcoin?",
+              "Compare BTC and ETH performance",
+              "What is the circulating supply of ETH?",
+            ],
+            Scanner: [
+              "I want to know where BTC is true for daily EMA > SMA.",
+              "Find coins with volume surge",
+              "Scan for bullish RSI divergence",
+              "Find coins with MACD crossover",
+            ],
+            "Basic Backtest": [
+              "Create a backtest with 1% target and 0.5% stop loss.",
+              "I want to backtest a strategy with 2 legs. Both should have 2% target and 1% stop loss.",
+              "Backtest a simple moving average crossover strategy",
+              "Test RSI overbought/oversold strategy",
+            ],
+            "Advanced Backtest": [
+              "When does ETH spot MACDFIX cross signal line upwards? Use 1 min chart 00:00 to 23:59.",
+              "Test a SMA 50 on BTC with exit condition of 20% profit or 10% stop loss",
+            ],
+          }
+        : {
+            "Company Fundamentals": [
+              "What is the P/E ratio of Reliance?",
+              "Show me debt-to-equity ratio of TCS",
+              "Compare revenue growth of HDFC Bank vs ICICI Bank",
+              "What is the ROE of Infosys?",
+              "What is the market cap of Tata Motors?",
+              "What is the EPS of HDFC Ltd?",
+            ],
+            "Fundamental Screener": [
+              "Create a screener for companies with P/E ratio less than 15",
+              "Find stocks with ROE greater than 20%",
+              "Screen for companies with debt-to-equity ratio below 0.5",
+              "Find companies with revenue growth above 10% in the last quarter",
+              "Create a screener for companies with market cap above 1 trillion",
+              "Screen for companies with dividend yield above 3%",
+              "Find companies with EPS growth above 15% in the last year",
+            ],
+            Scanner: [
+              "Scan for stocks breaking 52-week high",
+              "Find stocks with volume surge",
+              "Scan for bullish RSI divergence",
+              "Find stocks with MACD crossover",
+              "Scan for stocks with high volatility",
+              "Find stocks with significant price action",
+            ],
+            "Basic Backtest": [
+              "Backtest a simple moving average crossover strategy",
+              "Test RSI overbought/oversold strategy",
+              "Backtest momentum strategy with 20-day breakout",
+              "Test Bollinger Bands strategy",
+              "Backtest a mean reversion strategy",
+              "Test a trend-following strategy with 50-day moving average",
+            ],
+            "Advanced Backtest": [
+              "Test a SMA 50 on stocks with exit condition of 20% profit or 10% stop loss",
+              "Buy when RSI crosses above 30 and exit at 5% profit or 2% stop loss",
+            ],
+          },
+    [marketKey]
   );
 
   const scannerTypes = useMemo(
@@ -306,12 +395,17 @@ const AIChatbot = ({
   );
 
   const aboutBots = useMemo(
-    () => [
-      "You can ask about company ratios, financials, and other related queries.",
-      "You can create screeners and scanners for stocks.",
-      "You can get real-time scans on stocks.",
-      "You can backtest your strategies and view the results.",
-    ],
+    () => ({
+      "Company Fundamentals":
+        "You can ask about company ratios, financials, and other related queries.",
+      "Fundamental Screener":
+        "You can create screeners and scanners for stocks.",
+      Scanner: "You can get real-time scans on stocks.",
+      "Basic Backtest":
+        "You can backtest your strategies and view the results.",
+      "Advanced Backtest":
+        "You can backtest advanced strategies with multiple conditions and view the results.",
+    }),
     []
   );
 
@@ -328,161 +422,49 @@ const AIChatbot = ({
     setInput(option);
   }, []);
 
-  // Memoize all the chat handlers
-  const handleScannerChat = useCallback(async () => {
-    if (!loading && input.trim()) {
-      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
-      if (!chatbotSocket?.connected) {
-        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
-        return;
-      }
-      try {
-        addChatHistory((prevHistory) => [
-          ...prevHistory,
-          { role: "user", content: input },
-        ]);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: "user", text: input, mode: selectedBot },
-          { sender: "bot-stream", text: "", mode: selectedBot },
-        ]);
-        setLoading(true);
-        setInput("");
-        chatbotSocket.emit("alerts_chat", {
-          userid: auth?.user?._id,
-          uniquetoken: uniqueUserIdRef.current,
-          message: input,
-          api_key: Config.REACT_APP_CHATBOT_TOKEN,
-          chat_history: chatHistory,
-          scanner_form: scannerForm,
-          bot_type: selectedBot,
-          market: market,
-        });
-      } catch (e) {
-        console.error(e);
-      }
+  // Single entry point for every bot — web parity. The backend classifies the
+  // prompt ("classify_prompt") using the selected bot as a hint plus all three
+  // forms, and its stream_ended response tells us which bot actually answered
+  // (this is how YouTube links become "Youtube Bot" strategies without a chip).
+  const handleMessage = useCallback(() => {
+    if (loading || !input.trim()) return;
+    if (!auth?.user?._id) {
+      Alert.alert("Error", "Please log in again.");
+      return;
     }
-  }, [loading, input, selectedBot, auth?.user?._id, chatHistory, scannerForm]);
-
-  const handleScreenerChat = useCallback(async () => {
-    if (!loading && input.trim()) {
-      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
-      if (!chatbotSocket?.connected) {
-        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
-        return;
-      }
-      try {
-        addChatHistory((prevHistory) => [
-          ...prevHistory,
-          { role: "user", content: input },
-        ]);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: "user", text: input, mode: selectedBot },
-          { sender: "bot-stream", text: "", mode: selectedBot },
-        ]);
-        setLoading(true);
-        setInput("");
-        chatbotSocket.emit("alerts_chat", {
-          userid: auth?.user?._id,
-          uniquetoken: uniqueUserIdRef.current,
-          message: input,
-          api_key: Config.REACT_APP_CHATBOT_TOKEN,
-          chat_history: chatHistory,
-          scanner_form: scannerForm,
-          bot_type: selectedBot,
-          market: market,
-        });
-      } catch (e) {
-        console.error(e);
-      }
+    if (!chatbotSocket?.connected) {
+      Alert.alert(
+        "Chat unavailable",
+        "Couldn't reach the AI service. Please check your connection and try again."
+      );
+      return;
     }
-  }, [loading, input, selectedBot, auth?.user?._id, chatHistory, scannerForm]);
-
-  const handleEdBotChat = useCallback(async () => {
-    if (!loading && input.trim()) {
-      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
-      if (!chatbotSocket?.connected) {
-        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
-        return;
-      }
-      try {
-        addChatHistory((prevHistory) => [
-          ...prevHistory,
-          { role: "user", content: input },
-        ]);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: "user", text: input, mode: selectedBot },
-          { sender: "bot-stream", text: "", mode: selectedBot },
-        ]);
-        setLoading(true);
-        setInput("");
-        chatbotSocket.emit("chat", {
-          userid: auth?.user?._id,
-          uniquetoken: uniqueUserIdRef.current,
-          message: input,
-          api_key: Config.REACT_APP_CHATBOT_TOKEN,
-          chat_history: chatHistory,
-          market: market,
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, [loading, input, selectedBot, auth?.user?._id, chatHistory]);
-
-  const handleBacktestScansChat = useCallback(async () => {
-    if (!loading && input.trim()) {
-      if (!auth?.user?._id) { Alert.alert("Error", "Please log in again."); return; }
-      if (!chatbotSocket?.connected) {
-        Alert.alert("Chat unavailable", "Couldn't reach the AI service. Please check your connection and try again.");
-        return;
-      }
-      try {
-        addChatHistory((prevHistory) => [
-          ...prevHistory,
-          { role: "user", content: input },
-        ]);
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { sender: "user", text: input, mode: selectedBot },
-          { sender: "bot-stream", text: "", mode: selectedBot },
-        ]);
-        setLoading(true);
-        setInput("");
-        // In crypto mode, rewrite the seeded leg instrument (baseBacktestForm
-        // defaults to NIFTY) to a crypto pair — same idea as the scanner form's
-        // `segment1a: crypto ? "BTCUSDT" : ...` rewrite below. The backend
-        // regenerates the strategy from the NL prompt, but we must not seed it
-        // with an NSE symbol when the market is crypto.
-        const backtestFormForMarket =
-          market === "crypto"
-            ? {
-                ...basicBacktestForm,
-                positions: {
-                  ...basicBacktestForm?.positions,
-                  legs: (basicBacktestForm?.positions?.legs || []).map((leg: any) => ({
-                    ...leg,
-                    instrument: { ...(leg?.instrument || {}), option: "BTCUSDT", multiple: 1 },
-                  })),
-                },
-              }
-            : basicBacktestForm;
-
-        chatbotSocket.emit("backtest_chat", {
-          userid: auth?.user?._id,
-          uniquetoken: uniqueUserIdRef.current,
-          message: input,
-          api_key: Config.REACT_APP_CHATBOT_TOKEN,
-          chat_history: chatHistory,
-          backtest_form: backtestFormForMarket,
-          bot_type: selectedBot,
-          market: market,
-        });
-      } catch (e) {
-        console.error(e);
-      }
+    try {
+      addChatHistory((prevHistory) => [
+        ...prevHistory,
+        { role: "user", content: input },
+      ]);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { sender: "user", text: input, mode: selectedBot },
+        { sender: "bot-stream", text: "", mode: selectedBot },
+      ]);
+      setLoading(true);
+      setInput("");
+      chatbotSocket.emit("classify_prompt", {
+        userid: auth?.user?._id,
+        uniquetoken: uniqueUserIdRef.current,
+        message: input,
+        api_key: Config.REACT_APP_CHATBOT_TOKEN,
+        chat_history: chatHistory,
+        scanner_form: scannerForm,
+        backtest_form: basicBacktestForm,
+        advanced_form: advancedForm,
+        market: market,
+        bot_type: selectedBot,
+      });
+    } catch (e) {
+      console.error(e);
     }
   }, [
     loading,
@@ -490,26 +472,10 @@ const AIChatbot = ({
     selectedBot,
     auth?.user?._id,
     chatHistory,
+    scannerForm,
     basicBacktestForm,
-  ]);
-
-  // Memoize handleMessage
-  const handleMessage = useCallback(() => {
-    if (selectedBot === "Company Fundamentals") {
-      handleEdBotChat();
-    } else if (selectedBot === "Fundamental Screener") {
-      handleScreenerChat();
-    } else if (selectedBot === "Scanner") {
-      handleScannerChat();
-    } else if (selectedBot === "Basic Backtest") {
-      handleBacktestScansChat();
-    }
-  }, [
-    selectedBot,
-    handleEdBotChat,
-    handleScreenerChat,
-    handleScannerChat,
-    handleBacktestScansChat,
+    advancedForm,
+    market,
   ]);
 
   // React Native version - using onChangeText instead of onChange
@@ -554,18 +520,17 @@ const AIChatbot = ({
   }, []);
 
   const submitScannerForm = useCallback(
-    async (alerts) => {
+    async (alerts, botOverride) => {
       if (scannerForm && Object.keys(scannerForm).length > 0 && auth) {
         const finalForm = {
           ...scannerForm,
           windowId: uniqueUserIdRef.current,
           user: auth.user,
-          scanner_type: scannerTypes[selectedBot],
+          scanner_type: scannerTypes[botOverride || selectedBot],
           alert: "false",
           alerts: alerts,
           fnoLotSize: "",
           market: market,
-          segment1a: market === "crypto" ? "BTCUSDT" : "Nifty 50",
         };
         console.log("Final Form", finalForm);
         const res = await axios.get(
@@ -579,7 +544,7 @@ const AIChatbot = ({
         }
       }
     },
-    [scannerForm, auth, selectedBot, scannerTypes]
+    [scannerForm, auth, selectedBot, scannerTypes, market]
   );
 
   const submitBacktestForm = useCallback(async () => {
@@ -601,7 +566,32 @@ const AIChatbot = ({
         setIsProgressing(true);
       }
     }
-  }, [basicBacktestForm, auth, stratId, isProgressing]);
+  }, [basicBacktestForm, auth, stratId, isProgressing, market]);
+
+  // Advanced Backtest submit — same endpoint/payload the web chat and the
+  // in-app Advanced Backtester screen use.
+  const submitAdvancedForm = useCallback(async () => {
+    if (advancedForm && Object.keys(advancedForm).length > 0 && auth?.user) {
+      const payload = JSON.parse(JSON.stringify(advancedForm));
+      payload.user = {
+        backtests: parseInt(auth.user.backtests || 0),
+        tier: parseInt(auth.user.tier || 0),
+        _id: auth.user._id,
+      };
+      payload.market = market;
+      payload.windowId = String(uniqueUserIdRef.current);
+      try {
+        await axios.post(
+          `${Config.BACKEND_URL}/api/stocks/advbacktest`,
+          payload
+        );
+      } catch (e) {
+        console.error("Advanced backtest submit failed", e);
+        setLoading(false);
+        Alert.alert("Error", "Failed to submit backtest. Please try again.");
+      }
+    }
+  }, [advancedForm, auth, market]);
 
   const fetchAndParseCSV = useCallback(async (csvUrl) => {
     try {
@@ -653,28 +643,34 @@ const AIChatbot = ({
     [fetchAndParseCSV]
   );
 
-  const setForm = useCallback(
-    (form) => {
-      if (selectedBot === "Fundamental Screener" || selectedBot === "Scanner") {
-        setScannerForm(form);
-      } else if (selectedBot === "Basic Backtest") {
-        setBasicBacktestForm(form);
-      }
-    },
-    [selectedBot]
-  );
-
-  const submitForm = useCallback(() => {
-    //SUBMIT FORM ON CONFIRMATION
-    if (selectedBot === "Fundamental Screener") {
-      submitScannerForm("false");
-    } else if (selectedBot === "Scanner") {
-      submitScannerForm("false");
-    } else if (selectedBot === "Basic Backtest") {
-      submitBacktestForm();
+  // Route a form returned by the backend to the right state slot. `bot` is
+  // the bot_type from the response — the backend may have reclassified the
+  // prompt to a different bot than the selected chip.
+  const setForm = useCallback((form, bot) => {
+    if (bot === "Fundamental Screener" || bot === "Scanner") {
+      setScannerForm(form);
+    } else if (bot === "Basic Backtest") {
+      setBasicBacktestForm(form);
+    } else if (bot === "Advanced Backtest") {
+      setAdvancedForm(form);
     }
-    setLoading(true);
-  }, [selectedBot, submitScannerForm, submitBacktestForm]);
+  }, []);
+
+  const submitForm = useCallback(
+    (bot) => {
+      //SUBMIT FORM ON CONFIRMATION
+      const target = bot || selectedBot;
+      if (target === "Fundamental Screener" || target === "Scanner") {
+        submitScannerForm("false", target);
+      } else if (target === "Basic Backtest") {
+        submitBacktestForm();
+      } else if (target === "Advanced Backtest") {
+        submitAdvancedForm();
+      }
+      setLoading(true);
+    },
+    [selectedBot, submitScannerForm, submitBacktestForm, submitAdvancedForm]
+  );
 
   // Socket effects with stable dependencies
   useEffect(() => {
@@ -699,7 +695,7 @@ const AIChatbot = ({
             ...prevHistory.slice(0, prevHistory.length - 1),
             { role: "model", content: "Thank you for using UnflukeAI." },
           ]);
-          setScannerForm(baseScanForm);
+          setScannerForm(getBaseScanForm(marketKey));
           setScannerResults(data);
           setScannerResultsModalOpen(true);
           setLoading(false);
@@ -709,8 +705,9 @@ const AIChatbot = ({
       const handleBacktestResults = (data) => {
         if (data) {
           if (data.user == auth?.user?._id && data.stratid == stratId) {
+            // Same results URL the web app builds for basic backtests.
             const link = `${Config.PUBLIC_URL
-              }/${market}/basic-backtester-view?filename=${(data.filename || "").replace(
+              }/${market}/backtester-view?filename=${(data.filename || "").replace(
                 ".csv",
                 ""
               )}`;
@@ -726,21 +723,81 @@ const AIChatbot = ({
               ...prevHistory.slice(0, prevHistory.length - 1),
               { role: "model", content: "Thank you for using UnflukeAI." },
             ]);
-            setBasicBacktestForm(baseBacktestForm);
+            setBasicBacktestForm(getBaseBacktestForm(marketKey));
             setLoading(false);
           }
         }
       };
 
+      const handleAdvancedResults = (data) => {
+        if (
+          data &&
+          data.userId == auth?.user?._id &&
+          data.windowId == uniqueUserIdRef.current
+        ) {
+          if (data.filename) {
+            const link = `${Config.PUBLIC_URL
+              }/${market}/backtester-view?filename=${(data.filename || "").replace(
+                ".csv",
+                ""
+              )}&advanced=yes`;
+            setMessages((prevMessages) => [
+              ...prevMessages.slice(0, prevMessages.length - 1),
+              {
+                sender: "bot",
+                text: `Thank you for using UnflukeAI. You can now view your results [here](${link}).`,
+                mode: selectedBot,
+              },
+            ]);
+            setAdvancedForm(getBaseAdvancedForm(marketKey));
+          } else {
+            // Web parity: no rows for this timeframe — offer the 5-min retry
+            // and pre-rewrite every leg expression to the 5-min timeframe so
+            // a "yes" simply resubmits.
+            setMessages((prevMessages) => [
+              ...prevMessages.slice(0, prevMessages.length - 1),
+              {
+                sender: "bot",
+                text: "No results generated for this timeframe. Can I run the strategy on 5-min instead?",
+                mode: selectedBot,
+              },
+            ]);
+            setAdvancedForm((prev) => {
+              if (!prev?.legs) return prev;
+              const next = JSON.parse(JSON.stringify(prev));
+              ["entry", "exit"].forEach((side) => {
+                (next.legs[side] || []).forEach((leg) => {
+                  (leg.scannerExpr || []).forEach((subExpr) => {
+                    (subExpr || []).forEach((item) => {
+                      if (item.timeframe && item.timeframe !== "5-min") {
+                        item.timeframe = "5-min";
+                      }
+                    });
+                  });
+                });
+              });
+              return next;
+            });
+          }
+          addChatHistory((prevHistory) => [
+            ...prevHistory,
+            { role: "model", content: "Thank you for using UnflukeAI." },
+          ]);
+          setLoading(false);
+        }
+      };
+
       backendSocket.on("scanner-results", handleScannerResults);
       backendSocket.on("csv-filename", handleBacktestResults);
+      backendSocket.on("advbacktest-results", handleAdvancedResults);
 
       return () => {
         backendSocket.off("scanner-results", handleScannerResults);
         backendSocket.off("csv-filename", handleBacktestResults);
+        backendSocket.off("advbacktest-results", handleAdvancedResults);
       };
     }
-  }, [auth?.user?._id, selectedBot, stratId]); // Removed messages and chatHistory from dependencies
+  }, [auth?.user?._id, selectedBot, stratId, market, marketKey]); // Removed messages and chatHistory from dependencies
 
   useEffect(() => {
     scrollToBottom();
@@ -779,12 +836,23 @@ const AIChatbot = ({
           data["unique_token"] == uniqueUserIdRef.current
         ) {
           const docs = data.docs;
+          // The backend classifies the prompt and tells us which bot actually
+          // answered — switch the active chip to it (web parity) without
+          // wiping the conversation.
+          const respBot = data.bot_type || selectedBot;
+          if (respBot !== selectedBot && bots.includes(respBot)) {
+            preserveChatRef.current = true;
+            setSelectedBot(respBot);
+            if (onTabChange) {
+              onTabChange(respBot);
+            }
+          }
           setMessages((prevMessages) => [
             ...prevMessages.slice(0, prevMessages.length - 1),
             {
               sender: "bot",
               text: data.message,
-              mode: selectedBot,
+              mode: bots.includes(respBot) ? respBot : selectedBot,
               docs: (data.message || "").indexOf("<<IKNOW>>") !== -1 ? docs : {},
             },
           ]);
@@ -794,15 +862,23 @@ const AIChatbot = ({
             (data.form.indexOf("<<SUBMITTING>>") !== -1 ||
               data.message.indexOf("<<SUBMITTING>>") !== -1)
           ) {
-            submitForm();
+            submitForm(respBot);
           } else {
             if (data.form) {
-              const regex = /```json(.*?)```/s;
+              const regex = /```json([\s\S]*?)```/;
               const match = data.form.match(regex);
               if (match && match[1]) {
                 try {
-                  const parsedForm = JSON.parse(match[1]);
-                  setForm(parsedForm);
+                  // The bot sometimes emits Python literals — normalise to
+                  // JSON before parsing (same fixups as the web app).
+                  const raw = match[1]
+                    .trim()
+                    .replace(/\bTrue\b/g, "true")
+                    .replace(/\bFalse\b/g, "false")
+                    .replace(/\bNone\b/g, "null")
+                    .replace(/,(\s*[}\]])/g, "$1");
+                  const parsedForm = JSON.parse(raw);
+                  setForm(parsedForm, respBot);
                 } catch (e) {
                   console.error("Error parsing JSON", e);
                 }
@@ -810,8 +886,8 @@ const AIChatbot = ({
             }
             let botRole = "assistant";
             if (
-              selectedBot === "Fundamental Screener" ||
-              selectedBot === "Basic Backtest"
+              respBot === "Fundamental Screener" ||
+              respBot === "Basic Backtest"
             ) {
               botRole = "model";
             }
@@ -835,7 +911,7 @@ const AIChatbot = ({
         chatbotSocket.off("error", handleError);
       };
     }
-  }, [auth, chatbotSocket, selectedBot, submitForm, setForm]); // Removed chatHistory from dependencies
+  }, [auth, chatbotSocket, selectedBot, bots, onTabChange, submitForm, setForm]); // Removed chatHistory from dependencies
 
   // Handle defaultInput changes with proper dependency
   useEffect(() => {
@@ -846,17 +922,21 @@ const AIChatbot = ({
 
   // Handle botExplanation changes with stable dependencies
   useEffect(() => {
-    const botIndex = bots.indexOf(selectedBot);
-    if (botIndex !== -1) {
-      setBotExplanation(aboutBots[botIndex]);
+    if (aboutBots[selectedBot]) {
+      setBotExplanation(aboutBots[selectedBot]);
     }
-  }, [selectedBot, bots, aboutBots]);
+  }, [selectedBot, aboutBots]);
 
   // Handle bot type changes with stable dependencies
   useEffect(() => {
     setScannerResultsType(scannerTypes[selectedBot] || "fundamental");
     if (setBotType) {
       setBotType(selectedBot);
+    }
+    if (preserveChatRef.current) {
+      // Backend-driven reclassification — keep the conversation.
+      preserveChatRef.current = false;
+      return;
     }
     setMessages([]);
     addChatHistory([]);
@@ -874,6 +954,22 @@ const AIChatbot = ({
       handleSelect(activeTab);
     }
   }, [activeTab, selectedBot, handleSelect]);
+
+  // Re-seed the bot forms whenever the market changes — the web app gets this
+  // for free because its chat page remounts per market route. Also runs on
+  // mount, so the initial "in"-seeded state is corrected for crypto users.
+  useEffect(() => {
+    setScannerForm(getBaseScanForm(marketKey));
+    setBasicBacktestForm(getBaseBacktestForm(marketKey));
+    setAdvancedForm(getBaseAdvancedForm(marketKey));
+    if (!allBots.includes(selectedBot)) {
+      // e.g. "Fundamental Screener" doesn't exist in crypto mode.
+      setSelectedBot(allBots[0]);
+    }
+    // TODO(human): decide what happens to the ongoing conversation
+    // (messages + chatHistory) when the user flips NSE <-> crypto while
+    // this screen stays mounted.
+  }, [marketKey]);
 
   const isDarkMode = layoutMode === "DARKMODE";
 
@@ -1125,8 +1221,19 @@ const AIChatbot = ({
       {chatbotGuideOpen && (
         <ChatbotGuide
           setChatbotGuideOpen={setChatbotGuideOpen}
-          botType={selectedBot}
-          typeAndAsk={setInput}
+          market={market}
+          typeAndAsk={(question) => {
+            // Jump to the tab the question belongs to (web parity); YouTube
+            // links have no tab — the backend classifies them on send.
+            const targetTab = question_tab_mapping[question];
+            if (targetTab && bots.includes(targetTab)) {
+              setSelectedBot(targetTab);
+              if (onTabChange) {
+                onTabChange(targetTab);
+              }
+            }
+            setInput(question);
+          }}
         />
       )}
 
@@ -1150,6 +1257,13 @@ const AIChatbot = ({
             {loading ? `· analysing ${selectedBot}` : selectedBot}
           </Text>
         </View>
+        <TouchableOpacity
+          style={s.refreshButton}
+          activeOpacity={0.7}
+          onPress={() => setChatbotGuideOpen(true)}
+        >
+          <HelpCircle size={17} color={c.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity
           style={s.refreshButton}
           activeOpacity={0.7}
@@ -1181,7 +1295,7 @@ const AIChatbot = ({
                 onPress={() => {
                   if (loading) return;
                   setSelectedBot(bot);
-                  setBotExplanation(aboutBots[i]);
+                  setBotExplanation(aboutBots[bot]);
                   if (onTabChange) {
                     onTabChange(bot);
                   }

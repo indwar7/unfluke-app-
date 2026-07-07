@@ -151,13 +151,35 @@ export default function CryptoFundamentalScreen() {
    * fearGreed.data[{timestamp,value}]. BTC series endpoints return {date,value}
    * arrays (toSeries picks .value by default). */
   const charts = useMemo(() => {
+    // Miners revenue / hash rate are Bitcoin-protocol series; every other
+    // coin charts market cap (from CoinGecko market_chart) in their place so
+    // no coin's overview shows "No data".
+    const isBtc = symbol === "BTC";
     return [
       { key: "price", label: "Price Trend (15d)", series: toSeries(overview?.priceHistory, { seriesKey: "prices", yKey: "price", limit: 15 }) },
-      { key: "txvol", label: "Transaction Volume (30d)", series: toSeries(overview?.txVolume, { limit: 30 }) },
-      { key: "miners", label: "Miners Revenue (30d)", series: toSeries(overview?.minersRevenue, { limit: 30 }) },
-      { key: "hash", label: "Hash Rate (30d)", series: toSeries(overview?.hashRate, { limit: 30 }) },
+      { key: "txvol", label: isBtc ? "Transaction Volume (30d)" : "Trading Volume (30d)", series: toSeries(overview?.txVolume, { limit: 30 }) },
+      { key: "mcap", label: "Market Cap (30d)", series: toSeries(overview?.marketCap, { limit: 30 }) },
+      ...(isBtc ? [
+        { key: "miners", label: "Miners Revenue (30d)", series: toSeries(overview?.minersRevenue, { limit: 30 }) },
+        { key: "hash", label: "Hash Rate (30d)", series: toSeries(overview?.hashRate, { limit: 30 }) },
+      ] : []),
       { key: "fng", label: "Fear & Greed (15d)", series: toSeries(overview?.fearGreed, { seriesKey: "data", yKey: "value", limit: 15 }) },
     ];
+  }, [overview, symbol]);
+
+  // 30d averages from the series already fetched (website-parity
+  // "Historical Averages" block).
+  const averages = useMemo(() => {
+    const px = toSeries(overview?.priceHistory, { seriesKey: "prices", yKey: "price", limit: 30 });
+    const vol = toSeries(overview?.txVolume, { limit: 30 });
+    const avg = (a: { y: number }[]) => (a.length ? a.reduce((sum, p) => sum + p.y, 0) / a.length : null);
+    const avgPrice = avg(px);
+    const last = px.length ? px[px.length - 1].y : null;
+    return {
+      avgPrice,
+      avgVolume: avg(vol),
+      vsAvg: avgPrice && last != null ? ((last - avgPrice) / avgPrice) * 100 : null,
+    };
   }, [overview]);
 
   const tabs = ["Overview", ...CRYPTO_DETAIL_TABS.map((t) => t.label)];
@@ -303,6 +325,18 @@ export default function CryptoFundamentalScreen() {
                 {rank != null && (
                   <ObsRow c={c} s={s} label="Market Rank" ok text={`Ranked #${rank} by market cap`} />
                 )}
+              </View>
+
+              {/* Historical averages (website parity) */}
+              <View style={s.obsCard}>
+                <Text style={s.obsTitle}>Historical Averages (30d)</Text>
+                <ObsRow c={c} s={s} label="Avg Price" ok
+                  text={averages.avgPrice != null ? fmtUsd(averages.avgPrice, averages.avgPrice < 1 ? 4 : 2) : "—"} />
+                <ObsRow c={c} s={s} label="Avg Volume" ok
+                  text={averages.avgVolume != null ? fmtUsd(averages.avgVolume, 2) : "—"} />
+                <ObsRow c={c} s={s} label="Vs 30d Avg"
+                  ok={Number(averages.vsAvg) >= 0}
+                  text={averages.vsAvg != null ? `Price is ${fmtPct(averages.vsAvg)} vs its 30d average` : "—"} />
               </View>
             </>
           ) : (

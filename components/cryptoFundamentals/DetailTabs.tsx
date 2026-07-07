@@ -75,15 +75,36 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
   const Row = ({ k, v }: { k: string; v: any }) => (
     <View style={s.row}><Text style={s.rowKey}>{k}</Text><Text style={s.rowVal}>{v ?? "—"}</Text></View>
   );
+  // Explains a Bitcoin-only metric instead of a misleading "No data".
+  const Note = ({ text }: { text: string }) => (
+    <View style={s.section}><Text style={s.mutedSm}>{text}</Text></View>
+  );
 
   const info = data.coinInfo ?? {};
   const ser = data.series;
+  // Mempool, UTXO, hash rate, Lightning etc. are Bitcoin-protocol concepts —
+  // for other coins those sections are replaced with per-coin equivalents
+  // (trading volume, market cap) that exist for every listed coin.
+  const isBtc = symbol.toUpperCase() === "BTC";
+  const volSeries = () => toSeries(ser.txVolume, { limit: 30 });
+  const mcapSeries = () => toSeries(ser.marketCap, { limit: 30 });
 
   switch (tab) {
     case "On-Chain": {
       // Real getOnChainData shape: { transaction_count:[{date,value}], ... }
+      // For non-BTC coins the backend returns a stub (needs Etherscan Pro),
+      // so exchange activity stands in for on-chain activity.
       const txSeries = toSeries(data.onChain, { seriesKey: "transaction_count", limit: 30 });
       const lastTx = txSeries.length ? txSeries[txSeries.length - 1].y : null;
+      if (!isBtc && !txSeries.length) {
+        return (
+          <View>
+            <Section title="Trading Volume (30d)">{chart(volSeries(), true)}</Section>
+            <Section title="Market Cap (30d)">{chart(mcapSeries())}</Section>
+            <Note text={`Per-day on-chain transaction history for ${symbol} isn't published by our data sources — showing market activity instead.`} />
+          </View>
+        );
+      }
       return (
         <View>
           <Section title="Transaction Count (30d)">{chart(txSeries)}</Section>
@@ -97,6 +118,14 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
     }
 
     case "Mining":
+      if (!isBtc) {
+        return (
+          <View>
+            <Note text={`Hash rate and miners revenue are Proof-of-Work metrics and only apply to Bitcoin — ${symbol} is secured by a different consensus mechanism.`} />
+            <Section title="Market Cap (30d)">{chart(mcapSeries())}</Section>
+          </View>
+        );
+      }
       return (
         <View>
           <Section title="Hash Rate (30d)">{chart(toSeries(ser.hashRate, { limit: 30 }))}</Section>
@@ -109,6 +138,15 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
       );
 
     case "Network":
+      if (!isBtc) {
+        return (
+          <View>
+            <Section title="Trading Volume (30d)">{chart(volSeries(), true)}</Section>
+            <Section title="Market Cap (30d)">{chart(mcapSeries())}</Section>
+            <Note text={`Mempool and UTXO metrics are Bitcoin-specific — market activity is shown for ${symbol} instead.`} />
+          </View>
+        );
+      }
       return (
         <View>
           <Section title="Network Activity (30d)">{chart(toSeries(ser.networkActivities, { limit: 30 }))}</Section>
@@ -145,6 +183,14 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
       );
 
     case "Lightning": {
+      if (!isBtc) {
+        return (
+          <View>
+            <Note text={`The Lightning Network is Bitcoin's layer-2 payment network — it doesn't exist for ${symbol}.`} />
+            <Section title="Trading Volume (30d)">{chart(volSeries(), true)}</Section>
+          </View>
+        );
+      }
       // Real getLightningNetwork shape:
       // historical_stats:[{date, capacity_btc, channel_count, node_count}].
       const capSeries = toSeries(data.lightning, { seriesKey: "historical_stats", yKey: "capacity_btc", limit: 30 });
@@ -196,6 +242,19 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
       );
 
     case "Blockchain":
+      if (!isBtc) {
+        return (
+          <View>
+            <Section title="Market Cap (30d)">{chart(mcapSeries())}</Section>
+            <Section title="Chain Stats">
+              <Row k="Circulating" v={fmtNum(pick(info, ["circulating_supply", "circulatingSupply"]), 0)} />
+              <Row k="Total Supply" v={fmtNum(pick(info, ["total_supply", "totalSupply"]), 0)} />
+              <Row k="Market Cap Rank" v={pick(info, ["market_cap_rank", "rank"], "—")} />
+            </Section>
+            <Note text={`Block-size and blockchain-size series are collected for Bitcoin only.`} />
+          </View>
+        );
+      }
       return (
         <View>
           <Section title="Blockchain Size (30d)">{chart(toSeries(ser.blockchainSize, { limit: 30 }))}</Section>

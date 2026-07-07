@@ -210,6 +210,45 @@ async function liveCoinInfo(symbol: string | undefined): Promise<any | null> {
   };
 }
 
+/** Lift one series out of a CoinGecko market_chart payload ({[key]:
+ *  [[ts,value],...]}) into the {values:[...]} envelope toSeries reads.
+ *  market_chart exists for every listed coin, so these series fill the
+ *  charts where Bitcoin-only sources have nothing (e.g. BNB Network tab). */
+const marketChartSeries = (raw: any, key: "market_caps" | "total_volumes") =>
+  Array.isArray(raw?.[key]) && raw[key].length ? { values: raw[key] } : null;
+
+/** Live derivatives from Binance USDT-M futures (public, keyless): current
+ *  funding + funding history + open interest, normalised to the backend's
+ *  getDerivativesData shape so the tab reads either source unchanged. The
+ *  backend copy has been stale since Jan 2026, so live is preferred. */
+async function liveDerivatives(symbol: string | undefined): Promise<any | null> {
+  if (!symbol) return null;
+  const fut = `${symbol.toUpperCase()}USDT`;
+  const [premRaw, histRaw, oiRaw] = await Promise.all([
+    fetchJson(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${fut}`, "binance-premium"),
+    fetchJson(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${fut}&limit=90`, "binance-funding"),
+    fetchJson(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${fut}`, "binance-oi"),
+  ]);
+  // Binance answers HTTP 200 with {code,msg} for unknown symbols (e.g. PEPE
+  // trades as 1000PEPEUSDT) — treat those as misses so the backend fallback
+  // isn't shadowed by an empty shell.
+  const ok = (o: any) => (o && typeof o === "object" && o.code == null ? o : null);
+  const prem = ok(premRaw);
+  const oi = ok(oiRaw);
+  const hist = Array.isArray(histRaw) ? histRaw : null;
+  if (!prem && !hist) return null;
+  return {
+    symbol: symbol.toUpperCase(),
+    futures_symbol: fut,
+    source: "binance_futures(live)",
+    open_interest: oi?.openInterest != null ? Number(oi.openInterest) : null,
+    current_funding_rate: prem?.lastFundingRate != null ? Number(prem.lastFundingRate) : null,
+    funding_rate_history: hist
+      ? hist.map((h: any) => ({ timestamp: Number(h?.fundingTime), funding_rate: Number(h?.fundingRate) }))
+      : [],
+  };
+}
+
 /** Live price + 24h change via CoinGecko simple/price (60s refetch).
  *  Id resolved dynamically inside queryFn so every coin gets live KPIs. */
 export function useCoinLivePrice(symbol: string | undefined) {
@@ -253,7 +292,26 @@ export function useCryptoSearch(query: string) {
     queryKey: ["crypto-search", query],
     enabled: query.trim().length > 0,
     staleTime: 60 * 1000,
-    queryFn: () => safe(getCryptoSearchCoins({ searchText: query }), "searchCoins"),
+    queryFn: async () => {
+      const own = await safe(getCryptoSearchCoins({ searchText: query }), "searchCoins");
+      const arr = Array.isArray(own) ? own : Array.isArray((own as any)?.data) ? (own as any).data : [];
+      if (arr.length) return own;
+      // The backend coin list is finite (and its collector stale) — fall back
+      // to CoinGecko search so every coin the user types finds a result. The
+      // fundamentals tabs run on live sources, so a CoinGecko-only coin still
+      // renders full data.
+      const cg = await fetchJson(
+        `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query.trim())}`,
+        "cg-search"
+      );
+      if (Array.isArray(cg?.coins) && cg.coins.length) {
+        return cg.coins.slice(0, 20).map((c: any) => ({
+          symbol: String(c?.symbol || "").toUpperCase(),
+          name: String(c?.name || c?.symbol || ""),
+        }));
+      }
+      return own;
+    },
   });
 }
 
@@ -277,6 +335,7 @@ export type CryptoOverview = {
   hashRate: any;
   minersRevenue: any;
   txVolume: any;
+  marketCap: any;
 };
 
 export function useCryptoOverview(symbol: string | undefined) {
@@ -287,6 +346,12 @@ export function useCryptoOverview(symbol: string | undefined) {
     retry: 1,
     queryFn: async (): Promise<CryptoOverview> => {
       const p = { symbol };
+      // Hash rate / miners revenue / on-chain tx volume are Bitcoin-protocol
+      // series — only fetch them for BTC. Every other coin charts trading
+      // volume + market cap from CoinGecko market_chart instead, so no coin
+      // renders an empty Overview.
+      const isBtc = (symbol || "").toUpperCase() === "BTC";
+      const skip = Promise.resolve(null);
       const [
         coinInfo, coinInfoAlt, global, fearGreed, priceHistory, hashRate, minersRevenue, txVolume,
         fngLive, pricesLive, hashLive, minersLive, txVolLive, coinInfoLive,
@@ -296,16 +361,16 @@ export function useCryptoOverview(symbol: string | undefined) {
         safe(getCryptoGlobalMarket(), "global"),
         safe(getCryptoFearGreed(), "fearGreed"),
         safe(getCryptoPriceHistory(p), "priceHistory"),
-        safe(getCryptoBtcHashRate(), "hashRate"),
-        safe(getCryptoBtcMinersRevenue(), "minersRevenue"),
-        safe(getCryptoBtcTxnVolume(), "txVolume"),
+        isBtc ? safe(getCryptoBtcHashRate(), "hashRate") : skip,
+        isBtc ? safe(getCryptoBtcMinersRevenue(), "minersRevenue") : skip,
+        isBtc ? safe(getCryptoBtcTxnVolume(), "txVolume") : skip,
         // Live sources (preferred — the backend collector can lag).
         // liveCoinInfo added below in the same Promise.all.
         liveFearGreed(30),
-        livePriceHistory(symbol),
-        blockchainChart("hash-rate"),
-        blockchainChart("miners-revenue"),
-        blockchainChart("estimated-transaction-volume-usd"),
+        livePriceHistory(symbol, 30),
+        isBtc ? blockchainChart("hash-rate") : skip,
+        isBtc ? blockchainChart("miners-revenue") : skip,
+        isBtc ? blockchainChart("estimated-transaction-volume-usd") : skip,
         liveCoinInfo(symbol),
       ]);
       // Merge live coin fundamentals over the backend payload: live values win
@@ -323,7 +388,10 @@ export function useCryptoOverview(symbol: string | undefined) {
         priceHistory: pricesLive ?? first(priceHistory),
         hashRate: hashLive ?? first(hashRate),
         minersRevenue: minersLive ?? first(minersRevenue),
-        txVolume: txVolLive ?? first(txVolume),
+        txVolume: isBtc
+          ? (txVolLive ?? first(txVolume))
+          : marketChartSeries(pricesLive, "total_volumes"),
+        marketCap: marketChartSeries(pricesLive, "market_caps"),
       };
     },
   });
@@ -363,7 +431,8 @@ export function useCryptoDetails(symbol: string | undefined) {
     retry: 1,
     queryFn: async (): Promise<CryptoDetails> => {
       const p = { symbol };
-      const [coinInfo, onChain, derivatives, lightning, priceHistory, etherscan, pricesLive] =
+      const [coinInfo, onChain, derivatives, lightning, priceHistory, etherscan,
+             pricesLive, coinInfoLive, derivativesLive] =
         await Promise.all([
           safe(getCryptoCoinInfo(p), "coinInfo"),
           safe(getCryptoOnChain(p), "onChain"),
@@ -372,6 +441,11 @@ export function useCryptoDetails(symbol: string | undefined) {
           safe(getCryptoPriceHistory(p), "priceHistory"),
           safe(getCryptoEtherScanOnChain(p), "etherscan"),
           livePriceHistory(symbol, 30),
+          // Live fundamentals + derivatives, same precedence as the overview:
+          // the backend collector has been stale since Jan 2026 and returns
+          // all-null coinInfo for most non-BTC coins.
+          liveCoinInfo(symbol),
+          liveDerivatives(symbol),
         ]);
 
       // Bitcoin-only rich on-chain series (skip for non-BTC to save calls).
@@ -430,18 +504,32 @@ export function useCryptoDetails(symbol: string | undefined) {
             };
           })()
         : {
+            // Non-BTC coins have no mempool/UTXO/hash-rate (Bitcoin-protocol
+            // concepts), but market_chart gives every coin a trading-volume
+            // and market-cap series — the detail tabs chart these instead of
+            // rendering "No data".
             hashRate: null, difficulty: null, minersRevenue: null, totalFees: null,
-            txVolume: null, txCount: null, utxoCount: null, totalBitcoins: null,
-            avgBlockSize: null, blockchainSize: null, mempoolSize: null, marketCap: null,
+            txVolume: marketChartSeries(pricesLive, "total_volumes"),
+            txCount: null, utxoCount: null, totalBitcoins: null,
+            avgBlockSize: null, blockchainSize: null, mempoolSize: null,
+            marketCap: marketChartSeries(pricesLive, "market_caps"),
             networkActivities: null, lightnings: null,
           };
+
+      // Live coin fundamentals win over the (stale) backend payload, same
+      // merge the overview does — fills Supply/Indicators/Price History rows
+      // for every coin instead of "—".
+      const backendInfo = first(coinInfo) || {};
+      const mergedInfo = coinInfoLive
+        ? { ...backendInfo, ...Object.fromEntries(Object.entries(coinInfoLive).filter(([, v]) => v != null)) }
+        : backendInfo;
 
       return {
         // API returns [{...}] arrays — unwrap the first element for the
         // objects; the bitcoin `series` payloads are handled by toSeries().
-        coinInfo: first(coinInfo),
+        coinInfo: mergedInfo,
         onChain: first(onChain),
-        derivatives: first(derivatives),
+        derivatives: derivativesLive ?? first(derivatives),
         lightning: first(lightning),
         priceHistory: pricesLive ?? first(priceHistory),
         etherscan: first(etherscan),
@@ -537,7 +625,28 @@ export function toSeries(
     }
   }
   const lim = opts?.limit;
-  return lim && out.length > lim ? out.slice(-lim) : out;
+  const daily = dailySample(out);
+  return lim && daily.length > lim ? daily.slice(-lim) : daily;
+}
+
+/**
+ * Collapse intra-day points into one point per calendar day.
+ *
+ * CoinGecko market_chart returns HOURLY points for 2–90 day ranges (a 30d
+ * request = ~721 points), while blockchain.info and the backend return daily
+ * points. Charts label themselves "(30d)" and slice the last `limit` points —
+ * without this step an hourly series shows the last 30 HOURS. Points arrive
+ * chronological (oldest → newest); each point's `x` is already a YYYY-MM-DD
+ * day string, so points sharing the same `x` belong to the same day. Daily
+ * series must pass through unchanged.
+ */
+function dailySample(points: { x: string; y: number }[]): { x: string; y: number }[] {
+  // Last point per day wins — matches candle-close semantics. Map preserves
+  // first-insertion order, so a chronological input stays chronological; a
+  // series that's already daily (all-unique x) passes through unchanged.
+  const byDay = new Map<string, { x: string; y: number }>();
+  for (const p of points) byDay.set(p.x, p);
+  return [...byDay.values()];
 }
 
 /** Pull a plausible numeric field out of a nested object by candidate keys. */

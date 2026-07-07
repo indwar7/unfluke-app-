@@ -47,13 +47,12 @@ var HIST_STATE = { currentDateTime: '', symbol: '${DEFAULT_SYMBOL}' };
 var IS_DARK = ${isDark ? "true" : "false"};
 var tvWidget = null;
 var chartCreated = false;
-var fullName = undefined;
-var cachedBars = [];
-var data = false;
-var data2 = undefined;
-var timeframe = '1';
-var description = 'NSE';
-var prevDateTime = '';
+// Pagination cursors, one per instrument_token + resolution (website parity:
+// the backend pages purely off currentDateTime — pass the earliest bar time
+// seen so far to get the previous chunk; the legacy nxt=true protocol returns
+// the SAME chunk again for crypto, which fed TradingView duplicate bars and
+// blanked the chart).
+var barsCursor = {};
 var pendingRequests = {};
 var reqCounter = 0;
 
@@ -173,75 +172,47 @@ var Datafeed = {
 
   getBars: function(symbolInfo, resolution, periodParams, onResult, onError) {
     var first = periodParams.firstDataRequest;
-    var from = periodParams.from;
-    var to = periodParams.to;
     var id = AUTH.userId;
+    var key = symbolInfo.instrument_token + '_' + resolution;
+    var noData = function() { onResult([], { noData: true }); };
 
-    var useCurrentTime = (fullName !== symbolInfo.full_name) || (prevDateTime === HIST_STATE.currentDateTime);
-    var dateObj = useCurrentTime ? new Date() : (HIST_STATE.currentDateTime ? new Date(HIST_STATE.currentDateTime.replace(' ', 'T')) : new Date());
-    var options = { timeZone:'Asia/Kolkata', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' };
-    var currentDateTime = reformatDate(new Intl.DateTimeFormat('en-GB', options).format(dateObj));
+    // Bar times come back as "YYYY-MM-DD HH:mm:ss+05:30"; strip the offset so
+    // they compare lexicographically against the cursor.
+    var barTime = function(a) { return String(a).split('+')[0].trim(); };
 
-    if (timeframe != resolution || description != symbolInfo.description || prevDateTime != currentDateTime) {
-      timeframe = resolution;
-      description = symbolInfo.description;
-      data = false;
-      fullName = undefined;
-      data2 = undefined;
-      prevDateTime = currentDateTime;
-    }
-
-    if (symbolInfo.type === 'option') {
-      var currDate = Math.floor(new Date(currentDateTime).getTime()) / 1000;
-      var someMonthsPrev = currDate - 8919000;
-      if (from <= someMonthsPrev || to <= someMonthsPrev) {
-        onResult([], { noData: true }); return;
-      }
+    var cursor;
+    if (first) {
+      // Fresh load: start from the selected historical datetime (if any) or now.
+      var dateObj = HIST_STATE.currentDateTime ? new Date(HIST_STATE.currentDateTime.replace(' ', 'T')) : new Date();
+      if (isNaN(dateObj.getTime())) dateObj = new Date();
+      var options = { timeZone:'Asia/Kolkata', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' };
+      cursor = reformatDate(new Intl.DateTimeFormat('en-GB', options).format(dateObj));
+      delete barsCursor[key];
     } else {
-      if (from <= 1220085397 || to <= 1220085397) {
-        onResult([], { noData: true }); return;
-      }
+      cursor = barsCursor[key];
+      if (!cursor) { noData(); return; }
     }
 
     var url = '${BASE}/api/historicData/data/histoTradingminute';
     var params = 'i='+id+'&e='+encodeURIComponent(symbolInfo.instrument_token)
-      +'&currentDateTime='+encodeURIComponent(currentDateTime)
+      +'&currentDateTime='+encodeURIComponent(cursor)
       +'&type='+symbolInfo.type+'&name='+encodeURIComponent(symbolInfo.name)
       +'&resolution='+resolution;
 
-    if (!(data && fullName === symbolInfo.full_name)) {
-      fullName = symbolInfo.full_name;
-      apiFetch(url + '?' + params + '&nxt=false')
-      .then(function(result) {
-        data = result;
-        if (data && data.Response === 'Error') { onResult([], { noData: true }); return; }
-        if (!data || !Array.isArray(data) || data.length === 0) { onResult([], { noData: true }); return; }
-        cachedBars = data.map(function(el) {
-          return { time: new Date(el.a).getTime(), low: Number(el.b), high: Number(el.c), open: Number(el.d), close: Number(el.e), volume: Number(el.f) };
-        });
-        onResult(cachedBars, { noData: false });
-      })
-      .catch(function(err) { onResult([], { noData: true }); });
-    } else {
-      if (symbolInfo.type === 'option') {
-        onResult(cachedBars, { noData: false });
-        return;
-      }
-      apiFetch(url + '?' + params + '&nxt=true')
-      .then(function(result) {
-        data2 = result;
-        if (data2 && Array.isArray(data2) && data2.length > 0) {
-          data = data2.concat(data);
-          cachedBars = data.map(function(el) {
-            return { time: new Date(el.a).getTime(), low: Number(el.b), high: Number(el.c), open: Number(el.d), close: Number(el.e), volume: Number(el.f) };
-          });
-          onResult(cachedBars, { noData: false });
-        } else {
-          onResult(cachedBars, { noData: false });
-        }
-      })
-      .catch(function() { onResult(cachedBars, { noData: false }); });
-    }
+    apiFetch(url + '?' + params)
+    .then(function(result) {
+      if (!result || result.Response === 'Error' || !Array.isArray(result) || result.length === 0) { noData(); return; }
+      // On pagination only keep bars strictly older than the cursor — the
+      // backend window can overlap the previous chunk.
+      var chunk = first ? result : result.filter(function(el) { return barTime(el.a) < cursor; });
+      if (chunk.length === 0) { noData(); return; }
+      barsCursor[key] = barTime(chunk[0].a);
+      var bars = chunk.map(function(el) {
+        return { time: new Date(el.a).getTime(), low: Number(el.b), high: Number(el.c), open: Number(el.d), close: Number(el.e), volume: Number(el.f) };
+      });
+      onResult(bars, { noData: false });
+    })
+    .catch(function(err) { noData(); });
   },
   subscribeBars: function(symbolInfo, resolution, onTick, uid, onReset) {
     if (onReset) onReset();

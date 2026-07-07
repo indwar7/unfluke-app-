@@ -482,13 +482,34 @@ const moreElementsFunda = [
 
 const elemsWithNoDialog = ["min", "max"];
 
+// Chatbot guide content — mirrored 1:1 from the unfluke.in web app so the
+// phone shows exactly what the website shows, per market.
 const chatbotInfo = {
   "Company Fundamentals":
     'Unfluke\'s "Company Fundamentals" bot helps you with information on various financial data and annual reports. You can ask questions like:',
+  Scanner:
+    'Unfluke\'s "Scanner" bot helps you filter stocks based on price and technical indicators. You can ask questions like:',
   "Fundamental Screener":
-    "Unfluke's Fundamental Screener bot helps you filter stocks based on fundamental analysis. You can ask questions like:",
+    'Unfluke\'s "Fundamental Screener" bot helps you filter stocks based on fundamental analysis. You can ask questions like:',
   "Basic Backtest":
-    "Basic Backtest bot lets you create backtesters. You can ask questions like:",
+    'Unfluke\'s "Basic Backtest" bot lets you create backtesters. You can ask questions like:',
+  "Advanced Backtest":
+    'Unfluke\'s "Advanced Backtest" bot lets you create complex backtesters with multiple legs and conditions. You can ask questions like:',
+  "Youtube Bot":
+    'Unfluke\'s "Youtube Bot" lets you enter Youtube links and create strategies based on the content in the video. You can ask questions like:',
+};
+
+// Which bots the guide advertises per market ("in" = NSE, "crypto").
+const chatbotGuideTabs = {
+  in: [
+    "Company Fundamentals",
+    "Fundamental Screener",
+    "Scanner",
+    "Basic Backtest",
+    "Advanced Backtest",
+    "Youtube Bot",
+  ],
+  crypto: ["Scanner", "Basic Backtest", "Advanced Backtest", "Youtube Bot"],
 };
 
 const chatbotQuestions = {
@@ -500,12 +521,37 @@ const chatbotQuestions = {
   ],
   "Fundamental Screener": [
     "Give me stocks with Net Profit > 10% and Debt to Equity < 1.",
-    "Show me stocks with PE < 15 and ROE > 20%.",
+    "Show me stocks with Dividend Per Share < 15 and ROE > 20%.",
   ],
-  "Scanner": ["Tell me stocks where price is more than 1000."],
+  Scanner: ["Tell me stocks where price is more than 1000."],
   "Basic Backtest": [
     "Create a backtest with 1% target and 0.5% stop loss.",
     "I want to backtest a strategy with 2 legs. Both should have 2% target and 1% stop loss.",
+  ],
+  "Advanced Backtest": [
+    "Test a SMA 50 on stocks with exit condition of 20% profit or 10% stop loss",
+  ],
+  "Youtube Bot": [
+    "I want to create a strategy from this video: https://www.youtube.com/shorts/YV-gwsg2Ekc",
+    "https://www.youtube.com/shorts/SoVD74zm_bw",
+    "Test strategy from this video: https://www.youtube.com/shorts/vD0CEdl3g1M",
+  ],
+};
+
+// Crypto-market variants of the sample questions (web parity).
+const chatbotQuestionsCrypto = {
+  Scanner: ["I want to know where BTC is true for daily EMA > SMA."],
+  "Basic Backtest": [
+    "Create a backtest with 1% target and 0.5% stop loss.",
+    "I want to backtest a strategy with 2 legs. Both should have 2% target and 1% stop loss.",
+  ],
+  "Advanced Backtest": [
+    "When does ETH spot MACDFIX cross signal line upwards? Use 1 min chart 00:00 to 23:59.",
+  ],
+  "Youtube Bot": [
+    "I want to create a strategy from this video: https://www.youtube.com/shorts/YV-gwsg2Ekc",
+    "https://www.youtube.com/shorts/SoVD74zm_bw",
+    "Test strategy from this video: https://www.youtube.com/shorts/vD0CEdl3g1M",
   ],
 };
 
@@ -522,11 +568,17 @@ const question_tab_mapping = {
     "Company Fundamentals",
   "Give me stocks with Net Profit > 10% and Debt to Equity < 1.":
     "Fundamental Screener",
-  "Show me stocks with PE < 15 and ROE > 20%.": "Fundamental Screener",
+  "Show me stocks with Dividend Per Share < 15 and ROE > 20%.":
+    "Fundamental Screener",
   "Create a backtest with 1% target and 0.5% stop loss.": "Basic Backtest",
   "I want to backtest a strategy with 2 legs. Both should have 2% target and 1% stop loss.":
     "Basic Backtest",
   "Tell me stocks where price is more than 1000.": "Scanner",
+  "Test a SMA 50 on stocks with exit condition of 20% profit or 10% stop loss":
+    "Advanced Backtest",
+  "I want to know where BTC is true for daily EMA > SMA.": "Scanner",
+  "When does ETH spot MACDFIX cross signal line upwards? Use 1 min chart 00:00 to 23:59.":
+    "Advanced Backtest",
 };
 
 function createAdvancedBacktestLeg(index, entryexit) {
@@ -650,6 +702,8 @@ export {
   moreElementsFunda,
   elemsWithNoDialog,
   chatbotQuestions,
+  chatbotQuestionsCrypto,
+  chatbotGuideTabs,
   chatbotInfo,
   formatTime,
   deepCopy,

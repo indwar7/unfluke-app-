@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "expo-router";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   fetchAdvancedDefaultStrategies,
   fetchAdvancedStrategyDetails,
@@ -89,7 +90,8 @@ const AdvancedBacktestMainPage = () => {
       const ID = auth.user?._id;
       if (!ID) return;
       try {
-        const resp = await fetchAdvancedDefaultStrategies(axios);
+        const mkt = (await AsyncStorage.getItem("mkt")) || "in";
+        const resp = await fetchAdvancedDefaultStrategies(axios, mkt);
         // Normalize: API may return a raw AxiosResponse or the array.
         const raw0 = resp?.data ?? resp;
         const arr = Array.isArray(raw0) ? raw0 : [];

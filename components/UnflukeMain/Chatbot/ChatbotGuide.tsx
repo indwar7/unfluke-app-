@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Dimensions,
   Platform,
   KeyboardAvoidingView,
   BackHandler,
@@ -16,17 +15,34 @@ import { X } from "lucide-react-native";
 import {
   chatbotInfo,
   chatbotQuestions,
-  question_tab_mapping,
+  chatbotQuestionsCrypto,
+  chatbotGuideTabs,
 } from "../Utils/common_vars";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
 
+// "Welcome to UnflukeAI" guide modal — web parity: one tab per bot the
+// current market supports (NSE shows 6 incl. Youtube Bot, crypto shows 4),
+// each with an intro line and tappable sample questions.
+const ChatbotGuide = ({
+  setChatbotGuideOpen,
+  typeAndAsk,
+  market = "in",
+  isVisible = true,
+}) => {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { colors: c } = useTheme();
+  const s = makeStyles(c);
 
-const ChatbotGuide = ({ setChatbotGuideOpen, typeAndAsk, botType, isVisible = true }) => {
-  const [hoveredQuestion, setHoveredQuestion] = React.useState(null);
-const { width: screenWidth, height: screenHeight } = useWindowDimensions()
-  const { colors: c, isDark } = useTheme();
-  const styles = makeStyles(c, isDark);
+  const marketKey = market === "crypto" ? "crypto" : "in";
+  const tabs = chatbotGuideTabs[marketKey];
+  const questionsByBot =
+    marketKey === "crypto" ? chatbotQuestionsCrypto : chatbotQuestions;
+
+  const [activeTab, setActiveTab] = React.useState(tabs[0]);
+  useEffect(() => {
+    if (!tabs.includes(activeTab)) setActiveTab(tabs[0]);
+  }, [tabs, activeTab]);
 
   // Handle back button on Android
   useEffect(() => {
@@ -54,7 +70,12 @@ const { width: screenWidth, height: screenHeight } = useWindowDimensions()
   const handleClose = () => {
     setChatbotGuideOpen(false);
   };
-console.log(chatbotInfo[botType])
+
+  const questions = useMemo(
+    () => questionsByBot[activeTab] || [],
+    [questionsByBot, activeTab]
+  );
+
   return (
     <Modal
       animationType="slide"
@@ -64,72 +85,90 @@ console.log(chatbotInfo[botType])
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.modalOverlay}
+        style={s.modalOverlay}
       >
-        <View style={[styles.modalContainer,{    width: screenWidth * 0.9,    maxHeight: screenHeight * 0.8,
-    height:screenHeight*0.8,
-}]}>
+        <View
+          style={[
+            s.modalContainer,
+            {
+              width: screenWidth * 0.92,
+              maxHeight: screenHeight * 0.8,
+            },
+          ]}
+        >
           {/* Modal Header */}
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Welcome to UnflukeAI!</Text>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>Welcome to UnflukeAI!</Text>
             <TouchableOpacity
               onPress={handleClose}
-              style={styles.closeButton}
+              style={s.closeButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <X size={24} color={c.textSecondary} />
+              <X size={22} color={c.textSecondary} />
             </TouchableOpacity>
+          </View>
+
+          {/* Bot tabs */}
+          <View style={s.tabBar}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={s.tabScrollContent}
+            >
+              {tabs.map((tab) => {
+                const isActive = tab === activeTab;
+                return (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[s.tab, isActive && s.tabActive]}
+                    onPress={() => setActiveTab(tab)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[s.tabText, isActive && s.tabTextActive]}
+                      numberOfLines={1}
+                    >
+                      {tab}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
 
           {/* Modal Body */}
           <ScrollView
-            style={styles.modalBody}
+            style={s.modalBody}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={s.scrollContent}
           >
-           
-              <>
-                {/* Info Text */}
-                <Text style={styles.infoText}>{chatbotInfo[botType]}</Text>
+            <Text style={s.infoText}>{chatbotInfo[activeTab]}</Text>
 
-                {/* Questions Section */}
-                <View style={styles.questionsSection}>
-                  <Text style={styles.sectionTitle}>Try asking:</Text>
-                  
-                  {(chatbotQuestions[botType] || []).map((question, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.questionContainer}
-                      onPress={() => handleQuestionPress(question)}
-                      onPressIn={() => setHoveredQuestion(index)}
-                      onPressOut={() => setHoveredQuestion(null)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.questionRow}>
-                        <Text style={styles.bulletPoint}>•</Text>
-                        <Text
-                          style={[
-                            styles.questionText,
-                            hoveredQuestion === index && styles.questionTextHovered,
-                          ]}
-                        >
-                          {question}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
+            <View style={s.questionsSection}>
+              {questions.map((question, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={s.questionContainer}
+                  onPress={() => handleQuestionPress(question)}
+                  activeOpacity={0.7}
+                >
+                  <View style={s.questionRow}>
+                    <Text style={s.bulletPoint}>•</Text>
+                    <Text style={s.questionText}>{question}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
 
           {/* Modal Footer */}
-          <View style={styles.modalFooter}>
+          <View style={s.modalFooter}>
             <TouchableOpacity
-              style={styles.closeButtonFooter}
+              style={s.closeButtonFooter}
               onPress={handleClose}
               activeOpacity={0.8}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={s.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -138,110 +177,124 @@ console.log(chatbotInfo[botType])
   );
 };
 
-const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: c.overlay,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    backgroundColor: c.card,
-    borderRadius: 16,
-    maxWidth: 500,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+const makeStyles = (c: AppColors) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.55)",
+      justifyContent: "center",
+      alignItems: "center",
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: c.border,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: c.text,
-    flex: 1,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  modalBody: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  scrollContent: {
-    paddingVertical: 20,
-  },
-  infoText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: c.textSecondary,
-    marginBottom: 24,
-  },
-  questionsSection: {
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: c.text,
-    marginBottom: 16,
-  },
-  questionContainer: {
-    marginBottom: 12,
-    paddingVertical: 4,
-  },
-  questionRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  bulletPoint: {
-    fontSize: 16,
-    color: c.gold,
-    marginRight: 10,
-    marginTop: 2,
-  },
-  questionText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
-    color: c.gold,
-  },
-  questionTextHovered: {
-    textDecorationLine: "underline",
-  },
-  modalFooter: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: c.border,
-  },
-  closeButtonFooter: {
-    backgroundColor: c.surfaceElevated,
-    borderWidth: 1,
-    borderColor: c.border,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  closeButtonText: {
-    color: c.text,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});
+    modalContainer: {
+      backgroundColor: c.surface,
+      borderRadius: 16,
+      maxWidth: 520,
+      borderWidth: 1,
+      borderColor: c.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    modalTitle: {
+      fontSize: 19,
+      fontWeight: "bold",
+      color: c.text,
+      flex: 1,
+    },
+    closeButton: {
+      padding: 4,
+    },
+    tabBar: {
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    tabScrollContent: {
+      paddingHorizontal: 12,
+      gap: 4,
+    },
+    tab: {
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderBottomWidth: 2,
+      borderBottomColor: "transparent",
+    },
+    tabActive: {
+      borderBottomColor: c.gold,
+    },
+    tabText: {
+      fontSize: 13.5,
+      fontWeight: "600",
+      color: c.textSecondary,
+    },
+    tabTextActive: {
+      color: c.gold,
+    },
+    modalBody: {
+      paddingHorizontal: 20,
+    },
+    scrollContent: {
+      paddingVertical: 18,
+    },
+    infoText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: c.textSecondary,
+      marginBottom: 16,
+    },
+    questionsSection: {
+      marginTop: 4,
+    },
+    questionContainer: {
+      marginBottom: 12,
+      paddingVertical: 4,
+    },
+    questionRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+    },
+    bulletPoint: {
+      fontSize: 16,
+      color: c.gold,
+      marginRight: 10,
+      marginTop: 2,
+    },
+    questionText: {
+      flex: 1,
+      fontSize: 15,
+      lineHeight: 22,
+      color: c.gold,
+    },
+    modalFooter: {
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+    },
+    closeButtonFooter: {
+      backgroundColor: c.surfaceElevated,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+    closeButtonText: {
+      color: c.text,
+      fontSize: 15.5,
+      fontWeight: "600",
+    },
+  });
 
 export default ChatbotGuide;

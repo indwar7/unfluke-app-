@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ChevronRight,
   ChevronLeft,
@@ -183,9 +184,14 @@ const AdvancedBacktesterHome = () => {
     useCallback(() => {
       if (auth?.user?._id) {
         setLoading(true);
-        axios
-          .get(
-            `${Config.BACKEND_URL}/api/stocks/getSavedStrategies?user=${auth.user._id}`
+        // Market-scoped via ?market= like the website — this endpoint ignores
+        // the mrkt header, so without the param it returns NSE strategies even
+        // in crypto mode.
+        AsyncStorage.getItem("mkt")
+          .then((mkt) =>
+            axios.get(
+              `${Config.BACKEND_URL}/api/stocks/getSavedStrategies?user=${auth.user._id}&market=${mkt || "in"}`
+            )
           )
           .then((res) => {
             const data = res.data ?? res;
