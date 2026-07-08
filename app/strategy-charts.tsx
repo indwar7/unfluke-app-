@@ -684,6 +684,15 @@ export default function StrategyChartsScreen() {
             token
           );
         }
+        // TODO(human): expiryData can come back as { Error: "..." } — safeFetch
+        // never throws, so a hung/timed-out/errored backend call (e.g.
+        // getStradleExpiryDate, which is known to 524 after ~100s server-side)
+        // currently falls through to the `dates.length === 0` branch below and
+        // gets treated identically to "this instrument genuinely has no
+        // expiries" — silently clearing the dropdown with no explanation.
+        // Decide how this screen should surface a real fetch failure here vs
+        // a legitimate empty result (setError message text, whether to leave
+        // stale expiries/strikes in place instead of clearing them, etc).
         const dates: string[] = expiryData?.expiry_date || [];
         setExpiries(dates);
         if (dates.length > 0) {
