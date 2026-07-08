@@ -56,6 +56,10 @@ axios.interceptors.response.use(
 axios.interceptors.request.use(async function (config) {
   const mrkt = await AsyncStorage.getItem("mkt");
   if (mrkt) {
+    // Backend scopes time-series data by appType; keep mrkt for legacy
+    // endpoints. Mirrors the canonical Unfluke_helpers/api_helper.js so this
+    // duplicate can never ship market-blind (appType-less) requests.
+    config.headers["appType"] = mrkt;
     config.headers["mrkt"] = mrkt;
   }
 

@@ -222,12 +222,15 @@ const AIChatbot = ({
   }
 
   // Bot mode chips per market — mirrored from the unfluke.in web app's chat
-  // page ("Youtube Bot" is not a chip there either: pasting a YouTube link
-  // anywhere gets classified server-side via classify_prompt).
+  // page. "Youtube Bot" is not a chip (pasting a YouTube link anywhere gets
+  // classified server-side via classify_prompt), so each market's chips are its
+  // guide tabs minus "Youtube Bot". Crypto has no "Company Fundamentals" — the
+  // web bundle's crypto set is [Scanner, Basic Backtest, Advanced Backtest,
+  // Youtube Bot], i.e. no company reports for coins.
   const allBots = useMemo(
     () =>
       marketKey === "crypto"
-        ? ["Company Fundamentals", "Scanner", "Basic Backtest", "Advanced Backtest"]
+        ? ["Scanner", "Basic Backtest", "Advanced Backtest"]
         : [
             "Company Fundamentals",
             "Fundamental Screener",
@@ -556,7 +559,7 @@ const AIChatbot = ({
       const strategyAdded = await addStrategy(
         axios,
         basicBacktestForm,
-        // navigation, // Pass navigation instead of navigate
+        null, // navigate — unused inside addStrategy, kept only to match its (axios, strategy, navigate, randomSocketID, ID, isBacktesting, subUrl) signature
         stratId,
         auth?.user?._id,
         isProgressing,

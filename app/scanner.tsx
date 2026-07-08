@@ -806,11 +806,11 @@ const Scanner = ({ shared }) => {
       if (type === "alerts") {
         dispatch(handleChange({ name: "alerts", value: true }));
         if (!route.params?.state) {
-          dispatch(handleChange({ name: "segment1a", value: "360ONE" }));
+          dispatch(handleChange({ name: "segment1a", value: subUrl === "crypto" ? "BTCUSDT" : "360ONE" }));
         }
       }
     }
-  }, [route.params, auth, type]);
+  }, [route.params, auth, type, subUrl]);
 
   /***** RENDER *****/
   return (
