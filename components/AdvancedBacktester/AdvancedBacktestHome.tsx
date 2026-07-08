@@ -140,7 +140,11 @@ const AdvancedBacktesterHome = () => {
       Alert.alert("Error", "Could not generate share link");
       return;
     }
-    const link = `${Config.PUBLIC_URL}/basic-backtester-view?filename=${fileName.split(".")[0]
+    // Website parity: public results link is /{market}/backtester-view, not
+    // an app-internal route name — a link without the market segment won't
+    // resolve to the crypto-scoped results view on unfluke.in.
+    const market = globalState?.appType || "in";
+    const link = `${Config.PUBLIC_URL}/${market}/backtester-view?filename=${fileName.split(".")[0]
       }&advanced=yes`;
     try {
       await Share.share({ message: link, url: link });

@@ -22,9 +22,10 @@ const getEquityStocks = async (axios, type, market = "in") => {
 }
 
 const getIndexStocks = (market = "in") => {
-    // Crypto has no index-spot equivalents; keep the picker empty there so a
-    // crypto scanner never offers "Nifty Spot".
-    if (market === "crypto") return [];
+    // Website parity: crypto's "Indices" segment offers BTC/ETH, not an
+    // empty list (verified against the live bundle) — it's not literally an
+    // index, but it's the closest crypto equivalent to "the benchmark pair".
+    if (market === "crypto") return ["BTC", "ETH"];
     return [
         "Nifty Spot",
         "Banknifty Spot",

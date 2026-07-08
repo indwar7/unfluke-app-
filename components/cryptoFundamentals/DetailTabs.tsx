@@ -88,13 +88,23 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
   const isBtc = symbol.toUpperCase() === "BTC";
   const volSeries = () => toSeries(ser.txVolume, { limit: 30 });
   const mcapSeries = () => toSeries(ser.marketCap, { limit: 30 });
+  // Latest point of a live-merged series (same source the charts render),
+  // so a stat row never disagrees with the chart sitting right above it.
+  const lastOf = (seriesRaw: any) => {
+    const s = toSeries(seriesRaw, { limit: 1 });
+    return s.length ? s[0].y : undefined;
+  };
 
   switch (tab) {
     case "On-Chain": {
-      // Real getOnChainData shape: { transaction_count:[{date,value}], ... }
-      // For non-BTC coins the backend returns a stub (needs Etherscan Pro),
-      // so exchange activity stands in for on-chain activity.
-      const txSeries = toSeries(data.onChain, { seriesKey: "transaction_count", limit: 30 });
+      // BTC: prefer the live-merged series (same one the Network tab charts)
+      // over the stale backend on-chain collector. Non-BTC coins have no live
+      // equivalent, so they still fall back to the backend's stub — most
+      // return empty here anyway and drop into the "market activity" branch
+      // below.
+      const txSeries = isBtc
+        ? toSeries(ser.txCount, { limit: 30 })
+        : toSeries(data.onChain, { seriesKey: "transaction_count", limit: 30 });
       const lastTx = txSeries.length ? txSeries[txSeries.length - 1].y : null;
       if (!isBtc && !txSeries.length) {
         return (
@@ -131,8 +141,8 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
           <Section title="Hash Rate (30d)">{chart(toSeries(ser.hashRate, { limit: 30 }))}</Section>
           <Section title="Miners Revenue (30d)">{chart(toSeries(ser.minersRevenue, { limit: 30 }))}</Section>
           <Section title="Mining Stats">
-            <Row k="Difficulty" v={fmtNum(pick(data.onChain, ["difficulty"]))} />
-            <Row k="Miners Revenue" v={fmtNum(pick(data.onChain, ["minersRevenue", "miners_revenue"]))} />
+            <Row k="Difficulty" v={fmtNum(lastOf(ser.difficulty))} />
+            <Row k="Miners Revenue" v={fmtNum(lastOf(ser.minersRevenue))} />
           </Section>
         </View>
       );
@@ -228,18 +238,25 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
       );
     }
 
-    case "Indicators":
+    case "Indicators": {
+      const pct = (keys: string[]) => {
+        const p = pick(info, keys);
+        return p != null ? `${Number(p).toFixed(2)}%` : "—";
+      };
       return (
         <View>
           <Section title="Market Indicators">
             <Row k="Price" v={fmtNum(pick(info, ["current_price_usd", "current_price"]))} />
             <Row k="24h Volume" v={fmtNum(pick(info, ["total_volume_24h", "total_volume"]))} />
             <Row k="Market Cap Rank" v={pick(info, ["market_cap_rank", "rank"], "—")} />
-            <Row k="ATH Change" v={(() => { const p = pick(info, ["ath_change_percentage"]); return p != null ? `${Number(p).toFixed(2)}%` : "—"; })()} />
-            <Row k="Sentiment (Up)" v={(() => { const p = pick(info, ["sentiment_votes_up_percentage"]); return p != null ? `${Number(p).toFixed(0)}%` : "—"; })()} />
+            <Row k="ATH Change" v={pct(["ath_change_percentage"])} />
+            <Row k="7 Day Change" v={pct(["price_change_percentage_7d"])} />
+            <Row k="30 Day Change" v={pct(["price_change_percentage_30d"])} />
+            <Row k="1 Year Change" v={pct(["price_change_percentage_1y"])} />
           </Section>
         </View>
       );
+    }
 
     case "Blockchain":
       if (!isBtc) {
@@ -260,9 +277,9 @@ export function CryptoDetailTabs({ tab, symbol }: { tab: string; symbol: string 
           <Section title="Blockchain Size (30d)">{chart(toSeries(ser.blockchainSize, { limit: 30 }))}</Section>
           <Section title="Avg Block Size (30d)">{chart(toSeries(ser.avgBlockSize, { limit: 30 }))}</Section>
           <Section title="Blockchain Stats">
-            <Row k="Total Bitcoins" v={fmtNum(pick(data.onChain, ["totalBitcoins", "total_bitcoins"]), 0)} />
-            <Row k="Blockchain Size" v={fmtNum(pick(data.onChain, ["blockchainSize", "blocks_size"]))} />
-            <Row k="Avg Block Size" v={fmtNum(pick(data.onChain, ["avgBlockSize", "avg_block_size"]), 3)} />
+            <Row k="Total Bitcoins" v={fmtNum(lastOf(ser.totalBitcoins), 0)} />
+            <Row k="Blockchain Size" v={fmtNum(lastOf(ser.blockchainSize))} />
+            <Row k="Avg Block Size" v={fmtNum(lastOf(ser.avgBlockSize), 3)} />
           </Section>
         </View>
       );

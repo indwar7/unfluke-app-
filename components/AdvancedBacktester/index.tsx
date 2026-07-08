@@ -124,7 +124,7 @@ const AdvancedBacktester = () => {
   }
 
   function addLeg() {
-    dispatch(handleAddLeg({ index: advancedState.totalLegs }));
+    dispatch(handleAddLeg({ index: advancedState.totalLegs, market: subUrl }));
   }
 
   function removeLeg() {
@@ -226,7 +226,15 @@ const AdvancedBacktester = () => {
     state.windowId = windowId.current.toString();
 
     try {
-      await axios.post(`${Config.BACKEND_URL}/api/stocks/advbacktest`, state);
+      const res = await axios.post(`${Config.BACKEND_URL}/api/stocks/advbacktest`, state);
+      // Website parity: a 200 response can still carry `success:false` (e.g.
+      // paywall/plan limit) — reading only network/HTTP errors left this
+      // stuck on "Your results will be generated soon..." forever with no
+      // explanation, since the request itself never failed.
+      if (res?.data?.success === false) {
+        setIsBacktesting(false);
+        setErrorDialog(res.data.message || "Backtest could not be started.");
+      }
     } catch (error) {
       setIsBacktesting(false);
       Alert.alert("Error", "Failed to submit backtest. Please try again.");
@@ -241,10 +249,14 @@ const AdvancedBacktester = () => {
         const parsed = typeof params.state === "string" ? JSON.parse(params.state) : params.state;
         dispatch(setBacktester(parsed));
       } catch {
-        dispatch(handleAddLeg({ index: 0 }));
+        dispatch(handleAddLeg({ index: 0, market: globalState?.appType }));
       }
     } else {
-      dispatch(handleAddLeg({ index: 0 }));
+      // Read straight from the Redux selector, not the locally-mirrored
+      // `subUrl` state (set one tick later in the effect above) — this
+      // effect runs on mount and must not seed the first leg with the
+      // wrong market's instrument/hours if crypto is already selected.
+      dispatch(handleAddLeg({ index: 0, market: globalState?.appType }));
     }
   }, [params?.state]);
 

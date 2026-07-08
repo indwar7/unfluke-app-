@@ -581,7 +581,7 @@ const question_tab_mapping = {
     "Advanced Backtest",
 };
 
-function createAdvancedBacktestLeg(index, entryexit) {
+function createAdvancedBacktestLeg(index, entryexit, market) {
   let exitParams = {};
 
   if (entryexit === "exit") {
@@ -597,6 +597,12 @@ function createAdvancedBacktestLeg(index, entryexit) {
     };
   }
 
+  // Crypto trades 24x7 with no NSE-style instrument — mirror the website's
+  // per-market default instead of seeding every leg with an NSE stock and
+  // NSE trading hours (a crypto strategy would otherwise start out invalid
+  // until the user manually re-picks every leg's instrument and time range).
+  const isCrypto = market === "crypto";
+
   return {
     index: index,
     type: entryexit,
@@ -604,10 +610,10 @@ function createAdvancedBacktestLeg(index, entryexit) {
     noOfLots: 1,
     scannerExpr: [],
     scannerSegment: 0,
-    scannerSegment1a: "360ONE",
+    scannerSegment1a: isCrypto ? "BTCUSDT" : "360ONE",
     scannerSegment2a: ["X"],
-    startTime: "09:30",
-    endTime: "15:30",
+    startTime: isCrypto ? "00:00" : "09:30",
+    endTime: isCrypto ? "23:59" : "15:30",
     satisfy: true,
     duplicate: true,
     timeframe: "1-min",

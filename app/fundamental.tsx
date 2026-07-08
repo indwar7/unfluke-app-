@@ -154,11 +154,15 @@ export default function FundamentalScreen() {
   }, [isCrypto]);
 
   useEffect(() => {
-    dispatch(setSelectedStock(DEFAULT_STOCK));
-  }, []);
+    if (!isCrypto) dispatch(setSelectedStock(DEFAULT_STOCK));
+  }, [isCrypto]);
 
   const stock = redux?.capcode ? redux : DEFAULT_STOCK;
-  const capcode = String(stock.capcode);
+  // Empty in crypto mode: useCompany/useFinancials gate their queries on
+  // `enabled: !!capcode`, so this alone stops the redirect-race equity fetch
+  // (Capitaline getCompany/getFinancials for Reliance) from firing before
+  // the router.replace above lands.
+  const capcode = isCrypto ? "" : String(stock.capcode);
   const companyName = stock.name || DEFAULT_STOCK.name;
 
   const [query, setQuery] = useState(stock.name);

@@ -38,8 +38,9 @@ const advancedBacktestSlice = createSlice({
             if(state["totalLegs"] < 10)
             {
                 const index = action.payload.index
-                const legStateEntry = createAdvancedBacktestLeg(index, "entry")
-                const legStateExit = createAdvancedBacktestLeg(index, "exit")
+                const market = action.payload.market
+                const legStateEntry = createAdvancedBacktestLeg(index, "entry", market)
+                const legStateExit = createAdvancedBacktestLeg(index, "exit", market)
                 state["legs"]["entry"] = state["legs"]["entry"].concat([legStateEntry])
                 state["legs"]["exit"] = state["legs"]["exit"].concat([legStateExit])
                 state["totalLegs"] = state["legs"]["entry"].length
