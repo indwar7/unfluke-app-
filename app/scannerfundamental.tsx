@@ -8,6 +8,8 @@ import {
   StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
+import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronRight, Eye, Plus } from "lucide-react-native";
@@ -21,7 +23,15 @@ const ScannerFundamental = () => {
   const [defaultScanners, setDefaultScanners] = useState({});
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
-  const [appType, setAppType] = useState("default"); // You can set a default value or get it from props
+
+  // Crypto has no fundamentals data (P/E, ROE, debt/equity, ...) to scan on —
+  // the website drops this screen entirely for non-IND markets. Bounce crypto
+  // users to the Technical Scanner instead of leaving them on an empty screen.
+  const appType = useSelector((st: any) => st?.Layout?.appType ?? "in");
+  const isCrypto = appType === "crypto";
+  useEffect(() => {
+    if (isCrypto) router.replace("/scannermain" as any);
+  }, [isCrypto]);
 
   useEffect(() => {
     const fetchScanners = async () => {

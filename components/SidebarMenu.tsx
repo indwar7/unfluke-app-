@@ -57,7 +57,9 @@ const MENU_ITEMS = [
     { label: "Historical Charts", Icon: LineChart, route: "/historical" },
     { label: "Strategy Charts", Icon: Target, route: "/strategy-charts" },
     { label: "Technical Scanner", Icon: Search, route: "/scannermain" },
-    { label: "Fundamental Scanner", Icon: FlaskConical, route: "/scannerfundamental" },
+    // Crypto has no fundamentals data (P/E, ROE, debt/equity, ...) to scan on —
+    // the website drops this nav item entirely for non-IND markets.
+    { label: "Fundamental Scanner", Icon: FlaskConical, route: "/scannerfundamental", hideForCrypto: true },
     { label: "Simple Backtest", Icon: Timer, route: "/basic-backtester-main" },
     { label: "Advanced Backtest", Icon: Activity, route: "/advanced-backtester-main" },
     { label: "Option Simulator", Icon: Zap, route: "/simulator" },
@@ -159,7 +161,7 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
                     >
                         {/* Navigation Section */}
                         <Text style={styles.sectionLabel}>NAVIGATION</Text>
-                        {MENU_ITEMS.map((item, index) => (
+                        {MENU_ITEMS.filter((item) => !(isCrypto && item.hideForCrypto)).map((item, index) => (
                             <TouchableOpacity
                                 key={index}
                                 style={styles.menuItem}

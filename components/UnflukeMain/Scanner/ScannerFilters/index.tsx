@@ -748,14 +748,13 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
   };
 
   const resetSegment1a2a = (value) => {
-    if (
-      equityStocks.length > 0 &&
-      indexStocks.length > 0 &&
-      optionStocks.length > 0 &&
-      futureStocks.length > 0
-    ) {
-      const parsedSegment = parseInt(value);
-
+    // Gate only on the array the target segment actually needs — not all four.
+    // Crypto has no index/spot equivalent, so `indexStocks` is permanently []
+    // by design; requiring it non-empty here froze every other segment's
+    // picker (equity/option/future) for crypto too.
+    const parsedSegment = parseInt(value);
+    const segmentIsReady = [equityStocks, indexStocks, optionStocks, futureStocks][parsedSegment]?.length > 0;
+    if (segmentIsReady) {
       let first = "";
       let segment2a = "";
 
@@ -837,27 +836,14 @@ const ScannerFilters = ({ scannerState, type, handleChange, entryexit }) => {
   // Update segment1aList based on segment
 
   useEffect(() => {
+    // Same fix as resetSegment1a2a above: only the segment actually in view
+    // needs to be ready. Crypto's permanently-empty indexStocks must not
+    // block equity/option/future segments from populating.
     const setStocks = () => {
-      if (
-        equityStocks.length > 0 &&
-        indexStocks.length > 0 &&
-        optionStocks.length > 0 &&
-        futureStocks.length > 0
-      ) {
-        switch (scannerState.segment) {
-          case 0:
-            setSegment1aList(equityStocks);
-            break;
-          case 1:
-            setSegment1aList(indexStocks);
-            break;
-          case 2:
-            setSegment1aList(optionStocks);
-            break;
-          case 3:
-            setSegment1aList(futureStocks);
-            break;
-        }
+      const listsBySegment = [equityStocks, indexStocks, optionStocks, futureStocks];
+      const list = listsBySegment[scannerState.segment];
+      if (list && list.length > 0) {
+        setSegment1aList(list);
       }
     };
 

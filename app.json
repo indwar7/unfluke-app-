@@ -79,7 +79,7 @@
     },
     "extra": {
       "BACKEND_URL": "https://api.unfluke.in",
-      "PUBLIC_URL": "http://www.unfluke.in",
+      "PUBLIC_URL": "https://unfluke.in",
       "DEFAULT_AUTH": "jwt",
       "GENERATE_SOURCE_MAP": false,
       "GA_ID": "G-TXPTX3V04",

@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 // Hardcoded fallback values - these will be used if environment variables aren't found
 const FALLBACK_CONFIG = {
     BACKEND_URL: 'https://api.unfluke.in',
-    PUBLIC_URL: 'http://www.unfluke.in',
+    PUBLIC_URL: 'https://unfluke.in',
     REACT_APP_CHATBOT_URL: 'https://edbot.unfluke.in',
     REACT_APP_CHATBOT_TOKEN: 'ELRIKHJDFOIPJGHER9567802B43J9M5703459-BH78JM34589067',
     DEFAULT_AUTH: 'jwt',
