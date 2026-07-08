@@ -209,10 +209,19 @@ var Datafeed = {
       // backend window can overlap the previous chunk.
       var chunk = first ? result : result.filter(function(el) { return barTime(el.a) < cursor; });
       if (chunk.length === 0) { noData(); return; }
-      barsCursor[key] = barTime(chunk[0].a);
+      // Advance the cursor to the OLDEST bar in this chunk so the next page
+      // fetches strictly-older bars. Verified live that the backend returns bars
+      // oldest-first — but don't depend on that; scan for the min so paging can
+      // never stall if the response order ever flips.
+      var oldest = chunk[0];
+      for (var ci = 1; ci < chunk.length; ci++) {
+        if (barTime(chunk[ci].a) < barTime(oldest.a)) oldest = chunk[ci];
+      }
+      barsCursor[key] = barTime(oldest.a);
+      // TradingView requires ascending bars; sort rather than trust the response order.
       var bars = chunk.map(function(el) {
         return { time: new Date(el.a).getTime(), low: Number(el.b), high: Number(el.c), open: Number(el.d), close: Number(el.e), volume: Number(el.f) };
-      });
+      }).sort(function(a, b) { return a.time - b.time; });
       onResult(bars, { noData: false });
     })
     .catch(function(err) { noData(); });

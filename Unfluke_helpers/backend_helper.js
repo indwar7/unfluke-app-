@@ -161,9 +161,11 @@ export const getInstrumentNames = (market) =>
     ? api.get("/api/getAllOptions", { scanner: false, market: "crypto" })
     : api.get(url.GET_OPTIONS_NAMES);
 
-// Market-aware FUTURES-pair list for Backtester legs and the chart instrument
-// search (crypto → ["BTCUSDT","ETHUSDT",...]). Distinct from the simulator:
-// backtests/scanners key on the USDT pair, options on the bare coin.
+// Market-aware FUTURES-pair list (crypto → ["BTCUSDT","ETHUSDT",...]).
+// NOTE: Backtester legs use the bare coin (getInstrumentNames) because the
+// backend keys crypto OPTION legs on "BTC"/"ETH" — verified against its own
+// default crypto strategies. This helper is currently unused; retain it only
+// for a future crypto-futures leg mode.
 export const getFuturesInstrumentNames = (market) =>
   market === "crypto"
     ? api.get("/api/getAllFutures", { scanner: false, market: "crypto" })

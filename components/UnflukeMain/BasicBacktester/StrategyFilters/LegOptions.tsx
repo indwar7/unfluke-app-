@@ -119,10 +119,10 @@ const LegOptions = () => {
       leg = { id: Crypto.randomUUID(), ...leg }; // ✅ Works in Expo (SDK 49+)
 
       // initialLegPositions defaults instrument to NIFTY; in crypto mode the
-      // submitted leg must carry a crypto pair, or the backtest runs on the
-      // wrong instrument (backend gets market=crypto but a NIFTY leg).
+      // submitted leg must carry the bare coin BTC (crypto option legs key on
+      // "BTC"/"ETH"), or the backtest runs on the wrong instrument.
       if (isCrypto) {
-        leg.instrument = { option: "BTCUSDT", multiple: 1 };
+        leg.instrument = { option: "BTC", multiple: 1 };
       }
 
       // Validation check

@@ -27,7 +27,7 @@ import {
   updateLeg,
   setLegSummary,
 } from "../../../../redux/slices/basicBacktester/reducer";
-import { getFuturesInstrumentNames } from "../../../../Unfluke_helpers/backend_helper";
+import { getInstrumentNames } from "../../../../Unfluke_helpers/backend_helper";
 
 const Leg = (props) => {
   //////////////////// VARIABLES ////////////////////
@@ -51,25 +51,28 @@ const Leg = (props) => {
     props.expanded === false ? false : props.expanded === true ? true : false
   );
 
-  // Stock legs use the NSE index list; crypto legs the futures-pair list
-  // (fetched below). Default matches the market so a crypto backtest never
-  // starts pinned to NIFTY.
+  // Stock legs use the NSE index list; crypto legs the bare-coin option
+  // underlyings (BTC/ETH). Verified against the backend's own crypto strategies:
+  // option legs key on "BTC", NOT the "BTCUSDT" futures pair. Default matches the
+  // market so a crypto backtest never starts pinned to NIFTY.
   const [instrumentOptions, setInstrumentOptions] = useState(
-    isCrypto ? [{ option: "BTCUSDT", multiple: 1 }] : [{ option: "NIFTY", multiple: 50 }]
+    isCrypto ? [{ option: "BTC", multiple: 1 }] : [{ option: "NIFTY", multiple: 50 }]
   );
 
-  // In crypto mode pull the real futures pairs so the dropdown lists them all.
+  // In crypto mode pull the option-underlying coins (BTC/ETH) — the same source
+  // the Option Simulator uses. getAllFutures (USDT pairs) would list coins with
+  // no option chain and produce legs the backtest engine can't price.
   useEffect(() => {
     let alive = true;
     if (isCrypto) {
       (async () => {
         try {
-          const list = await getFuturesInstrumentNames("crypto");
+          const list = await getInstrumentNames("crypto");
           if (alive && Array.isArray(list) && list.length) {
-            // Crypto perps trade in units of 1; lot size isn't index-style.
+            // Crypto options trade in units of 1; lot size isn't index-style.
             setInstrumentOptions(list.map((sym) => ({ option: sym, multiple: 1 })));
           }
-        } catch { /* keep the BTCUSDT default on failure */ }
+        } catch { /* keep the BTC default on failure */ }
       })();
     } else {
       setInstrumentOptions([{ option: "NIFTY", multiple: 50 }]);
@@ -87,8 +90,9 @@ const Leg = (props) => {
   const [positions, setPositions] = useState({
     ...initialLegPositions,
     // initialLegPositions defaults the instrument to NIFTY; in crypto mode a
-    // new leg must default to a crypto pair instead.
-    ...(isCrypto ? { instrument: { option: "BTCUSDT", multiple: 1 } } : {}),
+    // new leg must default to the bare coin BTC (crypto option legs key on
+    // "BTC"/"ETH", verified against the backend's own crypto strategies).
+    ...(isCrypto ? { instrument: { option: "BTC", multiple: 1 } } : {}),
     legOptions: { ...legOptions },
   });
 
