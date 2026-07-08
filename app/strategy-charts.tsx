@@ -638,6 +638,7 @@ export default function StrategyChartsScreen() {
       `${BASE}/api/historicalChart/gitHistoricOptionsStikePrices?expiryDate=${encodeURIComponent(exp)}&optionName=${instrument}&optionType=${encodeURIComponent(type)}&id=${uid}`,
       token
     );
+    if (res?.Error) throw new Error(res.Error);
     return res?.strike_price || [];
   };
 
@@ -659,7 +660,10 @@ export default function StrategyChartsScreen() {
         setStrikes(sts);
         if (sts.length > 0) { setS1(sts[0]); setS2(sts[1] || sts[0]); setS3(sts[2] || sts[0]); }
       }
-    } catch (e) { console.error("Strike fetch error", e); }
+    } catch (e: any) {
+      console.error("Strike fetch error", e);
+      setError(`Couldn't load strike prices: ${e?.message || "unknown error"}`);
+    }
     setChartLoading(false);
   };
 
@@ -684,28 +688,31 @@ export default function StrategyChartsScreen() {
             token
           );
         }
-        // TODO(human): expiryData can come back as { Error: "..." } — safeFetch
-        // never throws, so a hung/timed-out/errored backend call (e.g.
-        // getStradleExpiryDate, which is known to 524 after ~100s server-side)
-        // currently falls through to the `dates.length === 0` branch below and
-        // gets treated identically to "this instrument genuinely has no
-        // expiries" — silently clearing the dropdown with no explanation.
-        // Decide how this screen should surface a real fetch failure here vs
-        // a legitimate empty result (setError message text, whether to leave
-        // stale expiries/strikes in place instead of clearing them, etc).
-        const dates: string[] = expiryData?.expiry_date || [];
-        setExpiries(dates);
-        if (dates.length > 0) {
-          const first = findNearestExpiry(dates);
-          setSelectedExpiry(first);
-          setLongExpiry(first);
-          setShortExpiry(first);
-          await updateStrikesForExpiry(first, selectedInstrument, chartType);
-        } else {
+        // safeFetch never throws — a hung/timed-out backend call (e.g.
+        // getStradleExpiryDate, known to 524 after ~100s server-side)
+        // resolves to { Error }. Surface that instead of silently treating
+        // it as "this instrument has no expiries".
+        if (expiryData?.Error) {
+          setError(`Couldn't load expiry dates: ${expiryData.Error}`);
           setExpiries([]);
           setStrikes([]);
           setCallStrikes([]);
           setPutStrikes([]);
+        } else {
+          const dates: string[] = expiryData?.expiry_date || [];
+          setExpiries(dates);
+          if (dates.length > 0) {
+            const first = findNearestExpiry(dates);
+            setSelectedExpiry(first);
+            setLongExpiry(first);
+            setShortExpiry(first);
+            await updateStrikesForExpiry(first, selectedInstrument, chartType);
+          } else {
+            setExpiries([]);
+            setStrikes([]);
+            setCallStrikes([]);
+            setPutStrikes([]);
+          }
         }
       } catch (e) { console.error("Expiry fetch error", e); }
       setChartLoading(false);
