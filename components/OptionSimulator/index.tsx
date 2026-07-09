@@ -130,10 +130,18 @@ const OptionSimulator = () => {
 
   const getSafeDateBeforeExpiry = (targetDate, expiryDate) => {
     const targetMoment = moment(targetDate, 'DD MMM YYYY hh:mm A');
-    const expiryMoment = moment(expiryDate, 'DDMMMYY');
-    if (targetMoment.isAfter(expiryMoment)) {
-      const safeMoment = expiryMoment.clone().subtract(1, 'day');
-      while (safeMoment.day() === 0 || safeMoment.day() === 6) safeMoment.subtract(1, 'day');
+    // Compare against END of the expiry day, not midnight — `moment(x,
+    // 'DDMMMYY')` parses to 00:00:00, so comparing against that treated any
+    // daytime hour ON the expiry date itself as "already past expiry" and
+    // snapped back a full day before the crypto 5:30 PM cap below ever got a
+    // chance to run, making the expiry day unreachable via time-travel.
+    const expiryEndOfDay = moment(expiryDate, 'DDMMMYY').endOf('day');
+    if (targetMoment.isAfter(expiryEndOfDay)) {
+      const safeMoment = expiryEndOfDay.clone().startOf('day').subtract(1, 'day');
+      // Crypto trades weekends too — only NSE needs the weekday roll-back.
+      if (!isCrypto) {
+        while (safeMoment.day() === 0 || safeMoment.day() === 6) safeMoment.subtract(1, 'day');
+      }
       return safeMoment.set({ hour: 9, minute: 20, second: 0 });
     }
     return targetMoment;
@@ -164,7 +172,11 @@ const OptionSimulator = () => {
 
   const handleStartDateConfirm = (date) => {
     const m = moment(date);
-    while (m.day() === 0 || m.day() === 6) m.add(1, 'day');
+    // Website only disables weekend dates in this picker for non-crypto —
+    // crypto trades weekends too, so a Saturday/Sunday start date is valid.
+    if (!isCrypto) {
+      while (m.day() === 0 || m.day() === 6) m.add(1, 'day');
+    }
     setStartDate(m.toDate());
     setStartDatePickerVisibility(false);
     setActivePickerType(null);
@@ -342,7 +354,13 @@ const OptionSimulator = () => {
       }
       setIsSearchingData(true);
       let found = false, attempts = 0;
-      const expM = moment(expiry.to_expiry, 'DDMMMYY');
+      // Crypto has data ON the expiry day (09:20 → the ~61370 the website
+      // shows), so allow any time up to end-of-day; comparing against midnight
+      // (the raw DDMMMYY parse) would `break` the instant we set 09:20 and
+      // leave spot/future blank. NSE keeps its stricter midnight cap unchanged.
+      const expM = isCrypto
+        ? moment(expiry.to_expiry, 'DDMMMYY').endOf('day')
+        : moment(expiry.to_expiry, 'DDMMMYY');
       while (!found && attempts < 10) {
         if (tempDateTimeRef.current.isAfter(expM)) break;
         found = await fetchSpotFuture(tempDateTimeRef.current.format('DD MMM YYYY hh:mm A'));
@@ -376,16 +394,28 @@ const OptionSimulator = () => {
 
   useEffect(() => {
     if (expiry) {
-      const from = moment(expiry.from_expiry, 'DDMMMYY');
+      // Website parity: for crypto the simulator defaults the Start Date to the
+      // expiry date itself (verified live against unfluke.in — start shows
+      // 03-Jul with spot 61370 / future 61342.7). The earlier (expiry - 1 day)
+      // default landed on 02-Jul, a day the frozen crypto series has NO data
+      // for (fetchCurrentData → 404), so the missing-data fallback in
+      // tryNextValidDay walked BACKWARD to 01-Jul and showed a stale ~59k price
+      // instead of the ~61k the website shows. Anchoring to the expiry date
+      // makes tryNextValidDay's "start AT expiry" branch fetch the right day.
+      const from = isCrypto
+        ? moment(expiry.to_expiry, 'DDMMMYY')
+        : moment(expiry.from_expiry, 'DDMMMYY');
       const to = moment(expiry.to_expiry, 'DDMMMYY');
-      while (from.day() === 0 || from.day() === 6) from.add(1, 'day');
+      if (!isCrypto) {
+        while (from.day() === 0 || from.day() === 6) from.add(1, 'day');
+      }
       while (to.day() === 0 || to.day() === 6) to.subtract(1, 'day');
       setStartDate(from.toDate());
       setPayOffDate(to.toDate());
       setCurrentDateTime(from.clone().set({ hour: 9, minute: 20, second: 0 }).format('DD MMM YYYY hh:mm A'));
       setIsInitialLoad(true);
     }
-  }, [expiry]);
+  }, [expiry, isCrypto]);
 
   const handleModalReset = () => {
     if (pendingSelection) {
@@ -400,11 +430,18 @@ const OptionSimulator = () => {
     const wouldExceed = () => {
       if (!expiry?.to_expiry || !currentDateTime) return false;
       const cur = moment(currentDateTime, 'DD MMM YYYY hh:mm A');
-      const exp = moment(expiry.to_expiry, 'DDMMMYY');
       const adj = minutes < 0
         ? (minutes === -1 ? cur.clone().subtract(1, 'day') : cur.clone().subtract(Math.abs(minutes), 'minutes'))
         : (minutes === 1 ? cur.clone().add(1, 'day') : cur.clone().add(minutes, 'minutes'));
-      return adj.isAfter(exp);
+      // Same cap `adjustTime` actually enforces — comparing against midnight
+      // of the expiry date (the old `moment(x,'DDMMMYY')` value) disabled
+      // every button the instant the target landed on the expiry day itself,
+      // well before crypto's real 5:30 PM cutoff.
+      if (isCrypto) {
+        const cap = moment(expiry.to_expiry, 'DDMMMYY').set({ hour: 17, minute: 30, second: 0 });
+        return adj.isAfter(cap);
+      }
+      return adj.isAfter(moment(expiry.to_expiry, 'DDMMMYY').endOf('day'));
     };
     const disabled = wouldExceed();
     const negative = minutes < 0;

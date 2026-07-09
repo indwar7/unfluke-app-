@@ -11,6 +11,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { Trash2, TrendingUp, Search, X } from 'lucide-react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { CustomSelect } from "../../components/OptionSimulator/Selects";
 
@@ -205,9 +206,18 @@ const Watchlist = () => {
 
     if (e.length > 1) {
       setSearchLoading(true);
-      searchTimeout.current = setTimeout(() => {
+      searchTimeout.current = setTimeout(async () => {
+        // Derive the market param from the SAME "mkt" value the api_helper
+        // request interceptor sends as the appType header. If the two ever
+        // disagree (e.g. component state lags a market toggle), this search
+        // endpoint HANGS server-side (verified live: appType=in + market=spot
+        // never responds) → the user sees a spinner then "No results". Reading
+        // mkt here guarantees the param family always matches the header:
+        // crypto → "spot"; NSE keeps the user's Equity/Future/Option/Index pick.
+        const mkt = (await AsyncStorage.getItem("mkt")) || "in";
+        const marketParam = mkt === "crypto" ? "spot" : selectMarket.toLowerCase();
         getWatchlistSearchResults({
-          market: selectMarket.toLowerCase(),
+          market: marketParam,
           search: e,
           date: getDateString(),
         }).then((data) => {
