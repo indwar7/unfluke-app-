@@ -297,6 +297,14 @@ const OptionSimulator = () => {
             return { to_expiry: e.to_expiry, from_expiry: from };
           });
 
+          // Website parity: the backend serves this list NEWEST-FIRST and the
+          // website simply picks element [0] — the LATEST expiry (03-Jul-26).
+          // Our ascending sort above (needed to derive from_expiry from the
+          // previous expiry) flipped that, so [0] became the OLDEST entry and
+          // the simulator opened on 29-Dec-23 in both markets. Reverse back to
+          // newest-first for the dropdown order + default pick.
+          withRange.reverse();
+
           const newExpiries = [
             {
               options: withRange.map((item) => ({

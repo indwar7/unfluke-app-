@@ -111,19 +111,24 @@ const Watchlist = () => {
   const appType = useSelector((state: any) => state?.Layout?.appType ?? "in");
   const isCrypto = appType === "crypto";
 
-  // Keep the instrument-type selector valid for the active market.
+  // Keep the instrument-type selector valid for the active market, reset the
+  // Option cascade, and (re)fetch the market's own watchlist — the backend
+  // keeps separate NSE/crypto lists, so a market toggle must reload it. This
+  // effect also covers the initial mount fetch (runs on first render).
   useEffect(() => {
     setSelectMarket(isCrypto ? "Spot" : "Equity");
     setMarketList([]);
     setSearch("");
-  }, [isCrypto]);
-
-  // Fetch watchlist on mount so it shows by default
-  useEffect(() => {
+    setOptionName("");
+    setExpiryDates([]);
+    setExpiryDate("");
+    setOptionType("");
+    setStrikePrices([]);
+    setPriceData({});
     if (user?._id) {
       dispatch(UserHistoricalWatchlist(user._id));
     }
-  }, [user?._id]);
+  }, [isCrypto, user?._id]);
 
   useEffect(() => {
     const val = watchlist?.map((item) => ({
@@ -156,20 +161,29 @@ const Watchlist = () => {
         getOptionNames({
           selectedDate: dateISO.split("T")[0],
         }).then((data) => {
+          // Array guard: an error payload here must not crash the sidebar.
           setOptionNames([
             {
-              options: data.map((x) => ({ label: x, value: x })),
+              options: (Array.isArray(data) ? data : []).map((x) => ({ label: x, value: x })),
             },
           ]);
-        });
+        }).catch(() => setOptionNames([]));
       }
     }
-  }, [currentDateTime]);
+    // isCrypto dep: the same endpoint serves market-scoped names via the
+    // appType header (crypto → ["BTC","ETH"]), so refetch on market toggle.
+  }, [currentDateTime, isCrypto]);
 
+  // Website parity (main.js): "crypto"===K ? [Spot, Future, Option]
+  //                          : [Equity, Future, Option, Index]
   const market = [
     {
       options: isCrypto
-        ? [{ label: "Spot", value: "Spot" }]
+        ? [
+            { label: "Spot", value: "Spot" },
+            { label: "Future", value: "Future" },
+            { label: "Option", value: "Option" },
+          ]
         : [
             { label: "Equity", value: "Equity" },
             { label: "Future", value: "Future" },
@@ -207,15 +221,21 @@ const Watchlist = () => {
     if (e.length > 1) {
       setSearchLoading(true);
       searchTimeout.current = setTimeout(async () => {
-        // Derive the market param from the SAME "mkt" value the api_helper
-        // request interceptor sends as the appType header. If the two ever
-        // disagree (e.g. component state lags a market toggle), this search
-        // endpoint HANGS server-side (verified live: appType=in + market=spot
-        // never responds) → the user sees a spinner then "No results". Reading
-        // mkt here guarantees the param family always matches the header:
-        // crypto → "spot"; NSE keeps the user's Equity/Future/Option/Index pick.
+        // Website parity: send the SELECTED market lowercased (crypto: spot |
+        // future; NSE: equity/future/option/index). Guard rail: the market
+        // param family must match the appType header from AsyncStorage "mkt" —
+        // a mismatch makes this endpoint HANG server-side (verified live:
+        // appType=in + market=spot never responds). If component state lags a
+        // market toggle by a render, clamp to that market's default. Note
+        // crypto market=option also hangs — options use the cascade UI below,
+        // never this search (search bar is hidden for Option).
         const mkt = (await AsyncStorage.getItem("mkt")) || "in";
-        const marketParam = mkt === "crypto" ? "spot" : selectMarket.toLowerCase();
+        let marketParam = selectMarket.toLowerCase();
+        if (mkt === "crypto") {
+          if (marketParam !== "spot" && marketParam !== "future") marketParam = "spot";
+        } else if (marketParam === "spot") {
+          marketParam = "equity";
+        }
         getWatchlistSearchResults({
           market: marketParam,
           search: e,
@@ -263,9 +283,12 @@ const Watchlist = () => {
     setMarketList([]);
     Keyboard.dismiss();
 
-    // Crypto results carry no instrument_token — the backend keys crypto
-    // watchlist entries by symbol (website uses e.name for crypto rows).
-    const token = marketListItem.instrument_token ?? marketListItem.symbol;
+    // Website parity: crypto watchlist entries are keyed by the search
+    // result's Mongo _id (instrument_token: "crypto"===K ? e._id :
+    // e.instrument_token); prices then resolve via feed.ticker ↔ row name.
+    const token = isCrypto
+      ? marketListItem._id
+      : marketListItem.instrument_token;
 
     // Check if already in watchlist — if so, skip the API call
     const alreadyInWatchlist = tradeWatch?.some(
@@ -287,16 +310,21 @@ const Watchlist = () => {
       data["name"] = itemName;
       data["exch"] = itemExch;
     }
-    postHistoricalWatchlist(data).then((resp) => {
+    postHistoricalWatchlist(data).then((resp: any) => {
       if (resp) {
-        const val = resp.watchlist.map((item) => ({
+        // Website parity: the backend maintains SEPARATE lists — crypto rows
+        // live in resp.cryptoWatchlist; the NSE view filters CRYPTO rows out.
+        const list = isCrypto
+          ? resp.cryptoWatchlist || []
+          : (resp.watchlist || []).filter((item) => item.exch !== "CRYPTO");
+        const val = list.map((item) => ({
           ...item,
           feed: 0,
           change: 0,
         }));
         setTradeWatch(val);
       }
-    });
+    }).catch(() => {});
   };
 
   const deleteTrade = (instrument_token) => {
@@ -304,10 +332,14 @@ const Watchlist = () => {
       userID: user._id,
       instrument_token: instrument_token,
     };
-    deleteHistoricalWatchlist({ data }).then((data) => {
-      setTradeWatch(data.watchlist);
+    deleteHistoricalWatchlist({ data }).then((resp: any) => {
+      // Same crypto/NSE list split as the add flow (website parity).
+      const list = isCrypto
+        ? resp?.cryptoWatchlist || []
+        : (resp?.watchlist || []).filter((item) => item.exch !== "CRYPTO");
+      setTradeWatch(list.map((item) => ({ ...item, feed: 0, change: 0 })));
       setActiveCardIndex(null);
-    });
+    }).catch(() => setActiveCardIndex(null));
   };
 
   const getCurrentFeed = async () => {
@@ -334,54 +366,60 @@ const Watchlist = () => {
     }).then((data) => {
       setLoader(false);
       const newPriceData = {};
-      data.forEach((feed) => {
+      (Array.isArray(data) ? data : []).forEach((feed) => {
         if (feed) {
+          // Website parity: crypto feed rows are keyed by `ticker` (matches
+          // the watchlist row's `name`); NSE rows by instrument_token.
+          const key = isCrypto ? feed.ticker : feed.instrument_token;
+          if (key === undefined || key === null) return;
           if (feed.open === "EXP" || feed.open === "NA") {
-            newPriceData[feed.instrument_token] = feed.open;
+            newPriceData[key] = feed.open;
           } else {
-            newPriceData[feed.instrument_token] = parseFloat(feed.open).toFixed(2);
+            newPriceData[key] = parseFloat(feed.open).toFixed(2);
           }
         }
       });
       setPriceData(newPriceData);
-    });
+    }).catch(() => setLoader(false));
   };
 
+  // NOTE: APIClient.get serialises params by iterating Object.keys(obj), so
+  // these must be FLAT objects. The axios-style { params: {...} } wrapper the
+  // website uses (its client passes it as axios config) went out from OUR
+  // client as "?params=[object Object]" — which silently broke the Option
+  // cascade in BOTH markets. The endpoints + params otherwise mirror the
+  // website exactly and work for crypto (BTC/ETH) too.
   const getOptionsExpiryDate = (e) => {
     setOptionName(e);
     getOptionsExpiries({
-      params: {
-        optionName: e,
-        id: user._id,
-        optionType: "CE - Call",
-      },
+      optionName: e,
+      id: user._id,
+      optionType: "CE - Call",
     }).then((data) => {
       setExpiryDates([
         {
-          options: data.expiry_date.map((x) => ({ label: x, value: x })),
+          options: (data?.expiry_date || []).map((x) => ({ label: x, value: x })),
         },
       ]);
-    });
+    }).catch(() => setExpiryDates([]));
   };
 
   const getOptionStrikePrice = (e) => {
     setOptionType(e);
     getOptionsStrikes({
-      params: {
-        expiryDate: expiryDate,
-        optionName: optionName,
-        optionType: e,
-        id: user._id,
-      },
+      expiryDate: expiryDate,
+      optionName: optionName,
+      optionType: e,
+      id: user._id,
     }).then((data) => {
       setStrikePrices([
         {
-          options: data.strike_price
+          options: (data?.strike_price || [])
             .sort((a, b) => a - b)
             .map((x) => ({ label: x, value: x })),
         },
       ]);
-    });
+    }).catch(() => setStrikePrices([]));
   };
 
   const getOptionData = (e) => {
@@ -394,7 +432,8 @@ const Watchlist = () => {
       date: getDateString(),
     }).then((data) => {
       setStrikePrice(0);
-      const reduceRedundancyData = data.filter((listItem) => {
+      const rows = Array.isArray(data) ? data : [];
+      const reduceRedundancyData = rows.filter((listItem) => {
         if (
           !tradeWatch?.some(
             (trade) => trade.instrument_token == listItem.instrument_token,
@@ -403,7 +442,7 @@ const Watchlist = () => {
           return listItem;
       });
       setMarketList(reduceRedundancyData);
-    });
+    }).catch(() => setMarketList([]));
   };
 
   useEffect(() => {
@@ -516,7 +555,7 @@ const Watchlist = () => {
             <TextInput
               style={styles.searchInput}
               value={search}
-              placeholder={isCrypto ? "Search e.g. BTCUSDT, ETHUSDT" : "Search e.g. Nifty, Reliance, TCS"}
+              placeholder={isCrypto ? "Search e.g. BTC, ETH" : "Search e.g. Nifty, Reliance, TCS"}
               onChangeText={getSearchResults}
               placeholderTextColor={c.textMuted}
               autoCorrect={false}
@@ -586,16 +625,19 @@ const Watchlist = () => {
         </View>
       )}
 
-      {/* Option search results */}
+      {/* Option search results — NSE rows: { option: "NFO:NIFTY..." };
+          crypto rows: { symbol: "C-BTC-60000-030726" } (no `option` field). */}
       {selectMarket === "Option" && marketList.length > 0 && (
         <ScrollView style={styles.optionResultsList} keyboardShouldPersistTaps="handled">
           {marketList.map((marketListItem, index) => (
             <TouchableOpacity
-              key={marketListItem.option || index}
+              key={marketListItem.option || marketListItem.symbol || index}
               style={styles.searchResultItem}
               onPress={() => addToWatchList(marketListItem)}
             >
-              <Text style={styles.searchResultText}>{marketListItem.option}</Text>
+              <Text style={styles.searchResultText}>
+                {marketListItem.option || marketListItem.symbol}
+              </Text>
               <Text style={styles.searchResultAdd}>+ Add</Text>
             </TouchableOpacity>
           ))}
@@ -629,7 +671,9 @@ const Watchlist = () => {
                   {tradeWatchItem.name?.toUpperCase()}
                 </Text>
                 <Text style={styles.watchItemPrice}>
-                  {priceData[tradeWatchItem.instrument_token] || "--"}
+                  {priceData[
+                    isCrypto ? tradeWatchItem.name : tradeWatchItem.instrument_token
+                  ] || "--"}
                 </Text>
               </View>
 

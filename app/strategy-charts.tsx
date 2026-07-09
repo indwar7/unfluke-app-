@@ -74,6 +74,9 @@ const MONTHS: Record<string, number> = {
   Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
 };
 function parseExpiry(s: string): Date | null {
+  // Defensive: a hung/erroring endpoint can surface non-string entries —
+  // never crash the screen over a malformed expiry.
+  if (typeof s !== "string") return null;
   const parts = s.split("-");
   if (parts.length !== 3) return null;
   const day = parseInt(parts[0], 10);
@@ -83,26 +86,43 @@ function parseExpiry(s: string): Date | null {
   return new Date(yr < 100 ? 2000 + yr : yr, mon, day);
 }
 
-// Find the expiry date closest to today (>= today)
+// Website parity (bundle fn `Q`): the expiry dropdown lists dates sorted
+// ASCENDING (oldest → newest). The API serves them newest-first, so sort a
+// copy — order elsewhere (default pick) is order-independent.
+function sortExpiriesAscending(dates: string[]): string[] {
+  return [...dates].sort((a, b) => {
+    const pa = parseExpiry(a)?.getTime() ?? 0;
+    const pb = parseExpiry(b)?.getTime() ?? 0;
+    return pa - pb;
+  });
+}
+
+// Website parity (bundle fn `W`): default = nearest expiry >= today; when
+// every expiry is in the past (crypto series frozen at 03-Jul), fall back to
+// the LATEST one — not element [0], which after ascending sort is the OLDEST.
 function findNearestExpiry(dates: string[]): string {
   if (dates.length === 0) return "";
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const nowMs = now.getTime();
 
-  let bestIdx = 0;
+  let bestIdx = -1;
   let bestDiff = Infinity;
+  let latestIdx = 0;
+  let latestMs = -Infinity;
 
   for (let i = 0; i < dates.length; i++) {
     const parsed = parseExpiry(dates[i]);
     if (!parsed) continue;
-    const diff = parsed.getTime() - nowMs;
+    const ms = parsed.getTime();
+    if (ms > latestMs) { latestMs = ms; latestIdx = i; }
+    const diff = ms - nowMs;
     if (diff >= 0 && diff < bestDiff) {
       bestDiff = diff;
       bestIdx = i;
     }
   }
-  if (bestDiff === Infinity) return dates[0];
+  if (bestIdx === -1) return dates[latestIdx];
   return dates[bestIdx];
 }
 
@@ -160,15 +180,17 @@ function apiFetch(url) {
     });
 }
 
+// Website parity (bundle fn cVe): compose the lots CSV from the submitted
+// form values — order matters and matches the website exactly.
 function getChartTypeLots() {
   if (!CHART_STATE.formData) return '1,1';
   var fd = CHART_STATE.formData;
   switch (CHART_STATE.chartType) {
     case 'Straddle Chart': return (fd.putLots||'1')+','+(fd.callLots||'1');
-    case 'Spread Chart': return '-1,1';
-    case 'Butterfly Chart': return '1,-2,1';
-    case 'Iron Fly Chart': return '1,-1,-1,1';
-    case 'Double Calendar Chart': return '1,-1,1,-1';
+    case 'Spread Chart': return (fd.shortLots||'-1')+','+(fd.longLots||'1');
+    case 'Butterfly Chart': return (fd.lotOne||'1')+','+(fd.lotTwo||'-2')+','+(fd.lotThree||'1');
+    case 'Iron Fly Chart': return (fd.callLotOne||'1')+','+(fd.callLotTwo||'-1')+','+(fd.putLotOne||'-1')+','+(fd.putLotTwo||'1');
+    case 'Double Calendar Chart': return (fd.longCallLot||'1')+','+(fd.shortCallLot||'-1')+','+(fd.longPutLot||'1')+','+(fd.shortPutLot||'-1');
     default: return '0';
   }
 }
@@ -521,8 +543,30 @@ export default function StrategyChartsScreen() {
   const [callLots, setCallLots] = useState("1");
   const [putLots, setPutLots] = useState("1");
 
+  // Website-parity lot inputs (defaults from the website's form state):
+  // Spread: Lot (Long)=1, Lot (Short)=-1
+  const [longLots, setLongLots] = useState("1");
+  const [shortLots, setShortLots] = useState("-1");
+  // Butterfly: Lots 1..3 = 1, -2, 1
+  const [bLot1, setBLot1] = useState("1");
+  const [bLot2, setBLot2] = useState("-2");
+  const [bLot3, setBLot3] = useState("1");
+  // Iron Fly: Lots 1..4 = 1, -1, -1, 1 (CE1, CE2, PE1, PE2)
+  const [ifLot1, setIfLot1] = useState("1");
+  const [ifLot2, setIfLot2] = useState("-1");
+  const [ifLot3, setIfLot3] = useState("-1");
+  const [ifLot4, setIfLot4] = useState("1");
+  // Double Calendar: CE Long=1, CE Short=-1, PE Long=1, PE Short=-1
+  const [dcLongCallLot, setDcLongCallLot] = useState("1");
+  const [dcShortCallLot, setDcShortCallLot] = useState("-1");
+  const [dcLongPutLot, setDcLongPutLot] = useState("1");
+  const [dcShortPutLot, setDcShortPutLot] = useState("-1");
+
   const webRef = useRef<WebView>(null);
   const autoSubmittedRef = useRef(false);
+  // Rotates which leg SET_SYMBOL resolves so identical re-submits still
+  // refresh the chart (website's `(g+1)%option.length` behaviour).
+  const submitCountRef = useRef(0);
 
   // Sidebar slide-in animation (matches Historical Charts pattern)
   const sidebarWidth = Math.min(400, winWidth * 0.9);
@@ -675,33 +719,19 @@ export default function StrategyChartsScreen() {
       setChartLoading(true);
       setS1(""); setS2(""); setS3(""); setS4(""); setS5(""); setS6("");
       try {
-        let expiryData;
-        const isStraddle = ["Straddle Chart", "Iron Fly Chart", "Double Calendar Chart", "Straddle Combo Chart"].includes(chartType);
-        if (isStraddle) {
-          // getStradleExpiryDate hangs server-side for CRYPTO (verified live:
-          // 20s+ with no response, Cloudflare 524s at ~110s) — it's what broke
-          // these 4 chart types in crypto mode. getOptionsExpiryDates returns
-          // the SAME expiry list (verified: {expiry_date:[...]} up to 03-Jul-26)
-          // in <1s, and the other 3 chart types + the option simulator already
-          // use it. Reroute crypto straddle-family charts to it. NSE keeps the
-          // original endpoint untouched (no Indian-market regression). optionType
-          // doesn't affect the expiry list; default to CE to match the verified
-          // request when a straddle has no side selected yet.
-          expiryData = isCrypto
-            ? await safeFetch(
-                `${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType || "CE")}&id=${uid}`,
-                token
-              )
-            : await safeFetch(
-                `${BASE}/api/historicalChart/getStradleExpiryDate?optionName=${selectedInstrument}&id=${uid}`,
-                token
-              );
-        } else {
-          expiryData = await safeFetch(
-            `${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`,
-            token
-          );
-        }
+        // getStradleExpiryDate HANGS server-side for BOTH markets (re-verified
+        // live 2026-07-09: NSE NIFTY AND crypto BTC time out — no response,
+        // Cloudflare 524s) — it's what broke the straddle-family charts
+        // (Straddle / Iron Fly / Double Calendar / Straddle Combo) in NSE mode
+        // after the crypto-only reroute shipped. getOptionsExpiryDates serves
+        // the SAME list for every chart type in <1s, so ALL chart types in
+        // BOTH markets now use it (the website's split exists only because its
+        // client sits behind a logged-in session where the legacy route still
+        // answers). optionType doesn't change the list; default CE.
+        const expiryData = await safeFetch(
+          `${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType || "CE - Call")}&id=${uid}`,
+          token
+        );
         // safeFetch never throws — a hung/timed-out backend call (e.g.
         // getStradleExpiryDate, known to 524 after ~100s server-side)
         // resolves to { Error }. Surface that instead of silently treating
@@ -713,7 +743,8 @@ export default function StrategyChartsScreen() {
           setCallStrikes([]);
           setPutStrikes([]);
         } else {
-          const dates: string[] = expiryData?.expiry_date || [];
+          // Ascending like the website's dropdown; default pick = website's W.
+          const dates: string[] = sortExpiriesAscending(expiryData?.expiry_date || []);
           setExpiries(dates);
           if (dates.length > 0) {
             const first = findNearestExpiry(dates);
@@ -749,6 +780,49 @@ export default function StrategyChartsScreen() {
     await updateStrikesForExpiry(exp, selectedInstrument, chartType);
   };
 
+  // Website parity: changing ONE side's expiry refetches the strike lists for
+  // that expiry and resets only that side's defaults —
+  //  · Double Calendar (bundle fns ee/te): short → Short CE/PE strikes (s1/s4),
+  //    long → Long CE/PE strikes (s2/s5); CE+PE lists refreshed.
+  //  · Spread (bundle fns Z/J): refetch for the active option type; long →
+  //    Long Strike (s1), short → Short Strike (s2).
+  const onSideExpiryChange = async (side: "long" | "short", exp: string) => {
+    if (side === "long") setLongExpiry(exp); else setShortExpiry(exp);
+    setChartLoading(true);
+    try {
+      if (chartType === "Double Calendar Chart") {
+        const [calls, puts] = await Promise.all([
+          fetchStrikes(exp, "CE - Call", selectedInstrument),
+          fetchStrikes(exp, "PE - Put", selectedInstrument),
+        ]);
+        setCallStrikes(calls);
+        setPutStrikes(puts);
+        if (side === "short") {
+          if (calls.length > 0) setS1(calls[0]);
+          if (puts.length > 0) setS4(puts[0]);
+        } else {
+          if (calls.length > 0) setS2(calls[1] || calls[0]);
+          if (puts.length > 0) setS5(puts[1] || puts[0]);
+        }
+      } else {
+        const sts = await fetchStrikes(exp, optionType, selectedInstrument);
+        setStrikes(sts);
+        if (sts.length > 0) {
+          if (side === "long") setS1(sts[0]);
+          else setS2(sts[1] || sts[0]);
+        }
+      }
+    } catch (e: any) {
+      setError(`Couldn't load strike prices: ${e?.message || "unknown error"}`);
+    }
+    setChartLoading(false);
+  };
+
+  // A lot field mid-edit can be "", "-" or garbage — never let that reach the
+  // API URL / chart math; fall back to that leg's default.
+  const numLot = (v: string, dflt: string) =>
+    /^-?\d+$/.test(String(v).trim()) ? String(v).trim() : dflt;
+
   const handleSubmit = async (silent = false) => {
     const uid = userId || "";
     if (!selectedInstrument) { if (!silent) Alert.alert("Error", "Please select an instrument"); return; }
@@ -767,11 +841,16 @@ export default function StrategyChartsScreen() {
           break;
         case "Straddle Chart":
           if (!s1 || !s4) { if (!silent) Alert.alert("Error", "Please select Call and Put strike prices"); setChartLoading(false); return; }
-          url = `${BASE}/api/historicalChart/getStradleOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${encodeURIComponent(selectedExpiry)}&callLots=${callLots}&putLots=${putLots}&callStrikePrice=${s1}&putStrikePrice=${s4}`;
+          url = `${BASE}/api/historicalChart/getStradleOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&expiryDate=${encodeURIComponent(selectedExpiry)}&callLots=${numLot(callLots, "1")}&putLots=${numLot(putLots, "1")}&callStrikePrice=${s1}&putStrikePrice=${s4}`;
           break;
         case "Spread Chart":
           if (!s1 || !s2) { if (!silent) Alert.alert("Error", "Please select Long and Short strike prices"); setChartLoading(false); return; }
-          url = `${BASE}/api/historicalChart/getSpreadOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&optionType=${encodeURIComponent(optionType)}&shortExpiryDate=${encodeURIComponent(shortExpiry || selectedExpiry)}&longExpiryDate=${encodeURIComponent(longExpiry || selectedExpiry)}&shortStrikePrice=${s2}&longStrikePrice=${s1}&shortLots=-1&longLots=1`;
+          // Website parity: a spread of the identical leg is rejected up front.
+          if ((shortExpiry || selectedExpiry) === (longExpiry || selectedExpiry) && s1 === s2) {
+            if (!silent) Alert.alert("Error", "Please select different Strikes or Expiries");
+            setChartLoading(false); return;
+          }
+          url = `${BASE}/api/historicalChart/getSpreadOptionResults?chartType=${encodeURIComponent(chartType)}&optionName=${selectedInstrument}&id=${uid}&optionType=${encodeURIComponent(optionType)}&shortExpiryDate=${encodeURIComponent(shortExpiry || selectedExpiry)}&longExpiryDate=${encodeURIComponent(longExpiry || selectedExpiry)}&shortStrikePrice=${s2}&longStrikePrice=${s1}&shortLots=${numLot(shortLots, "-1")}&longLots=${numLot(longLots, "1")}`;
           break;
         case "Butterfly Chart":
           if (!s1 || !s2 || !s3) { if (!silent) Alert.alert("Error", "Please select all 3 strike prices"); setChartLoading(false); return; }
@@ -809,16 +888,31 @@ export default function StrategyChartsScreen() {
         if (optionSymbols.length === 0) {
           setError("No chart data returned. Try different parameters.");
         } else {
-          // Step 2: Tell TradingView to switch symbol
-          const symbolName = chartType === "Options Chart"
-            ? optionSymbols[0]
-            : optionSymbols[0]; // first symbol for resolve
+          // Step 2: Tell TradingView to switch symbol. Website parity: rotate
+          // which leg is used as the resolve symbol on every submit — TV's
+          // setSymbol no-ops when the string is unchanged, so re-submitting
+          // with new lots/strikes that share the first leg showed a STALE
+          // chart. Cycling legs (the website's `(g+1)%option.length` index)
+          // forces a re-resolve + fresh getBars each time.
+          const idx = optionSymbols.length > 1
+            ? submitCountRef.current % optionSymbols.length
+            : 0;
+          submitCountRef.current += 1;
+          const symbolName = optionSymbols[idx];
 
+          // Field names mirror the website's per-chart form state so the
+          // WebView's getChartTypeLots (cVe) reads them 1:1.
           const formData = {
             chartType,
             symbolNames: optionSymbols.join(","),
             selectedSymbol: chartType === "Options Chart" ? optionSymbols[0] : optionSymbols,
-            putLots, callLots,
+            putLots: numLot(putLots, "1"), callLots: numLot(callLots, "1"),
+            shortLots: numLot(shortLots, "-1"), longLots: numLot(longLots, "1"),
+            lotOne: numLot(bLot1, "1"), lotTwo: numLot(bLot2, "-2"), lotThree: numLot(bLot3, "1"),
+            callLotOne: numLot(ifLot1, "1"), callLotTwo: numLot(ifLot2, "-1"),
+            putLotOne: numLot(ifLot3, "-1"), putLotTwo: numLot(ifLot4, "1"),
+            longCallLot: numLot(dcLongCallLot, "1"), shortCallLot: numLot(dcShortCallLot, "-1"),
+            longPutLot: numLot(dcLongPutLot, "1"), shortPutLot: numLot(dcShortPutLot, "-1"),
           };
 
           if (webRef.current) {
@@ -845,7 +939,12 @@ export default function StrategyChartsScreen() {
   const PickerModal = ({ visible, onClose, data, selected, onSelect, title, searchable = false }: any) => {
     const [search, setSearch] = useState("");
     const bottomGutter = useBottomGutter();
-    const filtered = searchable ? data.filter((i: string) => i.toLowerCase().includes(search.toLowerCase())) : data;
+    // String() guards: strike lists are numbers, and a defensive cast keeps a
+    // malformed API entry from crashing the picker.
+    const safeData = Array.isArray(data) ? data : [];
+    const filtered = searchable
+      ? safeData.filter((i: any) => String(i).toLowerCase().includes(search.toLowerCase()))
+      : safeData;
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
         <TouchableOpacity style={[s.modalOverlay, { paddingBottom: bottomGutter }]} activeOpacity={1} onPress={onClose}>
@@ -875,12 +974,15 @@ export default function StrategyChartsScreen() {
               keyExtractor={(item, i) => `${item}-${i}`}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[s.pickerItem, selected === item && s.pickerItemActive]}
+                  style={[s.pickerItem, String(selected) === String(item) && s.pickerItemActive]}
                   onPress={() => { onSelect(item); onClose(); }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[s.pickerItemText, selected === item && s.pickerItemTextActive]}>{item}</Text>
-                  {selected === item && <Check size={18} color={c.gold} />}
+                  {/* String(): strikes arrive as numbers; strict === against the
+                      string state missed the checkmark, and rendering is safest
+                      through an explicit cast. */}
+                  <Text style={[s.pickerItemText, String(selected) === String(item) && s.pickerItemTextActive]}>{String(item)}</Text>
+                  {String(selected) === String(item) && <Check size={18} color={c.gold} />}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={<Text style={s.pickerEmpty}>No items found</Text>}
@@ -903,6 +1005,20 @@ export default function StrategyChartsScreen() {
         <Text style={s.fieldValue} numberOfLines={1}>{value || "Select..."}</Text>
         <ChevronDown size={16} color={c.textMuted} />
       </TouchableOpacity>
+    </View>
+  );
+
+  // Numeric lot field — mirrors the website's per-leg "Lot (...)" inputs.
+  const LotInput = ({ label, value, onSet }: any) => (
+    <View style={[s.fieldGroup, { flex: 1 }]}>
+      <Text style={s.fieldLabel}>{label}</Text>
+      <TextInput
+        style={s.fieldInputText}
+        value={value}
+        onChangeText={onSet}
+        keyboardType="numbers-and-punctuation"
+        placeholderTextColor={c.textMuted}
+      />
     </View>
   );
 
@@ -1109,14 +1225,14 @@ export default function StrategyChartsScreen() {
             </View>
           )}
 
-          {/* Expiry */}
+          {/* Expiry — long/short pickers refetch that side's strikes (website ee/te/Z/J) */}
           {["Spread Chart", "Double Calendar Chart"].includes(chartType) ? (
             <View style={{ flexDirection: "row", gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <PickExpiry label="Long Expiry" value={longExpiry} onSet={setLongExpiry} />
+                <PickExpiry label="Long Expiry" value={longExpiry} onSet={(v: string) => onSideExpiryChange("long", v)} />
               </View>
               <View style={{ flex: 1 }}>
-                <PickExpiry label="Short Expiry" value={shortExpiry} onSet={setShortExpiry} />
+                <PickExpiry label="Short Expiry" value={shortExpiry} onSet={(v: string) => onSideExpiryChange("short", v)} />
               </View>
             </View>
           ) : (
@@ -1149,30 +1265,75 @@ export default function StrategyChartsScreen() {
 
           {chartType === "Butterfly Chart" && (
             <>
+              {/* Website: StrikePrice 1/Lots 1(+1), 2/Lots 2(-2), 3/Lots 3(+1) */}
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Strike 1" value={s1} list={strikes} onSet={setS1} /></View>
-                <View style={{ flex: 1 }}><PickStrike label="Strike 2" value={s2} list={strikes} onSet={setS2} /></View>
+                <LotInput label="Lots 1" value={bLot1} onSet={setBLot1} />
               </View>
-              <PickStrike label="Strike 3" value={s3} list={strikes} onSet={setS3} />
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Strike 2" value={s2} list={strikes} onSet={setS2} /></View>
+                <LotInput label="Lots 2" value={bLot2} onSet={setBLot2} />
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Strike 3" value={s3} list={strikes} onSet={setS3} /></View>
+                <LotInput label="Lots 3" value={bLot3} onSet={setBLot3} />
+              </View>
             </>
           )}
 
           {chartType === "Spread Chart" && (
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={{ flex: 1 }}><PickStrike label="Long Strike" value={s1} list={strikes} onSet={setS1} /></View>
-              <View style={{ flex: 1 }}><PickStrike label="Short Strike" value={s2} list={strikes} onSet={setS2} /></View>
-            </View>
+            <>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Long Strike" value={s1} list={strikes} onSet={setS1} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Short Strike" value={s2} list={strikes} onSet={setS2} /></View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <LotInput label="Lot (Long)" value={longLots} onSet={setLongLots} />
+                <LotInput label="Lot (Short)" value={shortLots} onSet={setShortLots} />
+              </View>
+            </>
           )}
 
-          {(chartType === "Iron Fly Chart" || chartType === "Double Calendar Chart") && (
+          {chartType === "Iron Fly Chart" && (
             <>
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Call Strike 1" value={s1} list={callStrikes} onSet={setS1} /></View>
+                <LotInput label="Lots 1" value={ifLot1} onSet={setIfLot1} />
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Call Strike 2" value={s2} list={callStrikes} onSet={setS2} /></View>
+                <LotInput label="Lots 2" value={ifLot2} onSet={setIfLot2} />
               </View>
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Put Strike 1" value={s4} list={putStrikes} onSet={setS4} /></View>
+                <LotInput label="Lots 3" value={ifLot3} onSet={setIfLot3} />
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}><PickStrike label="Put Strike 2" value={s5} list={putStrikes} onSet={setS5} /></View>
+                <LotInput label="Lots 4" value={ifLot4} onSet={setIfLot4} />
+              </View>
+            </>
+          )}
+
+          {chartType === "Double Calendar Chart" && (
+            <>
+              {/* Website labels: Short/Long CE Strike, Short/Long PE Strike
+                  (s1=short CE, s2=long CE, s4=short PE, s5=long PE) */}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Short CE Strike" value={s1} list={callStrikes} onSet={setS1} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Long CE Strike" value={s2} list={callStrikes} onSet={setS2} /></View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}><PickStrike label="Short PE Strike" value={s4} list={putStrikes} onSet={setS4} /></View>
+                <View style={{ flex: 1 }}><PickStrike label="Long PE Strike" value={s5} list={putStrikes} onSet={setS5} /></View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <LotInput label="Lot (CE Short)" value={dcShortCallLot} onSet={setDcShortCallLot} />
+                <LotInput label="Lot (CE Long)" value={dcLongCallLot} onSet={setDcLongCallLot} />
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <LotInput label="Lot (PE Short)" value={dcShortPutLot} onSet={setDcShortPutLot} />
+                <LotInput label="Lot (PE Long)" value={dcLongPutLot} onSet={setDcLongPutLot} />
               </View>
             </>
           )}

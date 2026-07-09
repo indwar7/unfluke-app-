@@ -16,6 +16,7 @@ import {
     updateHistoricalWatchlist,
     deleteHistoricalWatchlist
 } from "../../../Unfluke_helpers/backend_helper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const UserHistoricalOrders = (id) => async (dispatch) => {
     try {
@@ -62,7 +63,13 @@ export const UserHistoricalWatchlist = (id, time) => async (dispatch) => {
             })
            
             dispatch(setHistoricalDateTime(new Date(data.currentTime).toISOString()))
-            dispatch(setHistoricalWatchlist(data.watchlist))
+            // Website parity: crypto rows come back in a SEPARATE
+            // cryptoWatchlist array; the NSE view filters CRYPTO rows out.
+            const mkt = (await AsyncStorage.getItem("mkt")) || "in";
+            const list = mkt === "crypto"
+                ? data.cryptoWatchlist || []
+                : (data.watchlist || []).filter((item) => item.exch !== "CRYPTO");
+            dispatch(setHistoricalWatchlist(list))
         }
 
     } catch (error) {
