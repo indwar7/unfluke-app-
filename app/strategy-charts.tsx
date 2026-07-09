@@ -678,10 +678,24 @@ export default function StrategyChartsScreen() {
         let expiryData;
         const isStraddle = ["Straddle Chart", "Iron Fly Chart", "Double Calendar Chart", "Straddle Combo Chart"].includes(chartType);
         if (isStraddle) {
-          expiryData = await safeFetch(
-            `${BASE}/api/historicalChart/getStradleExpiryDate?optionName=${selectedInstrument}&id=${uid}`,
-            token
-          );
+          // getStradleExpiryDate hangs server-side for CRYPTO (verified live:
+          // 20s+ with no response, Cloudflare 524s at ~110s) — it's what broke
+          // these 4 chart types in crypto mode. getOptionsExpiryDates returns
+          // the SAME expiry list (verified: {expiry_date:[...]} up to 03-Jul-26)
+          // in <1s, and the other 3 chart types + the option simulator already
+          // use it. Reroute crypto straddle-family charts to it. NSE keeps the
+          // original endpoint untouched (no Indian-market regression). optionType
+          // doesn't affect the expiry list; default to CE to match the verified
+          // request when a straddle has no side selected yet.
+          expiryData = isCrypto
+            ? await safeFetch(
+                `${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType || "CE")}&id=${uid}`,
+                token
+              )
+            : await safeFetch(
+                `${BASE}/api/historicalChart/getStradleExpiryDate?optionName=${selectedInstrument}&id=${uid}`,
+                token
+              );
         } else {
           expiryData = await safeFetch(
             `${BASE}/api/option-simulator/getOptionsExpiryDates?optionName=${selectedInstrument}&optionType=${encodeURIComponent(optionType)}&id=${uid}`,

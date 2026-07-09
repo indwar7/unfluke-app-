@@ -9,6 +9,16 @@ console.log("Unfluke API Base URL:", Config.BACKEND_URL);
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 axios.defaults.withCredentials = true;
 
+// Fail-fast timeout. Without this the axios client waits indefinitely, so a
+// hung backend endpoint (e.g. getStradleExpiryDate, which Cloudflare only
+// 524s after ~110s during the crypto data-collector outage) leaves every
+// backend_helper-driven screen spinning for ~2 minutes. A healthy request
+// responds in well under this, so this ONLY trims hangs — it never changes
+// returned data and never affects a request that answers in time (no risk to
+// the Indian market's normal, fast responses). The strategy-charts screen
+// already has its own 30s AbortController; this covers every other screen.
+axios.defaults.timeout = 60000;
+
 // Create a function to get the current token
 const getToken = async () => {
   try {
@@ -79,6 +89,12 @@ axios.interceptors.response.use(
         default:
           message = serverMsg || error.message;
       }
+    } else if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message || '')) {
+      // The request exceeded axios.defaults.timeout — the backend hung rather
+      // than replied (e.g. a stalled crypto endpoint during the collector
+      // outage). Axios's raw message here is "timeout of 60000ms exceeded",
+      // which is too technical to show a user.
+      message = 'The server is taking too long to respond. Please try again in a moment.';
     } else {
       message = error.message;
     }
