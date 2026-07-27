@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons as Icon } from "@expo/vector-icons";
 import axios from "axios";
 import {
   deleteStrategies,

@@ -247,6 +247,10 @@ export const postCheckCoupon = (data) =>
   api.create(url.POST_CHECK_COUPON, data);
 export const postBuyMembership = (data) =>
   api.create(url.POST_BUY_MEMBERSHIP, data);
+// Sends an Apple purchase (JWS token + productId) to the backend for
+// server-side verification with Apple, which then unlocks the tier.
+export const postVerifyApplePurchase = (data) =>
+  api.create(url.POST_VERIFY_APPLE_PURCHASE, data);
 
 //
 export const postBuyBasicStrategy = (data) =>

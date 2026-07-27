@@ -15,6 +15,7 @@ import {
   User,
 } from "lucide-react-native";
 import { Link, router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../redux/Unfluke_slices/thunks";
 import { createSelector } from "reselect";
@@ -27,12 +28,14 @@ interface NavbarLayoutProps {
   setMenuVisible: Dispatch<SetStateAction<boolean>>;
 }
 
-// Safe status bar height
-const STATUS_BAR_HEIGHT = Platform.OS === "android" ? (StatusBar.currentHeight || 24) : 44;
+// Safe status bar height (iOS inset varies per device: 20 on old iPhones, ~59 on Dynamic Island)
+const getStatusBarHeight = (insetTop: number) =>
+  Platform.OS === "android" ? (StatusBar.currentHeight || 24) : (insetTop || 44);
 
 export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
   const { colors: c, isDark } = useTheme();
-  const styles = makeStyles(c, isDark);
+  const insets = useSafeAreaInsets();
+  const styles = makeStyles(c, isDark, getStatusBarHeight(insets.top));
   const notificationRef = useRef<any>(null);
   const [badgeCount, setBadgeCount] = useState(0);
   const [showBadge, setShowBadge] = useState(false);
@@ -190,7 +193,7 @@ export const NavbarLayout = ({ setMenuVisible }: NavbarLayoutProps) => {
   );
 };
 
-const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
+const makeStyles = (c: AppColors, isDark: boolean, STATUS_BAR_HEIGHT: number) => StyleSheet.create({
   navbarWrapper: {
     backgroundColor: c.card,
     borderBottomWidth: 1,

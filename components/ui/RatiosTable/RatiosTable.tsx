@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import RNPickerSelect from "react-native-picker-select";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { getCFRatiosData } from "../../../constants/Unfluke_helpers/backend_helper";
 import LineChartComponent from "./LineChart";
 

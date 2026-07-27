@@ -8,6 +8,13 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { ThemeProvider, useTheme } from "../constants/ThemeContext";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { AppState, Platform } from "react-native";
+import {
+  getTrackingPermissionsAsync,
+  requestTrackingPermissionsAsync,
+} from "expo-tracking-transparency";
+import { Settings } from "react-native-fbsdk-next";
 import "../helpers/globalErrorHandlers";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -60,7 +67,48 @@ function ThemedStack() {
   );
 }
 
+// iOS App Tracking Transparency: the FB SDK collects the IDFA
+// (advertiserIDCollectionEnabled), which Apple only allows after the user
+// grants the tracking prompt. iOS silently skips the dialog if it is
+// requested before the app reaches the "active" state, hence the AppState wait.
+function useTrackingPermission() {
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+
+    const syncTrackingPermission = async () => {
+      try {
+        let { status } = await getTrackingPermissionsAsync();
+        if (status === "undetermined") {
+          ({ status } = await requestTrackingPermissionsAsync());
+        }
+        await Settings.setAdvertiserTrackingEnabled(status === "granted");
+      } catch {}
+    };
+
+    if (AppState.currentState === "active") {
+      syncTrackingPermission();
+      return;
+    }
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        sub.remove();
+        syncTrackingPermission();
+      }
+    });
+    return () => sub.remove();
+  }, []);
+}
+
 export default function RootLayout() {
+  useTrackingPermission();
+
+  // Safety net: index.tsx hides the splash on the normal path; if any launch
+  // path ever bypasses it, don't leave the user stuck on the splash forever.
+  useEffect(() => {
+    const t = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 8000);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>

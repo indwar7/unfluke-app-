@@ -494,7 +494,7 @@
 
 // export default Billing;
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -504,27 +504,53 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  Linking,
   ActivityIndicator,
   Dimensions,
+  Platform,
   useWindowDimensions,
 } from "react-native";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   postBuyMembership,
   postCheckCoupon,
+  getUserInfo,
 } from "../../Unfluke_helpers/backend_helper";
+import {
+  createHdfcOrder,
+  getHdfcPaymentStatus,
+} from "../../Unfluke_helpers/hdfcPayment";
+import { loginSuccess } from "../../redux/Unfluke_slices/auth/login/reducer";
 import { Config } from "../../helpers/config";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+import { useSubscriptionIAP } from "@/hooks/useSubscriptionIAP";
+import HdfcPaymentWebView from "./HdfcPaymentWebView";
 
 function Billing({ tier, email, name, user, isOpenModal, toggleModal }) {
   // All hooks must run unconditionally (Rules of Hooks) — the early bail-out
   // for missing tier/user happens AFTER every hook below.
   const { colors: c, isDark } = useTheme();
   const styles = makeStyles(c, isDark);
+  const dispatch = useDispatch();
   const [message, setMessage] = useState({ status: 0, message: "" });
+
+  // Android/HDFC in-app checkout state. The hosted page loads in an in-app
+  // WebView; on return we poll /status/{orderId} for the authoritative result.
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [webviewVisible, setWebviewVisible] = useState(false);
+  // Guards against overlapping polls (return + cancel both trying to resolve) and
+  // against setState after the screen goes away.
+  const pollingRef = useRef(false);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   const [values, setValues] = useState({
     amount: 0,
     orderID: "",
@@ -549,6 +575,28 @@ const {  height } = useWindowDimensions()
   const showToast = (msg, type = "error") => {
     Alert.alert(type === "error" ? "Error" : "Success", msg, [{ text: "OK" }]);
   };
+
+  // iOS must use Apple In-App Purchase (App Store rule 3.1.1). Android keeps the
+  // existing HDFC gateway untouched. Coupons/points don't apply to Apple's fixed
+  // price tiers, so that UI is hidden on iOS below.
+  const isIOS = Platform.OS === "ios";
+
+  const iap = useSubscriptionIAP({
+    user,
+    onUnlocked: (tierIndex) => {
+      showToast(
+        `Subscription active! ${plan[tierIndex] || "Your plan"} unlocked.`,
+        "success",
+      );
+      toggleModal();
+    },
+    onError: (err: any) => {
+      showToast(err?.message || "Purchase could not be completed. Please try again.");
+    },
+  });
+
+  // Whether the Pay button should show a spinner (HDFC order OR Apple purchase in flight).
+  const payBusy = loading || (isIOS && iap.processing);
 
   useEffect(() => {
     if (message.status !== 0) {
@@ -581,7 +629,7 @@ const {  height } = useWindowDimensions()
   };
 
   const pointsChecker = () => {
-    const inputValue = parseInt(usePoints);
+    const inputValue = Number(usePoints);
 
     if (isNaN(inputValue) || inputValue < 0) {
       showToast("Please enter a valid points value");
@@ -608,8 +656,105 @@ const {  height } = useWindowDimensions()
   }, [coupon]);
 
   useEffect(() => {
-    setAmountToBePaid(tier.cost || 0);
+    setAmountToBePaid(tier?.cost || 0);
   }, [tier]);
+
+  // Map a /status/{orderId} response to a checkout outcome — the one decision
+  // where money meets entitlement (PAYMENT_DOCS.md §4 Step 6, §10).
+  // Return EXACTLY one of: "success" | "failed" | "review" | "pending".
+  const resolvePaymentOutcome = (
+    statusRes: any,
+  ): "success" | "failed" | "review" | "pending" => {
+    const status = statusRes?.status;
+
+    // Check mismatch FIRST — a paid-but-wrong-amount order is held for review and
+    // must never unlock, even if another field looks successful.
+    if (statusRes?.mismatch === true || status === "AMOUNT_MISMATCH") {
+      return "review";
+    }
+    // Only unlock when the server both reports success AND confirms the tier was
+    // actually granted (entitlementApplied). Belt-and-suspenders against a
+    // "Payment Successful" that hasn't settled the entitlement yet.
+    if (status === "Payment Successful" && statusRes?.entitlementApplied === true) {
+      return "success";
+    }
+    if (status === "Payment Failed") {
+      return "failed";
+    }
+    // Null response, unexpected status, or "Payment Successful" without the
+    // entitlement flag yet → keep polling. Safest default: never grants access.
+    return "pending";
+  };
+
+  // Step 7 — the tier is already activated server-side by the callback; we just
+  // pull the fresh profile and push it into AsyncStorage + Redux (same pattern
+  // as activate-telegram.tsx) so the UI reflects the new tier immediately.
+  const refreshUserSession = async () => {
+    try {
+      const res: any = await getUserInfo();
+      const fresh = res?.user || res;
+      if (fresh && typeof fresh === "object") {
+        const merged = { ...user, ...fresh };
+        await AsyncStorage.setItem("authUser", JSON.stringify(merged));
+        dispatch(loginSuccess(merged));
+      }
+    } catch (err) {
+      // Entitlement is already applied on the server — a refresh miss is not
+      // fatal; the tier will surface on the next natural profile load.
+      console.warn("Post-payment profile refresh failed:", err);
+    }
+  };
+
+  // Step 6 — poll every 3s, up to ~10 attempts, until a terminal outcome.
+  const pollPaymentStatus = async (oid: string) => {
+    if (pollingRef.current) return; // never run two polls for the same order
+    pollingRef.current = true;
+    setLoading(true);
+    try {
+      for (let attempt = 0; attempt < 10; attempt++) {
+        let outcome: "success" | "failed" | "review" | "pending" = "pending";
+        try {
+          const statusRes = await getHdfcPaymentStatus(oid);
+          outcome = resolvePaymentOutcome(statusRes);
+        } catch (err) {
+          // Transient network/gateway hiccup — treat as pending and retry.
+          console.warn("Status poll error:", err);
+        }
+
+        if (outcome === "success") {
+          await refreshUserSession();
+          showToast(
+            `Payment successful! ${plan[tier?.tier] || "Your plan"} unlocked.`,
+            "success",
+          );
+          toggleModal();
+          return;
+        }
+        if (outcome === "failed") {
+          showToast("Payment failed. Please try again.");
+          return;
+        }
+        if (outcome === "review") {
+          showToast(
+            "Your payment is under review. If money was debited, please contact support.",
+          );
+          return;
+        }
+
+        // Still pending — wait before the next attempt (skip after the last one
+        // so we don't leave the spinner dead for 3s before the timeout toast).
+        if (attempt < 9) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
+      }
+      showToast(
+        "We're still confirming your payment. It will reflect shortly once processed.",
+      );
+    } finally {
+      pollingRef.current = false;
+      if (isMountedRef.current) setLoading(false);
+    }
+  };
 
   const createOrder = async () => {
     if (loading) return; // prevent double-tap duplicate orders
@@ -618,39 +763,67 @@ const {  height } = useWindowDimensions()
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `${Config.BACKEND_URL}/api/hdfc-payment/createOrder`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: amountToBePaid,
-            currency: "INR",
-            customerId: user?._id,
-            returnUrl: `${Config.BACKEND_URL}/api/hdfc-payment/callback`,
-          }),
-        }
-      );
+      // Server is the amount authority — we send planId (the tier), never a price.
+      const data = await createHdfcOrder({
+        planId: tier?.tier,
+        customerId: user?._id,
+        // Only forward a coupon the user actually applied (coupon > 0) so the
+        // order matches the total shown in the modal. The server still
+        // re-validates and re-prices — it is the amount authority.
+        couponCode: coupon > 0 && couponCode?.trim() ? couponCode.trim() : undefined,
+        usePoints: usePoints > 0,
+      });
 
-      const data = await res.json();
-      console.log("data", data)
-      if (data.payment_links && data.payment_links.web) {
-        // Open payment link in browser
-        const supported = await Linking.canOpenURL(data.payment_links.web);
-        if (supported) {
-          await Linking.openURL(data.payment_links.web);
-        } else {
-          showToast("Cannot open payment link");
-        }
+      const link = data?.payment_links?.mobile || data?.payment_links?.web;
+      if (data?.order_id && link) {
+        setOrderId(data.order_id);
+        setPaymentUrl(link);
+        setWebviewVisible(true);
       } else {
         showToast("Failed to initiate payment. Please try again.");
         console.error("Payment initiation error:", data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating HDFC order:", err);
-      showToast("Something went wrong while creating order");
+      showToast(err?.message || "Something went wrong while creating order");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // WebView reached {PUBLIC_URL}/payment-result — the flow finished; poll for the
+  // authoritative result (never trust the redirect's status=pending param).
+  const onWebViewReturn = () => {
+    setWebviewVisible(false);
+    if (orderId) {
+      pollPaymentStatus(orderId).catch((e) =>
+        console.warn("Payment status poll failed:", e),
+      );
+    }
+  };
+
+  // User backed out. They may still have paid right before cancelling, so do a
+  // single quiet check that only reacts to a genuine success/review.
+  const onWebViewCancel = async () => {
+    setWebviewVisible(false);
+    if (!orderId) return;
+    try {
+      const statusRes = await getHdfcPaymentStatus(orderId);
+      const outcome = resolvePaymentOutcome(statusRes);
+      if (outcome === "success") {
+        await refreshUserSession();
+        showToast(
+          `Payment successful! ${plan[tier?.tier] || "Your plan"} unlocked.`,
+          "success",
+        );
+        toggleModal();
+      } else if (outcome === "review") {
+        showToast(
+          "Your payment is under review. If money was debited, please contact support.",
+        );
+      }
+    } catch (err) {
+      // Silent — a deliberate cancel with no payment shouldn't nag the user.
     }
   };
 
@@ -666,6 +839,7 @@ const {  height } = useWindowDimensions()
   }
 
   return (
+    <>
     <Modal
       visible={isOpenModal}
       animationType="slide"
@@ -777,6 +951,9 @@ const {  height } = useWindowDimensions()
                   </View>
                 </View>
 
+                {/* Coupons & points don't apply to Apple's fixed price tiers — Android/HDFC only. */}
+                {!isIOS && (
+                <>
                 <View style={styles.dashedDivider} />
 
                 {/* Coupon Code Input */}
@@ -833,6 +1010,8 @@ const {  height } = useWindowDimensions()
                     </TouchableOpacity>
                   </View>
                 </View>
+                </>
+                )}
 
                 <View style={styles.dashedDivider} />
 
@@ -840,48 +1019,88 @@ const {  height } = useWindowDimensions()
                 <View style={styles.billSummary}>
                   <View style={styles.billRow}>
                     <Text style={styles.billLabel}>Total:</Text>
-                    <Text style={styles.billValue}>₹ {tierCost}</Text>
+                    <Text style={styles.billValue}>
+                      {isIOS
+                        ? iap.priceForTier(tier?.tier) || `₹ ${tierCost}`
+                        : `₹ ${tierCost}`}
+                    </Text>
                   </View>
 
-                  <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>Coupon Discount:</Text>
-                    <Text style={styles.billValue}>- ₹ {coupon}</Text>
-                  </View>
+                  {/* Coupon/points only affect the HDFC (Android) total. */}
+                  {!isIOS && (
+                    <>
+                      <View style={styles.billRow}>
+                        <Text style={styles.billLabel}>Coupon Discount:</Text>
+                        <Text style={styles.billValue}>- ₹ {coupon}</Text>
+                      </View>
 
-                  <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>Points Applied:</Text>
-                    <Text style={styles.billValue}>- ₹ {usePoints}</Text>
-                  </View>
+                      <View style={styles.billRow}>
+                        <Text style={styles.billLabel}>Points Applied:</Text>
+                        <Text style={styles.billValue}>- ₹ {usePoints}</Text>
+                      </View>
+                    </>
+                  )}
 
                   <View style={[styles.billRow, styles.totalRow]}>
                     <Text style={styles.totalLabel}>Amount to be Paid:</Text>
-                    <Text style={styles.totalValue}>₹ {amountToBePaid}</Text>
+                    <Text style={styles.totalValue}>
+                      {isIOS
+                        ? iap.priceForTier(tier?.tier) || `₹ ${tierCost}`
+                        : `₹ ${amountToBePaid}`}
+                    </Text>
                   </View>
                 </View>
 
-                {/* Pay Button */}
+                {/* Pay Button — Apple IAP on iOS, HDFC gateway on Android */}
                 <TouchableOpacity
                   style={[
                     styles.payButton,
-                    loading && styles.payButtonDisabled,
+                    payBusy && styles.payButtonDisabled,
                   ]}
-                  onPress={createOrder}
-                  disabled={loading}
+                  onPress={() => (isIOS ? iap.buy(tier?.tier) : createOrder())}
+                  disabled={payBusy}
                 >
-                  {loading ? (
+                  {payBusy ? (
                     <ActivityIndicator size="small" color={c.onGold} />
                   ) : (
                     <Text style={styles.payButtonText}>
-                      Pay ₹ {amountToBePaid}
+                      {isIOS
+                        ? `Subscribe ${iap.priceForTier(tier?.tier) || ""}`.trim()
+                        : `Pay ₹ ${amountToBePaid}`}
                     </Text>
                   )}
                 </TouchableOpacity>
+
+                {/* Restore Purchases — Apple requires a way to recover an
+                    existing subscription (e.g. after reinstall / new device). */}
+                {isIOS && (
+                  <TouchableOpacity
+                    style={styles.restoreButton}
+                    onPress={iap.restore}
+                    disabled={payBusy}
+                  >
+                    <Text style={styles.restoreButtonText}>
+                      Restore Purchases
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </ScrollView>
           </LinearGradient>
         </View>
       </View>
     </Modal>
+
+    {/* Android/HDFC in-app checkout. iOS uses Apple IAP and never opens this. */}
+    {!isIOS && (
+      <HdfcPaymentWebView
+        visible={webviewVisible}
+        paymentUrl={paymentUrl}
+        onReturn={onWebViewReturn}
+        onCancel={onWebViewCancel}
+      />
+    )}
+    </>
   );
 }
 
@@ -1118,6 +1337,17 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
     color: "#fff",
     fontSize: 15,
     fontWeight: "700",
+  },
+  restoreButton: {
+    paddingVertical: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  restoreButtonText: {
+    color: c.onGold,
+    fontSize: 13,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });
 

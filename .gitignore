@@ -44,3 +44,10 @@ node_modules/
 *.jks
 *.keystore
 !android/app/debug.keystore
+
+# Build artifacts — large binaries, don't belong in git
+*.aab
+*.ipa
+
+# Credentials / cert config exported from EAS — NEVER commit (contains cert serials, Team ID, API key refs)
+ios data.txt

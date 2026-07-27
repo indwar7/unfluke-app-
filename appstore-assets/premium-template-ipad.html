@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body{ background:#000; }
+  #stage{ position:relative; width:2048px; height:2732px; overflow:hidden;
+    background:#08090C; color:#fff;
+    font-family:'Arial Rounded MT Bold','Helvetica Neue',system-ui,sans-serif; }
+  .bg{ position:absolute; inset:0; }
+  .bg-base{ background:radial-gradient(120% 80% at 50% -6%, #221a08 0%, #12100b 34%, #0a0a0d 62%, #08090c 100%); }
+  .bg-aurora{ background:radial-gradient(40% 26% at 50% 3%, rgba(233,196,106,.40), rgba(233,196,106,0) 70%); filter:blur(8px); }
+  .bg-aurora2{ background:radial-gradient(34% 22% at 10% 97%, rgba(80,120,150,.14), rgba(0,0,0,0) 70%); }
+  .bg-vignette{ background:radial-gradient(110% 75% at 50% 42%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  .bg-chart{ position:absolute; left:0; right:0; bottom:0; height:1500px; opacity:.055; }
+  .wrap{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; padding:186px 150px 128px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:20px; height:86px; padding:0 44px;
+    border-radius:100px; background:rgba(233,196,106,.10); border:2px solid rgba(233,196,106,.34);
+    color:#F6DFA3; font-size:38px; letter-spacing:.24em; font-weight:700;
+    font-family:'Helvetica Neue',system-ui; text-transform:uppercase; }
+  .eyebrow .star{ color:#E9C46A; font-size:36px; }
+  h1{ margin-top:54px; text-align:center; font-size:150px; line-height:1.02; letter-spacing:-.01em; color:#fff; text-shadow:0 6px 50px rgba(0,0,0,.5); }
+  .sub{ margin-top:40px; text-align:center; font-size:54px; line-height:1.32; color:#AEB3BE; font-family:'Helvetica Neue',system-ui; font-weight:400; max-width:1400px; }
+  .spacer{ flex:1 1 auto; min-height:40px; }
+  .frame{ position:relative; border-radius:80px; padding:3px;
+    background:linear-gradient(160deg, rgba(246,223,163,.9) 0%, rgba(233,196,106,.25) 26%, rgba(0,0,0,0) 52%, rgba(233,196,106,.28) 82%, rgba(201,162,75,.75) 100%);
+    box-shadow:0 80px 150px -36px rgba(0,0,0,.75), 0 0 120px -26px rgba(233,196,106,.28); }
+  .card{ position:relative; width:1240px; border-radius:77px; overflow:hidden; background:#0A0B0F; }
+  .card.light{ background:#fff; }
+  .statusbar{ position:relative; height:78px; display:flex; align-items:center; justify-content:space-between; padding:0 58px; font-family:'Helvetica Neue',system-ui; }
+  .card.dark .statusbar{ background:#0A0B0F; color:#fff; }
+  .card.light .statusbar{ background:#fff; color:#0A0B0F; }
+  .sb-time{ font-size:40px; font-weight:600; letter-spacing:.02em; }
+  .sb-ico{ display:flex; align-items:center; gap:16px; }
+  .island{ position:absolute; top:16px; left:50%; transform:translateX(-50%); width:154px; height:44px; background:#000; border-radius:26px; }
+  .shot{ display:block; width:100%; }
+  .footer{ display:flex; flex-direction:column; align-items:center; gap:22px; margin-top:70px; }
+  .footer img{ height:64px; opacity:.9; }
+  .footer .tag{ font-family:'Helvetica Neue',system-ui; font-size:32px; letter-spacing:.22em; color:rgba(255,255,255,.42); text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg bg-base"></div>
+  <div class="bg bg-aurora"></div>
+  <div class="bg bg-aurora2"></div>
+  <svg class="bg-chart" viewBox="0 0 2048 1500" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="ln" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9C46A" stop-opacity="1"/><stop offset="1" stop-color="#E9C46A" stop-opacity="0"/></linearGradient></defs>
+    <path d="M0,950 L200,870 L410,910 L620,740 L840,810 L1060,570 L1290,680 L1520,440 L1740,540 L1960,300 L2048,360" fill="none" stroke="#E9C46A" stroke-width="6"/>
+    <path d="M0,950 L200,870 L410,910 L620,740 L840,810 L1060,570 L1290,680 L1520,440 L1740,540 L1960,300 L2048,360 L2048,1500 L0,1500 Z" fill="url(#ln)" opacity="0.5"/>
+  </svg>
+  <div class="bg bg-vignette"></div>
+  <div class="wrap">
+    <div class="eyebrow"><span class="star">✦</span><span id="eyebrow"></span></div>
+    <h1 id="head"></h1>
+    <div class="sub" id="sub"></div>
+    <div class="spacer"></div>
+    <div class="frame">
+      <div class="card" id="card">
+        <div class="statusbar">
+          <div class="sb-time">9:41</div>
+          <div class="island"></div>
+          <div class="sb-ico">
+            <svg width="46" height="32" viewBox="0 0 34 24"><g fill="currentColor"><rect x="0" y="15" width="6" height="9" rx="1.5"/><rect x="9" y="10" width="6" height="14" rx="1.5"/><rect x="18" y="5" width="6" height="19" rx="1.5"/><rect x="27" y="0" width="6" height="24" rx="1.5"/></g></svg>
+            <svg width="40" height="32" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M3 8 A18 18 0 0 1 27 8"/><path d="M8 13 A11 11 0 0 1 22 13"/><circle cx="15" cy="19" r="2.4" fill="currentColor" stroke="none"/></svg>
+            <svg width="56" height="32" viewBox="0 0 42 24"><g fill="none" stroke="currentColor" stroke-width="2.4"><rect x="1.2" y="4" width="34" height="16" rx="4.5"/></g><rect x="4" y="7" width="26" height="10" rx="2.2" fill="currentColor"/><rect x="37.5" y="9" width="3.4" height="6" rx="1.6" fill="currentColor"/></svg>
+          </div>
+        </div>
+        <img class="shot" id="shot" src="">
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="footer"><img id="logo" src=""><div class="tag">NSE · BSE · Crypto</div></div>
+  </div>
+</div>
+<script>
+  var ASSET='file:///private/tmp/claude-501/-Users-abhayindwar-Projects-unfluke-app--nosync/b54e4d00-7323-4d0b-a2f4-9fe1d4f7f66e/scratchpad/premium/assets/';
+  var SCREENS={
+    1:{mode:'dark', eyebrow:'Fundamentals', head:'Real fundamentals,|at a glance', sub:'P/E, ROE, ROCE, debt & more for every stock', cap:'cap_1.png'},
+    2:{mode:'dark', eyebrow:'Live charts', head:'Charts that|just work', sub:'Live NIFTY, equity & crypto price action', cap:'cap_2.png'},
+    3:{mode:'dark', eyebrow:'Scanner', head:'Scan for|winning setups', sub:'50+ technical & breakout scanners', cap:'cap_3.png'},
+    4:{mode:'dark', eyebrow:'AI analyst', head:'Your AI|market analyst', sub:'Ask anything about any stock, instantly', cap:'cap_4.png'},
+    5:{mode:'dark', eyebrow:'Personalise', head:'Light or dark,|your call', sub:'Tuned to the way you trade', cap:'cap_5.png'},
+    6:{mode:'light', eyebrow:'Light mode', head:'Stunning in|light mode too', sub:'Every tool, one tap away', cap:'cap_6.png'},
+    7:{mode:'light', eyebrow:'All-in-one', head:'All your tools,|one place', sub:'Backtest · Simulate · Analyse', cap:'cap_7.png'}
+  };
+  function q(k,d){var m=new RegExp('[?&]'+k+'=([^&]+)').exec(location.search);return m?decodeURIComponent(m[1]):d;}
+  var n=parseInt(q('n','1'),10), w=parseInt(q('w','2048'),10), h=parseInt(q('h','2732'),10);
+  var st=document.getElementById('stage'); st.style.width=w+'px'; st.style.height=h+'px';
+  var s=SCREENS[n];
+  document.getElementById('eyebrow').textContent=s.eyebrow;
+  document.getElementById('head').innerHTML=s.head.split('|').join('<br>');
+  document.getElementById('sub').textContent=s.sub;
+  document.getElementById('shot').src=ASSET+s.cap;
+  document.getElementById('logo').src=ASSET+'logo.png';
+  document.getElementById('card').className='card '+s.mode;
+</script>
+</body>
+</html>

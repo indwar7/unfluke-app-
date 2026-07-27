@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root{
+    --gold:#E9C46A; --gold-lt:#F6DFA3; --gold-dp:#C9A24B;
+    --ink:#08090C; --sub:#AEB3BE;
+  }
+  html,body{ background:#000; }
+  #stage{
+    position:relative; width:1290px; height:2796px; overflow:hidden;
+    background:#08090C; color:#fff;
+    font-family:'Arial Rounded MT Bold','Helvetica Neue',system-ui,sans-serif;
+  }
+  /* ---------- background layers ---------- */
+  .bg{ position:absolute; inset:0; }
+  .bg-base{ background:
+      radial-gradient(140% 90% at 50% -8%, #221a08 0%, #12100b 34%, #0a0a0d 62%, #08090c 100%);
+  }
+  .bg-aurora{ /* warm gold bloom top */
+    background:radial-gradient(46% 30% at 50% 4%, rgba(233,196,106,.42), rgba(233,196,106,0) 70%);
+    filter:blur(6px);
+  }
+  .bg-aurora2{ /* soft cool balance bottom-left */
+    background:radial-gradient(38% 26% at 12% 96%, rgba(80,120,150,.16), rgba(0,0,0,0) 70%);
+  }
+  .bg-vignette{ background:radial-gradient(120% 80% at 50% 40%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  .bg-chart{ position:absolute; left:0; right:0; bottom:0; height:1200px; opacity:.06; }
+  /* ---------- content ---------- */
+  .wrap{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+         padding:128px 96px 84px; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:14px; height:60px; padding:0 30px;
+    border-radius:100px; background:rgba(233,196,106,.10);
+    border:1.5px solid rgba(233,196,106,.34);
+    color:var(--gold-lt); font-size:27px; letter-spacing:.24em; font-weight:700;
+    font-family:'Helvetica Neue',system-ui; text-transform:uppercase; }
+  .eyebrow .star{ color:var(--gold); font-size:26px; }
+  h1{ margin-top:40px; text-align:center; font-size:112px; line-height:1.02;
+      letter-spacing:-.01em; color:#fff;
+      text-shadow:0 4px 40px rgba(0,0,0,.5); }
+  .sub{ margin-top:30px; text-align:center; font-size:38px; line-height:1.32; color:var(--sub);
+        font-family:'Helvetica Neue',system-ui; font-weight:400; max-width:960px; }
+  .spacer{ flex:1 1 auto; min-height:40px; }
+  /* ---------- device / screen card ---------- */
+  .frame{ position:relative; border-radius:60px; padding:2.5px;
+    background:linear-gradient(160deg, rgba(246,223,163,.9) 0%, rgba(233,196,106,.25) 26%, rgba(0,0,0,0) 52%, rgba(233,196,106,.28) 82%, rgba(201,162,75,.75) 100%);
+    box-shadow:
+      0 60px 120px -30px rgba(0,0,0,.75),
+      0 0 90px -20px rgba(233,196,106,.28);
+  }
+  .card{ position:relative; width:1082px; border-radius:57px; overflow:hidden; background:#0A0B0F; }
+  .card.light{ background:#fff; }
+  .statusbar{ position:relative; height:58px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 44px; font-family:'Helvetica Neue',system-ui; }
+  .card.dark .statusbar{ background:#0A0B0F; color:#fff; }
+  .card.light .statusbar{ background:#ffffff; color:#0A0B0F; }
+  .sb-time{ font-size:30px; font-weight:600; letter-spacing:.02em; }
+  .sb-ico{ display:flex; align-items:center; gap:12px; }
+  .island{ position:absolute; top:13px; left:50%; transform:translateX(-50%);
+    width:118px; height:33px; background:#000; border-radius:20px; }
+  .shot{ display:block; width:100%; }
+  /* ---------- footer ---------- */
+  .footer{ display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:56px; }
+  .footer img{ height:46px; opacity:.9; }
+  .footer .tag{ font-family:'Helvetica Neue',system-ui; font-size:24px; letter-spacing:.22em;
+    color:rgba(255,255,255,.42); text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg bg-base"></div>
+  <div class="bg bg-aurora"></div>
+  <div class="bg bg-aurora2"></div>
+  <svg class="bg-chart" viewBox="0 0 1290 1200" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="ln" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9C46A" stop-opacity="1"/><stop offset="1" stop-color="#E9C46A" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="M0,760 L120,700 L250,730 L380,600 L520,650 L660,470 L800,540 L940,360 L1080,430 L1210,250 L1290,300"
+          fill="none" stroke="#E9C46A" stroke-width="5"/>
+    <path d="M0,760 L120,700 L250,730 L380,600 L520,650 L660,470 L800,540 L940,360 L1080,430 L1210,250 L1290,300 L1290,1200 L0,1200 Z"
+          fill="url(#ln)" opacity="0.5"/>
+    <g stroke="#E9C46A" stroke-width="3" opacity="0.55">
+      <line x1="150" y1="560" x2="150" y2="700"/><rect x="132" y="600" width="36" height="70" fill="#E9C46A"/>
+      <line x1="430" y1="470" x2="430" y2="640"/><rect x="412" y="520" width="36" height="90" fill="#E9C46A"/>
+      <line x1="720" y1="360" x2="720" y2="520"/><rect x="702" y="400" width="36" height="80" fill="#E9C46A"/>
+      <line x1="1010" y1="270" x2="1010" y2="440"/><rect x="992" y="320" width="36" height="90" fill="#E9C46A"/>
+    </g>
+  </svg>
+  <div class="bg bg-vignette"></div>
+
+  <div class="wrap">
+    <div class="eyebrow"><span class="star">✦</span><span id="eyebrow"></span></div>
+    <h1 id="head"></h1>
+    <div class="sub" id="sub"></div>
+    <div class="spacer"></div>
+    <div class="frame" id="frame">
+      <div class="card" id="card">
+        <div class="statusbar">
+          <div class="sb-time">9:41</div>
+          <div class="island"></div>
+          <div class="sb-ico">
+            <!-- signal -->
+            <svg width="34" height="24" viewBox="0 0 34 24"><g fill="currentColor">
+              <rect x="0" y="15" width="6" height="9" rx="1.5"/><rect x="9" y="10" width="6" height="14" rx="1.5"/>
+              <rect x="18" y="5" width="6" height="19" rx="1.5"/><rect x="27" y="0" width="6" height="24" rx="1.5"/>
+            </g></svg>
+            <!-- wifi -->
+            <svg width="30" height="24" viewBox="0 0 30 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+              <path d="M3 8 A18 18 0 0 1 27 8"/><path d="M8 13 A11 11 0 0 1 22 13"/><circle cx="15" cy="19" r="2.4" fill="currentColor" stroke="none"/>
+            </svg>
+            <!-- battery -->
+            <svg width="42" height="24" viewBox="0 0 42 24"><g fill="none" stroke="currentColor" stroke-width="2.4">
+              <rect x="1.2" y="4" width="34" height="16" rx="4.5"/></g>
+              <rect x="4" y="7" width="26" height="10" rx="2.2" fill="currentColor"/>
+              <rect x="37.5" y="9" width="3.4" height="6" rx="1.6" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+        <img class="shot" id="shot" src="">
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="footer">
+      <img id="logo" src="">
+      <div class="tag">NSE · BSE · Crypto</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var ASSET = 'file:///private/tmp/claude-501/-Users-abhayindwar-Projects-unfluke-app--nosync/b54e4d00-7323-4d0b-a2f4-9fe1d4f7f66e/scratchpad/premium/assets/';
+  var SCREENS = {
+    1:{mode:'dark',  eyebrow:'Fundamentals', head:'Real fundamentals,|at a glance',   sub:'P/E, ROE, ROCE, debt & more for every stock', cap:'cap_1.png'},
+    2:{mode:'dark',  eyebrow:'Live charts',  head:'Charts that|just work',            sub:'Live NIFTY, equity & crypto price action',     cap:'cap_2.png'},
+    3:{mode:'dark',  eyebrow:'Scanner',      head:'Scan for|winning setups',          sub:'50+ technical & breakout scanners',            cap:'cap_3.png'},
+    4:{mode:'dark',  eyebrow:'AI analyst',   head:'Your AI|market analyst',           sub:'Ask anything about any stock, instantly',      cap:'cap_4.png'},
+    5:{mode:'dark',  eyebrow:'Personalise',  head:'Light or dark,|your call',         sub:'Tuned to the way you trade',                   cap:'cap_5.png'},
+    6:{mode:'light', eyebrow:'Light mode',   head:'Stunning in|light mode too',       sub:'Every tool, one tap away',                     cap:'cap_6.png'},
+    7:{mode:'light', eyebrow:'All-in-one',   head:'All your tools,|one place',        sub:'Backtest · Simulate · Analyse',                cap:'cap_7.png'}
+  };
+  function q(k,d){ var m=new RegExp('[?&]'+k+'=([^&]+)').exec(location.search); return m?decodeURIComponent(m[1]):d; }
+  var n = parseInt(q('n','1'),10);
+  var w = parseInt(q('w','1290'),10), h = parseInt(q('h','2796'),10);
+  var st = document.getElementById('stage'); st.style.width=w+'px'; st.style.height=h+'px';
+  var s = SCREENS[n];
+  document.getElementById('eyebrow').textContent = s.eyebrow;
+  document.getElementById('head').innerHTML = s.head.split('|').join('<br>');
+  document.getElementById('sub').textContent = s.sub;
+  document.getElementById('shot').src = ASSET + s.cap;
+  document.getElementById('logo').src = ASSET + 'logo.png';
+  document.getElementById('card').className = 'card ' + s.mode;
+</script>
+</body>
+</html>

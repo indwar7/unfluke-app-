@@ -1145,6 +1145,11 @@ export default function StrategyChartsScreen() {
           onMessage={handleWebViewMessage}
           onLoadEnd={handleWebViewLoadEnd}
           onError={handleWebViewError}
+          // iOS kills the WKWebView content process under memory pressure;
+          // without this the chart stays permanently blank. READY handshake
+          // re-sends INIT after reload, so recovery is self-healing.
+          onContentProcessDidTerminate={() => webRef.current?.reload()}
+          onRenderProcessGone={() => webRef.current?.reload()}
         />
 
         {/* Error toast — shown over the chart when the sidebar is closed */}

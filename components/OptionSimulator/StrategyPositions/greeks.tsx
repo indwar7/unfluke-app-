@@ -73,6 +73,7 @@ import {
   ScrollView,
   StyleSheet,
   useColorScheme,
+  Platform,
 } from "react-native";
 
 const GreeksTable = ({ positions }) => {
@@ -303,7 +304,7 @@ const getStyles = (isDark) =>
     },
     numberCell: {
       // flex: 1,
-      fontFamily: "monospace",
+      fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
     },
     greeksCont: {
       flex: 1,
@@ -313,7 +314,7 @@ const getStyles = (isDark) =>
     },
     numberCell2: {
       // flex: 1,
-      fontFamily: "monospace",
+      fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
     },
     summaryLabel: {
       fontWeight: "600",

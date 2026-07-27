@@ -510,6 +510,11 @@ const Trading = () => {
           scrollEnabled={false}
           androidLayerType="hardware"
           cacheEnabled
+          // iOS kills the WKWebView content process under memory pressure;
+          // without this the chart stays permanently blank. READY handshake
+          // re-sends INIT after reload, so recovery is self-healing.
+          onContentProcessDidTerminate={() => webRef.current?.reload()}
+          onRenderProcessGone={() => webRef.current?.reload()}
           onMessage={(e) => {
             try {
               const parsed = JSON.parse(e.nativeEvent.data);

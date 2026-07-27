@@ -101,6 +101,15 @@ export const GET_ADMIN_SCANNER_LIST = "api/scanner/getAdminScanners";
 export const GET_MEMBERSHIP_PLANS = "api/payment/paymentDatabase";
 export const POST_CHECK_COUPON = "api/payment/coupon";
 export const POST_BUY_MEMBERSHIP = "api/ccavenue/buyMembership";
+// Apple In-App Purchase — server-side receipt/JWS verification + entitlement unlock.
+// Backend must verify with Apple's App Store Server API before granting the tier.
+export const POST_VERIFY_APPLE_PURCHASE = "api/payment/verifyApplePurchase";
+
+// HDFC SmartGateway (Android in-app checkout — see PAYMENT_DOCS.md).
+// createOrder is auth'd with the RAW access token (no "Bearer " prefix); status
+// is public. The client never sends an amount — the server resolves it from planId.
+export const POST_HDFC_CREATE_ORDER = "api/hdfc-payment/createOrder";
+export const GET_HDFC_PAYMENT_STATUS = "api/hdfc-payment/status"; // append /:orderId
 
 // Unfluke - Wallet History
 export const GET_WALLET_HISTORY = "api/wallet/history";

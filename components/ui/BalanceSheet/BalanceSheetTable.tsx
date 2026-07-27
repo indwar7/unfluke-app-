@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import Collapsible from "react-native-collapsible";
 import RNPickerSelect from "react-native-picker-select";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { getBalanceSheetData } from "../../../constants/Unfluke_helpers/backend_helper";
 import MyCollapse from "./BalanceCollapse";
 

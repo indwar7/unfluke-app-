@@ -339,7 +339,7 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import RNPickerSelect from "react-native-picker-select";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { getCashFlowData } from "../../../constants/Unfluke_helpers/backend_helper";
 import { formatNumberUS } from "../../../Unfluke_helpers/numberFormat";
 import { useTheme } from "@/constants/ThemeContext";

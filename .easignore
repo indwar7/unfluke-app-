@@ -10,6 +10,8 @@ android/app/src/main/assets/
 ios/build/
 *.log
 *.tsbuildinfo
+*.aab
+*.ipa
 .gradle/
 build/
 dist/

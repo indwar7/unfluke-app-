@@ -35,6 +35,7 @@ const DEFAULT_COIN = { symbol: "BTC", name: "Bitcoin" };
 type Coin = { symbol: string; name: string };
 
 const fmtUsd = (v: any, dp = 2) => {
+  if (v == null || v === "") return "—";
   const n = Number(v);
   if (!Number.isFinite(n)) return "—";
   if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(dp)}T`;
@@ -50,6 +51,7 @@ const fmtPct = (v: any) => {
 // Compact number WITHOUT Intl `notation:"compact"` — Hermes (this app's JS
 // engine) doesn't fully support it and can misbehave/crash. Pure-JS instead.
 const fmtCompact = (v: any) => {
+  if (v == null || v === "") return "—";
   const n = Number(v);
   if (!Number.isFinite(n)) return "—";
   const abs = Math.abs(n);
