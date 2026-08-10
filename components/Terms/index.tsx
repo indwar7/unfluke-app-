@@ -9,8 +9,12 @@ import Privacy from "./Privacy/Privacy";
 const logo = require("../../assets/images/unfluke/UNFLUKE -01.png");
 
 
-const Terms = () => {
-  const [activePage, setActivePage] = useState("terms"); // default: terms
+// `initialPage` lets a caller deep-link straight to one policy. App Store
+// Review Guideline 3.1.2 requires the paywall to carry SEPARATE functional
+// links to the Terms of Use and the Privacy Policy, and a link that always
+// lands on the Terms tab does not satisfy the Privacy Policy half.
+const Terms = ({ initialPage = "terms" }) => {
+  const [activePage, setActivePage] = useState(initialPage);
   const scrollRef = useRef(null);
 const { width, height } = useWindowDimensions()
 

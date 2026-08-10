@@ -67,22 +67,49 @@ function ThemedStack() {
   );
 }
 
-// iOS App Tracking Transparency: the FB SDK collects the IDFA
-// (advertiserIDCollectionEnabled), which Apple only allows after the user
-// grants the tracking prompt. iOS silently skips the dialog if it is
-// requested before the app reaches the "active" state, hence the AppState wait.
-function useTrackingPermission() {
+// The FB SDK no longer self-starts: AutoInitEnabled, AutoLogAppEventsEnabled and
+// AdvertiserIDCollectionEnabled are all false in the manifest / Info.plist (see
+// app.json). Auto-init made the SDK read the advertising identifier at process
+// start — before the user saw any disclosure — which reads to policy scanners as
+// undisclosed tracking. We now start it explicitly, after consent is resolved.
+//
+// iOS: the IDFA requires App Tracking Transparency. iOS silently skips the
+// dialog if it is requested before the app reaches the "active" state, hence the
+// AppState wait. Event logging is enabled either way; only the identifier is
+// gated on the grant.
+//
+// Android: there is no ATT equivalent, so we init once the app is running.
+// Advertising-ID use is covered by the Play Data Safety declaration and the
+// privacy policy — keep both in sync if these flags change.
+function useFacebookSdk() {
   useEffect(() => {
-    if (Platform.OS !== "ios") return;
+    const startSdk = async (advertiserIdAllowed: boolean) => {
+      try {
+        Settings.setAutoLogAppEventsEnabled(true);
+        Settings.setAdvertiserIDCollectionEnabled(advertiserIdAllowed);
+        if (Platform.OS === "ios") {
+          await Settings.setAdvertiserTrackingEnabled(advertiserIdAllowed);
+        }
+        Settings.initializeSDK();
+      } catch {}
+    };
+
+    if (Platform.OS !== "ios") {
+      startSdk(true);
+      return;
+    }
 
     const syncTrackingPermission = async () => {
+      let granted = false;
       try {
         let { status } = await getTrackingPermissionsAsync();
         if (status === "undetermined") {
           ({ status } = await requestTrackingPermissionsAsync());
         }
-        await Settings.setAdvertiserTrackingEnabled(status === "granted");
+        granted = status === "granted";
       } catch {}
+      // Start the SDK regardless — without the IDFA when consent was refused.
+      await startSdk(granted);
     };
 
     if (AppState.currentState === "active") {
@@ -100,7 +127,7 @@ function useTrackingPermission() {
 }
 
 export default function RootLayout() {
-  useTrackingPermission();
+  useFacebookSdk();
 
   // Safety net: index.tsx hides the splash on the normal path; if any launch
   // path ever bypasses it, don't leave the user stuck on the splash forever.

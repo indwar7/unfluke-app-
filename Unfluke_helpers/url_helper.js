@@ -24,6 +24,50 @@ export const POST_PHONE_SEND_OTP = "/api/phone/sendOTP";
 export const POST_PHONE_VERIFY_OTP = "/api/phone/verifyOTP";
 export const POST_EMAIL_SEND_OTP = "/api/user/sendVerificationMail";
 export const POST_EMAIL_VERIFY_OTP = "/api/user/verifyMail";
+export const POST_RESEND_OTP = "/api/user/resendOTP";
+
+// GOOGLE SIGN-IN
+// google-login starts every Google sign-in and is idempotent. It answers 200
+// either with { refresh_token } (existing user) or with
+// { needsSignup: true, signup_token, name, email, avatarUrl } (new user) —
+// branch on needsSignup, NOT on the status code.
+export const POST_GOOGLE_LOGIN = "/api/user/google-login";
+// Second step for new users: takes signup_token + phone and sends the OTP. It
+// does NOT create the account — POST_ACCOUNT_ACTIVATION does, once the OTP is
+// verified. An Unfluke account is keyed on phone number, not email, so a brand
+// new Google user cannot be created without a phone-OTP-verified number.
+export const POST_GOOGLE_REGISTER = "/api/user/google-register";
+
+// SIGN IN WITH APPLE
+// Mirrors the Google contract exactly, so the client can share one signup flow:
+// apple-login is idempotent and answers 200 with either { refresh_token }
+// (existing user) or { needsSignup: true, signup_token, name, email } (new
+// user) — again, branch on needsSignup rather than the status code.
+//
+// Two things differ from Google on the server side:
+//   - The identity token is verified against Apple's JWKS
+//     (https://appleid.apple.com/auth/keys), with `aud` = in.unfluke.app.
+//   - `name` arrives only on the user's FIRST authorization and is absent on
+//     every later sign-in, so the server must persist it the first time and
+//     must not treat a missing name as an error.
+export const POST_APPLE_LOGIN = "/api/user/apple-login";
+// Second step for new Apple users — same shape and semantics as
+// POST_GOOGLE_REGISTER: takes signup_token + phone, sends the OTP, and leaves
+// account creation to POST_ACCOUNT_ACTIVATION.
+export const POST_APPLE_REGISTER = "/api/user/apple-register";
+
+// ACCOUNT DELETION
+// Required by App Store Review Guideline 5.1.1(v): an app that lets users
+// create an account must let them start deleting it from inside the app —
+// pointing at a support email or a website form is not accepted.
+//
+// Authenticated: the account deleted is the one the access token belongs to,
+// never an id from the request body.
+//
+// ⚠️ BACKEND: this endpoint does not exist yet. The client below is complete
+// and will work the moment it ships. Expected: 200 on success; the app then
+// clears local tokens and returns to the login screen.
+export const DELETE_MY_ACCOUNT = "/api/user/delete-account";
 
 // UNFLUKE BUY BASIC BACKTEST STRATEGY
 export const POST_BUY_BASIC_STRATEGY = "api/strategy/createStrategy";

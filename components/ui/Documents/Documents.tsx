@@ -396,6 +396,7 @@ import {
 } from "../../../Unfluke_helpers/backend_helper";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+import { isWebUrl } from "@/helpers/externalLinks";
 
 
 const Documents = ({ companyName }) => {
@@ -476,12 +477,13 @@ const Documents = ({ companyName }) => {
     getData();
   }, [companyName]);
 
+  // Document URLs come from the backend, so restrict to http(s): a non-web
+  // scheme arriving in this data would otherwise launch an arbitrary app.
   const openLink = (url) => {
-    if (url) {
-      Linking.openURL(url).catch((err) =>
-        console.error("Failed to open URL:", err)
-      );
-    }
+    if (!isWebUrl(url)) return;
+    Linking.openURL(url).catch((err) =>
+      console.error("Failed to open URL:", err)
+    );
   };
 
   console.log()

@@ -24,6 +24,7 @@ import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
 import { Surface, SectionLabel } from "@/components/ui/Premium";
 import { Radius, Space, Shadow } from "@/constants/Theme";
+import { TELEGRAM_ACTIVATION_BOT_URL } from "@/constants/telegram";
 
 const ActivateTelegram = () => {
   const { colors: c } = useTheme();
@@ -31,6 +32,7 @@ const ActivateTelegram = () => {
   const dispatch = useDispatch();
   const [username, setUsername] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLinked, setIsLinked] = useState(false);
 
   const authUser = createSelector(
     (state: any) => state.Login,
@@ -61,8 +63,11 @@ const ActivateTelegram = () => {
         const updatedUser = { ...user, telegramUsername: username.trim() };
         await AsyncStorage.setItem("authUser", JSON.stringify(updatedUser));
         dispatch(loginSuccess(updatedUser));
-        Linking.openURL("https://t.me/UnflukeAI_bot");
-        router.replace("/profile");
+        // Do NOT auto-launch Telegram here. Leaving the app on a network
+        // response rather than a tap is a "forced redirect" pattern to policy
+        // scanners, and it also yanked the user out mid-flow. Show the linked
+        // state and let them choose to open Telegram.
+        setIsLinked(true);
       } else {
         Toast.show({
           type: "error",
@@ -121,11 +126,55 @@ const ActivateTelegram = () => {
           <Send size={26} color={c.gold} strokeWidth={2.2} />
         </View>
 
-        <Text style={s.title}>Connect Telegram</Text>
+        <Text style={s.title}>
+          {isLinked ? "Telegram Connected" : "Connect Telegram"}
+        </Text>
         <Text style={s.subtitle}>
-          Enter your Telegram username to receive alerts on Telegram
+          {isLinked
+            ? "Your username is saved. Open the Unfluke bot and press Start to begin receiving alerts."
+            : "Enter your Telegram username to receive alerts on Telegram"}
         </Text>
 
+        {isLinked ? (
+          <View style={s.linkedActions}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[s.button, s.linkedPrimary]}
+              onPress={() =>
+                Linking.openURL(TELEGRAM_ACTIVATION_BOT_URL).catch(() =>
+                  Toast.show({
+                    type: "error",
+                    text1: "Couldn't open Telegram. Is it installed?",
+                    position: "top",
+                    visibilityTime: 3000,
+                    autoHide: true,
+                  })
+                )
+              }
+            >
+              <LinearGradient
+                colors={[c.goldBright, c.gold, c.goldDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={s.buttonGradient}
+              >
+                <View style={s.buttonInner}>
+                  <Send size={16} color={c.onGold} strokeWidth={2.4} />
+                  <Text style={s.buttonText}>Open Telegram</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={s.secondaryButton}
+              onPress={() => router.replace("/profile")}
+            >
+              <Text style={s.secondaryButtonText}>Back to profile</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
         <SectionLabel style={s.fieldLabel}>Telegram Username</SectionLabel>
 
         <View style={s.inputRow}>
@@ -166,6 +215,8 @@ const ActivateTelegram = () => {
             )}
           </LinearGradient>
         </TouchableOpacity>
+          </>
+        )}
 
         <Surface style={s.stepsContainer}>
           <View style={s.stepsHeader}>
@@ -250,6 +301,21 @@ const makeStyles = (c: AppColors) =>
       ...Shadow.gold,
     },
     buttonDisabled: { opacity: 0.6 },
+    linkedActions: { marginBottom: Space.xxxl },
+    linkedPrimary: { marginBottom: Space.md },
+    secondaryButton: {
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingVertical: 15,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    secondaryButtonText: {
+      color: c.textSecondary,
+      fontSize: 15,
+      fontWeight: "600",
+    },
     buttonGradient: {
       borderRadius: Radius.md,
       paddingVertical: 16,

@@ -511,6 +511,7 @@ import {
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   postBuyMembership,
@@ -576,6 +577,28 @@ const {  height } = useWindowDimensions()
     Alert.alert(type === "error" ? "Error" : "Success", msg, [{ text: "OK" }]);
   };
 
+  // Pull the fresh profile after a successful purchase and push it into
+  // AsyncStorage + Redux (same pattern as activate-telegram.tsx). This is what
+  // makes the new tier's features load app-wide — every feature gate and the
+  // pricing screen read `user.tier` from Redux, so without this the purchase
+  // succeeds server-side but the UI keeps showing the old plan. Shared by BOTH
+  // the iOS Apple path (onUnlocked below) and the Android HDFC path (poll).
+  const refreshUserSession = async () => {
+    try {
+      const res: any = await getUserInfo();
+      const fresh = res?.user || res;
+      if (fresh && typeof fresh === "object") {
+        const merged = { ...user, ...fresh };
+        await AsyncStorage.setItem("authUser", JSON.stringify(merged));
+        dispatch(loginSuccess(merged));
+      }
+    } catch (err) {
+      // Entitlement is already applied on the server — a refresh miss is not
+      // fatal; the tier will surface on the next natural profile load.
+      console.warn("Post-payment profile refresh failed:", err);
+    }
+  };
+
   // iOS must use Apple In-App Purchase (App Store rule 3.1.1). Android keeps the
   // existing HDFC gateway untouched. Coupons/points don't apply to Apple's fixed
   // price tiers, so that UI is hidden on iOS below.
@@ -583,7 +606,9 @@ const {  height } = useWindowDimensions()
 
   const iap = useSubscriptionIAP({
     user,
-    onUnlocked: (tierIndex) => {
+    onUnlocked: async (tierIndex) => {
+      // Refresh FIRST so the tier's features are live before we tell the user.
+      await refreshUserSession();
       showToast(
         `Subscription active! ${plan[tierIndex] || "Your plan"} unlocked.`,
         "success",
@@ -686,26 +711,9 @@ const {  height } = useWindowDimensions()
     return "pending";
   };
 
-  // Step 7 — the tier is already activated server-side by the callback; we just
-  // pull the fresh profile and push it into AsyncStorage + Redux (same pattern
-  // as activate-telegram.tsx) so the UI reflects the new tier immediately.
-  const refreshUserSession = async () => {
-    try {
-      const res: any = await getUserInfo();
-      const fresh = res?.user || res;
-      if (fresh && typeof fresh === "object") {
-        const merged = { ...user, ...fresh };
-        await AsyncStorage.setItem("authUser", JSON.stringify(merged));
-        dispatch(loginSuccess(merged));
-      }
-    } catch (err) {
-      // Entitlement is already applied on the server — a refresh miss is not
-      // fatal; the tier will surface on the next natural profile load.
-      console.warn("Post-payment profile refresh failed:", err);
-    }
-  };
-
   // Step 6 — poll every 3s, up to ~10 attempts, until a terminal outcome.
+  // (refreshUserSession is defined above so both the iOS and Android success
+  // paths share it — Step 7 of the flow.)
   const pollPaymentStatus = async (oid: string) => {
     if (pollingRef.current) return; // never run two polls for the same order
     pollingRef.current = true;
@@ -1084,6 +1092,55 @@ const {  height } = useWindowDimensions()
                     </Text>
                   </TouchableOpacity>
                 )}
+
+                {/* Auto-renewable subscription disclosure — App Store Review
+                    Guideline 3.1.2 requires ALL of this to be visible on the
+                    purchase screen BEFORE buying: the subscription title, its
+                    length, the price, that it renews automatically, how to
+                    cancel, and separate working links to the Terms of Use and
+                    the Privacy Policy. A missing link here is one of the most
+                    common subscription rejections.
+
+                    iOS-only: Android buys through HDFC as a one-time payment,
+                    so Apple's renewal terms would be actively wrong there. */}
+                {isIOS && (
+                  <View style={styles.iapDisclosure}>
+                    <Text style={styles.iapDisclosureText}>
+                      {plan[tier?.tier] || "This plan"} is a 1-month
+                      auto-renewing subscription at{" "}
+                      {iap.priceForTier(tier?.tier) || `₹ ${tierCost}`}/month.
+                      Payment is charged to your Apple Account at confirmation
+                      of purchase. It renews automatically unless auto-renew is
+                      turned off at least 24 hours before the end of the current
+                      period. You can manage or cancel it any time in your Apple
+                      Account settings.
+                    </Text>
+
+                    <View style={styles.iapLinksRow}>
+                      <Text
+                        style={styles.iapLink}
+                        onPress={() => {
+                          // Close the modal first — the terms screen would
+                          // otherwise render behind it and look like a no-op.
+                          toggleModal();
+                          router.push("/terms" as any);
+                        }}
+                      >
+                        Terms of Use
+                      </Text>
+                      <Text style={styles.iapLinkSeparator}>•</Text>
+                      <Text
+                        style={styles.iapLink}
+                        onPress={() => {
+                          toggleModal();
+                          router.push("/terms?tab=privacy" as any);
+                        }}
+                      >
+                        Privacy Policy
+                      </Text>
+                    </View>
+                  </View>
+                )}
               </View>
             </ScrollView>
           </LinearGradient>
@@ -1348,6 +1405,35 @@ const makeStyles = (c: AppColors, isDark: boolean) =>
     fontSize: 13,
     fontWeight: "600",
     textDecorationLine: "underline",
+  },
+  iapDisclosure: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+  },
+  iapDisclosureText: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: c.textSecondary,
+    textAlign: "center",
+  },
+  iapLinksRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    gap: 8,
+  },
+  iapLink: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: c.gold,
+    textDecorationLine: "underline",
+  },
+  iapLinkSeparator: {
+    fontSize: 12,
+    color: c.textMuted,
   },
 });
 

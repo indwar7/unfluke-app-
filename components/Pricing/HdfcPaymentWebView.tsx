@@ -7,10 +7,12 @@ import {
   ActivityIndicator,
   StyleSheet,
   Platform,
+  Linking,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+import { isAllowedPaymentAppLink } from "@/helpers/externalLinks";
 
 // When the gateway finishes, the backend redirects the hosted page to
 // {PUBLIC_URL}/payment-result (or /custom-payment-result). We use that ONLY as a
@@ -58,6 +60,40 @@ export default function HdfcPaymentWebView({
     return false;
   };
 
+  // Decide whether the WebView should load a URL. Returns false to BLOCK the
+  // WebView from loading it (either because we handled it, or because it's a
+  // deep link the OS must handle).
+  const onShouldStartLoadWithRequest = (req: { url: string }) => {
+    const url = req?.url || "";
+
+    // Payment finished → intercept and go poll; don't load the web result page.
+    if (maybeHandleReturn(url)) return false;
+
+    // Non-http(s) schemes are UPI / bank-app deep links (upi://, phonepe://,
+    // tez://, paytmmp://, intent://, gpay://, credpay://, etc.). A WebView can't
+    // render these — it fails with ERR_UNKNOWN_URL_SCHEME and the UPI payment
+    // dies. Hand them to the OS so the actual UPI app opens, and block the load.
+    //
+    // Only for schemes on the payment allowlist, though: this URL comes from the
+    // gateway's page, not from us, so an unrestricted openURL here would let
+    // anything that page navigates to launch any installed app without the user
+    // choosing it. That is the "forced redirect" pattern Google's malware policy
+    // names. Anything else is simply blocked — the user stays on checkout.
+    if (url && !/^(https?|about|data|blob):/i.test(url)) {
+      if (isAllowedPaymentAppLink(url)) {
+        Linking.openURL(url).catch(() => {
+          // App not installed / can't handle — nothing to do; user can pick
+          // another method on the hosted page.
+        });
+      } else if (__DEV__) {
+        console.warn("[payment] blocked non-payment scheme from gateway:", url);
+      }
+      return false;
+    }
+
+    return true;
+  };
+
   return (
     <Modal
       visible={visible}
@@ -78,8 +114,8 @@ export default function HdfcPaymentWebView({
         {visible && paymentUrl ? (
           <WebView
             source={{ uri: paymentUrl }}
-            // Block the load of the return page and hand control back to the app.
-            onShouldStartLoadWithRequest={(req) => !maybeHandleReturn(req.url)}
+            // Handle return-URL interception AND UPI/bank-app deep-link hand-off.
+            onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
             // Safety net for redirects that don't trigger the guard above.
             onNavigationStateChange={(nav) => maybeHandleReturn(nav.url)}
             onLoadEnd={() => setLoading(false)}

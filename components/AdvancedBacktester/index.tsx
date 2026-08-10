@@ -54,6 +54,20 @@ import {
 import { deepCopy } from "../../components/UnflukeMain/BasicBacktester/StrategyLegs/utils";
 import { backendSocket } from "../../socket/socket";
 import { useBottomGutter } from "../../utils/bottomGutter";
+import {
+  classifyToken,
+  isExpressionSyntaxValid,
+  type ExprToken,
+} from "../../helpers/expressionSyntax";
+
+// No brackets: this screen's expression builder never emitted a "(" branch.
+const EXPR_TOKEN_SETS = {
+  mathOperators,
+  conditionalOperators,
+  advOperators,
+  binaryOperators,
+  brackets: [] as string[],
+};
 
 const AdvancedBacktester = () => {
   const { colors: c, isDark } = useTheme();
@@ -162,34 +176,16 @@ const AdvancedBacktester = () => {
   };
 
   const checkEquation = (equation: any[][]) => {
-    let pseudoEquation = "";
-    let totalLength = 0;
+    const tokens: ExprToken[] = [];
 
     for (const subEquation of equation) {
       if (!lhsRhsValid(subEquation)) return false;
       for (const item of subEquation) {
-        const indicName = item.indicatorName;
-        if (mathOperators.indexOf(indicName) !== -1 || conditionalOperators.indexOf(indicName) !== -1) {
-          pseudoEquation += " " + indicName + " ";
-        } else if (advOperators.indexOf(indicName) !== -1) {
-          pseudoEquation += " > ";
-        } else if (binaryOperators.indexOf(indicName) !== -1) {
-          pseudoEquation += " || ";
-        } else {
-          pseudoEquation += " 1 ";
-        }
-        totalLength += 1;
+        tokens.push(classifyToken(item.indicatorName, EXPR_TOKEN_SETS));
       }
     }
 
-    if (totalLength <= 1) return false;
-
-    try {
-      const evalVal = eval(pseudoEquation.trim()) + "";
-      return evalVal !== "";
-    } catch {
-      return false;
-    }
+    return isExpressionSyntaxValid(tokens);
   };
 
   function checkIsBacktesterValid() {

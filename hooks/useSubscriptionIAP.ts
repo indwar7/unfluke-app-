@@ -13,7 +13,7 @@
 //
 // See constants/iap/products.ts for the tier→product-ID map.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { useIAP } from "react-native-iap";
 import type { Purchase } from "react-native-iap";
@@ -41,6 +41,13 @@ export function useSubscriptionIAP({
   onError,
 }: UseSubscriptionIAPArgs) {
   const [processing, setProcessing] = useState(false);
+  // Transaction IDs we've already verified+unlocked this session. Guards the
+  // restore effect (which re-runs on every render because its callback deps
+  // change identity) from re-verifying and re-unlocking the same purchase —
+  // which would stack duplicate success alerts and hammer the verify endpoint.
+  // Only successful unlocks are recorded, so a failed verification can still be
+  // retried on the next Restore.
+  const processedTxRef = useRef<Set<string>>(new Set());
 
   // ── The decision core ──────────────────────────────────────────────────────
   // Verify a StoreKit purchase with our backend and, if valid, unlock the tier.
@@ -90,9 +97,16 @@ export function useSubscriptionIAP({
     getAvailablePurchases,
   } = useIAP({
     onPurchaseSuccess: async (purchase) => {
+      const txId = purchase?.transactionId;
+      // Skip a transaction we've already unlocked (defensive against re-delivery).
+      if (txId && processedTxRef.current.has(txId)) {
+        setProcessing(false);
+        return;
+      }
       try {
         const unlocked = await verifyAndUnlock(purchase);
         if (unlocked) {
+          if (txId) processedTxRef.current.add(txId);
           // Finalize only after a verified unlock. iOS replays unfinished
           // transactions on every launch until this is called.
           await finishTransaction({ purchase, isConsumable: false });
@@ -125,9 +139,16 @@ export function useSubscriptionIAP({
     if (!IS_IOS || !availablePurchases?.length) return;
     (async () => {
       for (const p of availablePurchases) {
+        const txId = p?.transactionId;
+        // Already handled this transaction — don't re-verify/re-unlock it. This
+        // is what breaks the re-render feedback loop after a successful restore.
+        if (txId && processedTxRef.current.has(txId)) continue;
         try {
           const unlocked = await verifyAndUnlock(p);
-          if (unlocked) await finishTransaction({ purchase: p, isConsumable: false });
+          if (unlocked) {
+            if (txId) processedTxRef.current.add(txId);
+            await finishTransaction({ purchase: p, isConsumable: false });
+          }
         } catch (e) {
           onError?.(e);
         }

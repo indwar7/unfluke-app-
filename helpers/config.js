@@ -11,6 +11,24 @@ const FALLBACK_CONFIG = {
     REACT_APP_CHATBOT_TOKEN: 'ELRIKHJDFOIPJGHER9567802B43J9M5703459-BH78JM34589067',
     DEFAULT_AUTH: 'jwt',
     GA_ID: 'G-TXPTX3V04',
+    // Google Sign-In OAuth client IDs. These are PUBLIC values (they ship in the
+    // web bundle too) — there is no client secret anywhere in this flow.
+    //
+    // The backend verifies every ID token against an allowlist of accepted
+    // audiences (its GOOGLE_CLIENT_IDS env var). The Web client ID below is
+    // already allowlisted, and Android ID tokens carry it as their `aud` because
+    // we pass it as `webClientId` — so Android needs no backend change.
+    //
+    // iOS ID tokens carry the iOS client ID as their `aud` instead, so the iOS
+    // client ID MUST be appended to the backend's GOOGLE_CLIENT_IDS or every iOS
+    // sign-in fails with 401 "Google sign-in failed. Please try again.".
+    //
+    // Now that GOOGLE_IOS_CLIENT_ID is set, googleAuth.ts reports iOS as
+    // configured and renders the button — so the backend allowlist has to
+    // include the iOS ID below before any iOS build ships. To disable the
+    // button again (e.g. to unblock a release), set this back to ''.
+    GOOGLE_WEB_CLIENT_ID: '1033885854116-ac9a96oua280itad1aq252958jk95une.apps.googleusercontent.com',
+    GOOGLE_IOS_CLIENT_ID: '1033885854116-s1a5uj4362bau46b3ug1577m34p0krvn.apps.googleusercontent.com',
 };
 
 // Helper function to get config value with fallbacks
@@ -54,6 +72,8 @@ export const Config = {
     REACT_APP_CHATBOT_TOKEN: getConfigValue('REACT_APP_CHATBOT_TOKEN'),
     DEFAULT_AUTH: getConfigValue('DEFAULT_AUTH'),
     GA_ID: getConfigValue('GA_ID'),
+    GOOGLE_WEB_CLIENT_ID: getConfigValue('GOOGLE_WEB_CLIENT_ID'),
+    GOOGLE_IOS_CLIENT_ID: getConfigValue('GOOGLE_IOS_CLIENT_ID'),
 };
 
 // Always log configuration for debugging (works in both dev and production)

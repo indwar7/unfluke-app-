@@ -19,19 +19,30 @@ interface OTPVerificationModalProps {
     onVerify: (otp: string) => Promise<void>;
     digits?: number;
     title?: string;
+    /**
+     * Optional. When supplied, a "Resend" action is shown — needed by flows
+     * where the OTP window can lapse ("Timeout please try again") and the user
+     * must be able to request a fresh code without restarting signup.
+     */
+    onResend?: () => Promise<void>;
+    subtitle?: string;
 }
 
-const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({ 
-    isOpen, 
-    toggle, 
-    onVerify, 
-    digits = 6, 
-    title = "Verify OTP" 
+const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
+    isOpen,
+    toggle,
+    onVerify,
+    digits = 6,
+    title = "Verify OTP",
+    onResend,
+    subtitle,
 }) => {
     const { colors: c, isDark } = useTheme();
     const styles = makeStyles(c, isDark);
     const [otp, setOtp] = useState<string[]>(Array(digits).fill(''));
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isResending, setIsResending] = useState(false);
+    const [notice, setNotice] = useState('');
     const [error, setError] = useState('');
     const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -40,7 +51,9 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         if (isOpen) {
             setOtp(Array(digits).fill(''));
             setError('');
+            setNotice('');
             setIsVerifying(false);
+            setIsResending(false);
             // Focus first input when modal opens
             setTimeout(() => {
                 if (inputRefs.current[0]) {
@@ -106,15 +119,44 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         }
 
         setIsVerifying(true);
+        setNotice('');
 
         try {
             await onVerify(otpValue);
             toggle();
-        } catch (err) {
+        } catch (err: any) {
             console.log("OTP__>", err);
-            setError('Invalid OTP. Please try again.');
+            // The backend's messages ("Incorrect OTP", "Timeout please try
+            // again") are written to be user-facing, so prefer them over a
+            // generic string. The axios interceptor rejects with a plain string.
+            const message =
+                (typeof err === 'string' ? err : err?.message) ||
+                'Invalid OTP. Please try again.';
+            setError(message);
         } finally {
             setIsVerifying(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!onResend || isResending) return;
+
+        setIsResending(true);
+        setError('');
+        setNotice('');
+
+        try {
+            await onResend();
+            setOtp(Array(digits).fill(''));
+            setNotice('A new code has been sent.');
+            inputRefs.current[0]?.focus();
+        } catch (err: any) {
+            const message =
+                (typeof err === 'string' ? err : err?.message) ||
+                'Could not resend the code. Please try again.';
+            setError(message);
+        } finally {
+            setIsResending(false);
         }
     };
 
@@ -138,7 +180,9 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                             <LockIcon />
                         </View>
                         <Text style={styles.title}>{title}</Text>
-                        <Text style={styles.subtitle}>We've sent a verification code to your device</Text>
+                        <Text style={styles.subtitle}>
+                            {subtitle || "We've sent a verification code to your device"}
+                        </Text>
                     </View>
 
                     <View style={styles.inputContainer}>
@@ -173,6 +217,12 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                         </View>
                     ) : null}
 
+                    {notice ? (
+                        <View style={styles.noticeContainer}>
+                            <Text style={styles.noticeText}>{notice}</Text>
+                        </View>
+                    ) : null}
+
                     <TouchableOpacity
                         style={[styles.verifyButton, isVerifying && styles.verifyButtonDisabled]}
                         onPress={handleVerify}
@@ -188,14 +238,24 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
                         )}
                     </TouchableOpacity>
 
-                    {/* Uncomment if you want resend functionality */}
-                    {/*
-                    <TouchableOpacity style={styles.resendButton} onPress={handleResend}>
-                        <Text style={styles.resendButtonText}>
-                            Didn't receive the code? Resend
-                        </Text>
-                    </TouchableOpacity>
-                    */}
+                    {onResend ? (
+                        <TouchableOpacity
+                            style={styles.resendButton}
+                            onPress={handleResend}
+                            disabled={isResending || isVerifying}
+                        >
+                            <Text
+                                style={[
+                                    styles.resendButtonText,
+                                    (isResending || isVerifying) && styles.resendButtonTextDisabled,
+                                ]}
+                            >
+                                {isResending
+                                    ? 'Sending a new code…'
+                                    : "Didn't receive the code? Resend"}
+                            </Text>
+                        </TouchableOpacity>
+                    ) : null}
 
                     {/* Close button */}
                     <TouchableOpacity style={styles.closeButton} onPress={toggle}>
@@ -337,6 +397,22 @@ const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         textAlign: 'center',
+    },
+    resendButtonTextDisabled: {
+        color: c.textMuted,
+    },
+    noticeContainer: {
+        backgroundColor: c.goldLight,
+        borderColor: c.gold,
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: 12,
+        marginBottom: 16,
+    },
+    noticeText: {
+        color: c.text,
+        textAlign: 'center',
+        fontSize: 14,
     },
     closeButton: {
         alignSelf: 'center',

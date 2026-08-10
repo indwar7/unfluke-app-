@@ -46,6 +46,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { deepCopy } from "../../../Components/UnflukeMain/BasicBacktester/StrategyLegs/utils";
 import OffsetModal from "../../../Components/UnflukeMain/Scanner/ScannerMisc/Modals/OffsetModal";
 import { io } from "socket.io-client";
+import {
+  classifyToken,
+  isExpressionSyntaxValid,
+} from "../../helpers/expressionSyntax";
 import { backendSocket } from "../../../socket";
 import { Parser } from "html-to-react";
 
@@ -158,52 +162,30 @@ const Scanner = ({ type, shared }) => {
     }
   };
 
+  // NOTE: this whole file is dead legacy web code (it imports reactstrap,
+  // react-router-dom and a ../../../Components tree that do not exist here) and
+  // is not reachable from the Metro bundle. Kept in sync only so no eval()
+  // remains anywhere in the repo; it should really just be deleted.
   const checkEquation = (equation) => {
-    let pseudoEquation = "";
-    let totalLength = 0;
+    const tokens = [];
 
     for (let subEquation of equation) {
       if (!lhsRhsValid(subEquation)) return false;
 
       for (let item of subEquation) {
-        const indicName = item.indicatorName;
-
-        if (
-          mathOperators.indexOf(indicName) !== -1 ||
-          conditionalOperators.indexOf(indicName) !== -1 ||
-          brackets.indexOf(indicName) !== -1
-        ) {
-          if (indicName === "(") {
-            pseudoEquation += " * " + indicName + " ";
-          } else {
-            pseudoEquation += " " + indicName + " ";
-          }
-        } else if (advOperators.indexOf(indicName) !== -1) {
-          pseudoEquation += " > ";
-        } else if (binaryOperators.indexOf(indicName) !== -1) {
-          pseudoEquation += " || ";
-        } else {
-          pseudoEquation += " 1 ";
-        }
-
-        totalLength += 1;
+        tokens.push(
+          classifyToken(item.indicatorName, {
+            mathOperators,
+            conditionalOperators,
+            advOperators,
+            binaryOperators,
+            brackets,
+          })
+        );
       }
     }
 
-    pseudoEquation = pseudoEquation.trim();
-
-    if (totalLength <= 1) return false;
-
-    try {
-      let evalVal = eval(pseudoEquation) + "";
-      if (evalVal !== "") {
-        return true;
-      }
-    } catch (err) {
-      return false;
-    }
-
-    return true;
+    return isExpressionSyntaxValid(tokens);
   };
 
   const handleSaving = async () => {

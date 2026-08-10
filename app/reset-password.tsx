@@ -60,8 +60,6 @@ const ResetPassword = () => {
   const phoneNumber = route.params?.phone;
   const token = route.params?.token;
 
-  console.log("Phone Number:", phoneNumber, "Token:", token);
-
   // Redirect if token or phone number is not provided
   useEffect(() => {
     if (!token || !phoneNumber) {

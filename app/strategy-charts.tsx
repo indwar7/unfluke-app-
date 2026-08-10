@@ -17,6 +17,7 @@ import {
 import { useBottomGutter } from "@/utils/bottomGutter";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+import { isAllowedChartNavigation } from "@/helpers/externalLinks";
 
 const WIDTH = Dimensions.get("window").width;
 const BASE = "https://api.unfluke.in";
@@ -1132,13 +1133,21 @@ export default function StrategyChartsScreen() {
           ref={webRef}
           source={chartSource}
           style={[{ flex: 1 }, !chartReady && { opacity: 0 }]}
-          originWhitelist={["*"]}
+          // Locked down deliberately. The previous combination — originWhitelist
+          // "*", allowUniversalAccessFromFileURLs, allowFileAccessFromFileURLs
+          // and mixedContentMode "always", with a native bridge over onMessage —
+          // is the WebView misconfiguration pattern Android security scanners
+          // flag on sight. None of it was needed: this WebView renders inline
+          // HTML under an https baseUrl (never file://), and every resource it
+          // loads is HTTPS.
+          originWhitelist={["https://*"]}
+          allowUniversalAccessFromFileURLs={false}
+          allowFileAccessFromFileURLs={false}
+          mixedContentMode="never"
+          onShouldStartLoadWithRequest={isAllowedChartNavigation}
           javaScriptEnabled
           domStorageEnabled
           allowsInlineMediaPlayback
-          allowUniversalAccessFromFileURLs={true}
-          allowFileAccessFromFileURLs={true}
-          mixedContentMode="always"
           scalesPageToFit={false}
           scrollEnabled={false}
           androidLayerType="hardware"

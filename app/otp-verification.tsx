@@ -60,8 +60,6 @@ const OtpVerification = () => {
   // Get phone number from route params
   const phoneNumber = route.params?.phone;
 
-  console.log("PHONE NUMBER", phoneNumber, 433);
-
   // Redirect if no phone number is provided
   useEffect(() => {
     if (!phoneNumber) {

@@ -63,6 +63,25 @@ export const postPhoneSendOtp = (data) =>
 export const postVerifyPhoneOtp = (data) =>
   api.create(url.POST_ACCOUNT_ACTIVATION, data);
 
+// Resends the signup OTP. Returns a NEW `hash` but NO new activation_token —
+// callers must overwrite the stored hash and keep the original
+// activation_token, which encodes the user data rather than the OTP.
+export const postResendOtp = (data) => api.create(url.POST_RESEND_OTP, data);
+
+// GOOGLE SIGN-IN
+export const postGoogleLogin = (data) => api.create(url.POST_GOOGLE_LOGIN, data);
+export const postGoogleRegister = (data) =>
+  api.create(url.POST_GOOGLE_REGISTER, data);
+
+// SIGN IN WITH APPLE
+export const postAppleLogin = (data) => api.create(url.POST_APPLE_LOGIN, data);
+export const postAppleRegister = (data) =>
+  api.create(url.POST_APPLE_REGISTER, data);
+
+// ACCOUNT DELETION — see url_helper.js, endpoint is pending on the backend.
+export const postDeleteMyAccount = (data) =>
+  api.create(url.DELETE_MY_ACCOUNT, data);
+
 // ChatBot Search
 export const getSearch = (data) => api.get(url.GET_SEARCH, data);
 export const getProfitLoss = (data) => api.get(url.GET_PROFIT_LOSS, data);
