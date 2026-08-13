@@ -15,7 +15,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  ActivityIndicator, Dimensions, StyleSheet, FlatList,
+  ActivityIndicator, useWindowDimensions, StyleSheet, FlatList,
 } from "react-native";
 import { Search, X, TrendingUp, TrendingDown } from "lucide-react-native";
 import { useLocalSearchParams } from "expo-router";
@@ -29,7 +29,6 @@ import {
 } from "../hooks/useCryptoFundamentalData";
 import { CryptoDetailTabs, CRYPTO_DETAIL_TABS } from "../components/cryptoFundamentals/DetailTabs";
 
-const { width: SCREEN_W } = Dimensions.get("window");
 const DEFAULT_COIN = { symbol: "BTC", name: "Bitcoin" };
 
 type Coin = { symbol: string; name: string };
@@ -64,7 +63,8 @@ const fmtCompact = (v: any) => {
 
 export default function CryptoFundamentalScreen() {
   const { colors: c, isDark } = useTheme();
-  const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
+  const { width: winW } = useWindowDimensions();
+  const s = useMemo(() => makeStyles(c, isDark, winW), [c, isDark, winW]);
 
   // Home-screen CryptoFundamentalsCard passes its selection via route params.
   const params = useLocalSearchParams<{ symbol?: string; name?: string }>();
@@ -358,7 +358,9 @@ const ObsRow = ({ c, s, label, ok, text }: any) => (
   </View>
 );
 
-const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
+// screenW is passed from useWindowDimensions at the call site so width-derived
+// styles recompute when the window changes (rotation, foldable, split-screen).
+const makeStyles = (c: AppColors, isDark: boolean, screenW: number) => StyleSheet.create({
   root: { flex: 1, backgroundColor: c.background },
   searchWrap: { paddingHorizontal: 14, paddingTop: 10, zIndex: 20 },
   searchBox: {
@@ -412,7 +414,7 @@ const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     paddingHorizontal: 14, paddingTop: 6,
   },
   kpiCard: {
-    width: (SCREEN_W - 28 - 20) / 3, backgroundColor: c.card, borderRadius: 12,
+    width: (screenW - 28 - 20) / 3, backgroundColor: c.card, borderRadius: 12,
     borderWidth: 1, borderColor: c.border, padding: 10,
   },
   kpiLabel: { fontSize: 10, color: c.textMuted, fontWeight: "600" },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, TextInput, Modal, FlatList, Dimensions,
+  ActivityIndicator, TextInput, Modal, FlatList,
   Alert, Animated, useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,7 +19,6 @@ import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
 import { isAllowedChartNavigation } from "@/helpers/externalLinks";
 
-const WIDTH = Dimensions.get("window").width;
 const BASE = "https://api.unfluke.in";
 
 const CHART_TYPES = [

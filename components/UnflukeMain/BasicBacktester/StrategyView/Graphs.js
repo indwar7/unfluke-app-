@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, TouchableOpacity, Dimensions, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, useWindowDimensions, StyleSheet, ScrollView } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { useTheme } from "@/constants/ThemeContext";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
-
 const Graphs = (props) => {
   const [activeTab, setActiveTab] = useState("Profit"); // "Profit" | "Cumulative" | "Drawdown"
+  // Read per-render, not once at module scope, so the chart re-measures when the
+  // window changes — rotation, foldable unfold, or split-screen resize.
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const { colors: c, isDark } = useTheme();
   const styles = makeStyles(c, isDark);
 

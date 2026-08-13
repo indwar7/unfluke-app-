@@ -9,7 +9,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  ActivityIndicator, Dimensions, StyleSheet, Modal, FlatList,
+  ActivityIndicator, useWindowDimensions, StyleSheet, Modal, FlatList,
   Keyboard,
 } from "react-native";
 import {
@@ -35,7 +35,6 @@ import {
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
 
-const { width: SCREEN_W } = Dimensions.get("window");
 const SEARCH_URL = "https://api.unfluke.in/api/historicData/search?searchQuery=";
 const DEFAULT_STOCK = { symbol: "RELIANCE", name: "Reliance Industries Ltd", capcode: 476 };
 
@@ -136,7 +135,8 @@ function PeriodPicker({ items, selected, onSelect, s, c }: {
 ═══════════════════════════════════════════════════════ */
 export default function FundamentalScreen() {
   const { colors: c, isDark } = useTheme();
-  const s = useMemo(() => makeStyles(c, isDark), [c, isDark]);
+  const { width: winW } = useWindowDimensions();
+  const s = useMemo(() => makeStyles(c, isDark, winW), [c, isDark, winW]);
   const dispatch = useDispatch();
   const scrollRef = useRef<ScrollView>(null);
   const tabScrollRef = useRef<ScrollView>(null);
@@ -514,7 +514,10 @@ export default function FundamentalScreen() {
   );
 }
 
-const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
+// screenW comes from useWindowDimensions at the call site, so styles that
+// depend on window width are recomputed when the window changes instead of
+// being frozen at whatever the width was when the module first loaded.
+const makeStyles = (c: AppColors, isDark: boolean, screenW: number) => StyleSheet.create({
   root: { flex: 1, backgroundColor: c.background },
 
   // Title
@@ -648,7 +651,7 @@ const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   },
   pickerModal: {
     backgroundColor: c.surfaceElevated, borderRadius: 20,
-    width: SCREEN_W * 0.8, maxHeight: 480, padding: 22,
+    width: screenW * 0.8, maxHeight: 480, padding: 22,
     borderWidth: 1, borderColor: c.border,
   },
   pickerTitle: { fontSize: 18, fontWeight: "800", color: c.text, marginBottom: 16, letterSpacing: -0.3 },

@@ -32,10 +32,11 @@ function ThemedStack() {
   const { scheme, colors } = useTheme();
   return (
     <>
-      <StatusBar
-        style={scheme === "dark" ? "light" : "dark"}
-        backgroundColor={colors.headerBg}
-      />
+      {/* No backgroundColor: with edgeToEdgeEnabled the prop is ignored by
+          expo-status-bar (it only logs a warning) and routes into the
+          Window.setStatusBarColor API deprecated in Android 15. To tint the
+          area behind the status bar, render a view under it instead. */}
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerShown: false,

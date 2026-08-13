@@ -2,7 +2,7 @@
   "expo": {
     "name": "Unfluke",
     "slug": "unfluke",
-    "version": "2.1.8",
+    "version": "2.1.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "unflukeapp",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "in.unfluke.app",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -30,7 +30,7 @@
       "edgeToEdgeEnabled": true,
       "package": "in.unfluke.app",
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 45
+      "versionCode": 46
     },
     "web": {
       "bundler": "metro",

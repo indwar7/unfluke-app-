@@ -23,6 +23,11 @@ android/local.properties
 ios/
 .expo/
 *.lock
+# yarn.lock must be committed: EAS builds from git, and without it yarn
+# re-resolves every ^/~ range on the build server. That makes builds
+# non-reproducible and lets a transitive dependency change silently between
+# releases — a real source of "worked locally, crashed in production".
+!yarn.lock
 .gradle/
 build/
 dist/
@@ -51,3 +56,6 @@ node_modules/
 
 # Credentials / cert config exported from EAS — NEVER commit (contains cert serials, Team ID, API key refs)
 ios data.txt
+
+# Single lockfile: this project uses yarn (see packageManager in package.json).
+package-lock.json
