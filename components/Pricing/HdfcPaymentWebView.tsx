@@ -114,6 +114,16 @@ export default function HdfcPaymentWebView({
         {visible && paymentUrl ? (
           <WebView
             source={{ uri: paymentUrl }}
+            // Counter-intuitive but deliberate: this WIDENS originWhitelist in
+            // order to TIGHTEN the policy. react-native-webview checks the
+            // whitelist BEFORE onShouldStartLoadWithRequest, and when a URL
+            // fails it runs its own fallback — Linking.canOpenURL().then(openURL)
+            // — without ever consulting the guard. Under the default whitelist
+            // (http/https only) every UPI and bank scheme took that path, so
+            // isAllowedPaymentAppLink below was unreachable and the gateway page
+            // could open ANY installed app, denylist and all. Deferring every URL
+            // to the guard is what actually enforces the policy.
+            originWhitelist={["*"]}
             // Handle return-URL interception AND UPI/bank-app deep-link hand-off.
             onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
             // Safety net for redirects that don't trigger the guard above.

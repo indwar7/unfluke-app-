@@ -46,6 +46,28 @@ export function isWebUrl(url: string): boolean {
 }
 
 /**
+ * `originWhitelist` for the chart WebViews.
+ *
+ * `blob:` is NOT optional. The TradingView standalone library renders the chart
+ * in an iframe whose src is a blob URL (it builds the frame's HTML in JS, wraps
+ * it in a Blob and calls URL.createObjectURL). On iOS every frame — including
+ * that one — goes through WKWebView's decidePolicyForNavigationAction, so the
+ * whitelist sees it; on Android blob iframes never reach shouldOverrideUrlLoading.
+ * That is why a whitelist of just ["https://*"] renders fine on Android and
+ * hangs on a permanent spinner on iPhone.
+ *
+ * Note the shape: react-native-webview's extractOrigin() reduces
+ * "blob:https://unfluke.in/<uuid>" to the literal string "blob:https:", so the
+ * entry has to be scheme-only — "blob://*" would never match.
+ *
+ * Still deliberately not ["*"]: that wildcard is the pattern security scanners
+ * flag, and the whitelist runs BEFORE isAllowedChartNavigation and
+ * short-circuits it, so anything missing here is blocked before the real guard
+ * below ever gets a say.
+ */
+export const CHART_ORIGIN_WHITELIST = ["https://*", "blob:*", "about:*"];
+
+/**
  * Navigation guard for the chart WebViews.
  *
  * Deliberately permissive: ALL web navigation is allowed, because the charting

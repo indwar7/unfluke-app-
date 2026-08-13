@@ -17,7 +17,7 @@ import {
 import { useBottomGutter } from "@/utils/bottomGutter";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
-import { isAllowedChartNavigation } from "@/helpers/externalLinks";
+import { CHART_ORIGIN_WHITELIST, isAllowedChartNavigation } from "@/helpers/externalLinks";
 
 const BASE = "https://api.unfluke.in";
 
@@ -1139,7 +1139,7 @@ export default function StrategyChartsScreen() {
           // flag on sight. None of it was needed: this WebView renders inline
           // HTML under an https baseUrl (never file://), and every resource it
           // loads is HTTPS.
-          originWhitelist={["https://*"]}
+          originWhitelist={CHART_ORIGIN_WHITELIST}
           allowUniversalAccessFromFileURLs={false}
           allowFileAccessFromFileURLs={false}
           mixedContentMode="never"

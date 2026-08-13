@@ -17,7 +17,7 @@ import Watchlist from "./Watchlist";
 import SidebarModal from "./WatchListModal";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
-import { isAllowedChartNavigation } from "@/helpers/externalLinks";
+import { CHART_ORIGIN_WHITELIST, isAllowedChartNavigation } from "@/helpers/externalLinks";
 
 const BASE = "https://api.unfluke.in";
 const DEFAULT_SYMBOL = "NSE:NIFTY 50";
@@ -504,7 +504,7 @@ const Trading = () => {
           // mixedContentMode "always" were unnecessary (inline HTML under an
           // https baseUrl, all resources HTTPS) and are exactly what Android
           // security scanners flag. Navigation is constrained to chart hosts.
-          originWhitelist={["https://*"]}
+          originWhitelist={CHART_ORIGIN_WHITELIST}
           javaScriptEnabled
           domStorageEnabled
           allowsInlineMediaPlayback
