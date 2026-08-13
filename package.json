@@ -8,6 +8,11 @@
     "node": ">=20.18.0"
   },
   "expo": {
+    "install": {
+      "exclude": [
+        "@react-native-picker/picker"
+      ]
+    },
     "autolinking": {
       "exclude": [
         "expo-dev-client",
