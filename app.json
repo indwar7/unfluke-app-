@@ -30,7 +30,7 @@
       "edgeToEdgeEnabled": true,
       "package": "in.unfluke.app",
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 46
+      "versionCode": 47
     },
     "web": {
       "bundler": "metro",
