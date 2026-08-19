@@ -2,7 +2,7 @@
   "expo": {
     "name": "Unfluke",
     "slug": "unfluke",
-    "version": "2.1.9",
+    "version": "2.1.10",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "unflukeapp",
@@ -30,7 +30,7 @@
       "edgeToEdgeEnabled": true,
       "package": "in.unfluke.app",
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 47
+      "versionCode": 51
     },
     "web": {
       "bundler": "metro",
