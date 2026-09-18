@@ -10,7 +10,7 @@ import {
 import { router } from "expo-router";
 import { useSelector } from "react-redux";
 import { createSelector } from "reselect";
-import { ChevronRight, Crown, Sparkles } from "lucide-react-native";
+import { ChevronRight, Crown, Sparkles, LineChart } from "lucide-react-native";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
 import FundamentalsCard from "@/components/ui/FundamentalsCard";
@@ -156,8 +156,28 @@ const UnDashboard = () => {
         </Reveal>
       )}
 
-      {/* Features — vertical cards with images, wipe-up on scroll */}
+      {/* Market Terminal — icon card (no image asset yet), links to the hub */}
       <Reveal index={isPaid ? 2 : 3}>
+        <TouchableOpacity
+          style={s.featureCard}
+          onPress={() => router.push("/market-terminal" as any)}
+          activeOpacity={0.85}
+        >
+          <View style={s.featureImgWrap}>
+            <LineChart size={36} color={c.gold} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.featureTitle}>Market Terminal</Text>
+            <Text style={s.featureSub} numberOfLines={2}>Live NSE movers, indices, derivatives & more</Text>
+          </View>
+          <View style={s.featureArrow}>
+            <ChevronRight size={18} color={c.gold} />
+          </View>
+        </TouchableOpacity>
+      </Reveal>
+
+      {/* Features — vertical cards with images, wipe-up on scroll */}
+      <Reveal index={isPaid ? 3 : 4}>
         <View style={s.sectionHeader}>
           <View style={s.sectionAccent} />
           <Text style={s.sectionTitle}>Explore Tools</Text>

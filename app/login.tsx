@@ -136,7 +136,6 @@ const UnflukeLogin = () => {
       password: Yup.string().required("Please Enter Your Password"),
     }),
     onSubmit: (values) => {
-      console.log("YES LOGGING", values);
       setIsNavigating(false);
       setLastShownErrorCount(errorCount);
       dispatch(loginUser(values));

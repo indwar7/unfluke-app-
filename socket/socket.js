@@ -18,7 +18,13 @@ const socketOpts = {
 
 export const backendSocket = io(Config.BACKEND_URL, socketOpts);
 
-export const chatbotSocket = io(Config.REACT_APP_CHATBOT_URL, socketOpts);
+// Chatbot origin currently takes 20-30s to respond under load (confirmed by
+// backend, Sep 2026) — the default connection timeout is too tight for that,
+// so give the handshake more room than the general-purpose backend socket.
+export const chatbotSocket = io(Config.REACT_APP_CHATBOT_URL, {
+    ...socketOpts,
+    timeout: 35000,
+});
 
 // Connection diagnostics — surfaces chatbot reachability in logs so a down
 // origin (e.g. edbot HTTPS) is obvious instead of a silent stuck spinner.

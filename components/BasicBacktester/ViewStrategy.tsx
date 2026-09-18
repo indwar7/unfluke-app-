@@ -9,7 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import axios from 'axios';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -58,7 +59,7 @@ const ViewStrategy = () => {
   // Redux and Navigation
   const auth = useSelector((state: any) => state.Login);
   const dispatch = useDispatch();
-  const navigation = useNavigation();
+  const router = useRouter();
   const route = useRoute();
 
   // Get strategy data from Redux store
@@ -196,10 +197,11 @@ const ViewStrategy = () => {
     csvToJson();
   }, [auth?.user?._id, csvFilename, csvFilename1, csvFilename2, advanced]);
 
-  // Handle edit navigation
+  // Handle edit navigation — same Redux-then-navigate pattern as
+  // BasicBacktesterHomePage.tsx's handleEdit: expo-router reads the strategy
+  // to edit from Redux, not from route params.
   function handleEdit() {
     try {
-      // Get current state - you'll need to adapt this based on your Redux store structure
       const slice = store.getState?.()?.BasicBacktester || {};
 
       const strategyForEdit = {
@@ -208,10 +210,8 @@ const ViewStrategy = () => {
         editStrategyId: sid || slice.editStrategyId || slice._id || null,
       };
 
-      navigation.navigate('basic-backtester', {
-        strategyData: strategyForEdit
-      });
-
+      dispatch(setEditStrategy(strategyForEdit));
+      router.push("/basic-backtester");
     } catch (error) {
       console.error('Error navigating to edit:', error);
       Alert.alert('Error', 'Failed to open strategy editor.');
