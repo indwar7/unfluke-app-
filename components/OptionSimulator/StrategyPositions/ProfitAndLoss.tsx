@@ -111,7 +111,8 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { postTickerPrice } from "../../../Unfluke_helpers/backend_helper";
 import { useTheme } from "@/constants/ThemeContext";
@@ -349,12 +350,12 @@ const getStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
   },
   priceCell: {
     flex: 1.2,
-    fontFamily: 'monospace',
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
     fontVariant: ['tabular-nums'],
   },
   pnlCell: {
     flex: 1.2,
-    fontFamily: 'monospace',
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },

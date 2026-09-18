@@ -297,7 +297,7 @@ const Watchlist = () => {
     if (alreadyInWatchlist) return;
 
     const data = {
-      userID: user._id,
+      userID: user?._id,
       instrument_token: token,
       type: marketListItem.type,
       date: currentDateTime || new Date().toISOString(),
@@ -329,7 +329,7 @@ const Watchlist = () => {
 
   const deleteTrade = (instrument_token) => {
     const data = {
-      userID: user._id,
+      userID: user?._id,
       instrument_token: instrument_token,
     };
     deleteHistoricalWatchlist({ data }).then((resp: any) => {
@@ -360,7 +360,7 @@ const Watchlist = () => {
     setLoader(true);
     await postHistoricalFeed({
       time,
-      userID: user._id,
+      userID: user?._id,
       currentDate: getDateString(),
       prevDateTime: prevDateTime.current,
     }).then((data) => {
@@ -393,7 +393,7 @@ const Watchlist = () => {
     setOptionName(e);
     getOptionsExpiries({
       optionName: e,
-      id: user._id,
+      id: user?._id,
       optionType: "CE - Call",
     }).then((data) => {
       setExpiryDates([
@@ -410,7 +410,7 @@ const Watchlist = () => {
       expiryDate: expiryDate,
       optionName: optionName,
       optionType: e,
-      id: user._id,
+      id: user?._id,
     }).then((data) => {
       setStrikePrices([
         {
@@ -446,7 +446,7 @@ const Watchlist = () => {
   };
 
   useEffect(() => {
-    user._id && !loader && getCurrentFeed();
+    user?._id && !loader && getCurrentFeed();
   }, [tradeWatch, currentDateTime]);
 
   const handleCardPress = (index) => {

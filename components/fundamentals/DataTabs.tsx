@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    FlatList, Dimensions, ScrollView, ActivityIndicator,
+    FlatList, useWindowDimensions, ScrollView, ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
@@ -266,16 +266,20 @@ function sortByDateDesc(items: any[]): any[] {
     return items;
 }
 
-const { width: SW } = Dimensions.get("window");
-const CW = SW - 48;
+// Chart width is derived per-render from useWindowDimensions rather than
+// captured once at module scope: a module-scope Dimensions.get() never updates,
+// so the chart keeps its portrait width after a rotation. Android 16 ignores
+// screenOrientation on displays >=600dp, so tablets and foldables rotate
+// regardless of the manifest lock.
 const CH = 200;
+const CHART_H_MARGIN = 48;
 
 /* ═══════════════════════════════════════════════════════════
    SVG LINE CHART
 ═══════════════════════════════════════════════════════════ */
 export function SvgLineChart({
     data,
-    width: w = CW,
+    width: widthProp,
     height: h = CH,
     color,
     areaColor = "rgba(99,102,241,0.08)",
@@ -287,6 +291,9 @@ export function SvgLineChart({
     showLabels?: boolean;
 }) {
     const { colors: c } = useTheme();
+    // Must run before the early return below — hooks cannot be conditional.
+    const { width: winW } = useWindowDimensions();
+    const w = widthProp ?? winW - CHART_H_MARGIN;
     const lineColor = color ?? c.gold;
     if (!data.length) return null;
 

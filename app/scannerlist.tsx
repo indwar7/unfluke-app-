@@ -88,7 +88,8 @@ const ScannerList = () => {
       activeOpacity={0.85}
       style={s.scannerItem}
       onPress={() =>
-        navigation.navigate(alerts ? "alert" : "scanner", {
+        // Alerts have no dedicated route; scanner.tsx fully handles type==='alerts'.
+        navigation.navigate("scanner", {
           state: item,
           type:
             type === "technical"
@@ -170,7 +171,10 @@ const ScannerList = () => {
             activeOpacity={0.8}
             style={s.viewSavedButton}
             onPress={() =>
-              navigation.navigate(alerts ? "alerts" : "scannerhome")
+              navigation.navigate(
+                "scannerhome",
+                alerts ? { alertsScanner: "true" } : undefined,
+              )
             }
           >
             <Eye color={c.textSecondary} size={13} />

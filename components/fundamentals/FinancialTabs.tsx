@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, useWindowDimensions, TouchableOpacity } from "react-native";
 import { EmptyState } from "./SharedComponents";
 import { SvgLineChart } from "./DataTabs";
 import { fmt } from "./constants";
@@ -15,9 +15,9 @@ import {
     type RatioSection,
 } from "../../hooks/useFundamentalData";
 
-const { width: SCREEN_W } = Dimensions.get("window");
-const CONTENT_W = SCREEN_W - 32;
-const LABEL_W = Math.min(140, CONTENT_W * 0.38);
+// The sticky label column is sized from the live window width (see the note in
+// DataTabs.tsx) — it is computed inside makeTblStyles rather than captured once
+// at module scope, so the table re-lays-out when the window changes.
 const DATA_COL_W = 90;
 const ROW_H = 42;
 
@@ -36,7 +36,8 @@ const themedValueColor = (c: AppColors, val: any): string => {
 ═══════════════════════════════════════════════════════════ */
 function HorizontalTable({ response, emptyMessage }: { response: any; emptyMessage?: string }) {
     const { colors: c, isDark } = useTheme();
-    const tbl = useMemo(() => makeTblStyles(c, isDark), [c, isDark]);
+    const { width: winW } = useWindowDimensions();
+    const tbl = useMemo(() => makeTblStyles(c, isDark, winW), [c, isDark, winW]);
     const periodKeys = useMemo(() => response?.results ? getPeriodKeys(response) : [], [response]);
     const headings = useMemo(() => {
         if (!response?.results) return [];
@@ -527,7 +528,9 @@ export function KeyRatiosTab({ ratios, period, banking }: { ratios: Record<strin
 /* ═══════════════════════════════════════════════════════════
    TABLE STYLES
 ═══════════════════════════════════════════════════════════ */
-const makeTblStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
+const makeTblStyles = (c: AppColors, isDark: boolean, screenW: number) => {
+    const LABEL_W = Math.min(140, (screenW - 32) * 0.38);
+    return StyleSheet.create({
     container: {
         borderRadius: 12, overflow: "hidden",
         borderWidth: 1, borderColor: c.border, backgroundColor: c.card,
@@ -549,7 +552,8 @@ const makeTblStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     boldRow: { backgroundColor: c.surfaceElevated },
     boldTxt: { fontWeight: "700", color: c.text, fontSize: 11 },
     childTxt: { color: c.textMuted, fontSize: 10, paddingLeft: 6 },
-});
+    });
+};
 
 const makeElStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     rowWrap: { marginBottom: 8 },

@@ -128,12 +128,17 @@ const ScannerHomePage = ({ }) => {
           }
         );
 
-        if (res && res.data?.sharingCode) {
+        // Global axios interceptor unwraps .data, so the payload is flat
+        // (scanner.tsx reads the same endpoint as res?.sharingCode).
+        const sharingCode = (res as any)?.sharingCode ?? res?.data?.sharingCode;
+        if (sharingCode) {
           const type = alerts ? "alert" : "scanner";
-          const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${res.data.sharingCode}&alert=false&type=${type}&market=${subUrl || "in"}`;
+          const link = `${Config.PUBLIC_URL}/scanner-sharing?code=${sharingCode}&alert=false&type=${type}&market=${subUrl || "in"}`;
 
           await Clipboard.setStringAsync(link);
           Alert.alert("Success", "Link copied to clipboard");
+        } else {
+          Alert.alert("Error", "Could not copy link");
         }
       }
     } catch (error) {

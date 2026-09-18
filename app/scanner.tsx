@@ -45,6 +45,11 @@ import {
 } from "../components/UnflukeMain/Utils/common_vars";
 
 import {
+  classifyToken,
+  isExpressionSyntaxValid,
+} from "../helpers/expressionSyntax";
+
+import {
   handleChange,
   handleSetState,
   resetState,
@@ -52,6 +57,14 @@ import {
 
 import { deepCopy } from "../components/UnflukeMain/BasicBacktester/StrategyLegs/utils";
 import { backendSocket } from "../socket/socket";
+
+const EXPR_TOKEN_SETS = {
+  mathOperators,
+  conditionalOperators,
+  advOperators,
+  binaryOperators,
+  brackets,
+};
 
 const Scanner = ({ shared }) => {
 
@@ -175,41 +188,17 @@ const Scanner = ({ shared }) => {
   };
 
   const checkEquation = (equation) => {
-    let pseudoEquation = "";
-    let totalLength = 0;
+    const tokens = [];
 
     for (let subEquation of equation) {
       if (!lhsRhsValid(subEquation)) return false;
 
       for (let item of subEquation) {
-        const indicName = item.indicatorName;
-
-        if (
-          mathOperators.indexOf(indicName) !== -1 ||
-          conditionalOperators.indexOf(indicName) !== -1 ||
-          brackets.indexOf(indicName) !== -1
-        ) {
-          pseudoEquation += indicName === "(" ? " * ( " : ` ${indicName} `;
-        } else if (advOperators.indexOf(indicName) !== -1) {
-          pseudoEquation += " > ";
-        } else if (binaryOperators.indexOf(indicName) !== -1) {
-          pseudoEquation += " || ";
-        } else {
-          pseudoEquation += " 1 ";
-        }
-        totalLength += 1;
+        tokens.push(classifyToken(item.indicatorName, EXPR_TOKEN_SETS));
       }
     }
 
-    pseudoEquation = pseudoEquation.trim();
-    if (totalLength <= 1) return false;
-
-    try {
-      let evalVal = eval(pseudoEquation) + "";
-      return evalVal !== "";
-    } catch (err) {
-      return false;
-    }
+    return isExpressionSyntaxValid(tokens);
   };
 
   /***** EXPRESSION MANIPULATION *****/

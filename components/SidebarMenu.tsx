@@ -31,6 +31,7 @@ import {
     ChevronRight,
 } from "lucide-react-native";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
@@ -48,7 +49,9 @@ interface SidebarMenuProps {
     onClose: () => void;
 }
 
-const STATUS_BAR_HEIGHT = Platform.OS === "android" ? (StatusBar.currentHeight || 24) : 44;
+// iOS inset varies per device: 20 on old iPhones, ~59 on Dynamic Island
+const getStatusBarHeight = (insetTop: number) =>
+    Platform.OS === "android" ? (StatusBar.currentHeight || 24) : (insetTop || 44);
 
 const MENU_ITEMS = [
     { label: "Dashboard", Icon: LayoutGrid, route: "/dashboard" },
@@ -75,6 +78,7 @@ const SidebarMenu = ({ visible, onClose }: SidebarMenuProps) => {
     const { width } = useWindowDimensions();
     const { colors: c, isDark } = useTheme();
     const styles = makeStyles(c);
+    const STATUS_BAR_HEIGHT = getStatusBarHeight(useSafeAreaInsets().top);
     const sidebarWidth = Math.min(300, width * 0.78);
     // Current market ("in" | "crypto"). Used to remap market-specific routes.
     const appType = useSelector((state: any) => state?.Layout?.appType ?? "in");

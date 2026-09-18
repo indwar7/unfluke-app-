@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { 
   Modal, 
   View, 
@@ -14,21 +14,17 @@ function SourcesModal({ sourcesModalOpen, setSourcesModalOpen, sources }) {
   const toggle = () => setSourcesModalOpen(!sourcesModalOpen);
 
   const openNewPage = async (source) => {
+    const url = typeof source === 'string' ? source : source?.url ?? source?.link;
     try {
-      await AsyncStorage.setItem('source', JSON.stringify(source));
-      // In React Native, you would typically navigate using a navigation library
-      // For now, we'll log it since opening a new tab like in web isn't the same
-      console.log('Source saved, would navigate to AIPDF view');
-      // If you're using React Navigation, you'd do something like:
-      // navigation.navigate('AIPDF', { source });
+      if (url && /^https?:\/\//.test(url)) {
+        await Linking.openURL(url);
+      } else {
+        await AsyncStorage.setItem('source', JSON.stringify(source));
+      }
     } catch (error) {
-      console.error('Error saving source:', error);
+      console.error('Error opening source:', error);
     }
   };
-
-  useEffect(() => {
-    console.log("SOURCES", sources);
-  }, [sources]);
 
   return (
     <Modal

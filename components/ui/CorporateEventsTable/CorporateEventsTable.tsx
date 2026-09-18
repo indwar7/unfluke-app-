@@ -496,7 +496,7 @@ import {
   Pressable,
 } from "react-native";
 import { getCorporateEvents } from "../../../constants/Unfluke_helpers/backend_helper";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { MaterialIcons as Icon } from "@expo/vector-icons";
 
 const CorporateEventsTable = ({ isConsolidated, company }) => {
   const [loading, setLoading] = useState(true);

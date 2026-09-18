@@ -17,6 +17,7 @@ import Watchlist from "./Watchlist";
 import SidebarModal from "./WatchListModal";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+import { CHART_ORIGIN_WHITELIST, isAllowedChartNavigation } from "@/helpers/externalLinks";
 
 const BASE = "https://api.unfluke.in";
 const DEFAULT_SYMBOL = "NSE:NIFTY 50";
@@ -499,17 +500,27 @@ const Trading = () => {
           ref={webRef}
           source={webViewSource}
           style={[{ flex: 1 }, !chartReady && { opacity: 0 }]}
-          originWhitelist={["*"]}
+          // See app/strategy-charts.tsx: the file-URL access flags and
+          // mixedContentMode "always" were unnecessary (inline HTML under an
+          // https baseUrl, all resources HTTPS) and are exactly what Android
+          // security scanners flag. Navigation is constrained to chart hosts.
+          originWhitelist={CHART_ORIGIN_WHITELIST}
           javaScriptEnabled
           domStorageEnabled
           allowsInlineMediaPlayback
-          allowUniversalAccessFromFileURLs={true}
-          allowFileAccessFromFileURLs={true}
-          mixedContentMode="always"
+          allowUniversalAccessFromFileURLs={false}
+          allowFileAccessFromFileURLs={false}
+          mixedContentMode="never"
+          onShouldStartLoadWithRequest={isAllowedChartNavigation}
           scalesPageToFit={false}
           scrollEnabled={false}
           androidLayerType="hardware"
           cacheEnabled
+          // iOS kills the WKWebView content process under memory pressure;
+          // without this the chart stays permanently blank. READY handshake
+          // re-sends INIT after reload, so recovery is self-healing.
+          onContentProcessDidTerminate={() => webRef.current?.reload()}
+          onRenderProcessGone={() => webRef.current?.reload()}
           onMessage={(e) => {
             try {
               const parsed = JSON.parse(e.nativeEvent.data);

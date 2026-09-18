@@ -14,6 +14,7 @@ import {
   Clipboard,
   Linking,
   Platform,
+  Alert,
   useWindowDimensions,
 } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
@@ -28,10 +29,11 @@ import {
 } from "@expo/vector-icons";
 
 import { router, useLocalSearchParams } from "expo-router";
-import { MembershipPlansList } from "../../redux/Unfluke_slices/thunks";
+import { MembershipPlansList, logoutUser } from "../../redux/Unfluke_slices/thunks";
 import {
   postChangePassword,
   postData,
+  postDeleteMyAccount,
   postEmailSendOtp,
   postVerifyEmailOtp,
 } from "../../Unfluke_helpers/backend_helper";
@@ -42,6 +44,7 @@ import { KeyboardAvoidingView } from "react-native";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { TELEGRAM_PROFILE_BOT_URL } from "@/constants/telegram";
 
 
 const Settings = () => {
@@ -285,6 +288,76 @@ const Settings = () => {
   };
 
 
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  /**
+   * Account deletion — App Store Review Guideline 5.1.1(v).
+   *
+   * Two confirmations on purpose. Apple requires deletion to be reachable from
+   * inside the app, but it is irreversible and sits one tap from the profile
+   * screen, so a single "Are you sure?" is too easy to fat-finger. The second
+   * step also spells out what actually goes, which is what a reviewer looks for.
+   *
+   * An active subscription is NOT cancelled by this — Apple owns that billing
+   * relationship and only the user can stop it in their Apple Account settings.
+   * Saying so here is both honest and required: deleting the account while a
+   * subscription silently keeps charging is its own rejection reason.
+   */
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete account?",
+      "This permanently deletes your Unfluke account. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Continue",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "This cannot be undone",
+              "Your profile, watchlists, scanners, alerts, backtests and points will be permanently deleted.\n\nIf you have a paid subscription, cancel it separately in your Apple Account settings — deleting this account does not stop Apple billing.",
+              [
+                { text: "Keep my account", style: "cancel" },
+                {
+                  text: "Delete forever",
+                  style: "destructive",
+                  onPress: confirmDeleteAccount,
+                },
+              ],
+            ),
+        },
+      ],
+    );
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (isDeletingAccount) return;
+    setIsDeletingAccount(true);
+
+    try {
+      await postDeleteMyAccount({});
+
+      // Tear the session down locally too. logoutUser clears the stored tokens
+      // and the native Google/Apple session, so the next launch starts clean
+      // rather than trying to refresh a token for an account that is gone.
+      await dispatch(logoutUser() as any);
+      router.replace("/login" as any);
+    } catch (error: any) {
+      // The axios interceptor rejects with the backend's user-facing `msg`.
+      Toast.show({
+        type: "error",
+        text1: "Could not delete account",
+        text2:
+          (typeof error === "string" ? error : error?.message) ||
+          "Please try again, or contact support if this keeps happening.",
+        position: "top",
+        visibilityTime: 4000,
+      });
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const handleCopyLink = () => {
     if (user.hisReferral) {
       const text = "https://unfluke.in/signup/" + user.hisReferral;
@@ -456,7 +529,7 @@ const Settings = () => {
                         <View style={s.alertActions}>
                           <TouchableOpacity
                             style={s.openButton}
-                            onPress={() => Linking.openURL("https://t.me/unflukebotbot")}
+                            onPress={() => Linking.openURL(TELEGRAM_PROFILE_BOT_URL)}
                           >
                             <MaterialIcons name="open-in-new" size={14} color="#FFFFFF" />
                           </TouchableOpacity>
@@ -770,6 +843,37 @@ const Settings = () => {
                             </TouchableOpacity>
                           </View>
                         </View>
+                      </View>
+
+                      {/* Account deletion — App Store Review Guideline
+                          5.1.1(v). An app that lets users create an account
+                          must let them start deleting it from inside the app;
+                          a support email or a website form is not accepted.
+                          Kept on the default tab so a reviewer finds it
+                          without hunting. */}
+                      <View style={s.dangerZone}>
+                        <Text style={s.dangerTitle}>Delete account</Text>
+                        <Text style={s.dangerText}>
+                          Permanently delete your Unfluke account and all its
+                          data. This cannot be undone.
+                        </Text>
+                        <TouchableOpacity
+                          style={[
+                            s.dangerButton,
+                            isDeletingAccount && s.dangerButtonDisabled,
+                          ]}
+                          onPress={handleDeleteAccount}
+                          disabled={isDeletingAccount}
+                          activeOpacity={0.85}
+                        >
+                          {isDeletingAccount ? (
+                            <ActivityIndicator size="small" color={c.error} />
+                          ) : (
+                            <Text style={s.dangerButtonText}>
+                              Delete my account
+                            </Text>
+                          )}
+                        </TouchableOpacity>
                       </View>
                     </View>
                   )}
@@ -1307,6 +1411,43 @@ const makeStyles = (c: AppColors, isDark: boolean) => StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     letterSpacing: 0.3,
+  },
+  // Deliberately understated — outlined, not a filled red button. It has to be
+  // easy for a reviewer to find, but it should not read as a primary action
+  // sitting under the referral card.
+  dangerZone: {
+    marginTop: 28,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+  },
+  dangerTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: c.text,
+    marginBottom: 6,
+  },
+  dangerText: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: c.textSecondary,
+    marginBottom: 14,
+  },
+  dangerButton: {
+    borderWidth: 1.5,
+    borderColor: c.error,
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dangerButtonDisabled: {
+    opacity: 0.6,
+  },
+  dangerButtonText: {
+    color: c.error,
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
 

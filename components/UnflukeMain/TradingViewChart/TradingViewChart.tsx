@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { CHART_ORIGIN_WHITELIST, isAllowedChartNavigation } from '@/helpers/externalLinks';
 
 interface TradingViewChartProps {
   coinId: string;
@@ -109,8 +110,9 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ coinId }) => {
         </View>
       )}
       <WebView
-        originWhitelist={['*']}
+        originWhitelist={CHART_ORIGIN_WHITELIST}
         source={{ html: tradingViewWidgetHtml }}
+        onShouldStartLoadWithRequest={isAllowedChartNavigation}
         style={[styles.webView, isLoading && { opacity: 0 }]}
         javaScriptEnabled={true}
         domStorageEnabled={true}
@@ -119,7 +121,9 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ coinId }) => {
         scrollEnabled={false}
         bounces={false}
         allowsInlineMediaPlayback={true}
-        mixedContentMode="always"
+        allowUniversalAccessFromFileURLs={false}
+        allowFileAccessFromFileURLs={false}
+        mixedContentMode="never"
         androidLayerType="hardware"
         onMessage={(event) => {
           if (event.nativeEvent.data === 'CHART_LOADED') {

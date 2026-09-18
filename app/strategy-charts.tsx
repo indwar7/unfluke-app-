@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, TextInput, Modal, FlatList, Dimensions,
+  ActivityIndicator, TextInput, Modal, FlatList,
   Alert, Animated, useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,8 +17,8 @@ import {
 import { useBottomGutter } from "@/utils/bottomGutter";
 import { useTheme } from "@/constants/ThemeContext";
 import type { AppColors } from "@/constants/Colors";
+import { CHART_ORIGIN_WHITELIST, isAllowedChartNavigation } from "@/helpers/externalLinks";
 
-const WIDTH = Dimensions.get("window").width;
 const BASE = "https://api.unfluke.in";
 
 const CHART_TYPES = [
@@ -1132,19 +1132,32 @@ export default function StrategyChartsScreen() {
           ref={webRef}
           source={chartSource}
           style={[{ flex: 1 }, !chartReady && { opacity: 0 }]}
-          originWhitelist={["*"]}
+          // Locked down deliberately. The previous combination — originWhitelist
+          // "*", allowUniversalAccessFromFileURLs, allowFileAccessFromFileURLs
+          // and mixedContentMode "always", with a native bridge over onMessage —
+          // is the WebView misconfiguration pattern Android security scanners
+          // flag on sight. None of it was needed: this WebView renders inline
+          // HTML under an https baseUrl (never file://), and every resource it
+          // loads is HTTPS.
+          originWhitelist={CHART_ORIGIN_WHITELIST}
+          allowUniversalAccessFromFileURLs={false}
+          allowFileAccessFromFileURLs={false}
+          mixedContentMode="never"
+          onShouldStartLoadWithRequest={isAllowedChartNavigation}
           javaScriptEnabled
           domStorageEnabled
           allowsInlineMediaPlayback
-          allowUniversalAccessFromFileURLs={true}
-          allowFileAccessFromFileURLs={true}
-          mixedContentMode="always"
           scalesPageToFit={false}
           scrollEnabled={false}
           androidLayerType="hardware"
           onMessage={handleWebViewMessage}
           onLoadEnd={handleWebViewLoadEnd}
           onError={handleWebViewError}
+          // iOS kills the WKWebView content process under memory pressure;
+          // without this the chart stays permanently blank. READY handshake
+          // re-sends INIT after reload, so recovery is self-healing.
+          onContentProcessDidTerminate={() => webRef.current?.reload()}
+          onRenderProcessGone={() => webRef.current?.reload()}
         />
 
         {/* Error toast — shown over the chart when the sidebar is closed */}

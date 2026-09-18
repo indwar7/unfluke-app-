@@ -31,6 +31,7 @@ const DEFAULT_COIN = { symbol: "BTC", name: "Bitcoin" };
 type Coin = { symbol: string; name: string };
 
 const fmtUsd = (v: any, dp = 2) => {
+  if (v == null || v === "") return "—";
   const n = Number(v);
   if (!Number.isFinite(n)) return "—";
   if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(dp)}T`;
@@ -77,7 +78,8 @@ const CryptoFundamentalsCard: React.FC = () => {
   );
 
   const snapshot = useMemo<Tile[]>(() => {
-    const fng = Number(fearGreedValue);
+    // Number(null) === 0 would render "FEAR/GREED 0" instead of the ATH fallback
+    const fng = fearGreedValue == null ? NaN : Number(fearGreedValue);
     const chg = Number(change24);
     return [
       { label: "PRICE", value: fmtUsd(livePrice), delta: Number.isFinite(chg) ? chg : undefined },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Image, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Image, StyleSheet, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useDispatch } from 'react-redux';
@@ -7,12 +7,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setUserFromStorage } from '../redux/Unfluke_slices/auth/login/reducer';
 import { useTheme } from '../constants/ThemeContext';
 
-const { width, height } = Dimensions.get('window');
-
 export default function IndexScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const dispatch = useDispatch();
   const { colors: c } = useTheme();
+  // Read per-render: a module-scope Dimensions.get() is captured once and would
+  // leave the splash art sized for the wrong orientation after a rotation.
+  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
@@ -83,13 +84,13 @@ export default function IndexScreen() {
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <Image
         source={require('../assets/splash.png')}
-        style={styles.splashImage}
+        style={[styles.splashImage, { width: width * 0.7, height: height * 0.4 }]}
         resizeMode="contain"
       />
       <ActivityIndicator
         size="small"
         color={c.gold}
-        style={styles.spinner}
+        style={[styles.spinner, { bottom: height * 0.12 }]}
       />
     </View>
   );
@@ -101,12 +102,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  splashImage: {
-    width: width * 0.7,
-    height: height * 0.4,
-  },
+  // Width/height and the spinner offset are applied inline at the call site —
+  // they depend on the live window size, which a module-scope StyleSheet cannot see.
+  splashImage: {},
   spinner: {
     position: 'absolute',
-    bottom: height * 0.12,
   },
 });

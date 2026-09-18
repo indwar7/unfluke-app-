@@ -1,42 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ProgressBar, Text } from 'react-native-paper';
-import { io } from 'socket.io-client';
-import Constants from "expo-constants";
+import { backendSocket } from '../../../socket/socket';
 
 const ProgressEventBar = ({ auth, setIsProgressing, stratId }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        if (auth?.user?._id !== undefined && auth?.user?._id !== null) {
-            const socket = io(Constants?.expoConfig?.extra?.BACKEND_URL, {
-                transports: ["websocket"],
-                query: { userID: auth.user._id },
-            });
+        if (auth?.user?._id === undefined || auth?.user?._id === null) return;
 
-            socket.emit("setSocketId", auth.user._id);
+        backendSocket.emit("setSocketId", auth.user._id);
 
-            socket.on("csv-filename", function (data) {
-                if (data) {
-                    if (data.user == auth.user._id && data.stratid == stratId) {
-                        setIsProgressing(false);
-                    }
-                }
-            });
+        const handleCsvFilename = (data) => {
+            if (data && data.user == auth.user._id && data.stratid == stratId) {
+                setIsProgressing(false);
+            }
+        };
 
-            socket.on("progress-update", function (data) {
-                if (data) {
-                    if (data.user == auth.user._id && data.stratid == stratId) {
-                        setProgress(data.progress / 100); // Convert to decimal for ProgressBar
-                    }
-                }
-            });
+        const handleProgressUpdate = (data) => {
+            if (data && data.user == auth.user._id && data.stratid == stratId) {
+                setProgress(data.progress / 100); // Convert to decimal for ProgressBar
+            }
+        };
 
-            // Clean up socket connection on unmount
-            return () => {
-                socket.disconnect();
-            };
-        }
+        const handleConnectError = () => {
+            setIsProgressing(false);
+        };
+
+        backendSocket.on("csv-filename", handleCsvFilename);
+        backendSocket.on("progress-update", handleProgressUpdate);
+        backendSocket.on("connect_error", handleConnectError);
+
+        return () => {
+            backendSocket.off("csv-filename", handleCsvFilename);
+            backendSocket.off("progress-update", handleProgressUpdate);
+            backendSocket.off("connect_error", handleConnectError);
+        };
     }, [auth, stratId, setIsProgressing]);
 
     return (

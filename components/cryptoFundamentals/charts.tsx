@@ -8,20 +8,21 @@
  */
 
 import React from "react";
-import { View, Dimensions } from "react-native";
+import { View, useWindowDimensions } from "react-native";
 import Svg, { Line, Text as SvgText, G, Rect } from "react-native-svg";
 import { useTheme } from "@/constants/ThemeContext";
 
 // Re-export the existing line chart so crypto components import from one place.
 export { SvgLineChart } from "../fundamentals/DataTabs";
 
-const SW = Dimensions.get("window").width;
-const CW = SW - 48;
+// Width is derived per-render (see the note in fundamentals/DataTabs.tsx): a
+// module-scope Dimensions.get() is captured once and never updates on rotation.
 const CH = 200;
+const CHART_H_MARGIN = 48;
 
 export function SvgBarChart({
   data,
-  width: w = CW,
+  width: widthProp,
   height: h = CH,
   color,
   showLabels = true,
@@ -33,6 +34,9 @@ export function SvgBarChart({
   showLabels?: boolean;
 }) {
   const { colors: c } = useTheme();
+  // Must run before the early return below — hooks cannot be conditional.
+  const { width: winW } = useWindowDimensions();
+  const w = widthProp ?? winW - CHART_H_MARGIN;
   const barColor = color ?? c.gold;
   if (!data.length) return null;
 

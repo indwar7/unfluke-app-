@@ -32,7 +32,6 @@ import {
 } from "../../components/UnflukeMain/Utils/common_vars";
 import { addStrategy } from "../../apis/BasicBacktester";
 import ProgressEventBar from "../../components/UnflukeMain/Chatbot/ProgressEventBar";
-import StreamingMessage from "../../components/UnflukeMain/Chatbot/StreamingMessage";
 import { backendSocket, chatbotSocket } from "../../socket/socket";
 import ChatbotGuide from "../../components/UnflukeMain/Chatbot/ChatbotGuide";
 import ScannerResultsModal from "../../components/UnflukeMain/Chatbot/ScannerResultsModal";
@@ -41,7 +40,6 @@ import {
   getBaseBacktestForm,
   getBaseAdvancedForm,
 } from "./chatbotForms";
-import ShowResultsLink from "../../components/UnflukeMain/Chatbot/ShowResultsLink";
 import { createSelector } from "reselect";
 import { layoutModeTypes } from "../../components/UnflukeMain/constants/layout";
 import { Config } from "../../helpers/config";
@@ -200,14 +198,6 @@ const AIChatbot = ({
   // Use navigation hook - adjust based on your navigation library
   // const navigation = useNavigation();
   const [isProgressing, setIsProgressing] = useState(false);
-
-  // Note: document.title doesn't exist in React Native
-  // You can use navigation options or a custom hook for title management
-  useEffect(() => {
-    // For React Navigation, you might do:
-    // navigation.setOptions({ title: "AI Bot | Unfluke" });
-    console.log("Page title would be: AI Bot | Unfluke");
-  }, []);
 
   const dispatch = useDispatch();
   const uniqueUserIdRef = useRef(null);
@@ -535,15 +525,14 @@ const AIChatbot = ({
           fnoLotSize: "",
           market: market,
         };
-        console.log("Final Form", finalForm);
-        const res = await axios.get(
-          `${Config.BACKEND_URL}/api/stocks/`,
-          {
+        try {
+          await axios.get(`${Config.BACKEND_URL}/api/stocks/`, {
             params: finalForm,
-          }
-        );
-        if (res) {
-          //console.log("Scanner results", res)
+          });
+        } catch (e) {
+          console.error("Scanner submit failed", e);
+          setLoading(false);
+          Alert.alert("Error", "Failed to submit scanner. Please try again.");
         }
       }
     },
@@ -556,17 +545,26 @@ const AIChatbot = ({
       Object.keys(basicBacktestForm).length > 0 &&
       auth
     ) {
-      const strategyAdded = await addStrategy(
-        axios,
-        basicBacktestForm,
-        null, // navigate — unused inside addStrategy, kept only to match its (axios, strategy, navigate, randomSocketID, ID, isBacktesting, subUrl) signature
-        stratId,
-        auth?.user?._id,
-        isProgressing,
-        market
-      );
-      if (strategyAdded) {
-        setIsProgressing(true);
+      try {
+        const result = await addStrategy(
+          axios,
+          basicBacktestForm,
+          null, // navigate — unused inside addStrategy, kept only to match its (axios, strategy, navigate, randomSocketID, ID, isBacktesting, subUrl) signature
+          stratId,
+          auth?.user?._id,
+          isProgressing,
+          market
+        );
+        if (result?.success) {
+          setIsProgressing(true);
+        } else {
+          setLoading(false);
+          Alert.alert("Error", result?.message || "Failed to start backtest. Please try again.");
+        }
+      } catch (e) {
+        console.error("Backtest submit failed", e);
+        setLoading(false);
+        Alert.alert("Error", "Failed to start backtest. Please try again.");
       }
     }
   }, [basicBacktestForm, auth, stratId, isProgressing, market]);
@@ -1208,7 +1206,6 @@ const AIChatbot = ({
     },
     [isDarkMode, c, s, resultsLinkAction, setOptionToPrompt, streamingMessage]
   );
-  console.log(chatbotGuideOpen, ChatbotGuide);
 
   return (
     <View style={s.container}>

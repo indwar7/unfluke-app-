@@ -17,14 +17,17 @@ export const addStrategy = async (axios, strategy, navigate, randomSocketID, ID,
 
         const response = await axios.post(`${Config.BACKEND_URL}/api/strategy/basicbacktest`, body);
 
-        if(response){
-            return true;
+        // Website parity: a 200 response can still carry `success:false` (e.g.
+        // paywall/plan limit) — treating any resolved request as success left
+        // the caller stuck waiting on a socket event that never arrives.
+        if (response?.data?.success === false) {
+            return { success: false, message: response.data.message || "Backtest could not be started." };
         }
 
-        return false;
+        return { success: true };
     } catch(error) {
         console.log(error)
-        return false;
+        return { success: false, message: "Failed to submit backtest. Please try again." };
         // return thunkAPI.rejectWithValue(error.response.data.message);
     }
 }

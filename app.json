@@ -2,7 +2,7 @@
   "expo": {
     "name": "Unfluke",
     "slug": "unfluke",
-    "version": "2.1.6",
+    "version": "2.1.10",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "unflukeapp",
@@ -16,7 +16,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "in.unfluke.app",
-      "buildNumber": "6"
+      "buildNumber": "11",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +30,7 @@
       "edgeToEdgeEnabled": true,
       "package": "in.unfluke.app",
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 42
+      "versionCode": 51
     },
     "web": {
       "bundler": "metro",
@@ -46,18 +50,12 @@
       ],
       "expo-web-browser",
       "expo-font",
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true
-          },
-          "ios": {
-            "infoPlist": {
-              "NSAppTransportSecurity": {
-                "NSAllowsArbitraryLoadsInWebContent": true
-              }
-            }
+            "usesCleartextTraffic": false
           }
         }
       ],
@@ -68,9 +66,21 @@
           "clientToken": "2246e0fc0be3997acba099e9a7fa7239",
           "displayName": "Unfluke",
           "scheme": "fb711595485218669",
-          "advertiserIDCollectionEnabled": true,
-          "autoLogAppEventsEnabled": true,
-          "isAutoInitEnabled": true
+          "advertiserIDCollectionEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": false
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Unfluke uses this identifier to measure the effectiveness of its marketing campaigns. This does not give the app access to your personal data."
+        }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1033885854116-s1a5uj4362bau46b3ug1577m34p0krvn"
         }
       ]
     ],
@@ -85,6 +95,8 @@
       "GA_ID": "G-TXPTX3V04",
       "REACT_APP_CHATBOT_TOKEN": "ELRIKHJDFOIPJGHER9567802B43J9M5703459-BH78JM34589067",
       "REACT_APP_CHATBOT_URL": "https://edbot.unfluke.in",
+      "GOOGLE_WEB_CLIENT_ID": "1033885854116-ac9a96oua280itad1aq252958jk95une.apps.googleusercontent.com",
+      "GOOGLE_IOS_CLIENT_ID": "1033885854116-s1a5uj4362bau46b3ug1577m34p0krvn.apps.googleusercontent.com",
       "router": {},
       "eas": {
         "projectId": "eb3f2c76-9555-479b-b2f1-65fccc64c2b6"

@@ -1,41 +1,48 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { io } from "socket.io-client";
 import { ProgressBar } from "react-native-paper";
-import { Config } from "../../../../helpers/config";
+import { backendSocket } from "../../../../socket/socket";
 
 const ProgressBarBacktest = ({ auth, setIsBacktesting, stratId, setCsvFilename, setResultsMessage }) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (auth?.user?._id !== undefined) {
-      const socket = io(Config.BACKEND_URL, {
-        transports: ["websocket"],
-        query: { userID: auth.user._id },
-      });
+    if (auth?.user?._id === undefined) return;
 
-      socket.emit("setSocketId", auth.user._id);
+    backendSocket.emit("setSocketId", auth.user._id);
 
-      socket.on("csv-filename", (data) => {
-        if (data && data.user === auth.user._id && data.stratid === stratId) {
-          setCsvFilename(data.filename);
-          setIsBacktesting(false);
-          setResultsMessage(data.message);
-        }
-      });
+    const handleCsvFilename = (data) => {
+      if (data && data.user === auth.user._id && data.stratid === stratId) {
+        setCsvFilename(data.filename);
+        setIsBacktesting(false);
+        setResultsMessage(data.message);
+      }
+    };
 
-      socket.on("progress-update", (data) => {
-        if (data && data.user === auth.user._id && data.stratid === stratId) {
-          // convert to 0-1 for ProgressBar in RN
-          setProgress(data.progress / 100);
-        }
-      });
+    const handleProgressUpdate = (data) => {
+      if (data && data.user === auth.user._id && data.stratid === stratId) {
+        // convert to 0-1 for ProgressBar in RN
+        setProgress(data.progress / 100);
+      }
+    };
 
-      // return () => {
-      //   socket.disconnect();
-      // };
-    }
-  }, [auth]);
+    // If the socket never connects, don't leave the caller stuck on the
+    // "Processing your strategy..." bar forever with no feedback.
+    const handleConnectError = () => {
+      setIsBacktesting(false);
+      setResultsMessage("Couldn't reach the server. Please try again.");
+    };
+
+    backendSocket.on("csv-filename", handleCsvFilename);
+    backendSocket.on("progress-update", handleProgressUpdate);
+    backendSocket.on("connect_error", handleConnectError);
+
+    return () => {
+      backendSocket.off("csv-filename", handleCsvFilename);
+      backendSocket.off("progress-update", handleProgressUpdate);
+      backendSocket.off("connect_error", handleConnectError);
+    };
+  }, [auth, stratId]);
 
   return (
     <View style={styles.container}>

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform } from "react-native";
 import { router } from "expo-router";
 
 interface Props {
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 24,
-    fontFamily: "monospace",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
     width: "100%",
   },
   primaryButton: {

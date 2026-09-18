@@ -807,8 +807,11 @@ const Pricing = ({ navigation }) => {
         <View style={[s.cardsContainer, { flexDirection: isTablet ? "row" : "column" }]}>
           {(tiers || [])
             .filter((tierInfo) => Number(tierInfo?.cost) !== 999)
-            .map((tierInfo, tierIndex) =>
-              renderPricingCard(tierInfo, tierIndex)
+            // Key the card off the real plan tier (0..3), NOT the post-filter
+            // array position — filtering out the ₹999 plan would otherwise shift
+            // indices and mislabel cards / the "Already Subscribed" state.
+            .map((tierInfo) =>
+              renderPricingCard(tierInfo, tierInfo?.tier)
             )}
         </View>
       </ScrollView>

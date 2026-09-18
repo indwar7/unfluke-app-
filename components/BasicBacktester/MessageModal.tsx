@@ -71,6 +71,16 @@ const MessageModal = ({ message, setResultsMessage }) => {
                   ` }}
                   style={styles.webView}
                   scalesPageToFit={false}
+                  // `message` is backend-supplied and is interpolated straight
+                  // into the document above, so a message containing <script>
+                  // would execute here. This view only ever needs to render
+                  // formatted text — no scripting, no navigation — so both are
+                  // switched off. Formatting still renders exactly as before.
+                  javaScriptEnabled={false}
+                  originWhitelist={["about:blank"]}
+                  onShouldStartLoadWithRequest={(req) =>
+                    !req?.url || req.url === "about:blank"
+                  }
                 />
               ) : (
                 // Option 2: Display as plain text if no HTML

@@ -92,8 +92,8 @@ android {
         applicationId 'in.unfluke.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 42
-        versionName "2.1.6"
+        versionCode 51
+        versionName "2.1.10"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -110,8 +110,10 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
+            // NOTE: this line is rewritten by EAS Build, which injects the
+            // managed upload keystore — Play-distributed builds are correctly
+            // signed. It only applies to a release built locally, and such an
+            // APK is debug-signed: never distribute one. Build via EAS.
             signingConfig signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
@@ -178,5 +180,26 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+// Debug-signing guard for release artifacts.
+//
+// A release APK signed with the Android debug key has the signature shape of a
+// repackaged app and is treated as such by security scanners — never distribute
+// one. This WARNS rather than fails on purpose: EAS Build rewrites the release
+// signingConfig with the managed upload key on its own workers, and a hard
+// failure here would break the production pipeline if that rewrite happens
+// after this file is evaluated. Play Store builds are correctly signed; this
+// only fires for a release built locally.
+gradle.taskGraph.whenReady { graph ->
+    def buildingRelease = graph.allTasks.any { it.name.toLowerCase().contains("release") }
+    if (buildingRelease && android.buildTypes.release.signingConfig == android.signingConfigs.debug) {
+        logger.warn("")
+        logger.warn("*******************************************************************")
+        logger.warn("WARNING: this release build is signed with the ANDROID DEBUG KEY.")
+        logger.warn("Do NOT distribute this artifact. Build via EAS for a signed release.")
+        logger.warn("*******************************************************************")
+        logger.warn("")
     }
 }

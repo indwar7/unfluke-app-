@@ -124,12 +124,8 @@ const BasicBacktester = () => {
       }
     }
 
-    console.log("Entry hua hai")
-
     const { isEditing, editStrategyId, ...newState } = backtester;
     const ID = auth.user._id;
-    console.log("aaya HamIcon", ID)
-    console.log("This is the new state", newState)
 
     if (isEditing) {
       newState._id = editStrategyId;
@@ -144,10 +140,10 @@ const BasicBacktester = () => {
       subUrl,
     );
 
-    if (res) {
+    if (res?.success) {
       setIsBacktesting(true);
     } else {
-      Alert.alert("Error", "Failed to start backtest. Please try again.");
+      Alert.alert("Error", res?.message || "Failed to start backtest. Please try again.");
     }
   }
 
