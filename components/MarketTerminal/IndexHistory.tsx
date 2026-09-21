@@ -53,7 +53,16 @@ export default function IndexHistory() {
     if (rows.length < 2) return null;
     const first = rows[0]?.close, last = rows[rows.length - 1]?.close;
     if (!first || !last) return null;
-    const years = activeRange.days / 365;
+    // Prefer the actual span of returned rows over the requested range length —
+    // the backend caps history at 400 days and a shorter series (index near its
+    // IPO, or fewer trading days than requested) would otherwise annualize over
+    // a longer period than the data actually covers.
+    const firstDate = new Date(rows[0]?.date).getTime();
+    const lastDate = new Date(rows[rows.length - 1]?.date).getTime();
+    const actualDays = Number.isFinite(firstDate) && Number.isFinite(lastDate) && lastDate > firstDate
+      ? (lastDate - firstDate) / 86400000
+      : activeRange.days;
+    const years = actualDays / 365;
     return (Math.pow(last / first, 1 / years) - 1) * 100;
   })();
 

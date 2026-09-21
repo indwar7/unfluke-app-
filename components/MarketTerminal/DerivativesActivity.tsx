@@ -19,6 +19,11 @@ const TABS = [
   { key: "oi_spurts", label: "OI Spurts", live: false },
 ] as const;
 
+// symbol/oi are unconfirmed guesses shared across three structurally
+// different endpoints (one live, two snapshot) with no real payload sample
+// for any of them — GenericTable falls back to "—" per-cell rather than
+// crashing, but a wrong guess means a tab's OI column renders blank for
+// every row until verified against a real response.
 const COLUMNS: Column[] = [
   { key: "symbol", label: "Symbol", flex: 1.6 },
   { key: "oi", label: "OI", flex: 1, align: "right" },

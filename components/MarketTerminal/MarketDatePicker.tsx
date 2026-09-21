@@ -59,7 +59,13 @@ export function MarketDatePicker({
 export function DateNotice({ requestedDate, actualDate }: { requestedDate?: string; actualDate?: string }) {
   const { colors: c } = useTheme();
   const styles = makeStyles(c);
-  if (!requestedDate || !actualDate || requestedDate === actualDate) return null;
+  // actualDate often comes straight off the API response, which some
+  // endpoints return as a full ISO timestamp rather than a bare
+  // YYYY-MM-DD — slice both sides so a same-day match doesn't fire this
+  // banner just because of timestamp vs. date-only formatting.
+  const requested = requestedDate?.slice(0, 10);
+  const actual = actualDate?.slice(0, 10);
+  if (!requested || !actual || requested === actual) return null;
   return (
     <View style={styles.notice}>
       <Text style={styles.noticeText}>

@@ -1,92 +1,116 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Image,
-  Text,
   View,
   TouchableOpacity,
+  Text,
   StyleSheet,
-  Button,
+  ScrollView,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  useWindowDimensions,
 } from "react-native";
-
-import OnboardingImage from "./Images/Onboarding";
-import OnboardingImage2 from "./Images/Onboarding2";
-import OnboardingImage3 from "./Images/Onboarding3";
-import { useNavigation } from "@react-navigation/native";
-import { useWindowDimensions } from "react-native";
+import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { logCompleteTutorial } from "../helpers/facebookEvents";
 
-const onboardingData = [
-  {
-    title: "Take hold of your finances",
-    description:
-      "Lets get you to be the Controller of your Finances and get great returns.",
-    image: <OnboardingImage />,
-  },
-  {
-    title: "Smart trading tools",
-    description: "Manage and categorize your spending in one place.",
-    image: <OnboardingImage2 />,
-  },
-  {
-    title: "Invest in the future",
-    description:
-      "Set goals and monitor your progress toward financial success.",
-    image: <OnboardingImage3 />,
-  },
+// Ascending order per source filenames in ~/Downloads (1,2,3,5,8,9,11,12 — the
+// batch skips some numbers, but "ascending" means sorted by that number, not
+// that every integer is present).
+const SLIDES = [
+  require("../assets/onboarding/01.png"),
+  require("../assets/onboarding/02.png"),
+  require("../assets/onboarding/03.png"),
+  require("../assets/onboarding/04.png"),
+  require("../assets/onboarding/05.png"),
+  require("../assets/onboarding/06.png"),
+  require("../assets/onboarding/07.png"),
+  require("../assets/onboarding/08.png"),
 ];
 
+export const ONBOARDING_VERSION_KEY = "onboardingSeenForVersion";
+
+export async function markOnboardingSeen() {
+  try {
+    const version = Constants.expoConfig?.version ?? "unknown";
+    await AsyncStorage.setItem(ONBOARDING_VERSION_KEY, version);
+  } catch {}
+}
+
+async function finishOnboarding() {
+  logCompleteTutorial(true, "onboarding");
+  await markOnboardingSeen();
+  const [accessToken, authUser] = await Promise.all([
+    AsyncStorage.getItem("access"),
+    AsyncStorage.getItem("authUser"),
+  ]);
+  router.replace(accessToken && authUser ? "/dashboard" : "/login");
+}
 
 export const OnBoardingPage = () => {
-  const {width,height} = useWindowDimensions()
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const { title, description, image } = onboardingData[currentIndex];
-  const navigation = useNavigation();
+  const { width, height } = useWindowDimensions();
+  const [index, setIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const isLast = index === SLIDES.length - 1;
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const next = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (next !== index) setIndex(next);
+  };
 
   const handleNext = () => {
-    if (currentIndex < onboardingData.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      console.log("Onboarding complete");
-      setCurrentIndex(0); // Reset or navigate
+    if (isLast) {
+      finishOnboarding();
+      return;
     }
+    scrollRef.current?.scrollTo({ x: width * (index + 1), animated: true });
+    setIndex(index + 1);
   };
 
   return (
     <View style={styles.container}>
-      {/* SVG Illustration */}
-      <View
-        style={[
-          styles.imageContainer,
-          currentIndex === 0
-            ? { marginTop: height * 0.1 }
-            : currentIndex === 1
-            ? { marginTop: height * 0.2 }
-            : { marginTop: height * 0.2 },
-        ]}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScroll}
+        scrollEventThrottle={16}
       >
-        {image}
-      </View>
+        {SLIDES.map((src, i) => (
+          <Image
+            key={i}
+            source={src}
+            style={{ width, height }}
+            resizeMode="cover"
+          />
+        ))}
+      </ScrollView>
 
-      {/* Content Section */}
-      <View style={[styles.contentContainer,{bottom: height * 0.12}]}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={finishOnboarding}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
+        <Text style={styles.skipText}>Skip</Text>
+      </TouchableOpacity>
 
-        <Image
-          source={require("../assets/Vector.jpg")}
-          style={styles.vectorBackground}
-        />
-{currentIndex == 2 ? (
-        <TouchableOpacity style={styles.button} onPress={() => {
-          logCompleteTutorial(true, "onboarding");
-          navigation.navigate("registerpage" as never);
-        }}>
-            <Text style={styles.buttonText}>Next</Text>
+      <View style={styles.footer}>
+        <View style={styles.dots}>
+          {SLIDES.map((_, i) => (
+            <View
+              key={i}
+              style={[styles.dot, i === index && styles.dotActive]}
+            />
+          ))}
+        </View>
+
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {isLast ? "Get Started" : "Next"}
+          </Text>
         </TouchableOpacity>
-           ):( <TouchableOpacity style={styles.button} onPress={handleNext}>
-            <Text style={styles.buttonText}>Next</Text>
-        </TouchableOpacity>)}
-        {/* {currentIndex == 2 && <Button title="Get Started" onPress={onFinish} />} */}
       </View>
     </View>
   );
@@ -94,52 +118,54 @@ export const OnBoardingPage = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    alignItems: "center",
-    width: "100%",
-    position: "relative",
+    flex: 1,
+    backgroundColor: "#000",
   },
-  imageContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  contentContainer: {
-    width: "100%",
-    alignItems: "center",
+  skipButton: {
     position: "absolute",
+    top: 56,
+    right: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
-  title: {
-    color: "#11183C",
-    fontSize: 32,
-    fontWeight: "bold",
-    textAlign: "center",
-    paddingTop: 40,
-  },
-  description: {
-    color: "#11183C",
+  skipText: {
+    color: "#fff",
     fontSize: 14,
-    textAlign: "center",
-    marginTop: 12,
     fontWeight: "600",
   },
-  vectorBackground: {
+  footer: {
     position: "absolute",
-    bottom: -10,
-    zIndex: -1,
-    resizeMode: "contain",
-    width: "100%",
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
-
-  button: {
+  dots: {
+    flexDirection: "row",
+    marginBottom: 20,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.4)",
+    marginHorizontal: 4,
+  },
+  dotActive: {
+    backgroundColor: "#fff",
+    width: 20,
+  },
+  nextButton: {
     backgroundColor: "#3F5189",
-    marginTop: 40,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
     width: 280,
     alignItems: "center",
   },
-  buttonText: {
+  nextButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",

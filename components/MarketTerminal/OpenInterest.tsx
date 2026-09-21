@@ -55,7 +55,7 @@ export default function OpenInterest() {
 
       {data?.totals && (
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryText}>Spot {data.spot} · PCR {data.totals.pcr}</Text>
+          <Text style={styles.summaryText}>Spot {data.spot ?? "—"} · PCR {data.totals.pcr ?? "—"}</Text>
           <TouchableOpacity onPress={() => setShowAll((v) => !v)}>
             <Text style={styles.toggleText}>{showAll ? "±15 strikes" : "Show all"}</Text>
           </TouchableOpacity>

@@ -11,9 +11,22 @@ import type { AppColors } from "@/constants/Colors";
 import { useOptionsCombinedOi } from "../../hooks/useMarketTerminal";
 import { useOptionInstrumentPicker, OptionInstrumentPickerRow } from "./OptionInstrumentPicker";
 
+// `t` may be a bare "HH:MM[:SS]" or a full ISO timestamp — pull the minute
+// digits out explicitly instead of checking string suffix, since an ISO
+// string never ends in ":00"/":05" (it ends in seconds + "Z"/offset) and a
+// suffix-only check would silently drop every point but the last one.
+function minuteOf(t: string | undefined): number | null {
+  if (!t) return null;
+  const match = t.match(/T?(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/);
+  return match ? parseInt(match[2], 10) : null;
+}
+
 function fiveMinutePoints(points: any[]): any[] {
   if (!points.length) return points;
-  const filtered = points.filter((p) => p.t?.endsWith(":00") || p.t?.endsWith(":05"));
+  const filtered = points.filter((p) => {
+    const m = minuteOf(p.t);
+    return m != null && m % 5 === 0;
+  });
   const last = points[points.length - 1];
   if (filtered[filtered.length - 1]?.t !== last.t) filtered.push(last);
   return filtered;

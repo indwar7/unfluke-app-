@@ -4,8 +4,10 @@ import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { setUserFromStorage } from '../redux/Unfluke_slices/auth/login/reducer';
 import { useTheme } from '../constants/ThemeContext';
+import { ONBOARDING_VERSION_KEY } from '../components/OnBoardingPage';
 
 export default function IndexScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
@@ -55,6 +57,15 @@ export default function IndexScreen() {
         const authUser = await AsyncStorage.getItem("authUser");
 
         await new Promise(resolve => setTimeout(resolve, 2500));
+
+        // First install (nothing stored yet) or after an update (stored value
+        // doesn't match the running app's version) both show onboarding once.
+        const currentVersion = Constants.expoConfig?.version ?? "unknown";
+        const seenForVersion = await AsyncStorage.getItem(ONBOARDING_VERSION_KEY);
+        if (seenForVersion !== currentVersion) {
+          router.replace("/onboardingpage");
+          return;
+        }
 
         if (accessToken && authUser) {
           try {

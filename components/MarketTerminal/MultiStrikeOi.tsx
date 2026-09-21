@@ -30,6 +30,12 @@ export default function MultiStrikeOi() {
   const strikes: any[] = Array.isArray(oiSeed.data?.strikes) ? oiSeed.data.strikes : [];
 
   const [legs, setLegs] = useState<string[]>([]);
+  // Switching instrument/expiry invalidates any picked strikes (they're
+  // scaled to the previous instrument) — clear so the seed effect below
+  // re-picks defaults for the new strike list instead of querying stale legs.
+  useEffect(() => {
+    setLegs([]);
+  }, [picker.name, picker.expiry]);
   useEffect(() => {
     if (!legs.length && strikes.length && oiSeed.data?.spot != null) {
       setLegs(defaultLegs(strikes, oiSeed.data.spot));
