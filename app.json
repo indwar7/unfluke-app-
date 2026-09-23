@@ -8,11 +8,6 @@
     "scheme": "unflukeapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "in.unfluke.app",
@@ -42,10 +37,14 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icon.png",
-          "imageWidth": 200,
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#0A0B0E",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#0A0B0E"
+          }
         }
       ],
       "expo-web-browser",

@@ -6,16 +6,14 @@ import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { setUserFromStorage } from '../redux/Unfluke_slices/auth/login/reducer';
-import { useTheme } from '../constants/ThemeContext';
 import { ONBOARDING_VERSION_KEY } from '../components/OnBoardingPage';
 
 export default function IndexScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const dispatch = useDispatch();
-  const { colors: c } = useTheme();
   // Read per-render: a module-scope Dimensions.get() is captured once and would
   // leave the splash art sized for the wrong orientation after a rotation.
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
@@ -92,30 +90,44 @@ export default function IndexScreen() {
   }, [isNavigating]);
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
+    <View style={styles.container}>
+      {/* Mirrors the native splash (expo-splash-screen in app.json): same
+          artwork, same 220dp width, same #0A0B0E ground. The background is
+          pinned rather than themed — c.background is white in light mode,
+          which would flash against the native splash this screen replaces. */}
       <Image
-        source={require('../assets/splash.png')}
-        style={[styles.splashImage, { width: width * 0.7, height: height * 0.4 }]}
+        source={require('../assets/splash-icon.png')}
+        style={styles.splashImage}
         resizeMode="contain"
       />
       <ActivityIndicator
         size="small"
-        color={c.gold}
+        color={SPLASH_ACCENT}
         style={[styles.spinner, { bottom: height * 0.12 }]}
       />
     </View>
   );
 }
 
+// Pinned to the native splash's ground + the app's gold accent so the
+// handoff from the native splash to this screen is seamless in both themes.
+const SPLASH_BG = '#0A0B0E';
+const SPLASH_ACCENT = '#E9C46A';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: SPLASH_BG,
   },
-  // Width/height and the spinner offset are applied inline at the call site —
-  // they depend on the live window size, which a module-scope StyleSheet cannot see.
-  splashImage: {},
+  // 220 matches imageWidth in the expo-splash-screen plugin config, so the
+  // logo doesn't visibly resize when the native splash hands off to this screen.
+  splashImage: {
+    width: 220,
+    height: 220,
+  },
+  // The offset depends on the live window size, so it's applied inline.
   spinner: {
     position: 'absolute',
   },
