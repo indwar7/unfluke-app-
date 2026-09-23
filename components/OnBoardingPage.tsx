@@ -10,6 +10,7 @@ import {
   NativeScrollEvent,
   useWindowDimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
@@ -50,6 +51,7 @@ async function finishOnboarding() {
 
 export const OnBoardingPage = () => {
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const isLast = index === SLIDES.length - 1;
@@ -59,14 +61,24 @@ export const OnBoardingPage = () => {
     if (next !== index) setIndex(next);
   };
 
+  const goTo = (i: number) => {
+    scrollRef.current?.scrollTo({ x: width * i, animated: true });
+    setIndex(i);
+  };
+
   const handleNext = () => {
     if (isLast) {
       finishOnboarding();
       return;
     }
-    scrollRef.current?.scrollTo({ x: width * (index + 1), animated: true });
-    setIndex(index + 1);
+    goTo(index + 1);
   };
+
+  // Controls sit above the artwork, so reserve room for them: the slides are
+  // full-bleed 9:16 graphics with their content baked in, and `contain` keeps
+  // the whole frame visible instead of cropping edges off on taller/wider
+  // devices the way `cover` did.
+  const footerHeight = 132 + insets.bottom;
 
   return (
     <View style={styles.container}>
@@ -79,34 +91,43 @@ export const OnBoardingPage = () => {
         scrollEventThrottle={16}
       >
         {SLIDES.map((src, i) => (
-          <Image
-            key={i}
-            source={src}
-            style={{ width, height }}
-            resizeMode="cover"
-          />
+          <View key={i} style={{ width, height }}>
+            <Image
+              source={src}
+              style={{ width, height: height - footerHeight }}
+              resizeMode="contain"
+            />
+          </View>
         ))}
       </ScrollView>
 
       <TouchableOpacity
-        style={styles.skipButton}
+        style={[styles.skipButton, { top: insets.top + 12 }]}
         onPress={finishOnboarding}
+        activeOpacity={0.85}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.dots}>
           {SLIDES.map((_, i) => (
-            <View
+            <TouchableOpacity
               key={i}
-              style={[styles.dot, i === index && styles.dotActive]}
-            />
+              onPress={() => goTo(i)}
+              hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+            >
+              <View style={[styles.dot, i === index && styles.dotActive]} />
+            </TouchableOpacity>
           ))}
         </View>
 
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={handleNext}
+          activeOpacity={0.85}
+        >
           <Text style={styles.nextButtonText}>
             {isLast ? "Get Started" : "Next"}
           </Text>
@@ -116,58 +137,79 @@ export const OnBoardingPage = () => {
   );
 };
 
+// Onboarding always renders on the dark artwork regardless of device theme,
+// so it pins the dark-theme tokens from constants/Colors.ts rather than
+// reading useTheme() — the gold accent and near-black canvas are the app's
+// documented dark identity.
+const GOLD = "#E9C46A";
+const ON_GOLD = "#15110A";
+const CANVAS = "#0A0B0E";
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    // Matches the app's dark canvas so the letterboxed bands `contain` leaves
+    // on differently-proportioned screens blend in.
+    backgroundColor: CANVAS,
   },
   skipButton: {
     position: "absolute",
-    top: 56,
     right: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: GOLD,
+    shadowColor: GOLD,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 6,
   },
   skipText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
+    color: ON_GOLD,
+    fontSize: 14.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   footer: {
     position: "absolute",
-    bottom: 40,
+    bottom: 0,
     left: 0,
     right: 0,
     alignItems: "center",
   },
   dots: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 18,
   },
   dot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.4)",
+    backgroundColor: "rgba(255,255,255,0.32)",
     marginHorizontal: 4,
   },
   dotActive: {
-    backgroundColor: "#fff",
-    width: 20,
+    backgroundColor: GOLD,
+    width: 22,
   },
   nextButton: {
-    backgroundColor: "#3F5189",
-    paddingVertical: 14,
+    backgroundColor: GOLD,
+    paddingVertical: 15,
     paddingHorizontal: 20,
-    borderRadius: 12,
+    borderRadius: 14,
     width: 280,
     alignItems: "center",
+    shadowColor: GOLD,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   nextButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+    color: ON_GOLD,
+    fontSize: 16.5,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
 });
