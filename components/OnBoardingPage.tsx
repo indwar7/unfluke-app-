@@ -16,18 +16,24 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { logCompleteTutorial } from "../helpers/facebookEvents";
 
-// Ascending order per source filenames in ~/Downloads (1,2,3,5,8,9,11,12 — the
-// batch skips some numbers, but "ascending" means sorted by that number, not
-// that every integer is present).
+// The eight dashboard research tools in dashboard order, then five Market
+// Terminal screens. `bg` is the
+// slide's average pastel (fills letterbox bands on wide screens); `deep` is
+// its ink colour, used for Skip / dots / Next so the controls match each slide.
 const SLIDES = [
-  require("../assets/onboarding/01.png"),
-  require("../assets/onboarding/02.png"),
-  require("../assets/onboarding/03.png"),
-  require("../assets/onboarding/04.png"),
-  require("../assets/onboarding/05.png"),
-  require("../assets/onboarding/06.png"),
-  require("../assets/onboarding/07.png"),
-  require("../assets/onboarding/08.png"),
+  { src: require("../assets/onboarding/01.jpg"), bg: "#7595C3", deep: "#182656" }, // AI-Bot
+  { src: require("../assets/onboarding/02.jpg"), bg: "#5EA292", deep: "#123636" }, // Scanner
+  { src: require("../assets/onboarding/03.jpg"), bg: "#BE9667", deep: "#3A2016" }, // Time Based Backtest
+  { src: require("../assets/onboarding/04.jpg"), bg: "#8AA86A", deep: "#203416" }, // Indicator Backtest
+  { src: require("../assets/onboarding/05.jpg"), bg: "#7E72B7", deep: "#201A48" }, // Option Simulator
+  { src: require("../assets/onboarding/06.jpg"), bg: "#B9806D", deep: "#261C40" }, // Historical Charts
+  { src: require("../assets/onboarding/07.jpg"), bg: "#6EA2B7", deep: "#142E42" }, // Strategy Charts
+  { src: require("../assets/onboarding/08.jpg"), bg: "#B07387", deep: "#341636" }, // Fundamentals
+  { src: require("../assets/onboarding/09.jpg"), bg: "#A86C81", deep: "#331834" }, // Market Movers
+  { src: require("../assets/onboarding/10.jpg"), bg: "#689BB1", deep: "#112B3B" }, // Open Interest
+  { src: require("../assets/onboarding/11.jpg"), bg: "#BC7A62", deep: "#251736" }, // Most Active
+  { src: require("../assets/onboarding/12.jpg"), bg: "#8373B9", deep: "#271C4B" }, // Derivatives + Reference
+  { src: require("../assets/onboarding/13.jpg"), bg: "#89AA67", deep: "#203916" }, // Index History
 ];
 
 export const ONBOARDING_VERSION_KEY = "onboardingSeenForVersion";
@@ -50,14 +56,46 @@ async function finishOnboarding() {
 }
 
 // Decode every slide up front. Without this the first swipe onto each of the
-// eight ~1.5MB PNGs decodes on demand and flashes blank behind the controls.
+// slides decodes on demand and flashes blank behind the controls.
 function usePreloadedSlides() {
   useEffect(() => {
-    SLIDES.forEach((src) => {
+    SLIDES.forEach(({ src }) => {
       const uri = Image.resolveAssetSource(src)?.uri;
       if (uri) Image.prefetch(uri).catch(() => {});
     });
   }, []);
+}
+
+// Every slide is 1300x2900 with its content inside rows ART_TOP..ART_BOTTOM
+// and plain pastel margin around it.
+const ART_W = 1300;
+const ART_H = 2900;
+const ART_TOP = 524;
+const ART_BOTTOM = 2044;
+
+// Place the artwork so it fills the screen like `cover` does, then check the
+// content band actually lands in the gap between Skip and the footer. On a
+// short phone (e.g. 360x640 with a 3-button nav bar) cover alone would push
+// the content under the dots, so the art is scaled down just enough to fit;
+// on a tablet the same rule keeps it readable instead of cropping it. Any
+// area the image no longer reaches shows the slide's own pastel `bg`.
+function slideLayout(width: number, height: number, safeTop: number, safeBottom: number) {
+  const cover = Math.max(width / ART_W, height / ART_H);
+  const fit = (safeBottom - safeTop) / (ART_BOTTOM - ART_TOP);
+  const s = Math.min(cover, fit);
+  const w = ART_W * s;
+  const h = ART_H * s;
+  const centred = (safeTop + safeBottom) / 2 - ((ART_TOP + ART_BOTTOM) / 2) * s;
+  // Prefer an edge-to-edge fill: pull the art back until it covers the top and
+  // bottom of the screen, as long as the content still clears the controls.
+  let top = centred;
+  if (h >= height) {
+    const clamped = Math.min(0, Math.max(height - h, centred));
+    const contentTop = clamped + ART_TOP * s;
+    const contentBottom = clamped + ART_BOTTOM * s;
+    if (contentTop >= safeTop && contentBottom <= safeBottom) top = clamped;
+  }
+  return { width: w, height: h, left: (width - w) / 2, top };
 }
 
 export const OnBoardingPage = () => {
@@ -71,6 +109,10 @@ export const OnBoardingPage = () => {
   const indexRef = useRef(0);
   const isDraggingRef = useRef(false);
   const finishingRef = useRef(false);
+  // Measured rather than assumed, so large system font sizes and different
+  // nav-bar heights still leave the content clear of the controls.
+  const [skipH, setSkipH] = useState(40);
+  const [footerH, setFooterH] = useState(132 + insets.bottom);
   const isLast = index === SLIDES.length - 1;
 
   usePreloadedSlides();
@@ -132,14 +174,14 @@ export const OnBoardingPage = () => {
     scrollRef.current?.scrollTo({ x: width * indexRef.current, animated: false });
   }, [width]);
 
-  // Controls sit above the artwork, so reserve room for them: the slides are
-  // full-bleed 9:16 graphics with their content baked in, and `contain` keeps
-  // the whole frame visible instead of cropping edges off on taller/wider
-  // devices the way `cover` did.
-  const footerHeight = 132 + insets.bottom;
+  const safeTop = insets.top + 12 + skipH + 12;
+  const safeBottom = height - footerH - 8;
+  const art = slideLayout(width, height, safeTop, safeBottom);
+
+  const theme = SLIDES[index];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -160,12 +202,12 @@ export const OnBoardingPage = () => {
         bounces={false}
         overScrollMode="never"
       >
-        {SLIDES.map((src, i) => (
-          <View key={i} style={{ width, height }}>
+        {SLIDES.map(({ src, bg }, i) => (
+          <View key={i} style={{ width, height, backgroundColor: bg, overflow: "hidden" }}>
             <Image
               source={src}
-              style={{ width, height: height - footerHeight }}
-              resizeMode="contain"
+              style={{ position: "absolute", ...art }}
+              resizeMode="stretch"
               fadeDuration={0}
             />
           </View>
@@ -173,7 +215,8 @@ export const OnBoardingPage = () => {
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.skipButton, { top: insets.top + 12 }]}
+        style={[styles.skipButton, { top: insets.top + 12, backgroundColor: theme.deep }]}
+        onLayout={(e) => setSkipH(e.nativeEvent.layout.height)}
         onPress={finishOnce}
         activeOpacity={0.85}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -183,7 +226,10 @@ export const OnBoardingPage = () => {
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
+      <View
+        style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}
+        onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
+      >
         <View style={styles.dots}>
           {SLIDES.map((_, i) => (
             <TouchableOpacity
@@ -195,13 +241,13 @@ export const OnBoardingPage = () => {
               accessibilityRole="button"
               accessibilityLabel={`Go to slide ${i + 1} of ${SLIDES.length}`}
             >
-              <View style={[styles.dot, i === index && styles.dotActive]} />
+              <View style={[styles.dot, i === index && [styles.dotActive, { backgroundColor: theme.deep }]]} />
             </TouchableOpacity>
           ))}
         </View>
 
         <TouchableOpacity
-          style={styles.nextButton}
+          style={[styles.nextButton, { backgroundColor: theme.deep }]}
           onPress={handleNext}
           activeOpacity={0.85}
           accessibilityRole="button"
@@ -216,39 +262,31 @@ export const OnBoardingPage = () => {
   );
 };
 
-// Onboarding always renders on the dark artwork regardless of device theme,
-// so it pins the dark-theme tokens from constants/Colors.ts rather than
-// reading useTheme() — the gold accent and near-black canvas are the app's
-// documented dark identity.
-const GOLD = "#E9C46A";
-const ON_GOLD = "#15110A";
-const CANVAS = "#0A0B0E";
-
+// Background, Skip, active dot and Next take each slide's own colours (set
+// inline from SLIDES), so only shape and type live here.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // Matches the app's dark canvas so the letterboxed bands `contain` leaves
-    // on differently-proportioned screens blend in.
-    backgroundColor: CANVAS,
   },
   skipButton: {
     position: "absolute",
+    minHeight: 40,
+    justifyContent: "center",
     right: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 20,
-    backgroundColor: GOLD,
-    shadowColor: GOLD,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 22,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
   },
   skipText: {
-    color: ON_GOLD,
-    fontSize: 14.5,
+    color: "#FFFFFF",
+    fontSize: 15,
     fontWeight: "800",
-    letterSpacing: 0.3,
+    letterSpacing: 0.6,
   },
   footer: {
     position: "absolute",
@@ -256,42 +294,40 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   dots: {
     flexDirection: "row",
     alignItems: "center",
     // Fixed height keeps the row from reflowing as the active dot widens.
     height: 16,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   dot: {
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.32)",
+    backgroundColor: "rgba(255,255,255,0.6)",
     marginHorizontal: 4,
   },
   dotActive: {
-    backgroundColor: GOLD,
-    width: 22,
+    width: 24,
   },
   nextButton: {
-    backgroundColor: GOLD,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    width: 280,
+    alignSelf: "stretch",
+    paddingVertical: 17,
+    borderRadius: 30,
     alignItems: "center",
-    shadowColor: GOLD,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 5,
   },
   nextButtonText: {
-    color: ON_GOLD,
-    fontSize: 16.5,
-    fontWeight: "800",
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
     letterSpacing: 0.3,
   },
 });
